@@ -1,46 +1,61 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="Novo Pedido",
-    page_icon="🛒",
-    layout="wide"
+    page_title="Doce Cesta Brasília",
+    page_icon="🎁",
+    layout="centered"
 )
 
-st.title("🛒 Novo Pedido")
-st.write("Preencha os dados abaixo para montar sua cesta personalizada.")
+# Logo
+try:
+    st.image("assets/logo.webp", width=220)
+except:
+    pass
+
+st.markdown(
+    "<h1 style='text-align:center;color:#8B5A2B;'>Doce Cesta Brasília</h1>",
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    "<p style='text-align:center;'>Cestas personalizadas para momentos especiais 💝</p>",
+    unsafe_allow_html=True,
+)
+
+st.divider()
 
 with st.form("pedido"):
 
     st.subheader("👤 Dados do Cliente")
 
-    nome = st.text_input("Nome Completo *")
+    nome = st.text_input("Nome *")
 
-    cpf = st.text_input("CPF *")
+    cpf = st.text_input("CPF *", placeholder="000.000.000-00")
 
-    telefone = st.text_input("Telefone / WhatsApp *")
-
-    endereco = st.text_area("Endereço de Entrega *")
+    telefone = st.text_input("Telefone *")
 
     st.divider()
 
-    st.subheader("🎁 Escolha da Cesta")
+    st.subheader("🎁 Cesta")
 
     cesta = st.selectbox(
-        "Nome da Cesta",
+        "Nome da Cesta *",
         [
+            "Selecione...",
             "Cesta Básica",
             "Cesta Romântica",
             "Cesta Premium",
-            "Cesta Luxo"
-        ]
+            "Cesta Luxo",
+        ],
     )
 
     pao = st.radio(
         "Tipo de pão",
         [
             "Australiano",
-            "Pão Doce"
-        ]
+            "Pão Doce",
+        ],
+        horizontal=True,
     )
 
     espalhavel = st.radio(
@@ -48,8 +63,9 @@ with st.form("pedido"):
         [
             "Doce de Leite",
             "Geleia",
-            "Nutella"
-        ]
+            "Nutella",
+        ],
+        horizontal=True,
     )
 
     bebida = st.radio(
@@ -57,69 +73,107 @@ with st.form("pedido"):
         [
             "Suco de Uva",
             "Suco de Laranja",
-            "Frappuccino"
-        ]
+            "Frappuccino",
+        ],
+        horizontal=True,
     )
 
     st.divider()
 
     st.subheader("✨ Adicionais")
 
-    adicionais = st.multiselect(
-        "Escolha os adicionais",
-        [
-            "Caneca",
-            "Polaroid",
-            "Balão",
-            "Mini Buquê",
-            "Mini Buquê Flores Secas"
-        ]
-    )
+    caneca = st.checkbox("Caneca")
 
-    fotos = None
+    polaroid = st.checkbox("Polaroid")
 
-    if "Polaroid" in adicionais:
+    balao = st.checkbox("Balão")
+
+    mini_buque = st.checkbox("Mini Buquê")
+
+    mini_buque_flores = st.checkbox("Mini Buquê Flores Secas")
+
+    fotos = []
+
+    if polaroid:
+
+        st.info("Selecione uma ou mais fotos para impressão.")
 
         fotos = st.file_uploader(
-            "Envie as fotos para impressão",
-            type=["jpg","jpeg","png","webp"],
-            accept_multiple_files=True
+            "Fotos",
+            accept_multiple_files=True,
+            type=["jpg", "jpeg", "png", "webp"],
         )
 
     st.divider()
 
-    pagamento = st.radio(
-        "Forma de Pagamento",
-        [
-            "Pix",
-            "Cartão de Crédito"
-        ]
-    )
+    st.subheader("💌 Mensagem")
 
     mensagem = st.text_area(
-        "Mensagem que será enviada"
+        "",
+        placeholder="Digite aqui a mensagem que será enviada..."
+    )
+
+    st.divider()
+
+    st.subheader("📍 Endereço de Entrega")
+
+    endereco = st.text_area(
+        "",
+        placeholder="Rua, número, complemento, bairro..."
+    )
+
+    st.divider()
+
+    st.subheader("💳 Forma de Pagamento")
+
+    pagamento = st.radio(
+        "",
+        [
+            "Pix",
+            "Cartão de Crédito",
+        ],
+        horizontal=True,
     )
 
     enviar = st.form_submit_button(
         "📦 ENVIAR PEDIDO",
-        use_container_width=True
+        use_container_width=True,
     )
 
 if enviar:
 
-    if nome == "" or cpf == "" or telefone == "" or endereco == "":
+    erros = []
 
-        st.error("Preencha todos os campos obrigatórios.")
+    if nome.strip() == "":
+        erros.append("Informe o nome.")
+
+    if cpf.strip() == "":
+        erros.append("Informe o CPF.")
+
+    if telefone.strip() == "":
+        erros.append("Informe o telefone.")
+
+    if cesta == "Selecione...":
+        erros.append("Escolha uma cesta.")
+
+    if endereco.strip() == "":
+        erros.append("Informe o endereço de entrega.")
+
+    if erros:
+
+        st.error("Corrija os itens abaixo:")
+
+        for erro in erros:
+            st.write("•", erro)
 
     else:
 
-        st.success("🎉 Pedido enviado com sucesso!")
+        st.success("Pedido enviado com sucesso! 🎉")
 
-        st.info(
-            """
-Obrigado pelo seu pedido!
+        st.info("""
+Obrigado por escolher a Doce Cesta Brasília.
 
-Recebemos sua solicitação.
+Recebemos seu pedido.
 
 Nossa equipe entrará em contato o mais rápido possível para informar:
 
@@ -128,22 +182,11 @@ Nossa equipe entrará em contato o mais rápido possível para informar:
 ✅ Valor final da cesta
 
 ✅ Confirmação da entrega
-"""
-        )
+""")
 
-        with st.expander("Visualizar dados enviados"):
+st.divider()
 
-            st.write("**Nome:**", nome)
-            st.write("**CPF:**", cpf)
-            st.write("**Telefone:**", telefone)
-            st.write("**Endereço:**", endereco)
-            st.write("**Cesta:**", cesta)
-            st.write("**Pão:**", pao)
-            st.write("**Espalhável:**", espalhavel)
-            st.write("**Bebida:**", bebida)
-            st.write("**Adicionais:**", adicionais)
-            st.write("**Pagamento:**", pagamento)
-            st.write("**Mensagem:**", mensagem)
-
-            if fotos:
-                st.write(f"📷 {len(fotos)} foto(s) enviada(s)")
+st.markdown(
+    "<p style='text-align:center;font-size:13px;'>🔒 Área Administrativa</p>",
+    unsafe_allow_html=True,
+)
