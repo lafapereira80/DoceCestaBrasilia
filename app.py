@@ -1,125 +1,76 @@
 import streamlit as st
-
-# ======================================
-# CONFIGURAÇÃO DA PÁGINA
-# ======================================
+from pathlib import Path
 
 st.set_page_config(
     page_title="Doce Cesta Brasília",
     page_icon="🎁",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+    layout="wide"
 )
 
-# ======================================
-# CORES
-# ======================================
+# Carrega o CSS
+css_path = Path("assets/style.css")
+if css_path.exists():
+    with open(css_path, encoding="utf-8") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-verde = "#9BC58A"
-marrom = "#B86A34"
-fundo = "#FAF8F5"
+# Logo
+logo = Path("assets/logo.webp")
+if logo.exists():
+    st.image(str(logo), width=250)
 
-# ======================================
-# CSS
-# ======================================
+# Título
+st.markdown("<div class='main-title'>Doce Cesta Brasília</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Cestas personalizadas para momentos especiais 💝</div>", unsafe_allow_html=True)
 
-st.markdown(f"""
-<style>
+st.divider()
 
-.stApp{{
-    background:{fundo};
-}}
-
-h1,h2,h3{{
-    color:{marrom};
-    text-align:center;
-}}
-
-p{{
-    text-align:center;
-    font-size:18px;
-}}
-
-.botao{{
-    background:{marrom};
-    color:white;
-    padding:15px;
-    border-radius:12px;
-    text-align:center;
-    font-size:22px;
-    font-weight:bold;
-}}
-
-.card{{
-    background:white;
-    border-radius:15px;
-    padding:25px;
-    box-shadow:0px 4px 12px rgba(0,0,0,.10);
-}}
-
-</style>
-""", unsafe_allow_html=True)
-
-# ======================================
-# LOGO
-# ======================================
-
-st.image("assets/logo.webp", width=260)
-
-# ======================================
-# TÍTULO
-# ======================================
-
-st.title("Doce Cesta Brasília")
-
-st.subheader("Cestas personalizadas para momentos especiais ❤️")
-
-st.write("")
-
-# ======================================
-# APRESENTAÇÃO
-# ======================================
-
-st.markdown("""
-### Bem-vindo!
-
-Escolha sua cesta personalizada e monte um presente inesquecível.
-
-Nossa equipe entrará em contato após o envio do pedido para informar:
-
-- 🚚 Valor do frete
-
-- 💰 Valor final da cesta
-
-- 📅 Confirmação da entrega
-""")
-
-st.write("")
-
-# ======================================
-# COMO FUNCIONA
-# ======================================
-
-col1,col2,col3,col4 = st.columns(4)
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.success("🎁\n\nEscolha sua cesta")
+    st.markdown("""
+    <div class='card'>
+        <h3>🎁</h3>
+        <b>Escolha sua cesta</b>
+        <p>Diversas opções para cada ocasião.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 with col2:
-    st.success("🍞\n\nPersonalize")
+    st.markdown("""
+    <div class='card'>
+        <h3>🍞</h3>
+        <b>Personalize</b>
+        <p>Escolha pão, bebida e espalháveis.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 with col3:
-    st.success("📷\n\nEnvie suas fotos")
+    st.markdown("""
+    <div class='card'>
+        <h3>📷</h3>
+        <b>Polaroid</b>
+        <p>Envie várias fotos para impressão.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 with col4:
-    st.success("🚚\n\nReceba em casa")
+    st.markdown("""
+    <div class='card'>
+        <h3>🚚</h3>
+        <b>Entrega</b>
+        <p>Receba no endereço escolhido.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-st.write("")
+st.divider()
 
-st.info("O formulário completo estará disponível na próxima atualização do sistema.")
+col_esq, col_centro, col_dir = st.columns([1,2,1])
 
-st.button("🛒 FAZER PEDIDO")
+with col_centro:
+    if st.button("🛒 FAZER PEDIDO", use_container_width=True):
+        st.switch_page("pages/02_Pedidos.py")
 
-st.write("")
-
-st.caption("© Doce Cesta Brasília")
+st.markdown(
+    "<div class='footer'>© Doce Cesta Brasília - Todos os direitos reservados.</div>",
+    unsafe_allow_html=True
+)
