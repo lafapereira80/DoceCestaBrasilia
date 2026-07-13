@@ -15,15 +15,24 @@ st.set_page_config(
 st.markdown("""
 <style>
 
-/* Esconde apenas a navegação lateral */
+/* Esconde o menu de navegação das páginas */
 [data-testid="stSidebarNav"]{
     display:none;
 }
 
-/* Centraliza o conteúdo */
-.block-container{
-    max-width:850px;
-    padding-top:20px;
+/* Esconde a barra lateral inteira */
+section[data-testid="stSidebar"]{
+    display:none;
+}
+
+/* Esconde o botão >> */
+[data-testid="stSidebarCollapsedControl"]{
+    display:none;
+}
+
+/* Esconde o cabeçalho */
+header{
+    visibility:hidden;
 }
 
 /* Esconde menu */
@@ -31,11 +40,18 @@ st.markdown("""
     visibility:hidden;
 }
 
-/* Esconde footer */
+/* Esconde rodapé */
 footer{
     visibility:hidden;
 }
 
+/* Centraliza a página */
+.block-container{
+    max-width:900px;
+    padding-top:20px;
+}
+
+/* Título */
 .titulo{
     text-align:center;
     color:#8B5A2B;
@@ -43,6 +59,7 @@ footer{
     font-weight:bold;
 }
 
+/* Subtítulo */
 .subtitulo{
     text-align:center;
     color:#666;
@@ -52,7 +69,6 @@ footer{
 
 </style>
 """, unsafe_allow_html=True)
-
 # ==========================
 # LOGO
 # ==========================
