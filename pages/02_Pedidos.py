@@ -1,4 +1,7 @@
 import streamlit as st
+from datetime import datetime
+
+from services.pedido_service import salvar_pedido
 
 st.set_page_config(
     page_title="Doce Cesta Brasília",
@@ -6,7 +9,10 @@ st.set_page_config(
     layout="centered"
 )
 
-# Logo
+# ===========================
+# LOGO
+# ===========================
+
 try:
     st.image("assets/logo.webp", width=220)
 except:
@@ -14,15 +20,19 @@ except:
 
 st.markdown(
     "<h1 style='text-align:center;color:#8B5A2B;'>Doce Cesta Brasília</h1>",
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
 )
 
 st.markdown(
     "<p style='text-align:center;'>Cestas personalizadas para momentos especiais 💝</p>",
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
 )
 
 st.divider()
+
+# ===========================
+# FORMULÁRIO
+# ===========================
 
 with st.form("pedido"):
 
@@ -30,7 +40,10 @@ with st.form("pedido"):
 
     nome = st.text_input("Nome *")
 
-    cpf = st.text_input("CPF *", placeholder="000.000.000-00")
+    cpf = st.text_input(
+        "CPF *",
+        placeholder="000.000.000-00"
+    )
 
     telefone = st.text_input("Telefone *")
 
@@ -45,17 +58,17 @@ with st.form("pedido"):
             "Cesta Básica",
             "Cesta Romântica",
             "Cesta Premium",
-            "Cesta Luxo",
-        ],
+            "Cesta Luxo"
+        ]
     )
 
     pao = st.radio(
         "Tipo de pão",
         [
             "Australiano",
-            "Pão Doce",
+            "Pão Doce"
         ],
-        horizontal=True,
+        horizontal=True
     )
 
     espalhavel = st.radio(
@@ -63,9 +76,9 @@ with st.form("pedido"):
         [
             "Doce de Leite",
             "Geleia",
-            "Nutella",
+            "Nutella"
         ],
-        horizontal=True,
+        horizontal=True
     )
 
     bebida = st.radio(
@@ -73,9 +86,9 @@ with st.form("pedido"):
         [
             "Suco de Uva",
             "Suco de Laranja",
-            "Frappuccino",
+            "Frappuccino"
         ],
-        horizontal=True,
+        horizontal=True
     )
 
     st.divider()
@@ -100,8 +113,8 @@ with st.form("pedido"):
 
         fotos = st.file_uploader(
             "Fotos",
-            accept_multiple_files=True,
             type=["jpg", "jpeg", "png", "webp"],
+            accept_multiple_files=True
         )
 
     st.divider()
@@ -110,7 +123,7 @@ with st.form("pedido"):
 
     mensagem = st.text_area(
         "",
-        placeholder="Digite aqui a mensagem que será enviada..."
+        placeholder="Digite aqui a mensagem..."
     )
 
     st.divider()
@@ -130,15 +143,19 @@ with st.form("pedido"):
         "",
         [
             "Pix",
-            "Cartão de Crédito",
+            "Cartão de Crédito"
         ],
-        horizontal=True,
+        horizontal=True
     )
 
     enviar = st.form_submit_button(
         "📦 ENVIAR PEDIDO",
-        use_container_width=True,
+        use_container_width=True
     )
+
+# ===========================
+# SALVAR PEDIDO
+# ===========================
 
 if enviar:
 
@@ -168,9 +185,60 @@ if enviar:
 
     else:
 
-        st.success("Pedido enviado com sucesso! 🎉")
+        adicionais = []
 
-        st.info("""
+        if caneca:
+            adicionais.append("Caneca")
+
+        if polaroid:
+            adicionais.append("Polaroid")
+
+        if balao:
+            adicionais.append("Balão")
+
+        if mini_buque:
+            adicionais.append("Mini Buquê")
+
+        if mini_buque_flores:
+            adicionais.append("Mini Buquê Flores Secas")
+
+        pedido = {
+
+            "cliente_nome": nome,
+
+            "cliente_cpf": cpf,
+
+            "cliente_telefone": telefone,
+
+            "cesta_nome": cesta,
+
+            "pao": pao,
+
+            "espalhavel": espalhavel,
+
+            "bebida": bebida,
+
+            "adicionais": ", ".join(adicionais),
+
+            "mensagem": mensagem,
+
+            "endereco": endereco,
+
+            "pagamento": pagamento,
+
+            "status": "Recebido",
+
+            "created_at": datetime.now().isoformat()
+
+        }
+
+        try:
+
+            salvar_pedido(pedido)
+
+            st.success("🎉 Pedido enviado com sucesso!")
+
+            st.info("""
 Obrigado por escolher a Doce Cesta Brasília.
 
 Recebemos seu pedido.
@@ -184,9 +252,15 @@ Nossa equipe entrará em contato o mais rápido possível para informar:
 ✅ Confirmação da entrega
 """)
 
+        except Exception as erro:
+
+            st.error("Erro ao salvar o pedido.")
+
+            st.exception(erro)
+
 st.divider()
 
 st.markdown(
     "<p style='text-align:center;font-size:13px;'>🔒 Área Administrativa</p>",
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
 )
