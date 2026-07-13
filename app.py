@@ -8,47 +8,32 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Esconde completamente a navegação e o menu do Streamlit
+# ==========================
+# CSS
+# ==========================
+
 st.markdown("""
 <style>
 
-/* Esconde a barra lateral */
-section[data-testid="stSidebar"]{
+/* Esconde apenas a navegação lateral */
+[data-testid="stSidebarNav"]{
     display:none;
 }
 
-/* Esconde o botão que abre a barra lateral */
-button[kind="header"]{
-    display:none;
+/* Centraliza o conteúdo */
+.block-container{
+    max-width:850px;
+    padding-top:20px;
 }
 
-/* Esconde menu superior */
+/* Esconde menu */
 #MainMenu{
     visibility:hidden;
 }
 
-/* Esconde rodapé do Streamlit */
+/* Esconde footer */
 footer{
     visibility:hidden;
-}
-
-/* Esconde cabeçalho */
-header{
-    visibility:hidden;
-}
-
-/* Centraliza conteúdo */
-.block-container{
-    max-width:850px;
-    padding-top:1rem;
-    padding-bottom:3rem;
-}
-
-.logo{
-    display:block;
-    margin-left:auto;
-    margin-right:auto;
-    margin-bottom:20px;
 }
 
 .titulo{
@@ -62,58 +47,46 @@ header{
     text-align:center;
     color:#666;
     font-size:18px;
-    margin-bottom:25px;
-}
-
-.rodape{
-    text-align:center;
-    margin-top:60px;
-    color:#888;
-    font-size:14px;
-}
-
-a{
-    text-decoration:none;
+    margin-bottom:30px;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-# Logo
+# ==========================
+# LOGO
+# ==========================
+
 logo = Path("assets/logo.webp")
 
 if logo.exists():
-    col1, col2, col3 = st.columns([1,2,1])
 
-    with col2:
+    c1,c2,c3 = st.columns([1,2,1])
+
+    with c2:
+
         st.image(str(logo), use_container_width=True)
 
-st.markdown("<div class='titulo'>Doce Cesta Brasília</div>", unsafe_allow_html=True)
-
-st.markdown("<div class='subtitulo'>Cestas personalizadas para momentos especiais 💝</div>", unsafe_allow_html=True)
-
-st.info(
-"""
-Esta página será o formulário oficial de pedidos.
-
-Na próxima etapa iremos mover todo o formulário para esta página.
-"""
+st.markdown(
+    "<div class='titulo'>Doce Cesta Brasília</div>",
+    unsafe_allow_html=True
 )
+
+st.markdown(
+    "<div class='subtitulo'>Cestas personalizadas para momentos especiais 💝</div>",
+    unsafe_allow_html=True
+)
+
+st.success("Sistema em desenvolvimento.")
+
+st.write("Na próxima etapa o formulário completo será colocado nesta página.")
 
 st.divider()
 
-st.markdown("""
-<div class="rodape">
+st.caption("© Doce Cesta Brasília")
 
-© Doce Cesta Brasília
-
-<br><br>
-
-<a href="/Admin" target="_self">
-
-🔒 Área Administrativa
-
-</a>
-
-</div>
-""", unsafe_allow_html=True)
+st.page_link(
+    "pages/99_Admin.py",
+    label="🔒 Área Administrativa",
+    icon="🔒"
+)
