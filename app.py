@@ -93,9 +93,78 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.success("Sistema em desenvolvimento.")
+# ==========================
+# FORMULÁRIO DE PEDIDOS
+# ==========================
 
-st.write("Na próxima etapa o formulário completo será colocado nesta página.")
+st.header("📝 Formulário de Pedido")
+
+with st.form("pedido"):
+
+    st.subheader("👤 Dados do Cliente")
+
+    nome = st.text_input(
+        "Nome Completo *"
+    )
+
+    cpf = st.text_input(
+        "CPF *",
+        placeholder="000.000.000-00"
+    )
+
+    telefone = st.text_input(
+        "Telefone *",
+        placeholder="(61) 99999-9999"
+    )
+
+    st.subheader("🎁 Escolha da Cesta")
+
+    cesta = st.selectbox(
+        "Nome da Cesta",
+        [
+            "Selecione...",
+            "Cesta Romântica",
+            "Cesta Premium",
+            "Cesta Luxo"
+        ]
+    )
+
+    tipo_pao = st.radio(
+        "Tipo de Pão",
+        [
+            "Australiano",
+            "Pão Doce"
+        ],
+        horizontal=True
+    )
+
+    espalhavel = st.radio(
+        "Espalhável",
+        [
+            "Doce de Leite",
+            "Geleia",
+            "Nutella"
+        ],
+        horizontal=True
+    )
+
+    bebida = st.radio(
+        "Bebida",
+        [
+            "Suco de Uva",
+            "Suco de Laranja",
+            "Frappuccino"
+        ],
+        horizontal=True
+    )
+
+    enviar = st.form_submit_button(
+        "Continuar"
+    )
+
+if enviar:
+
+    st.success("Primeira parte do formulário criada com sucesso.")
 
 st.divider()
 
