@@ -77,11 +77,10 @@ logo = Path("assets/logo.webp")
 
 if logo.exists():
 
-    c1,c2,c3 = st.columns([1,2,1])
+    c1, c2, c3 = st.columns([1, 2, 1])
 
     with c2:
-
-    st.image(str(logo), width=180)
+        st.image(str(logo), width=180)
     
 st.markdown(
     "<div class='titulo'>Doce Cesta Brasília</div>",
