@@ -253,7 +253,100 @@ with st.form("pedido"):
 
 if enviar:
 
-    st.success("🎉 Pedido enviado com sucesso!")
+    # ============================
+    # VALIDAÇÕES
+    # ============================
+
+    if nome.strip() == "":
+        st.error("Informe o nome do cliente.")
+
+    elif cpf.strip() == "":
+        st.error("Informe o CPF.")
+
+    elif telefone.strip() == "":
+        st.error("Informe o telefone.")
+
+    elif cesta == "Selecione...":
+        st.error("Escolha uma cesta.")
+
+    else:
+
+        adicionais = []
+
+        if caneca:
+            adicionais.append("Caneca")
+
+        if polaroid:
+            adicionais.append("Polaroid")
+
+        if balao:
+            adicionais.append("Balão")
+
+        if mini_buque:
+            adicionais.append("Mini Buquê")
+
+        if mini_buque_flores:
+            adicionais.append("Mini Buquê Flores Secas")
+
+        dados = {
+
+            "cliente_nome": nome,
+
+            "cliente_cpf": cpf,
+
+            "cliente_telefone": telefone,
+
+            "cesta_nome": cesta,
+
+            "pao": tipo_pao,
+
+            "espalhavel": espalhavel,
+
+            "bebida": bebida,
+
+            "adicionais": ", ".join(adicionais),
+
+            "pagamento": pagamento,
+
+            "mensagem": mensagem,
+
+            "endereco": endereco,
+
+            "data_entrega": str(data_entrega),
+
+            "horario_entrega": str(horario_entrega),
+
+            "status": "Recebido",
+
+            "valor_frete": 0,
+
+            "valor_total": 0
+
+        }
+
+        sucesso, resposta = salvar_pedido(dados)
+
+        if sucesso:
+
+            st.success("🎉 Pedido enviado com sucesso!")
+
+            st.info("""
+
+Nossa equipe entrará em contato para informar:
+
+✅ Valor do frete
+
+✅ Valor final da cesta
+
+✅ Confirmação da entrega
+
+Muito obrigado pela preferência ❤️
+
+""")
+
+        else:
+
+            st.error(resposta)
 
     st.info("""
 Obrigado por escolher a **Doce Cesta Brasília** ❤️
