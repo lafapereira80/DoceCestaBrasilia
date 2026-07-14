@@ -141,11 +141,7 @@ st.header("📝 Formulário de Pedido")
 
 with st.form("pedido"):
 
-st.markdown("""
-<div class="card">
-<h3>👤 Dados do Cliente</h3>
-""", unsafe_allow_html=True)
-    
+
     st.subheader("👤 Dados do Cliente")
 
     nome = st.text_input(
@@ -161,12 +157,6 @@ st.markdown("""
         "Telefone *",
         placeholder="(61) 99999-9999"
     )
-st.markdown("</div>", unsafe_allow_html=True)
-
-st.markdown("""
-<div class="card">
-<h3>🎁 Escolha da Cesta</h3>
-""", unsafe_allow_html=True)
 
     st.subheader("🎁 Escolha da Cesta")
 
@@ -208,15 +198,10 @@ st.markdown("""
         ],
         horizontal=True
     )
-st.markdown("</div>", unsafe_allow_html=True)
+
     # ============================================
     # ADICIONAIS
     # ============================================
-
-    st.markdown("""
-<div class="card">
-<h3>🎀 Adicionais</h3>
-""", unsafe_allow_html=True)
 
     st.subheader("🎀 Adicionais")
 
@@ -249,15 +234,9 @@ st.markdown("</div>", unsafe_allow_html=True)
             accept_multiple_files=True
         )
 
-    st.markdown("</div>", unsafe_allow_html=True)
-
     # ============================================
     # PAGAMENTO
     # ============================================
-st.markdown("""
-<div class="card">
-<h3>💳 Pagamento e Entrega</h3>
-""", unsafe_allow_html=True)
 
     st.subheader("💳 Forma de Pagamento")
 
@@ -316,8 +295,6 @@ st.markdown("""
         "🛒 ENVIAR PEDIDO",
         use_container_width=True
     )
-
-st.markdown("</div>", unsafe_allow_html=True)
 
 if enviar:
 
