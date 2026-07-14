@@ -81,8 +81,8 @@ if logo.exists():
 
     with c2:
 
-        st.image(str(logo), use_container_width=True)
-
+    st.image(str(logo), width=180)
+    
 st.markdown(
     "<div class='titulo'>Doce Cesta Brasília</div>",
     unsafe_allow_html=True
