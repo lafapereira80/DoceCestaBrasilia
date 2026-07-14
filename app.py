@@ -157,14 +157,130 @@ with st.form("pedido"):
         ],
         horizontal=True
     )
+# ============================================
+# ADICIONAIS
+# ============================================
 
-    enviar = st.form_submit_button(
-        "Continuar"
+st.subheader("🎀 Adicionais")
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    caneca = st.checkbox("☕ Caneca")
+
+    polaroid = st.checkbox("📷 Polaroid")
+
+    balao = st.checkbox("🎈 Balão")
+
+with col2:
+
+    mini_buque = st.checkbox("💐 Mini Buquê")
+
+    mini_buque_flores = st.checkbox("🌸 Mini Buquê Flores Secas")
+
+# ============================================
+# FOTOS
+# ============================================
+
+fotos = []
+
+if polaroid:
+
+    st.info(
+        "Selecione uma ou mais fotos que serão impressas e colocadas na cesta."
     )
 
+    fotos = st.file_uploader(
+        "Enviar Fotos",
+        type=["jpg","jpeg","png","webp"],
+        accept_multiple_files=True
+    )
+
+# ============================================
+# PAGAMENTO
+# ============================================
+
+st.subheader("💳 Forma de Pagamento")
+
+pagamento = st.radio(
+    "",
+    [
+        "Pix",
+        "Cartão de Crédito"
+    ],
+    horizontal=True
+)
+
+# ============================================
+# MENSAGEM
+# ============================================
+
+st.subheader("💌 Mensagem")
+
+mensagem = st.text_area(
+    "",
+    height=120,
+    placeholder="Digite aqui a mensagem que acompanhará a cesta..."
+)
+
+# ============================================
+# ENTREGA
+# ============================================
+
+st.subheader("📍 Endereço de Entrega")
+
+endereco = st.text_area(
+    "",
+    height=120,
+    placeholder="Rua, número, complemento, bairro, cidade..."
+)
+
+# ============================================
+# DATA
+# ============================================
+
+col1,col2 = st.columns(2)
+
+with col1:
+
+    data_entrega = st.date_input(
+        "📅 Data da Entrega"
+    )
+
+with col2:
+
+    horario_entrega = st.time_input(
+        "🕒 Horário"
+    )
+
+st.divider()
+
+enviar = st.form_submit_button(
+    "🛒 ENVIAR PEDIDO",
+    use_container_width=True
+)
 if enviar:
 
-    st.success("Primeira parte do formulário criada com sucesso.")
+    st.success("🎉 Pedido enviado com sucesso!")
+
+    st.info("""
+
+Obrigado por escolher a **Doce Cesta Brasília** ❤️
+
+Recebemos seu pedido.
+
+Nossa equipe entrará em contato o mais rápido possível para informar:
+
+✅ Valor do frete
+
+✅ Valor final da cesta
+
+✅ Confirmação da entrega.
+
+Muito obrigado pela preferência!
+
+""")
 
 st.divider()
 
