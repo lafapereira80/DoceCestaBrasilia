@@ -77,19 +77,16 @@ logo = Path("assets/logo.webp")
 
 if logo.exists():
 
-    c1, c2, c3 = st.columns([1, 2, 1])
+    st.markdown(
+        """
+        <div style="display:flex;justify-content:center;margin-bottom:20px;">
+        """,
+        unsafe_allow_html=True
+    )
 
-    with c2:
-        st.image(str(logo), width=180)
-    
-st.markdown(
-    "<div class='titulo'>Doce Cesta Brasília</div>",
-    unsafe_allow_html=True
-)
+    st.image(str(logo), width=180)
 
-st.markdown(
-    "<div class='subtitulo'>Cestas personalizadas para momentos especiais 💝</div>",
-    unsafe_allow_html=True
+    st.markdown("</div>", unsafe_allow_html=True)
 )
 
 # ==========================
