@@ -87,7 +87,6 @@ if logo.exists():
     st.image(str(logo), width=180)
 
     st.markdown("</div>", unsafe_allow_html=True)
-)
 
 # ==========================
 # FORMULÁRIO DE PEDIDOS
