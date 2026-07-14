@@ -1,5 +1,6 @@
 import streamlit as st
 from pathlib import Path
+from services.pedido_service import salvar_pedido
 
 st.set_page_config(
     page_title="Doce Cesta Brasília",
@@ -11,102 +12,55 @@ st.set_page_config(
 # ==========================
 # CSS
 # ==========================
-
 st.markdown("""
 <style>
 
-/* Esconde o menu de navegação das páginas */
-[data-testid="stSidebarNav"]{
-    display:none;
-}
-
-/* Esconde a barra lateral inteira */
+/* Esconde menu lateral */
 section[data-testid="stSidebar"]{
     display:none;
 }
 
-/* Esconde o botão >> */
-[data-testid="stSidebarCollapsedControl"]{
+/* Esconde botão do menu */
+[data-testid="collapsedControl"]{
     display:none;
 }
 
-/* Esconde o cabeçalho */
+/* Cabeçalho */
 header{
     visibility:hidden;
 }
 
-/* Esconde menu */
-#MainMenu{
-    visibility:hidden;
-}
-
-/* Esconde rodapé */
+/* Rodapé */
 footer{
     visibility:hidden;
 }
 
-/* Centraliza a página */
+/* Menu Streamlit */
+#MainMenu{
+    visibility:hidden;
+}
+
+/* Centraliza conteúdo */
 .block-container{
-    max-width:900px;
+    max-width:850px;
     padding-top:20px;
 }
 
-/* Título */
-.titulo{
-    text-align:center;
-    color:#8B5A2B;
-    font-size:42px;
-    font-weight:bold;
-}
-
-/* Subtítulo */
-.subtitulo{
-    text-align:center;
-    color:#666;
-    font-size:18px;
-    margin-bottom:30px;
-}
-
-/* ==========================
-   CARDS
-========================== */
-
-.card{
-    background:#FFFFFF;
-    border-radius:18px;
-    padding:25px;
-    margin-bottom:25px;
-    border:1px solid #E7DCCF;
-    box-shadow:0 4px 12px rgba(0,0,0,.06);
-}
-
-.card h3{
-    color:#8B5A2B;
-    margin-top:0;
-    margin-bottom:18px;
-}
-
-.stButton>button{
+/* Botão */
+.stButton > button{
     background:#8B5A2B;
     color:white;
     border-radius:12px;
-    border:none;
     height:55px;
     font-size:18px;
     font-weight:bold;
 }
 
-.stButton>button:hover{
-    background:#A66A34;
-    color:white;
-}
-
-div[data-baseweb="select"]{
-    border-radius:10px;
-}
-
-textarea{
-    border-radius:10px !important;
+/* Rodapé */
+.rodape{
+    text-align:center;
+    color:#777;
+    margin-top:50px;
 }
 
 </style>
@@ -119,20 +73,21 @@ logo = Path("assets/logo.webp")
 
 if logo.exists():
 
-    st.markdown(
-        """
-        <div style="display:flex;justify-content:center;margin-bottom:20px;">
-        """,
-        unsafe_allow_html=True
-    )
+    col1,col2,col3 = st.columns([2,1,2])
 
-col_esq, col_centro, col_dir = st.columns([2,1,2])
+    with col2:
 
-with col_centro:
-    st.image("assets/logo.webp", width=180)
+        st.image(str(logo), width=180)
 
-    st.markdown("</div>", unsafe_allow_html=True)
+st.markdown(
+    "<h1 style='text-align:center;color:#8B5A2B;'>Doce Cesta Brasília</h1>",
+    unsafe_allow_html=True
+)
 
+st.markdown(
+    "<p style='text-align:center;'>Cestas personalizadas para momentos especiais 💝</p>",
+    unsafe_allow_html=True
+)
 # ==========================
 # FORMULÁRIO DE PEDIDOS
 # ==========================
