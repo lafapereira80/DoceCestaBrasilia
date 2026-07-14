@@ -84,7 +84,10 @@ if logo.exists():
         unsafe_allow_html=True
     )
 
-    st.image(str(logo), width=180)
+col_esq, col_centro, col_dir = st.columns([2,1,2])
+
+with col_centro:
+    st.image("assets/logo.webp", width=180)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
