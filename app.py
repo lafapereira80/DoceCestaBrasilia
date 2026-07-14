@@ -155,115 +155,109 @@ with st.form("pedido"):
         ],
         horizontal=True
     )
-# ============================================
-# ADICIONAIS
-# ============================================
 
-st.subheader("🎀 Adicionais")
+    # ============================================
+    # ADICIONAIS
+    # ============================================
 
-col1, col2 = st.columns(2)
+    st.subheader("🎀 Adicionais")
 
-with col1:
+    col1, col2 = st.columns(2)
 
-    caneca = st.checkbox("☕ Caneca")
+    with col1:
+        caneca = st.checkbox("☕ Caneca")
+        polaroid = st.checkbox("📷 Polaroid")
+        balao = st.checkbox("🎈 Balão")
 
-    polaroid = st.checkbox("📷 Polaroid")
+    with col2:
+        mini_buque = st.checkbox("💐 Mini Buquê")
+        mini_buque_flores = st.checkbox("🌸 Mini Buquê Flores Secas")
 
-    balao = st.checkbox("🎈 Balão")
+    # ============================================
+    # FOTOS
+    # ============================================
 
-with col2:
+    fotos = []
 
-    mini_buque = st.checkbox("💐 Mini Buquê")
+    if polaroid:
 
-    mini_buque_flores = st.checkbox("🌸 Mini Buquê Flores Secas")
+        st.info(
+            "Selecione uma ou mais fotos que serão impressas e colocadas na cesta."
+        )
 
-# ============================================
-# FOTOS
-# ============================================
+        fotos = st.file_uploader(
+            "Enviar Fotos",
+            type=["jpg", "jpeg", "png", "webp"],
+            accept_multiple_files=True
+        )
 
-fotos = []
+    # ============================================
+    # PAGAMENTO
+    # ============================================
 
-if polaroid:
+    st.subheader("💳 Forma de Pagamento")
 
-    st.info(
-        "Selecione uma ou mais fotos que serão impressas e colocadas na cesta."
+    pagamento = st.radio(
+        "",
+        [
+            "Pix",
+            "Cartão de Crédito"
+        ],
+        horizontal=True
     )
 
-    fotos = st.file_uploader(
-        "Enviar Fotos",
-        type=["jpg","jpeg","png","webp"],
-        accept_multiple_files=True
+    # ============================================
+    # MENSAGEM
+    # ============================================
+
+    st.subheader("💌 Mensagem")
+
+    mensagem = st.text_area(
+        "",
+        height=120,
+        placeholder="Digite aqui a mensagem que acompanhará a cesta..."
     )
 
-# ============================================
-# PAGAMENTO
-# ============================================
+    # ============================================
+    # ENTREGA
+    # ============================================
 
-st.subheader("💳 Forma de Pagamento")
+    st.subheader("📍 Endereço de Entrega")
 
-pagamento = st.radio(
-    "",
-    [
-        "Pix",
-        "Cartão de Crédito"
-    ],
-    horizontal=True
-)
-
-# ============================================
-# MENSAGEM
-# ============================================
-
-st.subheader("💌 Mensagem")
-
-mensagem = st.text_area(
-    "",
-    height=120,
-    placeholder="Digite aqui a mensagem que acompanhará a cesta..."
-)
-
-# ============================================
-# ENTREGA
-# ============================================
-
-st.subheader("📍 Endereço de Entrega")
-
-endereco = st.text_area(
-    "",
-    height=120,
-    placeholder="Rua, número, complemento, bairro, cidade..."
-)
-
-# ============================================
-# DATA
-# ============================================
-
-col1,col2 = st.columns(2)
-
-with col1:
-
-    data_entrega = st.date_input(
-        "📅 Data da Entrega"
+    endereco = st.text_area(
+        "",
+        height=120,
+        placeholder="Rua, número, complemento, bairro, cidade..."
     )
 
-with col2:
+    # ============================================
+    # DATA E HORÁRIO
+    # ============================================
 
-    horario_entrega = st.time_input(
-        "🕒 Horário"
+    col1, col2 = st.columns(2)
+
+    with col1:
+        data_entrega = st.date_input(
+            "📅 Data da Entrega"
+        )
+
+    with col2:
+        horario_entrega = st.time_input(
+            "🕒 Horário"
+        )
+
+    st.divider()
+
+    enviar = st.form_submit_button(
+        "🛒 ENVIAR PEDIDO",
+        use_container_width=True
     )
 
-st.divider()
-
-enviar = st.form_submit_button(
-    "🛒 ENVIAR PEDIDO",
-    use_container_width=True
-)
 if enviar:
 
     st.success("🎉 Pedido enviado com sucesso!")
 
     st.info("""
-
 Obrigado por escolher a **Doce Cesta Brasília** ❤️
 
 Recebemos seu pedido.
@@ -277,15 +271,4 @@ Nossa equipe entrará em contato o mais rápido possível para informar:
 ✅ Confirmação da entrega.
 
 Muito obrigado pela preferência!
-
 """)
-
-st.divider()
-
-st.caption("© Doce Cesta Brasília")
-
-st.page_link(
-    "pages/99_Admin.py",
-    label="🔒 Área Administrativa",
-    icon="🔒"
-)
