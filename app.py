@@ -172,23 +172,21 @@ with st.form("pedido"):
         mini_buque = st.checkbox("💐 Mini Buquê")
         mini_buque_flores = st.checkbox("🌸 Mini Buquê Flores Secas")
 
-    # ============================================
-    # FOTOS
-    # ============================================
+# ============================================
+# FOTOS
+# ============================================
 
-    fotos = []
+st.subheader("📷 Fotos para Polaroid")
 
-    if polaroid:
+if not polaroid:
+    st.caption("Marque a opção 📷 Polaroid para incluir fotos.")
 
-        st.info(
-            "Selecione uma ou mais fotos que serão impressas e colocadas na cesta."
-        )
-
-        fotos = st.file_uploader(
-            "Enviar Fotos",
-            type=["jpg", "jpeg", "png", "webp"],
-            accept_multiple_files=True
-        )
+fotos = st.file_uploader(
+    "Selecione uma ou mais fotos",
+    type=["jpg", "jpeg", "png", "webp"],
+    accept_multiple_files=True,
+    disabled=not polaroid
+)
 
     # ============================================
     # PAGAMENTO
