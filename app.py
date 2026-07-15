@@ -95,65 +95,62 @@ st.markdown(
 
 st.header("📝 Formulário de Pedido")
 
-with st.form("pedido"):
+st.subheader("👤 Dados do Cliente")
 
+nome = st.text_input(
+"Nome Completo *"
+)
 
-    st.subheader("👤 Dados do Cliente")
+cpf = st.text_input(
+"CPF *",
+placeholder="000.000.000-00"
+)
 
-    nome = st.text_input(
-        "Nome Completo *"
-    )
+telefone = st.text_input(
+"Telefone *",
+placeholder="(61) 99999-9999"
+)
 
-    cpf = st.text_input(
-        "CPF *",
-        placeholder="000.000.000-00"
-    )
+st.subheader("🎁 Escolha da Cesta")
 
-    telefone = st.text_input(
-        "Telefone *",
-        placeholder="(61) 99999-9999"
-    )
+cesta = st.selectbox(
+"Nome da Cesta",
+[
+"Selecione...",
+"Cesta Romântica",
+"Cesta Premium",
+"Cesta Luxo"
+]
+)
 
-    st.subheader("🎁 Escolha da Cesta")
+tipo_pao = st.radio(
+"Tipo de Pão",
+[
+"Australiano",
+"Pão Doce"
+],
+horizontal=True
+)
 
-    cesta = st.selectbox(
-        "Nome da Cesta",
-        [
-            "Selecione...",
-            "Cesta Romântica",
-            "Cesta Premium",
-            "Cesta Luxo"
-        ]
-    )
+espalhavel = st.radio(
+"Espalhável",
+[
+"Doce de Leite",
+"Geleia",
+"Nutella"
+],
+horizontal=True
+)
 
-    tipo_pao = st.radio(
-        "Tipo de Pão",
-        [
-            "Australiano",
-            "Pão Doce"
-        ],
-        horizontal=True
-    )
-
-    espalhavel = st.radio(
-        "Espalhável",
-        [
-            "Doce de Leite",
-            "Geleia",
-            "Nutella"
-        ],
-        horizontal=True
-    )
-
-    bebida = st.radio(
-        "Bebida",
-        [
-            "Suco de Uva",
-            "Suco de Laranja",
-            "Frappuccino"
-        ],
-        horizontal=True
-    )
+bebida = st.radio(
+"Bebida",
+[
+"Suco de Uva",
+"Suco de Laranja",
+"Frappuccino"
+],
+horizontal=True
+)
 
     # ============================================
     # ADICIONAIS
@@ -241,10 +238,12 @@ with st.form("pedido"):
 
     st.divider()
 
-    enviar = st.form_submit_button(
-        "🛒 ENVIAR PEDIDO",
-        use_container_width=True
-    )
+  enviar = st.button(
+    "🛒 ENVIAR PEDIDO",
+    use_container_width=True,
+    type="primary"
+)
+
 if enviar:
 
     # ============================
