@@ -172,21 +172,21 @@ with st.form("pedido"):
         mini_buque = st.checkbox("💐 Mini Buquê")
         mini_buque_flores = st.checkbox("🌸 Mini Buquê Flores Secas")
 
-# ============================================
-# FOTOS
-# ============================================
+    # ============================================
+    # FOTOS
+    # ============================================
 
-st.subheader("📷 Fotos para Polaroid")
+    st.subheader("📷 Fotos para Polaroid")
 
-if not polaroid:
-    st.caption("Marque a opção 📷 Polaroid para incluir fotos.")
+    if not polaroid:
+        st.caption("Marque a opção 📷 Polaroid para incluir fotos.")
 
-fotos = st.file_uploader(
-    "Selecione uma ou mais fotos",
-    type=["jpg", "jpeg", "png", "webp"],
-    accept_multiple_files=True,
-    disabled=not polaroid
-)
+    fotos = st.file_uploader(
+        "Selecione uma ou mais fotos",
+        type=["jpg", "jpeg", "png", "webp"],
+        accept_multiple_files=True,
+        disabled=not polaroid
+    )
 
     # ============================================
     # PAGAMENTO
@@ -234,14 +234,10 @@ fotos = st.file_uploader(
     col1, col2 = st.columns(2)
 
     with col1:
-        data_entrega = st.date_input(
-            "📅 Data da Entrega"
-        )
+        data_entrega = st.date_input("📅 Data da Entrega")
 
     with col2:
-        horario_entrega = st.time_input(
-            "🕒 Horário"
-        )
+        horario_entrega = st.time_input("🕒 Horário")
 
     st.divider()
 
@@ -249,7 +245,6 @@ fotos = st.file_uploader(
         "🛒 ENVIAR PEDIDO",
         use_container_width=True
     )
-
 if enviar:
 
     # ============================
