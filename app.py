@@ -292,58 +292,43 @@ if enviar:
         dados = {
 
             "cliente_nome": nome,
-
             "cliente_cpf": cpf,
-
             "cliente_telefone": telefone,
-
             "cesta_nome": cesta,
-
             "pao": tipo_pao,
-
             "espalhavel": espalhavel,
-
             "bebida": bebida,
-
             "adicionais": ", ".join(adicionais),
-
             "pagamento": pagamento,
-
             "mensagem": mensagem,
-
             "endereco": endereco,
-
             "data_entrega": str(data_entrega),
-
             "horario_entrega": str(horario_entrega),
-
             "status": "Recebido",
-
             "valor_frete": 0,
-
             "valor_total": 0
 
         }
 
         sucesso, pedido_id = salvar_pedido(dados)
 
-if sucesso:
+        if sucesso:
 
-    # Salva as fotos (caso existam)
-    if polaroid and fotos:
-        try:
-            salvar_fotos(pedido_id, fotos)
-        except Exception as erro:
-            st.warning(f"As fotos não puderam ser enviadas: {erro}")
+            # Salva as fotos (caso existam)
+            if polaroid and fotos:
+                try:
+                    salvar_fotos(pedido_id, fotos)
+                except Exception as erro:
+                    st.warning(f"As fotos não puderam ser enviadas: {erro}")
 
-    st.success("🎉 Pedido enviado com sucesso!")
+            st.success("🎉 Pedido enviado com sucesso!")
 
-    st.info("""
+            st.info("""
 Obrigado por escolher a **Doce Cesta Brasília** ❤️
 
 Recebemos seu pedido com sucesso.
 
-Nossa equipe entrará em contato o mais rápido possível para informar:
+Nossa equipe entrará em contato para informar:
 
 ✅ Valor do frete
 
@@ -354,6 +339,6 @@ Nossa equipe entrará em contato o mais rápido possível para informar:
 Muito obrigado pela preferência!
 """)
 
-else:
+        else:
 
-    st.error(f"Erro ao salvar o pedido: {pedido_id}")
+            st.error(f"Erro ao salvar o pedido: {pedido_id}")
