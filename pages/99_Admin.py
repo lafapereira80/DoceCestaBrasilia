@@ -1,56 +1,137 @@
 import streamlit as st
+from pathlib import Path
 
 st.set_page_config(
-    page_title="Área Administrativa",
+    page_title="Administrador",
     page_icon="🔒",
     layout="wide"
 )
 
-# Proteção provisória
-if "logado" not in st.session_state:
-    st.session_state.logado = False
+# ---------------------------------------------------
+# CSS
+# ---------------------------------------------------
 
-if not st.session_state.logado:
+st.markdown("""
+<style>
 
-    st.title("🔒 Área Administrativa")
+#MainMenu {visibility:hidden;}
+footer {visibility:hidden;}
+header {visibility:hidden;}
 
-    st.write("Faça login para acessar o sistema.")
+.card{
+    background:#ffffff;
+    border-radius:12px;
+    padding:20px;
+    border:1px solid #e5e5e5;
+    text-align:center;
+    margin-bottom:15px;
+}
 
-    usuario = st.text_input("Usuário")
+.titulo{
+    text-align:center;
+    font-size:34px;
+    font-weight:bold;
+    color:#8B5A2B;
+}
 
-    senha = st.text_input("Senha", type="password")
+.sub{
+    text-align:center;
+    color:#777;
+    margin-bottom:30px;
+}
 
-    entrar = st.button("Entrar", use_container_width=True)
+</style>
+""", unsafe_allow_html=True)
 
-    if entrar:
+# ---------------------------------------------------
+# LOGO
+# ---------------------------------------------------
 
-        # Login temporário
-        if usuario == "admin" and senha == "123456":
+logo = Path("assets/logo.webp")
 
-            st.session_state.logado = True
+col1,col2,col3 = st.columns([2,1,2])
 
+with col2:
+
+    if logo.exists():
+        st.image(str(logo), width=140)
+
+st.markdown(
+    "<div class='titulo'>Painel Administrativo</div>",
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    "<div class='sub'>Doce Cesta Brasília</div>",
+    unsafe_allow_html=True
+)
+
+st.divider()
+
+# ---------------------------------------------------
+# LOGIN
+# ---------------------------------------------------
+
+if "admin_logado" not in st.session_state:
+    st.session_state.admin_logado = False
+
+if not st.session_state.admin_logado:
+
+    senha = st.text_input(
+        "Senha do Administrador",
+        type="password"
+    )
+
+    if st.button(
+        "Entrar",
+        use_container_width=True
+    ):
+
+        if senha == "admin123":
+
+            st.session_state.admin_logado = True
             st.rerun()
 
         else:
 
-            st.error("Usuário ou senha inválidos.")
+            st.error("Senha incorreta.")
 
-else:
+    st.stop()
 
-    st.success("Bem-vindo ao painel administrativo!")
+# ---------------------------------------------------
+# MENU
+# ---------------------------------------------------
 
-    st.divider()
+st.success("Administrador conectado.")
 
-    col1, col2, col3, col4 = st.columns(4)
+col1,col2,col3 = st.columns(3)
 
-    col1.metric("Pedidos", "0")
+with col1:
 
-    col2.metric("Clientes", "0")
+    st.info("📋 Pedidos")
 
-    col3.metric("Faturamento", "R$ 0,00")
+with col2:
 
-    col4.metric("Cestas", "0")
+    st.info("👥 Clientes")
 
-    st.divider()
+with col3:
 
-    st.info("Nas próximas etapas construiremos os módulos administrativos.")
+    st.info("📊 Dashboard")
+
+col1,col2,col3 = st.columns(3)
+
+with col1:
+
+    st.info("🎁 Cestas")
+
+with col2:
+
+    st.info("🛒 Produtos")
+
+with col3:
+
+    st.info("💰 Financeiro")
+
+st.divider()
+
+st.write("Em seguida iremos construir cada módulo.")
