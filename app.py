@@ -95,95 +95,123 @@ st.markdown(
 
 st.header("📝 Formulário de Pedido")
 
+# ==========================================================
+# DADOS DO CLIENTE
+# ==========================================================
+
 st.subheader("👤 Dados do Cliente")
 
 nome = st.text_input(
-"Nome Completo *"
+    "Nome Completo *"
 )
 
 cpf = st.text_input(
-"CPF *",
-placeholder="000.000.000-00"
+    "CPF *",
+    placeholder="000.000.000-00"
 )
 
 telefone = st.text_input(
-"Telefone *",
-placeholder="(61) 99999-9999"
+    "Telefone *",
+    placeholder="(61) 99999-9999"
 )
+
+st.divider()
+
+# ==========================================================
+# CESTA
+# ==========================================================
 
 st.subheader("🎁 Escolha da Cesta")
 
 cesta = st.selectbox(
-"Nome da Cesta",
-[
-"Selecione...",
-"Cesta Romântica",
-"Cesta Premium",
-"Cesta Luxo"
-]
+    "Nome da Cesta",
+    [
+        "Selecione...",
+        "Cesta Romântica",
+        "Cesta Premium",
+        "Cesta Luxo"
+    ]
 )
 
 tipo_pao = st.radio(
-"Tipo de Pão",
-[
-"Australiano",
-"Pão Doce"
-],
-horizontal=True
+    "Tipo de Pão",
+    [
+        "Australiano",
+        "Pão Doce"
+    ],
+    horizontal=True
 )
 
 espalhavel = st.radio(
-"Espalhável",
-[
-"Doce de Leite",
-"Geleia",
-"Nutella"
-],
-horizontal=True
+    "Espalhável",
+    [
+        "Doce de Leite",
+        "Geleia",
+        "Nutella"
+    ],
+    horizontal=True
 )
 
 bebida = st.radio(
-"Bebida",
-[
-"Suco de Uva",
-"Suco de Laranja",
-"Frappuccino"
-],
-horizontal=True
+    "Bebida",
+    [
+        "Suco de Uva",
+        "Suco de Laranja",
+        "Frappuccino"
+    ],
+    horizontal=True
 )
 
-    # ============================================
-    # ADICIONAIS
-    # ============================================
+st.divider()
 
-    st.subheader("🎀 Adicionais")
+# ==========================================================
+# ADICIONAIS
+# ==========================================================
 
-    col1, col2 = st.columns(2)
+st.subheader("🎀 Adicionais")
 
-    with col1:
-        caneca = st.checkbox("☕ Caneca")
-        polaroid = st.checkbox("📷 Polaroid")
-        balao = st.checkbox("🎈 Balão")
+col1, col2 = st.columns(2)
 
-    with col2:
-        mini_buque = st.checkbox("💐 Mini Buquê")
-        mini_buque_flores = st.checkbox("🌸 Mini Buquê Flores Secas")
+with col1:
 
-    # ============================================
-    # FOTOS
-    # ============================================
+    caneca = st.checkbox("☕ Caneca")
 
-    st.subheader("📷 Fotos para Polaroid")
+    polaroid = st.checkbox("📷 Polaroid")
 
-    if not polaroid:
-        st.caption("Marque a opção 📷 Polaroid para incluir fotos.")
+    balao = st.checkbox("🎈 Balão")
+
+with col2:
+
+    mini_buque = st.checkbox("💐 Mini Buquê")
+
+    mini_buque_flores = st.checkbox("🌸 Mini Buquê Flores Secas")
+
+st.divider()
+
+# ==========================================================
+# FOTOS
+# ==========================================================
+
+st.subheader("📷 Fotos para Polaroid")
+
+if polaroid:
+
+    st.success("Agora selecione uma ou mais fotos para impressão.")
 
     fotos = st.file_uploader(
-        "Selecione uma ou mais fotos",
+        "Selecionar Fotos",
         type=["jpg", "jpeg", "png", "webp"],
         accept_multiple_files=True,
-        disabled=not polaroid
+        key="pedido_fotos"
     )
+
+else:
+
+    fotos = []
+
+    st.info("Marque a opção 📷 Polaroid caso deseje enviar fotos para impressão.")
+
+st.divider()
 
     # ============================================
     # PAGAMENTO
