@@ -393,6 +393,6 @@ st.markdown(
 
 st.page_link(
     "pages/99_Admin.py",
-    label="🔒 Área Administrativa",
+    label="Área Administrativa",
     icon="🔒"
 )
