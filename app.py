@@ -196,7 +196,7 @@ st.subheader("📷 Fotos para Polaroid")
 
 if polaroid:
 
-    st.success("Agora selecione uma ou mais fotos para impressão.")
+    st.success("Selecione abaixo as fotos que serão impressas.")
 
     fotos = st.file_uploader(
         "Selecionar Fotos",
@@ -209,64 +209,70 @@ else:
 
     fotos = []
 
-    st.info("Marque a opção 📷 Polaroid caso deseje enviar fotos para impressão.")
+    st.info("Marque a opção 📷 Polaroid para habilitar o envio das fotos.")
 
 st.divider()
 
-    # ============================================
-    # PAGAMENTO
-    # ============================================
+# ==========================================================
+# PAGAMENTO
+# ==========================================================
 
-    st.subheader("💳 Forma de Pagamento")
+st.subheader("💳 Forma de Pagamento")
 
-    pagamento = st.radio(
-        "",
-        [
-            "Pix",
-            "Cartão de Crédito"
-        ],
-        horizontal=True
+pagamento = st.radio(
+    "",
+    [
+        "Pix",
+        "Cartão de Crédito"
+    ],
+    horizontal=True
+)
+
+st.divider()
+
+# ==========================================================
+# MENSAGEM
+# ==========================================================
+
+st.subheader("💌 Mensagem")
+
+mensagem = st.text_area(
+    "",
+    height=120,
+    placeholder="Digite aqui a mensagem que acompanhará a cesta..."
+)
+
+st.divider()
+
+# ==========================================================
+# ENTREGA
+# ==========================================================
+
+st.subheader("📍 Endereço de Entrega")
+
+endereco = st.text_area(
+    "",
+    height=120,
+    placeholder="Rua, número, complemento, bairro, cidade..."
+)
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    data_entrega = st.date_input(
+        "📅 Data da Entrega"
     )
 
-    # ============================================
-    # MENSAGEM
-    # ============================================
+with col2:
 
-    st.subheader("💌 Mensagem")
-
-    mensagem = st.text_area(
-        "",
-        height=120,
-        placeholder="Digite aqui a mensagem que acompanhará a cesta..."
+    horario_entrega = st.time_input(
+        "🕒 Horário"
     )
 
-    # ============================================
-    # ENTREGA
-    # ============================================
+st.divider()
 
-    st.subheader("📍 Endereço de Entrega")
-
-    endereco = st.text_area(
-        "",
-        height=120,
-        placeholder="Rua, número, complemento, bairro, cidade..."
-    )
-
-    # ============================================
-    # DATA E HORÁRIO
-    # ============================================
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        data_entrega = st.date_input("📅 Data da Entrega")
-
-    with col2:
-        horario_entrega = st.time_input("🕒 Horário")
-
-    st.divider()
-
-  enviar = st.button(
+enviar = st.button(
     "🛒 ENVIAR PEDIDO",
     use_container_width=True,
     type="primary"
