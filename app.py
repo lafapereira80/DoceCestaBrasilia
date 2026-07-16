@@ -280,9 +280,9 @@ enviar = st.button(
 
 if enviar:
 
-    # ============================
+    # ==========================================
     # VALIDAÇÕES
-    # ============================
+    # ==========================================
 
     if nome.strip() == "":
         st.error("Informe o nome do cliente.")
@@ -340,12 +340,20 @@ if enviar:
 
         if sucesso:
 
-            # Salva as fotos (caso existam)
             if polaroid and fotos:
+
                 try:
-                    salvar_fotos(pedido_id, fotos)
+
+                    salvar_fotos(
+                        pedido_id,
+                        fotos
+                    )
+
                 except Exception as erro:
-                    st.warning(f"As fotos não puderam ser enviadas: {erro}")
+
+                    st.warning(
+                        f"As fotos não puderam ser enviadas: {erro}"
+                    )
 
             st.success("🎉 Pedido enviado com sucesso!")
 
@@ -354,15 +362,13 @@ Obrigado por escolher a **Doce Cesta Brasília** ❤️
 
 Recebemos seu pedido com sucesso.
 
-Nossa equipe entrará em contato para informar:
+Nossa equipe entrará em contato em breve para informar:
 
 ✅ Valor do frete
 
 ✅ Valor final da cesta
 
-✅ Confirmação da entrega.
-
-Muito obrigado pela preferência!
+✅ Confirmação da entrega
 """)
 
         else:
