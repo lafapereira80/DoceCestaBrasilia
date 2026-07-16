@@ -374,3 +374,25 @@ Nossa equipe entrará em contato em breve para informar:
         else:
 
             st.error(f"Erro ao salvar o pedido: {pedido_id}")
+# ==========================================================
+# RODAPÉ
+# ==========================================================
+
+st.divider()
+
+st.markdown(
+    """
+    <div style="text-align:center; padding:20px 0;">
+        <p style="color:#777; font-size:14px; margin-bottom:20px;">
+            © 2026 Doce Cesta Brasília
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+st.page_link(
+    "pages/99_Admin.py",
+    label="🔒 Área Administrativa",
+    icon="🔒"
+)
