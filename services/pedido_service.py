@@ -38,3 +38,28 @@ def buscar_pedido(pedido_id):
     )
 
     return resposta.data
+
+def atualizar_pedido(
+    pedido_id,
+    status,
+    valor_frete,
+    valor_total
+):
+
+    resposta = (
+        supabase
+        .table("pedidos")
+        .update({
+
+            "status": status,
+
+            "valor_frete": valor_frete,
+
+            "valor_total": valor_total
+
+        })
+        .eq("id", pedido_id)
+        .execute()
+    )
+
+    return resposta.data
