@@ -2,7 +2,6 @@ import streamlit as st
 
 from services.pedido_service import buscar_pedido
 from services.foto_service import listar_fotos
-from config.supabase import supabase
 
 st.set_page_config(
     page_title="Pedido",
@@ -197,21 +196,11 @@ try:
 
             with colunas[indice % 3]:
 
-                resultado = supabase.storage.from_("pedido_fotos").get_public_url(
-                    foto["arquivo"]
-                )
-
-                # Compatível com diferentes versões da biblioteca
-                if isinstance(resultado, dict):
-                    url_publica = resultado.get("publicUrl")
-                else:
-                    url_publica = resultado
-
                 st.image(
-                    url_publica,
-                    caption=foto.get("nome_original", "Foto"),
-                    use_container_width=True
-                )
+    foto["url_publica"],
+    caption=foto.get("nome_original", "Foto"),
+    use_container_width=True
+)
 
     else:
 
