@@ -197,15 +197,21 @@ try:
 
             with colunas[indice % 3]:
 
-                url_publica = supabase.storage.from_("pedido_fotos").get_public_url(
-    foto["arquivo"]
-)
+                resultado = supabase.storage.from_("pedido_fotos").get_public_url(
+                    foto["arquivo"]
+                )
 
-st.image(
-    url_publica,
-    caption=foto.get("nome_original", "Foto"),
-    use_container_width=True
-)
+                # Compatível com diferentes versões da biblioteca
+                if isinstance(resultado, dict):
+                    url_publica = resultado.get("publicUrl")
+                else:
+                    url_publica = resultado
+
+                st.image(
+                    url_publica,
+                    caption=foto.get("nome_original", "Foto"),
+                    use_container_width=True
+                )
 
     else:
 
@@ -216,7 +222,6 @@ except Exception as erro:
     st.error(f"Erro ao carregar as fotos: {erro}")
 
 st.divider()
-
 # =====================================================
 # VOLTAR
 # =====================================================
