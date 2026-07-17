@@ -1,8 +1,8 @@
 import streamlit as st
 
 from services.pedido_service import buscar_pedido
-
 from services.foto_service import listar_fotos
+from config.supabase import supabase
 
 st.set_page_config(
     page_title="Pedido",
@@ -189,8 +189,6 @@ try:
 
     fotos = listar_fotos(pedido["id"])
 
-    st.write(fotos)
-
     if fotos:
 
         colunas = st.columns(3)
@@ -199,11 +197,15 @@ try:
 
             with colunas[indice % 3]:
 
-                st.image(
-                    foto["url"],
-                    caption=foto.get("nome_original", "Foto"),
-                    use_container_width=True
-                )
+                url_publica = supabase.storage.from_("pedido_fotos").get_public_url(
+    foto["arquivo"]
+)
+
+st.image(
+    url_publica,
+    caption=foto.get("nome_original", "Foto"),
+    use_container_width=True
+)
 
     else:
 
