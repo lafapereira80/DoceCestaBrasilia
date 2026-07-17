@@ -1,6 +1,10 @@
 import streamlit as st
 
-from services.pedido_service import buscar_pedido
+from services.pedido_service import (
+    buscar_pedido,
+    atualizar_pedido
+)
+
 from services.foto_service import listar_fotos
 
 st.set_page_config(
@@ -211,9 +215,80 @@ except Exception as erro:
     st.error(f"Erro ao carregar as fotos: {erro}")
 
 st.divider()
+
 # =====================================================
-# VOLTAR
+# ATENDIMENTO
 # =====================================================
+
+st.subheader("🚚 Atendimento")
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    valor_frete = st.number_input(
+        "Valor do Frete (R$)",
+        min_value=0.0,
+        value=float(pedido.get("valor_frete", 0) or 0),
+        step=1.0,
+        key="valor_frete"
+    )
+
+with col2:
+
+    valor_total = st.number_input(
+        "Valor Final (R$)",
+        min_value=0.0,
+        value=float(pedido.get("valor_total", 0) or 0),
+        step=1.0,
+        key="valor_total"
+    )
+
+status = st.selectbox(
+    "Status do Pedido",
+    [
+        "Recebido",
+        "Em análise",
+        "Aguardando pagamento",
+        "Pagamento confirmado",
+        "Em produção",
+        "Em entrega",
+        "Entregue",
+        "Cancelado"
+    ],
+    index=[
+        "Recebido",
+        "Em análise",
+        "Aguardando pagamento",
+        "Pagamento confirmado",
+        "Em produção",
+        "Em entrega",
+        "Entregue",
+        "Cancelado"
+    ].index(
+        pedido.get("status", "Recebido")
+    ),
+    key="status_pedido"
+)
+
+if st.button(
+    "💾 Salvar Atendimento",
+    use_container_width=True,
+    key="salvar_atendimento"
+):
+
+    atualizar_pedido(
+        pedido["id"],
+        status,
+        valor_frete,
+        valor_total
+    )
+
+    st.success("✅ Atendimento atualizado com sucesso!")
+
+    st.rerun()
+
+st.divider()
 
 if st.button(
     "⬅ Voltar para Pedidos",
