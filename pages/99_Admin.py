@@ -112,7 +112,7 @@ with col1:
 
     st.page_link(
         "pages/02_Pedidos.py",
-        label="📋 Pedidos",
+        label="Pedidos",
         icon="📋"
     )
 
@@ -120,7 +120,7 @@ with col2:
 
     st.page_link(
         "pages/03_Clientes.py",
-        label="👥 Clientes",
+        label="Clientes",
         icon="👥"
     )
 
@@ -128,7 +128,7 @@ with col3:
 
     st.page_link(
         "pages/07_Dashboard.py",
-        label="📊 Dashboard",
+        label="Dashboard",
         icon="📊"
     )
 
@@ -138,7 +138,7 @@ with col1:
 
     st.page_link(
         "pages/04_Cestas.py",
-        label="🎁 Cestas",
+        label="Cestas",
         icon="🎁"
     )
 
@@ -146,7 +146,7 @@ with col2:
 
     st.page_link(
         "pages/05_Produtos.py",
-        label="🛒 Produtos",
+        label="Produtos",
         icon="🛒"
     )
 
@@ -154,7 +154,7 @@ with col3:
 
     st.page_link(
         "pages/06_Financeiro.py",
-        label="💰 Financeiro",
+        label="Financeiro",
         icon="💰"
     )
 
