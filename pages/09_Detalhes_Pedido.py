@@ -2,6 +2,8 @@ import streamlit as st
 
 from services.pedido_service import buscar_pedido
 
+from services.foto_service import listar_fotos
+
 st.set_page_config(
     page_title="Pedido",
     page_icon="📋",
@@ -177,6 +179,47 @@ with col2:
 
 st.divider()
 
-if st.button("⬅ Voltar para Pedidos"):
+# =====================================================
+# FOTOS DA POLAROID
+# =====================================================
+
+st.subheader("📷 Fotos da Polaroid")
+
+try:
+
+    fotos = listar_fotos(pedido["id"])
+
+    if fotos:
+
+        colunas = st.columns(3)
+
+        for indice, foto in enumerate(fotos):
+
+            with colunas[indice % 3]:
+
+                st.image(
+                    foto["url"],
+                    caption=foto.get("nome_original", "Foto"),
+                    use_container_width=True
+                )
+
+    else:
+
+        st.info("Este pedido não possui fotos.")
+
+except Exception as erro:
+
+    st.error(f"Erro ao carregar as fotos: {erro}")
+
+st.divider()
+
+# =====================================================
+# VOLTAR
+# =====================================================
+
+if st.button(
+    "⬅ Voltar para Pedidos",
+    key="voltar_pedidos"
+):
 
     st.switch_page("pages/02_Pedidos.py")
