@@ -30,3 +30,16 @@ def salvar_fotos(pedido_id, arquivos):
             "nome_original": arquivo.name
 
         }).execute()
+
+def listar_fotos(pedido_id):
+
+    resposta = (
+        supabase
+        .table("pedido_fotos")
+        .select("*")
+        .eq("pedido_id", pedido_id)
+        .order("id")
+        .execute()
+    )
+
+    return resposta.data
