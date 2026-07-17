@@ -75,8 +75,106 @@ with col2:
 st.divider()
 
 # =====================================================
-# BOTÃO VOLTAR
+# INFORMAÇÕES DO PEDIDO
 # =====================================================
+
+st.subheader("🎁 Informações do Pedido")
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    st.write("**Cesta**")
+    st.write(pedido["cesta_nome"])
+
+    st.write("**Tipo de pão**")
+    st.write(pedido["pao"])
+
+    st.write("**Espalhável**")
+    st.write(pedido["espalhavel"])
+
+with col2:
+
+    st.write("**Bebida**")
+    st.write(pedido["bebida"])
+
+    st.write("**Pagamento**")
+    st.write(pedido["pagamento"])
+
+    st.write("**Status**")
+    st.write(pedido["status"])
+
+st.divider()
+
+# =====================================================
+# ADICIONAIS
+# =====================================================
+
+st.subheader("🎀 Adicionais")
+
+adicionais = pedido.get("adicionais", "")
+
+if adicionais:
+
+    st.success(adicionais)
+
+else:
+
+    st.info("Nenhum adicional escolhido.")
+
+st.divider()
+
+# =====================================================
+# MENSAGEM
+# =====================================================
+
+st.subheader("💌 Mensagem")
+
+mensagem = pedido.get("mensagem", "")
+
+if mensagem:
+
+    st.text_area(
+        "",
+        value=mensagem,
+        disabled=True,
+        height=120
+    )
+
+else:
+
+    st.info("Nenhuma mensagem cadastrada.")
+
+st.divider()
+
+# =====================================================
+# ENTREGA
+# =====================================================
+
+st.subheader("📍 Entrega")
+
+st.write("**Endereço**")
+
+st.text_area(
+    "",
+    value=pedido.get("endereco", ""),
+    disabled=True,
+    height=120
+)
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    st.write("**Data**")
+    st.write(pedido["data_entrega"])
+
+with col2:
+
+    st.write("**Horário**")
+    st.write(pedido["horario_entrega"])
+
+st.divider()
 
 if st.button("⬅ Voltar para Pedidos"):
 
