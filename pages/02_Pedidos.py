@@ -113,10 +113,41 @@ colunas = [
 colunas = [c for c in colunas if c in df.columns]
 
 df = df[colunas]
-st.dataframe(
-    df,
-    use_container_width=True,
-    hide_index=True
-)
+st.subheader("📋 Lista de Pedidos")
+
+for _, pedido in df.iterrows():
+
+    col1, col2, col3, col4, col5, col6 = st.columns(
+        [1, 3, 2, 2, 2, 1]
+    )
+
+    with col1:
+        st.write(f"**#{pedido['id']}**")
+
+    with col2:
+        st.write(pedido["cliente_nome"])
+
+    with col3:
+        st.write(pedido["cesta_nome"])
+
+    with col4:
+        st.write(pedido["status"])
+
+    with col5:
+        st.write(str(pedido["data_entrega"]))
+
+    with col6:
+
+        if st.button(
+            "👁️",
+            key=f"abrir_{pedido['id']}",
+            help="Abrir pedido"
+        ):
+
+            st.session_state["pedido_aberto"] = pedido["id"]
+
+            st.switch_page("pages/08_Admin.py")
+
+st.divider()
 
 st.caption(f"Total de pedidos: {len(df)}")
