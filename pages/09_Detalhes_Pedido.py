@@ -187,7 +187,9 @@ st.subheader("📷 Fotos da Polaroid")
 
 try:
 
-    fotos = listar_fotos(pedido["id"])
+   fotos = listar_fotos(pedido["id"])
+
+st.write(fotos)
 
     if fotos:
 
