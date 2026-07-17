@@ -104,34 +104,60 @@ if not st.session_state.admin_logado:
 
 st.success("Administrador conectado.")
 
-col1,col2,col3 = st.columns(3)
+st.subheader("📂 Módulos do Sistema")
+
+col1, col2, col3 = st.columns(3)
 
 with col1:
 
-    st.info("📋 Pedidos")
+    st.page_link(
+        "pages/02_Pedidos.py",
+        label="📋 Pedidos",
+        icon="📋"
+    )
 
 with col2:
 
-    st.info("👥 Clientes")
+    st.page_link(
+        "pages/03_Clientes.py",
+        label="👥 Clientes",
+        icon="👥"
+    )
 
 with col3:
 
-    st.info("📊 Dashboard")
+    st.page_link(
+        "pages/07_Dashboard.py",
+        label="📊 Dashboard",
+        icon="📊"
+    )
 
-col1,col2,col3 = st.columns(3)
+col1, col2, col3 = st.columns(3)
 
 with col1:
 
-    st.info("🎁 Cestas")
+    st.page_link(
+        "pages/04_Cestas.py",
+        label="🎁 Cestas",
+        icon="🎁"
+    )
 
 with col2:
 
-    st.info("🛒 Produtos")
+    st.page_link(
+        "pages/05_Produtos.py",
+        label="🛒 Produtos",
+        icon="🛒"
+    )
 
 with col3:
 
-    st.info("💰 Financeiro")
+    st.page_link(
+        "pages/06_Financeiro.py",
+        label="💰 Financeiro",
+        icon="💰"
+    )
 
 st.divider()
 
-st.write("Em seguida iremos construir cada módulo.")
+st.info("Selecione um módulo para começar.")
