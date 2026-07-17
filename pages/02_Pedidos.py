@@ -43,7 +43,64 @@ if not pedidos:
 
 df = pd.DataFrame(pedidos)
 
-# Exibe somente as colunas que interessam
+# ==========================================================
+# FILTROS
+# ==========================================================
+
+st.subheader("🔍 Pesquisar Pedidos")
+
+col1, col2 = st.columns([3, 1])
+
+with col1:
+
+    pesquisa = st.text_input(
+        "Nome do cliente",
+        placeholder="Digite o nome..."
+    )
+
+with col2:
+
+    status_lista = ["Todos"]
+
+    if "status" in df.columns:
+        status_lista.extend(
+            sorted(df["status"].dropna().unique().tolist())
+        )
+
+    status = st.selectbox(
+        "Status",
+        status_lista
+    )
+
+# ==========================================================
+# FILTRO NOME
+# ==========================================================
+
+if pesquisa.strip():
+
+    df = df[
+        df["cliente_nome"]
+        .fillna("")
+        .str.contains(
+            pesquisa,
+            case=False
+        )
+    ]
+
+# ==========================================================
+# FILTRO STATUS
+# ==========================================================
+
+if status != "Todos":
+
+    df = df[
+        df["status"] == status
+    ]
+
+# ==========================================================
+# COLUNAS
+# ==========================================================
+
 colunas = [
     "id",
     "cliente_nome",
@@ -53,11 +110,9 @@ colunas = [
     "data_entrega"
 ]
 
-# Mantém apenas as colunas existentes
 colunas = [c for c in colunas if c in df.columns]
 
 df = df[colunas]
-
 st.dataframe(
     df,
     use_container_width=True,
