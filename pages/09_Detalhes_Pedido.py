@@ -134,13 +134,13 @@ mensagem = pedido.get("mensagem", "")
 
 if mensagem:
 
-    st.text_area(
-        "",
-        value=mensagem,
-        disabled=True,
-        height=120
-    )
-
+   st.text_area(
+    "Mensagem",
+    value=mensagem,
+    disabled=True,
+    height=120,
+    key="mensagem_pedido"
+)
 else:
 
     st.info("Nenhuma mensagem cadastrada.")
@@ -156,10 +156,11 @@ st.subheader("📍 Entrega")
 st.write("**Endereço**")
 
 st.text_area(
-    "",
+    "Endereço",
     value=pedido.get("endereco", ""),
     disabled=True,
-    height=120
+    height=120,
+    key="endereco_pedido"
 )
 
 col1, col2 = st.columns(2)
