@@ -29,13 +29,11 @@ try:
 except Exception as erro:
 
     st.error(f"Erro ao carregar categorias: {erro}")
-
     st.stop()
 
 if not categorias:
 
     st.warning("Nenhuma categoria cadastrada.")
-
     st.stop()
 
 # =====================================================
@@ -52,15 +50,13 @@ with st.form("novo_produto"):
         format_func=lambda c: c["nome"]
     )
 
-    nome = st.text_input(
-        "Nome do Produto"
-    )
+    nome = st.text_input("Nome do Produto")
 
     preco = st.number_input(
         "Preço",
         min_value=0.0,
-        step=1.0,
-        value=0.0
+        value=0.0,
+        step=1.0
     )
 
     salvar = st.form_submit_button(
@@ -84,9 +80,7 @@ if salvar:
                 preco
             )
 
-            st.success(
-                "Produto cadastrado com sucesso!"
-            )
+            st.success("Produto cadastrado com sucesso!")
 
             st.rerun()
 
@@ -94,11 +88,11 @@ if salvar:
 
             st.error(erro)
 
-st.divider()
+# =====================================================
+# LISTAGEM
+# =====================================================
 
-# =====================================================
-# LISTA
-# =====================================================
+st.divider()
 
 st.subheader("📋 Produtos")
 
@@ -131,16 +125,10 @@ for produto in produtos:
         "Sem Categoria"
     )
 
-    if nome_categoria not in produtos_por_categoria:
-
-        produtos_por_categoria[nome_categoria] = []
-
-    produtos_por_categoria[nome_categoria].append(produto)
-
-
-# =====================================================
-# EXIBE PRODUTOS POR CATEGORIA
-# =====================================================
+    produtos_por_categoria.setdefault(
+        nome_categoria,
+        []
+    ).append(produto)
 
 ordem_categorias = [
     "Pães",
@@ -166,11 +154,13 @@ for nome_categoria in ordem_categorias:
 
     for produto in lista:
 
+        ativo = produto.get("ativo", True)
+
         with st.container(border=True):
 
-           col1, col2, col3, col4, col5, col6 = st.columns(
-    [5, 2, 2, 1, 1, 1]
-)
+            col1, col2, col3, col4, col5, col6 = st.columns(
+                [5, 2, 2, 1, 1, 1]
+            )
 
             with col1:
 
@@ -184,8 +174,6 @@ for nome_categoria in ordem_categorias:
 
             with col3:
 
-                ativo = produto.get("ativo", True)
-
                 if ativo:
 
                     st.success("Ativo")
@@ -194,48 +182,46 @@ for nome_categoria in ordem_categorias:
 
                     st.error("Inativo")
 
-           with col4:
+            with col4:
 
-    if st.button(
-        "✏️",
-        key=f"editar_{produto['id']}"
-    ):
+                if st.button(
+                    "✏️",
+                    key=f"editar_{produto['id']}"
+                ):
 
-        st.session_state["produto_editar"] = produto["id"]
+                    st.session_state["produto_editar"] = produto["id"]
 
-        st.info(
-            "A página de edição será criada na próxima etapa."
-        )
+                    st.info(
+                        "Tela de edição será criada na próxima etapa."
+                    )
 
-with col5:
+            with col5:
 
-    if st.button(
-        "🔄",
-        key=f"status_{produto['id']}"
-    ):
+                if st.button(
+                    "🔄",
+                    key=f"status_{produto['id']}"
+                ):
 
-        alterar_status(
-            produto["id"],
-            not ativo
-        )
+                    alterar_status(
+                        produto["id"],
+                        not ativo
+                    )
 
-        st.rerun()
+                    st.rerun()
 
-with col6:
+            with col6:
 
-    if st.button(
-        "🗑️",
-        key=f"excluir_{produto['id']}"
-    ):
+                if st.button(
+                    "🗑️",
+                    key=f"excluir_{produto['id']}"
+                ):
 
-        excluir_produto(
-            produto["id"]
-        )
+                    excluir_produto(
+                        produto["id"]
+                    )
 
-        st.success(
-            "Produto excluído."
-        )
+                    st.success("Produto excluído.")
 
-        st.rerun()
+                    st.rerun()
+
     st.divider()
-
