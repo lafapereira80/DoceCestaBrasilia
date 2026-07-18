@@ -134,7 +134,7 @@ else:
 
         st.container(border=True)
 
-        col1, col2, col3 = st.columns([5, 2, 2])
+        col1, col2, col3, col4, col5 = st.columns([5, 2, 2, 1, 1])
 
         with col1:
 
@@ -155,10 +155,36 @@ else:
 
         with col3:
 
-            if produto["ativo"]:
+    if produto["ativo"]:
 
-                st.success("Ativo")
+        st.success("Ativo")
 
-            else:
+    else:
 
-                st.error("Inativo")
+        st.error("Inativo")
+
+with col4:
+
+    if st.button(
+        "✏️",
+        key=f"editar_{produto['id']}"
+    ):
+
+        st.session_state["produto_editar"] = produto["id"]
+
+        st.info(
+            "A edição do produto será implementada na próxima etapa."
+        )
+
+with col5:
+
+    if st.button(
+        "🗑️",
+        key=f"excluir_{produto['id']}"
+    ):
+
+        excluir_produto(produto["id"])
+
+        st.success("Produto excluído com sucesso!")
+
+        st.rerun()
