@@ -50,10 +50,12 @@ with st.form("novo_produto"):
         format_func=lambda c: c["nome"]
     )
 
-    nome = st.text_input("Nome do Produto")
+    nome = st.text_input(
+        "Nome do Produto"
+    )
 
     preco = st.number_input(
-        "Preço",
+        "Preço (R$)",
         min_value=0.0,
         value=0.0,
         step=1.0
@@ -86,15 +88,13 @@ if salvar:
 
         except Exception as erro:
 
-            st.error(erro)
-
-# =====================================================
-# LISTAGEM
-# =====================================================
+            st.error(f"Erro ao cadastrar produto: {erro}")
 
 st.divider()
 
-st.subheader("📋 Produtos")
+# =====================================================
+# CARREGA PRODUTOS
+# =====================================================
 
 try:
 
@@ -102,9 +102,12 @@ try:
 
 except Exception as erro:
 
-    st.error(erro)
-
+    st.error(f"Erro ao carregar produtos: {erro}")
     st.stop()
+
+# =====================================================
+# ORGANIZA PRODUTOS POR CATEGORIA
+# =====================================================
 
 categorias_dict = {}
 
@@ -125,10 +128,11 @@ for produto in produtos:
         "Sem Categoria"
     )
 
-    produtos_por_categoria.setdefault(
-        nome_categoria,
-        []
-    ).append(produto)
+    if nome_categoria not in produtos_por_categoria:
+
+        produtos_por_categoria[nome_categoria] = []
+
+    produtos_por_categoria[nome_categoria].append(produto)
 
 ordem_categorias = [
     "Pães",
@@ -136,6 +140,11 @@ ordem_categorias = [
     "Espalháveis",
     "Adicionais"
 ]
+
+st.subheader("📋 Produtos Cadastrados")
+# =====================================================
+# EXIBE PRODUTOS
+# =====================================================
 
 for nome_categoria in ordem_categorias:
 
@@ -162,9 +171,17 @@ for nome_categoria in ordem_categorias:
                 [5, 2, 2, 1, 1, 1]
             )
 
+            # ==========================================
+            # Nome
+            # ==========================================
+
             with col1:
 
                 st.write(f"**{produto['nome']}**")
+
+            # ==========================================
+            # Preço
+            # ==========================================
 
             with col2:
 
@@ -172,7 +189,11 @@ for nome_categoria in ordem_categorias:
                     f"R$ {float(produto['preco']):.2f}"
                 )
 
-                        with col3:
+            # ==========================================
+            # Status
+            # ==========================================
+
+            with col3:
 
                 if ativo:
 
@@ -181,6 +202,10 @@ for nome_categoria in ordem_categorias:
                 else:
 
                     st.error("Inativo")
+
+            # ==========================================
+            # Editar
+            # ==========================================
 
             with col4:
 
@@ -191,7 +216,13 @@ for nome_categoria in ordem_categorias:
 
                     st.session_state["produto_editar"] = produto["id"]
 
-                    st.switch_page("pages/10_Editar_Produto.py")
+                    st.switch_page(
+                        "pages/10_Editar_Produto.py"
+                    )
+
+            # ==========================================
+            # Ativar / Inativar
+            # ==========================================
 
             with col5:
 
@@ -207,6 +238,10 @@ for nome_categoria in ordem_categorias:
 
                     st.rerun()
 
+            # ==========================================
+            # Excluir
+            # ==========================================
+
             with col6:
 
                 if st.button(
@@ -218,6 +253,11 @@ for nome_categoria in ordem_categorias:
                         produto["id"]
                     )
 
-                    st.success("Produto excluído.")
+                    st.success(
+                        "Produto excluído com sucesso!"
+                    )
 
                     st.rerun()
+
+    st.divider()
+    
