@@ -86,3 +86,42 @@ def alterar_status(
         "id",
         produto_id
     ).execute()
+# =====================================================
+# BUSCAR PRODUTO
+# =====================================================
+
+def buscar_produto(produto_id):
+
+    resposta = (
+        supabase
+        .table("produtos")
+        .select("*")
+        .eq("id", produto_id)
+        .single()
+        .execute()
+    )
+
+    return resposta.data
+
+
+# =====================================================
+# ATUALIZAR PRODUTO
+# =====================================================
+
+def atualizar_produto(
+    produto_id,
+    categoria_id,
+    nome,
+    preco,
+    ativo
+):
+
+    supabase.table("produtos").update({
+
+        "categoria_id": categoria_id,
+        "nome": nome,
+        "preco": preco,
+        "ativo": ativo
+
+    }).eq("id", produto_id).execute()
+
