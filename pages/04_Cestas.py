@@ -107,8 +107,8 @@ else:
 
             st.caption(cesta["descricao"])
 
-        col1, col2, col3, col4, col5 = st.columns(5)
-
+        col1, col2, col3 = st.columns([2,2,1])
+        
         with col1:
 
             if st.button(
@@ -124,55 +124,33 @@ else:
 
         with col2:
 
-            if st.button(
-                "🍞 Pães",
-                key=f"paes_{cesta['id']}"
-            ):
+    if st.button(
 
-                st.session_state["configurar_cesta"] = cesta["id"]
+        "⚙️ Configurar",
 
-                st.session_state["categoria"] = "Pães"
+        key=f"configurar_{cesta['id']}"
 
-                st.rerun()
+    ):
 
-        with col3:
+        st.session_state["configurar_cesta"] = cesta["id"]
 
-            if st.button(
-                "🥤 Bebidas",
-                key=f"bebidas_{cesta['id']}"
-            ):
+        st.rerun()
+        
+      with col3:
 
-                st.session_state["configurar_cesta"] = cesta["id"]
+    if st.button(
 
-                st.session_state["categoria"] = "Bebidas"
+        "🗑️",
 
-                st.rerun()
+        key=f"excluir_{cesta['id']}"
 
-        with col4:
+    ):
 
-            if st.button(
-                "🍯 Espalháveis",
-                key=f"espalhaveis_{cesta['id']}"
-            ):
+        excluir_cesta(cesta["id"])
 
-                st.session_state["configurar_cesta"] = cesta["id"]
+        st.success("Cesta excluída.")
 
-                st.session_state["categoria"] = "Espalháveis"
-
-                st.rerun()
-
-        with col5:
-
-            if st.button(
-                "🗑️",
-                key=f"excluir_{cesta['id']}"
-            ):
-
-                excluir_cesta(cesta["id"])
-
-                st.success("Cesta excluída.")
-
-                st.rerun()
+        st.rerun()
 
         # =====================================================
 # PAINEL DE CONFIGURAÇÃO
