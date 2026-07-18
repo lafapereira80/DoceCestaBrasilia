@@ -15,7 +15,7 @@ def listar_cestas():
         .execute()
     )
 
-    return resposta.data
+    return resposta.data or []
 
 
 # =====================================================
@@ -25,27 +25,56 @@ def listar_cestas():
 def cadastrar_cesta(
     nome,
     descricao,
-    preco
+    preco,
+    imagem
 ):
 
-    resposta = (
+    supabase.table("cestas").insert({
+
+        "nome": nome,
+        "descricao": descricao,
+        "preco": preco,
+        "imagem": imagem,
+        "ativa": True
+
+    }).execute()
+
+
+# =====================================================
+# EXCLUIR CESTA
+# =====================================================
+
+def excluir_cesta(cesta_id):
+
+    (
         supabase
         .table("cestas")
-        .insert({
-
-            "nome": nome,
-
-            "descricao": descricao,
-
-            "preco": preco,
-
-            "ativa": True
-
-        })
+        .delete()
+        .eq("id", cesta_id)
         .execute()
     )
 
-    return resposta.data
+
+# =====================================================
+# ALTERAR STATUS
+# =====================================================
+
+def alterar_status_cesta(
+    cesta_id,
+    ativa
+):
+
+    (
+        supabase
+        .table("cestas")
+        .update({
+
+            "ativa": ativa
+
+        })
+        .eq("id", cesta_id)
+        .execute()
+    )
 
 
 # =====================================================
@@ -67,112 +96,30 @@ def buscar_cesta(cesta_id):
 
 
 # =====================================================
-# EXCLUIR CESTA
+# ATUALIZAR CESTA
 # =====================================================
 
-def excluir_cesta(cesta_id):
-
-    resposta = (
-        supabase
-        .table("cestas")
-        .delete()
-        .eq("id", cesta_id)
-        .execute()
-    )
-
-    return resposta.data
-
-# =====================================================
-# LISTAR PRODUTOS DA CATEGORIA
-# =====================================================
-
-def listar_produtos_categoria(categoria_nome):
-
-    resposta_categoria = (
-        supabase
-        .table("categorias")
-        .select("id")
-        .eq("nome", categoria_nome)
-        .single()
-        .execute()
-    )
-
-    categoria_id = resposta_categoria.data["id"]
-
-    resposta = (
-        supabase
-        .table("produtos")
-        .select("*")
-        .eq("categoria_id", categoria_id)
-        .eq("ativo", True)
-        .order("nome")
-        .execute()
-    )
-
-    return resposta.data
-
-
-# =====================================================
-# LISTAR PRODUTOS DA CESTA
-# =====================================================
-
-def listar_produtos_cesta(cesta_id):
-
-    resposta = (
-        supabase
-        .table("cesta_produtos")
-        .select("*")
-        .eq("cesta_id", cesta_id)
-        .execute()
-    )
-
-    return resposta.data
-
-
-# =====================================================
-# SALVAR CONFIGURAÇÃO
-# =====================================================
-
-def salvar_configuracao(
-
+def atualizar_cesta(
     cesta_id,
-    categoria,
-    produtos,
-    min_escolhas,
-    max_escolhas
-
+    nome,
+    descricao,
+    preco,
+    imagem,
+    ativa
 ):
 
     (
         supabase
-        .table("cesta_produtos")
-        .delete()
-        .eq("cesta_id", cesta_id)
-        .eq("categoria", categoria)
+        .table("cestas")
+        .update({
+
+            "nome": nome,
+            "descricao": descricao,
+            "preco": preco,
+            "imagem": imagem,
+            "ativa": ativa
+
+        })
+        .eq("id", cesta_id)
         .execute()
     )
-
-    for produto in produtos:
-
-        (
-            supabase
-            .table("cesta_produtos")
-            .insert({
-
-                "cesta_id": cesta_id,
-
-                "produto_id": produto,
-
-                "categoria": categoria,
-
-                "quantidade": 1,
-
-                "min_escolhas": min_escolhas,
-
-                "max_escolhas": max_escolhas,
-
-                "ordem": 0
-
-            })
-            .execute()
-        )
