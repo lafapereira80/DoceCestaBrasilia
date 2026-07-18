@@ -137,3 +137,92 @@ for produto in produtos:
 
     produtos_por_categoria[nome_categoria].append(produto)
 
+
+# =====================================================
+# EXIBE PRODUTOS POR CATEGORIA
+# =====================================================
+
+ordem_categorias = [
+    "Pães",
+    "Bebidas",
+    "Espalháveis",
+    "Adicionais"
+]
+
+for nome_categoria in ordem_categorias:
+
+    if nome_categoria not in produtos_por_categoria:
+        continue
+
+    st.subheader(f"📦 {nome_categoria}")
+
+    lista = produtos_por_categoria[nome_categoria]
+
+    if len(lista) == 0:
+
+        st.info("Nenhum produto cadastrado.")
+
+        continue
+
+    for produto in lista:
+
+        with st.container(border=True):
+
+            col1, col2, col3, col4, col5 = st.columns(
+                [5, 2, 2, 1, 1]
+            )
+
+            with col1:
+
+                st.write(f"**{produto['nome']}**")
+
+            with col2:
+
+                st.write(
+                    f"R$ {float(produto['preco']):.2f}"
+                )
+
+            with col3:
+
+                ativo = produto.get("ativo", True)
+
+                if ativo:
+
+                    st.success("Ativo")
+
+                else:
+
+                    st.error("Inativo")
+
+            with col4:
+
+                if st.button(
+                    "🔄",
+                    key=f"status_{produto['id']}"
+                ):
+
+                    alterar_status(
+                        produto["id"],
+                        not ativo
+                    )
+
+                    st.rerun()
+
+            with col5:
+
+                if st.button(
+                    "🗑️",
+                    key=f"excluir_{produto['id']}"
+                ):
+
+                    excluir_produto(
+                        produto["id"]
+                    )
+
+                    st.success(
+                        "Produto excluído."
+                    )
+
+                    st.rerun()
+
+    st.divider()
