@@ -168,9 +168,9 @@ for nome_categoria in ordem_categorias:
 
         with st.container(border=True):
 
-            col1, col2, col3, col4, col5 = st.columns(
-                [5, 2, 2, 1, 1]
-            )
+           col1, col2, col3, col4, col5, col6 = st.columns(
+    [5, 2, 2, 1, 1, 1]
+)
 
             with col1:
 
@@ -194,36 +194,48 @@ for nome_categoria in ordem_categorias:
 
                     st.error("Inativo")
 
-            with col4:
+           with col4:
 
-                if st.button(
-                    "🔄",
-                    key=f"status_{produto['id']}"
-                ):
+    if st.button(
+        "✏️",
+        key=f"editar_{produto['id']}"
+    ):
 
-                    alterar_status(
-                        produto["id"],
-                        not ativo
-                    )
+        st.session_state["produto_editar"] = produto["id"]
 
-                    st.rerun()
+        st.info(
+            "A página de edição será criada na próxima etapa."
+        )
 
-            with col5:
+with col5:
 
-                if st.button(
-                    "🗑️",
-                    key=f"excluir_{produto['id']}"
-                ):
+    if st.button(
+        "🔄",
+        key=f"status_{produto['id']}"
+    ):
 
-                    excluir_produto(
-                        produto["id"]
-                    )
+        alterar_status(
+            produto["id"],
+            not ativo
+        )
 
-                    st.success(
-                        "Produto excluído."
-                    )
+        st.rerun()
 
-                    st.rerun()
+with col6:
 
+    if st.button(
+        "🗑️",
+        key=f"excluir_{produto['id']}"
+    ):
+
+        excluir_produto(
+            produto["id"]
+        )
+
+        st.success(
+            "Produto excluído."
+        )
+
+        st.rerun()
     st.divider()
 
