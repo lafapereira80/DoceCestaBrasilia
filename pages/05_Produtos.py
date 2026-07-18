@@ -182,18 +182,16 @@ for nome_categoria in ordem_categorias:
 
                     st.error("Inativo")
 
-            with col4:
+           with col4:
 
-                if st.button(
-                    "✏️",
-                    key=f"editar_{produto['id']}"
-                ):
+    if st.button(
+        "✏️",
+        key=f"editar_{produto['id']}"
+    ):
 
-                    st.session_state["produto_editar"] = produto["id"]
+        st.session_state["produto_editar"] = produto["id"]
 
-                    st.info(
-                        "Tela de edição será criada na próxima etapa."
-                    )
+        st.switch_page("pages/10_Editar_Produto.py")
 
             with col5:
 
