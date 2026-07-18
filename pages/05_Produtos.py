@@ -1,11 +1,11 @@
 import streamlit as st
 
-from config.supabase import supabase
-
 from services.produto_service import (
+    listar_categorias,
     listar_produtos,
     cadastrar_produto,
-    excluir_produto
+    excluir_produto,
+    alterar_status
 )
 
 st.set_page_config(
@@ -19,46 +19,37 @@ st.title("🛒 Cadastro de Produtos")
 st.divider()
 
 # =====================================================
-# CARREGA AS CATEGORIAS
+# CARREGA CATEGORIAS
 # =====================================================
 
 try:
 
-    resposta = (
-        supabase
-        .table("categorias")
-        .select("*")
-        .order("nome")
-        .execute()
-    )
-
-    categorias = resposta.data
-
-st.write(resposta)
-st.write(categorias)
+    categorias = listar_categorias()
 
 except Exception as erro:
 
-    st.error(erro)
+    st.error(f"Erro ao carregar categorias: {erro}")
+
     st.stop()
 
 if not categorias:
 
     st.warning("Nenhuma categoria cadastrada.")
+
     st.stop()
 
 # =====================================================
-# FORMULÁRIO
+# NOVO PRODUTO
 # =====================================================
 
 st.subheader("➕ Novo Produto")
 
-with st.form("form_produto"):
+with st.form("novo_produto"):
 
     categoria = st.selectbox(
         "Categoria",
         categorias,
-        format_func=lambda x: x["nome"]
+        format_func=lambda c: c["nome"]
     )
 
     nome = st.text_input(
@@ -66,10 +57,10 @@ with st.form("form_produto"):
     )
 
     preco = st.number_input(
-        "Preço (R$)",
+        "Preço",
         min_value=0.0,
-        value=0.0,
-        step=1.0
+        step=1.0,
+        value=0.0
     )
 
     salvar = st.form_submit_button(
@@ -89,7 +80,7 @@ if salvar:
 
             cadastrar_produto(
                 categoria["id"],
-                nome,
+                nome.strip(),
                 preco
             )
 
@@ -106,10 +97,10 @@ if salvar:
 st.divider()
 
 # =====================================================
-# LISTA DE PRODUTOS
+# LISTA
 # =====================================================
 
-st.subheader("📋 Produtos Cadastrados")
+st.subheader("📋 Produtos")
 
 try:
 
@@ -121,73 +112,28 @@ except Exception as erro:
 
     st.stop()
 
-if not produtos:
+categorias_dict = {}
 
-    st.info("Nenhum produto cadastrado.")
+for categoria in categorias:
 
-else:
+    categorias_dict[categoria["id"]] = categoria["nome"]
 
-    categorias_dict = {}
+produtos_por_categoria = {}
 
-    for categoria in categorias:
+for categoria in categorias:
 
-        categorias_dict[categoria["id"]] = categoria["nome"]
+    produtos_por_categoria[categoria["nome"]] = []
 
-    for produto in produtos:
+for produto in produtos:
 
-        st.container(border=True)
+    nome_categoria = categorias_dict.get(
+        produto["categoria_id"],
+        "Sem Categoria"
+    )
 
-        col1, col2, col3, col4, col5 = st.columns([5, 2, 2, 1, 1])
+    if nome_categoria not in produtos_por_categoria:
 
-        with col1:
+        produtos_por_categoria[nome_categoria] = []
 
-            st.write(f"**{produto['nome']}**")
+    produtos_por_categoria[nome_categoria].append(produto)
 
-            nome_categoria = categorias_dict.get(
-                produto["categoria_id"],
-                "Sem categoria"
-            )
-
-            st.caption(nome_categoria)
-
-        with col2:
-
-            st.write(
-                f"R$ {float(produto['preco']):.2f}"
-            )
-
-        with col3:
-
-            if produto["ativo"]:
-
-                st.success("Ativo")
-
-            else:
-
-                st.error("Inativo")
-
-        with col4:
-
-            if st.button(
-                "✏️",
-                key=f"editar_{produto['id']}"
-            ):
-
-                st.session_state["produto_editar"] = produto["id"]
-
-                st.info(
-                    "A edição do produto será implementada na próxima etapa."
-                )
-
-        with col5:
-
-            if st.button(
-                "🗑️",
-                key=f"excluir_{produto['id']}"
-            ):
-
-                excluir_produto(produto["id"])
-
-                st.success("Produto excluído com sucesso!")
-
-                st.rerun()
