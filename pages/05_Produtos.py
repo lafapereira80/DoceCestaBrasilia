@@ -269,8 +269,8 @@ else:
 
             encontrou = True
 
-            col1, col2, col3 = st.columns([6,2,2])
-
+            col1, col2, col3, col4, col5, col6 = st.columns([5,2,2,1,1,1])
+            
             with col1:
 
                 st.write(produto["nome"])
@@ -281,15 +281,59 @@ else:
                     f"R$ {float(produto['preco']):.2f}"
                 )
 
-            with col3:
+           with col3:
 
-                if produto["ativo"]:
+    ativo = produto["ativo"]
 
-                    st.success("Ativo")
+    if ativo:
 
-                else:
+        st.success("Ativo")
 
-                    st.error("Inativo")
+    else:
+
+        st.error("Inativo")
+
+with col4:
+
+    if st.button(
+        "✏️",
+        key=f"editar_{produto['id']}"
+    ):
+
+        st.info(
+            "Tela de edição será criada na próxima etapa."
+        )
+
+with col5:
+
+    if st.button(
+        "🔄",
+        key=f"status_{produto['id']}"
+    ):
+
+        alterar_status(
+            produto["id"],
+            not ativo
+        )
+
+        st.rerun()
+
+with col6:
+
+    if st.button(
+        "🗑️",
+        key=f"excluir_{produto['id']}"
+    ):
+
+        excluir_produto(
+            produto["id"]
+        )
+
+        st.success(
+            "Produto excluído."
+        )
+
+        st.rerun()
 
         if not encontrou:
 
