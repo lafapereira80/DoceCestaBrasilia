@@ -11,12 +11,14 @@ def listar_categorias():
         supabase
         .table("categorias")
         .select("*")
-        .order("nome")
         .execute()
     )
 
-    return resposta.data or []
+    print("RESPOSTA:", resposta)
 
+    print("DADOS:", resposta.data)
+
+    return resposta.data or []
 
 # =====================================================
 # LISTAR PRODUTOS
