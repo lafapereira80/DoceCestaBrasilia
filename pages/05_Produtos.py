@@ -101,3 +101,64 @@ if salvar:
             st.error(erro)
 
 st.divider()
+
+# =====================================================
+# LISTA DE PRODUTOS
+# =====================================================
+
+st.subheader("📋 Produtos Cadastrados")
+
+try:
+
+    produtos = listar_produtos()
+
+except Exception as erro:
+
+    st.error(erro)
+
+    st.stop()
+
+if not produtos:
+
+    st.info("Nenhum produto cadastrado.")
+
+else:
+
+    categorias_dict = {}
+
+    for categoria in categorias:
+
+        categorias_dict[categoria["id"]] = categoria["nome"]
+
+    for produto in produtos:
+
+        st.container(border=True)
+
+        col1, col2, col3 = st.columns([5, 2, 2])
+
+        with col1:
+
+            st.write(f"**{produto['nome']}**")
+
+            nome_categoria = categorias_dict.get(
+                produto["categoria_id"],
+                "Sem categoria"
+            )
+
+            st.caption(nome_categoria)
+
+        with col2:
+
+            st.write(
+                f"R$ {float(produto['preco']):.2f}"
+            )
+
+        with col3:
+
+            if produto["ativo"]:
+
+                st.success("Ativo")
+
+            else:
+
+                st.error("Inativo")
