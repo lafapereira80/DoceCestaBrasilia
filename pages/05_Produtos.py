@@ -226,3 +226,73 @@ for nome_categoria in ordem_categorias:
                     st.rerun()
 
     st.divider()
+
+# =====================================================
+# PRODUTOS CADASTRADOS
+# =====================================================
+
+st.divider()
+
+st.subheader("📋 Produtos Cadastrados")
+
+try:
+
+    produtos = listar_produtos()
+
+except Exception as erro:
+
+    st.error(erro)
+
+    st.stop()
+
+if not produtos:
+
+    st.info("Nenhum produto cadastrado.")
+
+else:
+
+    categorias_dict = {
+        categoria["id"]: categoria["nome"]
+        for categoria in categorias
+    }
+
+    for categoria in categorias:
+
+        st.markdown(f"### {categoria['nome']}")
+
+        encontrou = False
+
+        for produto in produtos:
+
+            if produto["categoria_id"] != categoria["id"]:
+                continue
+
+            encontrou = True
+
+            col1, col2, col3 = st.columns([6,2,2])
+
+            with col1:
+
+                st.write(produto["nome"])
+
+            with col2:
+
+                st.write(
+                    f"R$ {float(produto['preco']):.2f}"
+                )
+
+            with col3:
+
+                if produto["ativo"]:
+
+                    st.success("Ativo")
+
+                else:
+
+                    st.error("Inativo")
+
+        if not encontrou:
+
+            st.caption("Nenhum produto cadastrado.")
+
+        st.divider()
