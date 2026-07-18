@@ -159,52 +159,52 @@ else:
 
         for produto in produtos_por_categoria[nome_categoria]:
 
-            col1, col2, col3, col4, col5 = st.columns([5,2,2,1,1])
-            
-            with col1:
+    col1, col2, col3, col4, col5 = st.columns([5, 2, 2, 1, 1])
 
-                st.write(f"**{produto['nome']}**")
+    with col1:
 
-            with col2:
+        st.write(f"**{produto['nome']}**")
 
-                st.write(
-                    f"R$ {float(produto['preco']):.2f}"
-                )
+    with col2:
 
-            with col3:
-
-                if produto["ativo"]:
-
-                    st.success("Ativo")
-
-                else:
-
-                    st.error("Inativo")
-
-        with col4:
-
-    if st.button(
-        "✏️",
-        key=f"editar_{produto['id']}"
-    ):
-
-        st.session_state["produto_editar"] = produto["id"]
-
-        st.switch_page(
-            "pages/10_Editar_Produto.py"
+        st.write(
+            f"R$ {float(produto['preco']):.2f}"
         )
 
-with col5:
+    with col3:
 
-    if st.button(
-        "🗑️",
-        key=f"excluir_{produto['id']}"
-    ):
+        if produto["ativo"]:
 
-        excluir_produto(produto["id"])
+            st.success("Ativo")
 
-        st.success("Produto excluído!")
+        else:
 
-        st.rerun()
+            st.error("Inativo")
 
-        st.divider()
+    with col4:
+
+        if st.button(
+            "✏️",
+            key=f"editar_{produto['id']}"
+        ):
+
+            st.session_state["produto_editar"] = produto["id"]
+
+            st.switch_page(
+                "pages/10_Editar_Produto.py"
+            )
+
+    with col5:
+
+        if st.button(
+            "🗑️",
+            key=f"excluir_{produto['id']}"
+        ):
+
+            excluir_produto(produto["id"])
+
+            st.success("Produto excluído!")
+
+            st.rerun()
+
+st.divider()
