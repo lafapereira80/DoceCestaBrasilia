@@ -172,7 +172,7 @@ for nome_categoria in ordem_categorias:
                     f"R$ {float(produto['preco']):.2f}"
                 )
 
-            with col3:
+                        with col3:
 
                 if ativo:
 
@@ -182,16 +182,16 @@ for nome_categoria in ordem_categorias:
 
                     st.error("Inativo")
 
-           with col4:
+            with col4:
 
-    if st.button(
-        "✏️",
-        key=f"editar_{produto['id']}"
-    ):
+                if st.button(
+                    "✏️",
+                    key=f"editar_{produto['id']}"
+                ):
 
-        st.session_state["produto_editar"] = produto["id"]
+                    st.session_state["produto_editar"] = produto["id"]
 
-        st.switch_page("pages/10_Editar_Produto.py")
+                    st.switch_page("pages/10_Editar_Produto.py")
 
             with col5:
 
@@ -221,5 +221,3 @@ for nome_categoria in ordem_categorias:
                     st.success("Produto excluído.")
 
                     st.rerun()
-
-    st.divider()
