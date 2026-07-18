@@ -155,36 +155,36 @@ else:
 
         with col3:
 
-    if produto["ativo"]:
+            if produto["ativo"]:
 
-        st.success("Ativo")
+                st.success("Ativo")
 
-    else:
+            else:
 
-        st.error("Inativo")
+                st.error("Inativo")
 
-with col4:
+        with col4:
 
-    if st.button(
-        "✏️",
-        key=f"editar_{produto['id']}"
-    ):
+            if st.button(
+                "✏️",
+                key=f"editar_{produto['id']}"
+            ):
 
-        st.session_state["produto_editar"] = produto["id"]
+                st.session_state["produto_editar"] = produto["id"]
 
-        st.info(
-            "A edição do produto será implementada na próxima etapa."
-        )
+                st.info(
+                    "A edição do produto será implementada na próxima etapa."
+                )
 
-with col5:
+        with col5:
 
-    if st.button(
-        "🗑️",
-        key=f"excluir_{produto['id']}"
-    ):
+            if st.button(
+                "🗑️",
+                key=f"excluir_{produto['id']}"
+            ):
 
-        excluir_produto(produto["id"])
+                excluir_produto(produto["id"])
 
-        st.success("Produto excluído com sucesso!")
+                st.success("Produto excluído com sucesso!")
 
-        st.rerun()
+                st.rerun()
