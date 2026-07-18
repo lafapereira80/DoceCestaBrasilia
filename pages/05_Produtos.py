@@ -34,6 +34,9 @@ try:
 
     categorias = resposta.data
 
+st.write(resposta)
+st.write(categorias)
+
 except Exception as erro:
 
     st.error(erro)
