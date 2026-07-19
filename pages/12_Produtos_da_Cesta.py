@@ -120,3 +120,51 @@ for categoria in ordem:
             selecionados.append(produto["id"])
 
     st.divider()
+
+# =====================================================
+# BOTÕES
+# =====================================================
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    if st.button(
+        "💾 Salvar Produtos da Cesta",
+        use_container_width=True
+    ):
+
+        try:
+
+            salvar_produtos_da_cesta(
+                cesta_id,
+                selecionados
+            )
+
+            st.success(
+                "Produtos da cesta atualizados com sucesso!"
+            )
+
+            st.rerun()
+
+        except Exception as erro:
+
+            st.error(
+                f"Erro ao salvar: {erro}"
+            )
+
+with col2:
+
+    if st.button(
+        "⬅ Voltar",
+        use_container_width=True
+    ):
+
+        st.session_state.pop(
+            "cesta_produtos",
+            None
+        )
+
+        st.switch_page(
+            "pages/04_Cestas.py"
+        )
