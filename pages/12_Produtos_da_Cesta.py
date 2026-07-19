@@ -45,3 +45,78 @@ categorias = listar_categorias()
 produtos = listar_produtos()
 
 produtos_da_cesta = listar_produtos_da_cesta(cesta_id)
+
+# =====================================================
+# ORGANIZA PRODUTOS POR CATEGORIA
+# =====================================================
+
+categorias_dict = {
+    categoria["id"]: categoria["nome"]
+    for categoria in categorias
+}
+
+produtos_por_categoria = {}
+
+for categoria in categorias:
+
+    produtos_por_categoria[categoria["nome"]] = []
+
+for produto in produtos:
+
+    nome_categoria = categorias_dict.get(
+        produto["categoria_id"],
+        "Sem Categoria"
+    )
+
+    produtos_por_categoria.setdefault(
+        nome_categoria,
+        []
+    ).append(produto)
+
+# Produtos já vinculados à cesta
+
+produtos_marcados = []
+
+for item in produtos_da_cesta:
+
+    produtos_marcados.append(item["produto_id"])
+
+# =====================================================
+# CHECKBOXES
+# =====================================================
+
+selecionados = []
+
+ordem = [
+    "Pães",
+    "Bebidas",
+    "Espalháveis",
+    "Adicionais"
+]
+
+for categoria in ordem:
+
+    if categoria not in produtos_por_categoria:
+        continue
+
+    st.subheader(f"📦 {categoria}")
+
+    for produto in produtos_por_categoria[categoria]:
+
+        marcado = produto["id"] in produtos_marcados
+
+        escolhido = st.checkbox(
+
+            produto["nome"],
+
+            value=marcado,
+
+            key=f"produto_{produto['id']}"
+
+        )
+
+        if escolhido:
+
+            selecionados.append(produto["id"])
+
+    st.divider()
