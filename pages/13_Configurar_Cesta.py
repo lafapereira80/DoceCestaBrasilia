@@ -42,3 +42,82 @@ config = {}
 for item in configuracoes:
 
     config[item["categoria"]] = item["quantidade"]
+# =====================================================
+# FORMULÁRIO
+# =====================================================
+
+with st.form("configuracao_cesta"):
+
+    st.subheader("🥖 Pães")
+
+    qtd_paes = st.radio(
+
+        "Quantidade que o cliente poderá escolher",
+
+        [1, 2, 3],
+
+        index=max(0, config.get("Pães", 1) - 1),
+
+        horizontal=True
+
+    )
+
+    st.divider()
+
+    st.subheader("🥤 Bebidas")
+
+    qtd_bebidas = st.radio(
+
+        "Quantidade que o cliente poderá escolher ",
+
+        [1, 2, 3],
+
+        index=max(0, config.get("Bebidas", 1) - 1),
+
+        horizontal=True,
+
+        key="bebidas"
+
+    )
+
+    st.divider()
+
+    st.subheader("🍯 Espalháveis")
+
+    qtd_espalhaveis = st.radio(
+
+        "Quantidade que o cliente poderá escolher  ",
+
+        [1, 2, 3],
+
+        index=max(0, config.get("Espalháveis", 1) - 1),
+
+        horizontal=True,
+
+        key="espalhaveis"
+
+    )
+
+    st.divider()
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        salvar = st.form_submit_button(
+
+            "💾 Salvar Configuração",
+
+            use_container_width=True
+
+        )
+
+    with col2:
+
+        voltar = st.form_submit_button(
+
+            "⬅ Voltar",
+
+            use_container_width=True
+
+        )
