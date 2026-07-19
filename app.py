@@ -4,6 +4,7 @@ from pathlib import Path
 from services.pedido_service import salvar_pedido
 from services.foto_service import salvar_fotos
 from services.cesta_service import listar_cestas
+from services.configuracao_cesta_service import carregar_configuracao_cesta
 
 st.set_page_config(
     page_title="Doce Cesta Brasília",
@@ -189,34 +190,55 @@ respeitando a quantidade permitida para cada categoria.
 
 st.divider()
 
-tipo_pao = st.radio(
-    "Tipo de Pão",
-    [
-        "Australiano",
-        "Pão Doce"
-    ],
-    horizontal=True
-)
+# ==========================================================
+# PRODUTOS DA CESTA
+# ==========================================================
 
-espalhavel = st.radio(
-    "Espalhável",
-    [
-        "Doce de Leite",
-        "Geleia",
-        "Nutella"
-    ],
-    horizontal=True
-)
+configuracao = carregar_configuracao_cesta(cesta["id"])
 
-bebida = st.radio(
-    "Bebida",
-    [
-        "Suco de Uva",
-        "Suco de Laranja",
-        "Frappuccino"
-    ],
-    horizontal=True
-)
+selecoes_cliente = {}
+
+if configuracao:
+
+    for categoria in configuracao:
+
+        st.subheader(f"📦 {categoria['categoria']}")
+
+        quantidade = categoria["quantidade"]
+
+        produtos = categoria["produtos"]
+
+        if quantidade == 1:
+
+            selecoes_cliente[categoria["categoria"]] = st.radio(
+
+                "Escolha uma opção",
+
+                produtos,
+
+                format_func=lambda p: p["nome"],
+
+                key=f"radio_{categoria['categoria']}"
+
+            )
+
+        else:
+
+            selecoes_cliente[categoria["categoria"]] = st.multiselect(
+
+                f"Escolha até {quantidade}",
+
+                produtos,
+
+                format_func=lambda p: p["nome"],
+
+                max_selections=quantidade,
+
+                key=f"multi_{categoria['categoria']}"
+
+            )
+
+        st.divider()
 
 st.divider()
 
