@@ -146,7 +146,7 @@ for _, pedido in df.iterrows():
 
             st.session_state["pedido_aberto"] = pedido["id"]
 
-            st.switch_page("pages/99_Admin.py")
+            st.switch_page("pages/09_Detalhes_Pedido.py")
 
 st.divider()
 
