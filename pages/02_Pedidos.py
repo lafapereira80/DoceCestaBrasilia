@@ -1,153 +1,69 @@
 import streamlit as st
-import pandas as pd
 
-from services.pedido_service import listar_pedidos
+from services.cesta_service import listar_cestas
 
 st.set_page_config(
-    page_title="Pedidos",
-    page_icon="📋",
+    page_title="Novo Pedido",
+    page_icon="🎁",
     layout="wide"
 )
 
-st.title("📋 Pedidos")
-
-st.write("Todos os pedidos recebidos pelo sistema.")
+st.title("🎁 Novo Pedido")
 
 st.divider()
 
-# ==========================================================
-# CARREGA PEDIDOS
-# ==========================================================
+# =====================================================
+# DADOS DO CLIENTE
+# =====================================================
+
+st.subheader("👤 Dados do Cliente")
+
+nome = st.text_input(
+    "Nome"
+)
+
+cpf = st.text_input(
+    "CPF"
+)
+
+telefone = st.text_input(
+    "Telefone"
+)
+
+st.divider()
+
+# =====================================================
+# ESCOLHA DA CESTA
+# =====================================================
+
+st.subheader("🎁 Escolha sua Cesta")
 
 try:
 
-    pedidos = listar_pedidos()
+    cestas = listar_cestas()
 
 except Exception as erro:
 
-    st.error(f"Erro ao carregar pedidos: {erro}")
+    st.error(
+        f"Erro ao carregar as cestas: {erro}"
+    )
+
     st.stop()
 
-# ==========================================================
-# SEM PEDIDOS
-# ==========================================================
+if not cestas:
 
-if not pedidos:
+    st.warning(
+        "Nenhuma cesta cadastrada."
+    )
 
-    st.info("Nenhum pedido foi encontrado.")
     st.stop()
 
-# ==========================================================
-# TABELA
-# ==========================================================
+cesta = st.selectbox(
 
-df = pd.DataFrame(pedidos)
+    "Selecione uma cesta",
 
-# ==========================================================
-# FILTROS
-# ==========================================================
+    cestas,
 
-st.subheader("🔍 Pesquisar Pedidos")
+    format_func=lambda c: c["nome"]
 
-col1, col2 = st.columns([3, 1])
-
-with col1:
-
-    pesquisa = st.text_input(
-        "Nome do cliente",
-        placeholder="Digite o nome..."
-    )
-
-with col2:
-
-    status_lista = ["Todos"]
-
-    if "status" in df.columns:
-        status_lista.extend(
-            sorted(df["status"].dropna().unique().tolist())
-        )
-
-    status = st.selectbox(
-        "Status",
-        status_lista
-    )
-
-# ==========================================================
-# FILTRO NOME
-# ==========================================================
-
-if pesquisa.strip():
-
-    df = df[
-        df["cliente_nome"]
-        .fillna("")
-        .str.contains(
-            pesquisa,
-            case=False
-        )
-    ]
-
-# ==========================================================
-# FILTRO STATUS
-# ==========================================================
-
-if status != "Todos":
-
-    df = df[
-        df["status"] == status
-    ]
-
-# ==========================================================
-# COLUNAS
-# ==========================================================
-
-colunas = [
-    "id",
-    "cliente_nome",
-    "cliente_telefone",
-    "cesta_nome",
-    "status",
-    "data_entrega"
-]
-
-colunas = [c for c in colunas if c in df.columns]
-
-df = df[colunas]
-st.subheader("📋 Lista de Pedidos")
-
-for _, pedido in df.iterrows():
-
-    col1, col2, col3, col4, col5, col6 = st.columns(
-        [1, 3, 2, 2, 2, 1]
-    )
-
-    with col1:
-        st.write(f"**#{pedido['id']}**")
-
-    with col2:
-        st.write(pedido["cliente_nome"])
-
-    with col3:
-        st.write(pedido["cesta_nome"])
-
-    with col4:
-        st.write(pedido["status"])
-
-    with col5:
-        st.write(str(pedido["data_entrega"]))
-
-    with col6:
-
-        if st.button(
-            "👁️",
-            key=f"abrir_{pedido['id']}",
-            help="Abrir pedido"
-        ):
-
-            st.session_state["pedido_aberto"] = pedido["id"]
-
-            st.switch_page("pages/09_Detalhes_Pedido.py")
-
-st.divider()
-
-st.caption(f"Total de pedidos: {len(df)}")
+)
