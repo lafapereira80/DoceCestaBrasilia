@@ -123,14 +123,34 @@ st.divider()
 
 st.subheader("🎁 Escolha da Cesta")
 
+try:
+
+    cestas = listar_cestas()
+
+except Exception as erro:
+
+    st.error(
+        f"Erro ao carregar as cestas: {erro}"
+    )
+
+    st.stop()
+
+if not cestas:
+
+    st.warning(
+        "Nenhuma cesta cadastrada."
+    )
+
+    st.stop()
+
 cesta = st.selectbox(
+
     "Nome da Cesta",
-    [
-        "Selecione...",
-        "Cesta Romântica",
-        "Cesta Premium",
-        "Cesta Luxo"
-    ]
+
+    cestas,
+
+    format_func=lambda c: c["nome"]
+
 )
 
 tipo_pao = st.radio(
