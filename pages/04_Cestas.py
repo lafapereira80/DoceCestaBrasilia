@@ -99,7 +99,7 @@ except Exception as erro:
 st.subheader("📋 Cestas Cadastradas")
 
 # =====================================================
-# LISTAGEM DAS CESTAS
+# LISTAGEM
 # =====================================================
 
 if not cestas:
@@ -114,9 +114,13 @@ else:
 
         with st.container(border=True):
 
-            col1, col2, col3, col4, col5, col6 = st.columns(
-                [5, 2, 1, 1, 1, 1]
+            col1, col2, col3, col4, col5, col6, col7 = st.columns(
+                [5, 2, 1, 1, 1, 1, 1]
             )
+
+            # ===========================
+            # DADOS
+            # ===========================
 
             with col1:
 
@@ -142,9 +146,9 @@ else:
 
                     st.error("Inativa")
 
-            # =======================================
+            # ===========================
             # EDITAR
-            # =======================================
+            # ===========================
 
             with col4:
 
@@ -159,9 +163,9 @@ else:
                         "pages/11_Editar_Cesta.py"
                     )
 
-            # =======================================
-            # PRODUTOS DA CESTA
-            # =======================================
+            # ===========================
+            # PRODUTOS
+            # ===========================
 
             with col5:
 
@@ -176,11 +180,28 @@ else:
                         "pages/12_Produtos_da_Cesta.py"
                     )
 
-            # =======================================
-            # EXCLUIR
-            # =======================================
+            # ===========================
+            # CONFIGURAÇÃO
+            # ===========================
 
             with col6:
+
+                if st.button(
+                    "⚙️",
+                    key=f"config_{cesta['id']}"
+                ):
+
+                    st.session_state["cesta_produtos"] = cesta["id"]
+
+                    st.switch_page(
+                        "pages/13_Configurar_Cesta.py"
+                    )
+
+            # ===========================
+            # EXCLUIR
+            # ===========================
+
+            with col7:
 
                 if st.button(
                     "🗑️",
@@ -194,4 +215,3 @@ else:
                     st.rerun()
 
         st.divider()
-        
