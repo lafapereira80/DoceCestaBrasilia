@@ -2,56 +2,51 @@ from config.supabase import supabase
 
 
 # =====================================================
-# BUSCAR CONFIGURAÇÕES DA CESTA
+# CARREGA CONFIGURAÇÃO DA CESTA
 # =====================================================
 
-def buscar_configuracoes_da_cesta(cesta_id):
+def carregar_configuracao_cesta(cesta_id):
 
     resposta = (
         supabase
         .table("configuracao_cestas")
-        .select("*")
+        .select("""
+            categoria,
+            quantidade,
+            produtos:produto_id(
+                id,
+                nome,
+                preco,
+                ativo
+            )
+        """)
         .eq("cesta_id", cesta_id)
+        .order("categoria")
         .execute()
     )
 
-    return resposta.data or []
+    configuracao = []
 
+    categorias = {}
 
-# =====================================================
-# SALVAR CONFIGURAÇÕES
-# =====================================================
+    for item in resposta.data or []:
 
-def salvar_configuracoes(
-    cesta_id,
-    configuracoes
-):
+        categoria = item["categoria"]
 
-    # Remove todas as configurações atuais
+        if categoria not in categorias:
 
-    (
-        supabase
-        .table("configuracao_cestas")
-        .delete()
-        .eq("cesta_id", cesta_id)
-        .execute()
-    )
-
-    # Insere novamente
-
-    for categoria, quantidade in configuracoes.items():
-
-        (
-            supabase
-            .table("configuracao_cestas")
-            .insert({
-
-                "cesta_id": cesta_id,
-
+            categorias[categoria] = {
                 "categoria": categoria,
+                "quantidade": item["quantidade"],
+                "produtos": []
+            }
 
-                "quantidade": quantidade
+        produto = item["produtos"]
 
-            })
-            .execute()
-        )
+        if produto and produto["ativo"]:
+
+            categorias[categoria]["produtos"].append(produto)
+
+    configuracao = list(categorias.values())
+
+    return configuracao
