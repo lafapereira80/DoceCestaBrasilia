@@ -97,3 +97,101 @@ except Exception as erro:
     st.stop()
 
 st.subheader("📋 Cestas Cadastradas")
+
+# =====================================================
+# LISTAGEM DAS CESTAS
+# =====================================================
+
+if not cestas:
+
+    st.info("Nenhuma cesta cadastrada.")
+
+else:
+
+    for cesta in cestas:
+
+        ativa = cesta.get("ativa", True)
+
+        with st.container(border=True):
+
+            col1, col2, col3, col4, col5, col6 = st.columns(
+                [5, 2, 1, 1, 1, 1]
+            )
+
+            with col1:
+
+                st.write(f"**{cesta['nome']}**")
+
+                if cesta["descricao"]:
+
+                    st.caption(cesta["descricao"])
+
+            with col2:
+
+                st.write(
+                    f"R$ {float(cesta['preco']):.2f}"
+                )
+
+            with col3:
+
+                if ativa:
+
+                    st.success("Ativa")
+
+                else:
+
+                    st.error("Inativa")
+
+            # =======================================
+            # EDITAR
+            # =======================================
+
+            with col4:
+
+                if st.button(
+                    "✏️",
+                    key=f"editar_{cesta['id']}"
+                ):
+
+                    st.session_state["cesta_editar"] = cesta["id"]
+
+                    st.switch_page(
+                        "pages/11_Editar_Cesta.py"
+                    )
+
+            # =======================================
+            # PRODUTOS DA CESTA
+            # =======================================
+
+            with col5:
+
+                if st.button(
+                    "📦",
+                    key=f"produtos_{cesta['id']}"
+                ):
+
+                    st.session_state["cesta_produtos"] = cesta["id"]
+
+                    st.switch_page(
+                        "pages/12_Produtos_da_Cesta.py"
+                    )
+
+            # =======================================
+            # EXCLUIR
+            # =======================================
+
+            with col6:
+
+                if st.button(
+                    "🗑️",
+                    key=f"excluir_{cesta['id']}"
+                ):
+
+                    excluir_cesta(cesta["id"])
+
+                    st.success("Cesta excluída.")
+
+                    st.rerun()
+
+        st.divider()
+        
