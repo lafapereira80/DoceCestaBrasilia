@@ -161,8 +161,6 @@ cesta = st.selectbox(
 
 st.divider()
 
-st.subheader("🎁 Cesta Selecionada")
-
 if cesta:
 
     # FOTO
@@ -172,11 +170,6 @@ if cesta:
             cesta["imagem"],
             use_container_width=True
         )
-
-    # NOME
-    st.markdown(
-        f"## {cesta['nome']}"
-    )
 
     # DESCRIÇÃO
     if cesta.get("descricao"):
