@@ -9,44 +9,54 @@ def carregar_configuracao_cesta(cesta_id):
 
     resposta = (
         supabase
-        .table("configuracao_cestas")
+        .table("cesta_produtos")
         .select("""
-            categoria,
             quantidade,
             produtos:produto_id(
                 id,
                 nome,
+                categoria_id,
                 preco,
                 ativo
             )
         """)
         .eq("cesta_id", cesta_id)
-        .order("categoria")
         .execute()
     )
 
-    configuracao = []
+    if not resposta.data:
+        return []
 
     categorias = {}
 
-    for item in resposta.data or []:
+    for item in resposta.data:
 
-        categoria = item["categoria"]
+        produto = item["produtos"]
 
-        if categoria not in categorias:
+        if not produto:
+            continue
 
-            categorias[categoria] = {
-                "categoria": categoria,
+        categoria_id = produto["categoria_id"]
+
+        categoria = (
+            supabase
+            .table("categorias")
+            .select("nome")
+            .eq("id", categoria_id)
+            .single()
+            .execute()
+        )
+
+        nome_categoria = categoria.data["nome"]
+
+        if nome_categoria not in categorias:
+
+            categorias[nome_categoria] = {
+                "categoria": nome_categoria,
                 "quantidade": item["quantidade"],
                 "produtos": []
             }
 
-        produto = item["produtos"]
+        categorias[nome_categoria]["produtos"].append(produto)
 
-        if produto and produto["ativo"]:
-
-            categorias[categoria]["produtos"].append(produto)
-
-    configuracao = list(categorias.values())
-
-    return configuracao
+    return list(categorias.values())
