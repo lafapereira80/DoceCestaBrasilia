@@ -155,6 +155,47 @@ cesta = st.selectbox(
 
 )
 
+# ==========================================================
+# INFORMAÇÕES DA CESTA
+# ==========================================================
+
+st.divider()
+
+st.subheader("🎁 Cesta Selecionada")
+
+if cesta:
+
+    # FOTO
+    if cesta.get("imagem"):
+
+        st.image(
+            cesta["imagem"],
+            use_container_width=True
+        )
+
+    # NOME
+    st.markdown(
+        f"## {cesta['nome']}"
+    )
+
+    # DESCRIÇÃO
+    if cesta.get("descricao"):
+
+        st.info(
+            cesta["descricao"]
+        )
+
+    st.markdown(
+        """
+### 📝 Monte sua cesta
+
+Selecione abaixo os produtos que deseja incluir na sua cesta,
+respeitando a quantidade permitida para cada categoria.
+"""
+    )
+
+st.divider()
+
 tipo_pao = st.radio(
     "Tipo de Pão",
     [
