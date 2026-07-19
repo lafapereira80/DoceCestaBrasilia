@@ -121,3 +121,50 @@ with st.form("configuracao_cesta"):
             use_container_width=True
 
         )
+# =====================================================
+# BOTÕES
+# =====================================================
+
+if voltar:
+
+    st.session_state.pop(
+        "cesta_produtos",
+        None
+    )
+
+    st.switch_page(
+        "pages/04_Cestas.py"
+    )
+
+
+if salvar:
+
+    try:
+
+        salvar_configuracoes(
+
+            cesta_id,
+
+            {
+
+                "Pães": qtd_paes,
+
+                "Bebidas": qtd_bebidas,
+
+                "Espalháveis": qtd_espalhaveis
+
+            }
+
+        )
+
+        st.success(
+            "Configuração salva com sucesso!"
+        )
+
+        st.rerun()
+
+    except Exception as erro:
+
+        st.error(
+            f"Erro ao salvar configuração: {erro}"
+        )
