@@ -186,7 +186,7 @@ st.divider()
 # PRODUTOS DA CESTA
 # ==========================================================
 
-configuracao = carregar_configuracao_cesta(cesta["id"])
+configuracao = listar_produtos_da_cesta(cesta["id"])
 
 selecoes_cliente = {}
 
