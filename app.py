@@ -4,7 +4,7 @@ from pathlib import Path
 from services.pedido_service import salvar_pedido
 from services.foto_service import salvar_fotos
 from services.cesta_service import listar_cestas
-from services.cesta_produto_service import 
+from services.cesta_produto_service import listar_produtos_da_cesta
 #from services.configuracao_cesta_service import carregar_configuracao_cesta
 
 st.set_page_config(
