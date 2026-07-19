@@ -7,56 +7,71 @@ from config.supabase import supabase
 
 def carregar_configuracao_cesta(cesta_id):
 
+    # Busca produtos vinculados à cesta
     resposta = (
         supabase
         .table("cesta_produtos")
-        .select("""
-            quantidade,
-            produtos:produto_id(
-                id,
-                nome,
-                categoria_id,
-                preco,
-                ativo
-            )
-        """)
+        .select("*")
         .eq("cesta_id", cesta_id)
         .execute()
     )
 
     if not resposta.data:
+
         return []
 
     categorias = {}
 
     for item in resposta.data:
 
-        produto = item["produtos"]
+        produto_id = item["produto_id"]
 
-        if not produto:
-            continue
-
-        categoria_id = produto["categoria_id"]
-
-        categoria = (
+        # Busca o produto
+        produto_resp = (
             supabase
-            .table("categorias")
-            .select("nome")
-            .eq("id", categoria_id)
+            .table("produtos")
+            .select("*")
+            .eq("id", produto_id)
             .single()
             .execute()
         )
 
-        nome_categoria = categoria.data["nome"]
+        produto = produto_resp.data
 
-        if nome_categoria not in categorias:
+        if not produto:
 
-            categorias[nome_categoria] = {
-                "categoria": nome_categoria,
-                "quantidade": item["quantidade"],
+            continue
+
+        # Busca categoria do produto
+        categoria_resp = (
+            supabase
+            .table("categorias")
+            .select("nome")
+            .eq("id", produto["categoria_id"])
+            .single()
+            .execute()
+        )
+
+        categoria_nome = categoria_resp.data["nome"]
+
+
+        if categoria_nome not in categorias:
+
+            categorias[categoria_nome] = {
+
+                "categoria": categoria_nome,
+
+                "quantidade": item.get(
+                    "quantidade",
+                    1
+                ),
+
                 "produtos": []
+
             }
 
-        categorias[nome_categoria]["produtos"].append(produto)
+
+        categorias[categoria_nome]["produtos"].append(produto)
+
 
     return list(categorias.values())
