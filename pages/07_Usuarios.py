@@ -3,7 +3,8 @@ import streamlit as st
 from services.usuario_service import (
     listar_usuarios,
     salvar_usuario,
-    excluir_usuario
+    excluir_usuario,
+    atualizar_usuario
 )
 
 
@@ -12,6 +13,7 @@ st.set_page_config(
     page_icon="👤",
     layout="wide"
 )
+
 
 
 # =====================================================
@@ -50,7 +52,6 @@ if usuario_logado["perfil"] != "Administrador":
 # CSS
 # =====================================================
 
-
 st.markdown(
 """
 <style>
@@ -68,21 +69,6 @@ display:none;
 }
 
 
-.card{
-
-background:#ffffff;
-
-padding:15px;
-
-border-radius:12px;
-
-border:1px solid #ddd;
-
-margin-bottom:10px;
-
-}
-
-
 </style>
 """,
 unsafe_allow_html=True
@@ -93,7 +79,6 @@ unsafe_allow_html=True
 # =====================================================
 # TÍTULO
 # =====================================================
-
 
 st.title(
     "👤 Usuários do Sistema"
@@ -110,56 +95,52 @@ st.divider()
 
 
 # =====================================================
-# CADASTRO
+# NOVO USUÁRIO
 # =====================================================
-
 
 st.subheader(
     "➕ Novo Usuário"
 )
 
 
-
 col1, col2 = st.columns(2)
-
 
 
 with col1:
 
     novo_login = st.text_input(
-        "Login"
+        "Login",
+        key="novo_login"
     )
-
 
 
 with col2:
 
     nova_senha = st.text_input(
         "Senha",
-        type="password"
+        type="password",
+        key="nova_senha"
     )
 
 
-
-perfil = st.selectbox(
+novo_perfil = st.selectbox(
 
     "Perfil",
 
     [
         "Administrador",
         "Operador"
-    ]
+    ],
+
+    key="novo_perfil"
 
 )
 
 
 
 if st.button(
-
     "💾 Salvar Usuário",
-
     use_container_width=True
-
 ):
 
 
@@ -185,14 +166,13 @@ if st.button(
 
     try:
 
-
         salvar_usuario(
 
             novo_login,
 
             nova_senha,
 
-            perfil
+            novo_perfil
 
         )
 
@@ -201,13 +181,11 @@ if st.button(
             "Usuário cadastrado com sucesso!"
         )
 
-
         st.rerun()
 
 
 
     except Exception as erro:
-
 
         st.error(
             f"Erro ao cadastrar usuário: {erro}"
@@ -220,7 +198,7 @@ st.divider()
 
 
 # =====================================================
-# LISTA USUÁRIOS
+# LISTAGEM
 # =====================================================
 
 
@@ -237,7 +215,6 @@ try:
 
 except Exception as erro:
 
-
     st.error(
         f"Erro ao carregar usuários: {erro}"
     )
@@ -248,7 +225,6 @@ except Exception as erro:
 
 if not usuarios:
 
-
     st.info(
         "Nenhum usuário cadastrado."
     )
@@ -258,7 +234,7 @@ if not usuarios:
 
 
 # =====================================================
-# CARDS
+# USUÁRIOS
 # =====================================================
 
 
@@ -268,24 +244,19 @@ for usuario in usuarios:
     with st.container(border=True):
 
 
-        col1, col2, col3, col4 = st.columns(
-            [3,2,2,1]
+        st.markdown(
+            f"### 👤 {usuario['login']}"
         )
+
+
+        col1, col2, col3 = st.columns(3)
 
 
 
         with col1:
 
             st.write(
-                f"**👤 {usuario['login']}**"
-            )
-
-
-
-        with col2:
-
-            st.write(
-                "Perfil"
+                "**Perfil:**"
             )
 
             st.write(
@@ -294,10 +265,10 @@ for usuario in usuarios:
 
 
 
-        with col3:
+        with col2:
 
             st.write(
-                "Criado em"
+                "**Criado em:**"
             )
 
             st.write(
@@ -311,52 +282,165 @@ for usuario in usuarios:
 
 
 
-        with col4:
+        with col3:
 
+            if usuario["login"] == usuario_logado["login"]:
 
-            if usuario["login"] != usuario_logado["login"]:
-
-
-                if st.button(
-
-                    "🗑️",
-
-                    key=f"del_{usuario['id']}"
-
-                ):
-
-
-                    try:
-
-
-                        excluir_usuario(
-                            usuario["id"]
-                        )
-
-
-                        st.success(
-                            "Usuário excluído."
-                        )
-
-
-                        st.rerun()
-
-
-
-                    except Exception as erro:
-
-
-                        st.error(
-                            f"Erro: {erro}"
-                        )
-
+                st.info(
+                    "Usuário atual"
+                )
 
             else:
 
-
-                st.info(
-                    "Atual"
+                st.warning(
+                    "Gerenciar"
                 )
+
+
+
+        # =================================================
+        # EDITAR
+        # =================================================
+
+
+        with st.expander(
+            "✏️ Editar usuário"
+        ):
+
+
+            editar_login = st.text_input(
+
+                "Login",
+
+                value=usuario["login"],
+
+                key=f"login_{usuario['id']}"
+
+            )
+
+
+
+            editar_senha = st.text_input(
+
+                "Nova senha (opcional)",
+
+                type="password",
+
+                key=f"senha_{usuario['id']}"
+
+            )
+
+
+
+            editar_perfil = st.selectbox(
+
+                "Perfil",
+
+                [
+                    "Administrador",
+                    "Operador"
+                ],
+
+                index=
+                0
+                if usuario["perfil"] == "Administrador"
+                else 1,
+
+                key=f"perfil_{usuario['id']}"
+
+            )
+
+
+
+            if st.button(
+
+                "💾 Atualizar",
+
+                key=f"update_{usuario['id']}",
+
+                use_container_width=True
+
+            ):
+
+
+                try:
+
+
+                    atualizar_usuario(
+
+                        usuario["id"],
+
+                        editar_login,
+
+                        editar_senha,
+
+                        editar_perfil
+
+                    )
+
+
+                    st.success(
+                        "Usuário atualizado!"
+                    )
+
+
+                    st.rerun()
+
+
+
+                except Exception as erro:
+
+
+                    st.error(
+                        f"Erro ao atualizar: {erro}"
+                    )
+
+
+
+        # =================================================
+        # EXCLUIR
+        # =================================================
+
+
+        if usuario["login"] != usuario_logado["login"]:
+
+
+            if st.button(
+
+                "🗑️ Excluir usuário",
+
+                key=f"delete_{usuario['id']}",
+
+                use_container_width=True
+
+            ):
+
+
+                try:
+
+
+                    excluir_usuario(
+
+                        usuario["id"]
+
+                    )
+
+
+                    st.success(
+                        "Usuário excluído."
+                    )
+
+
+                    st.rerun()
+
+
+
+                except Exception as erro:
+
+
+                    st.error(
+                        f"Erro ao excluir: {erro}"
+                    )
 
 
 
