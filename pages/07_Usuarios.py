@@ -7,6 +7,9 @@ from services.usuario_service import (
     atualizar_usuario
 )
 
+from utils.permissao import administrador
+
+
 
 st.set_page_config(
     page_title="Usuários",
@@ -17,34 +20,13 @@ st.set_page_config(
 
 
 # =====================================================
-# VERIFICA LOGIN
-# =====================================================
-
-if "usuario" not in st.session_state or st.session_state.usuario is None:
-
-    st.error(
-        "Acesso não autorizado."
-    )
-
-    st.stop()
-
-
-
-usuario_logado = st.session_state.usuario
-
-
-
-# =====================================================
 # PERMISSÃO
 # =====================================================
 
-if usuario_logado["perfil"] != "Administrador":
+administrador()
 
-    st.error(
-        "Somente Administradores podem acessar este módulo."
-    )
 
-    st.stop()
+usuario_logado = st.session_state.usuario
 
 
 
@@ -67,7 +49,6 @@ display:none;
 header{
 display:none;
 }
-
 
 </style>
 """,
@@ -114,6 +95,7 @@ with col1:
     )
 
 
+
 with col2:
 
     nova_senha = st.text_input(
@@ -121,6 +103,7 @@ with col2:
         type="password",
         key="nova_senha"
     )
+
 
 
 novo_perfil = st.selectbox(
@@ -164,18 +147,18 @@ if st.button(
 
 
 
-    try:
+    sucesso, mensagem = salvar_usuario(
 
-        salvar_usuario(
+        novo_login,
 
-            novo_login,
+        nova_senha,
 
-            nova_senha,
+        novo_perfil
 
-            novo_perfil
+    )
 
-        )
 
+    if sucesso:
 
         st.success(
             "Usuário cadastrado com sucesso!"
@@ -184,11 +167,10 @@ if st.button(
         st.rerun()
 
 
-
-    except Exception as erro:
+    else:
 
         st.error(
-            f"Erro ao cadastrar usuário: {erro}"
+            mensagem
         )
 
 
@@ -249,6 +231,7 @@ for usuario in usuarios:
         )
 
 
+
         col1, col2, col3 = st.columns(3)
 
 
@@ -272,23 +255,27 @@ for usuario in usuarios:
             )
 
             st.write(
+
                 str(
                     usuario.get(
                         "created_at",
                         "-"
                     )
                 )[:10]
+
             )
 
 
 
         with col3:
 
+
             if usuario["login"] == usuario_logado["login"]:
 
                 st.info(
                     "Usuário atual"
                 )
+
 
             else:
 
@@ -322,7 +309,7 @@ for usuario in usuarios:
 
             editar_senha = st.text_input(
 
-                "Nova senha (opcional)",
+                "Nova senha (deixe vazio para manter)",
 
                 type="password",
 
@@ -363,36 +350,32 @@ for usuario in usuarios:
             ):
 
 
-                try:
+                sucesso, mensagem = atualizar_usuario(
+
+                    usuario["id"],
+
+                    editar_login,
+
+                    editar_senha,
+
+                    editar_perfil
+
+                )
 
 
-                    atualizar_usuario(
-
-                        usuario["id"],
-
-                        editar_login,
-
-                        editar_senha,
-
-                        editar_perfil
-
-                    )
-
+                if sucesso:
 
                     st.success(
                         "Usuário atualizado!"
                     )
 
-
                     st.rerun()
 
 
-
-                except Exception as erro:
-
+                else:
 
                     st.error(
-                        f"Erro ao atualizar: {erro}"
+                        mensagem
                     )
 
 
@@ -405,42 +388,58 @@ for usuario in usuarios:
         if usuario["login"] != usuario_logado["login"]:
 
 
-            if st.button(
+            confirmar = st.checkbox(
 
-                "🗑️ Excluir usuário",
+                "Confirmar exclusão",
 
-                key=f"delete_{usuario['id']}",
+                key=f"confirm_{usuario['id']}"
 
-                use_container_width=True
-
-            ):
+            )
 
 
-                try:
+            if confirmar:
 
 
-                    excluir_usuario(
+                if st.button(
+
+                    "🗑️ Excluir usuário",
+
+                    key=f"delete_{usuario['id']}",
+
+                    use_container_width=True
+
+                ):
+
+
+                    sucesso, mensagem = excluir_usuario(
 
                         usuario["id"]
 
                     )
 
 
-                    st.success(
-                        "Usuário excluído."
-                    )
+                    if sucesso:
+
+                        st.success(
+                            "Usuário excluído com sucesso!"
+                        )
+
+                        st.rerun()
 
 
-                    st.rerun()
+                    else:
+
+                        st.error(
+                            mensagem
+                        )
 
 
+        else:
 
-                except Exception as erro:
 
-
-                    st.error(
-                        f"Erro ao excluir: {erro}"
-                    )
+            st.info(
+                "🔒 Usuário atualmente conectado não pode ser excluído."
+            )
 
 
 
