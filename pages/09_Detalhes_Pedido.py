@@ -16,6 +16,57 @@ st.set_page_config(
 
 
 # =====================================================
+# AJUSTE VISUAL
+# =====================================================
+
+st.markdown(
+    """
+    <style>
+
+    h1 {
+        font-size: 26px !important;
+        margin-bottom: 10px;
+    }
+
+    h2 {
+        font-size: 18px !important;
+        margin-top: 10px;
+    }
+
+    h3 {
+        font-size: 15px !important;
+    }
+
+
+    p, div, span {
+        font-size: 13px;
+    }
+
+
+    textarea {
+
+        font-size: 13px !important;
+
+    }
+
+
+    .stButton button {
+
+        font-size: 13px;
+
+        padding: 5px 10px;
+
+    }
+
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
+
+# =====================================================
 # VALIDA PEDIDO
 # =====================================================
 
@@ -63,18 +114,23 @@ except Exception as erro:
 # CABEÇALHO
 # =====================================================
 
-st.title("📋 Detalhes do Pedido")
+st.title(
+    "📋 Detalhes do Pedido"
+)
 
 st.caption(
     f"Status atual: {pedido.get('status','-')}"
 )
 
 
+
 # =====================================================
 # CLIENTE
 # =====================================================
 
-st.subheader("👤 Cliente")
+st.markdown(
+    "### 👤 Cliente"
+)
 
 
 col1, col2, col3 = st.columns(3)
@@ -82,8 +138,9 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
 
-    st.metric(
-        "Nome",
+    st.write("**Nome**")
+
+    st.write(
         pedido.get(
             "cliente_nome",
             "-"
@@ -93,8 +150,9 @@ with col1:
 
 with col2:
 
-    st.metric(
-        "CPF",
+    st.write("**CPF**")
+
+    st.write(
         pedido.get(
             "cliente_cpf",
             "-"
@@ -104,8 +162,9 @@ with col2:
 
 with col3:
 
-    st.metric(
-        "Telefone",
+    st.write("**Telefone**")
+
+    st.write(
         pedido.get(
             "cliente_telefone",
             "-"
@@ -115,10 +174,13 @@ with col3:
 
 
 # =====================================================
-# PEDIDO
+# INFORMAÇÕES DO PEDIDO
 # =====================================================
 
-st.subheader("🎁 Pedido")
+st.markdown(
+    "### 🎁 Pedido"
+)
+
 
 
 col1, col2, col3, col4 = st.columns(4)
@@ -126,8 +188,9 @@ col1, col2, col3, col4 = st.columns(4)
 
 with col1:
 
-    st.metric(
-        "Cesta",
+    st.write("**Cesta**")
+
+    st.write(
         pedido.get(
             "cesta_nome",
             "-"
@@ -137,8 +200,9 @@ with col1:
 
 with col2:
 
-    st.metric(
-        "Pagamento",
+    st.write("**Pagamento**")
+
+    st.write(
         pedido.get(
             "pagamento",
             "-"
@@ -148,8 +212,9 @@ with col2:
 
 with col3:
 
-    st.metric(
-        "Entrega",
+    st.write("**Data entrega**")
+
+    st.write(
         pedido.get(
             "data_entrega",
             "-"
@@ -159,8 +224,9 @@ with col3:
 
 with col4:
 
-    st.metric(
-        "Período",
+    st.write("**Período**")
+
+    st.write(
         pedido.get(
             "periodo_entrega",
             "-"
@@ -170,16 +236,17 @@ with col4:
 
 
 # =====================================================
-# PRODUTOS E ADICIONAIS
+# PRODUTOS / ADICIONAIS
 # =====================================================
 
 col1, col2 = st.columns(2)
 
 
+
 with col1:
 
-    st.subheader(
-        "🛒 Produtos"
+    st.markdown(
+        "### 🛒 Produtos"
     )
 
     produtos = pedido.get(
@@ -206,8 +273,8 @@ with col1:
 
 with col2:
 
-    st.subheader(
-        "🎀 Adicionais"
+    st.markdown(
+        "### 🎀 Adicionais"
     )
 
 
@@ -219,7 +286,7 @@ with col2:
 
     if adicionais:
 
-        st.success(
+        st.write(
             adicionais
         )
 
@@ -232,7 +299,7 @@ with col2:
 
 
 # =====================================================
-# MENSAGENS
+# TEXTOS
 # =====================================================
 
 col1, col2 = st.columns(2)
@@ -241,8 +308,8 @@ col1, col2 = st.columns(2)
 
 with col1:
 
-    st.subheader(
-        "💌 Mensagem"
+    st.markdown(
+        "### 💌 Mensagem"
     )
 
 
@@ -253,7 +320,7 @@ with col1:
             ""
         ),
         disabled=True,
-        height=100,
+        height=70,
         key="mensagem_view"
     )
 
@@ -261,8 +328,8 @@ with col1:
 
 with col2:
 
-    st.subheader(
-        "✨ Pedido Especial"
+    st.markdown(
+        "### ✨ Pedido Especial"
     )
 
 
@@ -273,18 +340,18 @@ with col2:
             ""
         ),
         disabled=True,
-        height=100,
+        height=70,
         key="especial_view"
     )
 
 
 
 # =====================================================
-# ENTREGA
+# ENDEREÇO
 # =====================================================
 
-st.subheader(
-    "📍 Endereço de Entrega"
+st.markdown(
+    "### 📍 Endereço"
 )
 
 
@@ -295,7 +362,7 @@ st.text_area(
         ""
     ),
     disabled=True,
-    height=80,
+    height=70,
     key="endereco_view"
 )
 
@@ -305,8 +372,8 @@ st.text_area(
 # FOTOS
 # =====================================================
 
-st.subheader(
-    "📷 Fotos da Polaroid"
+st.markdown(
+    "### 📷 Fotos da Polaroid"
 )
 
 
@@ -346,7 +413,7 @@ try:
 except Exception as erro:
 
     st.error(
-        f"Erro nas fotos: {erro}"
+        f"Erro ao carregar fotos: {erro}"
     )
 
 
@@ -355,18 +422,20 @@ except Exception as erro:
 # ATENDIMENTO
 # =====================================================
 
-st.subheader(
-    "🚚 Atendimento"
+st.markdown(
+    "### 🚚 Atendimento"
 )
+
 
 
 col1, col2, col3 = st.columns(3)
 
 
+
 with col1:
 
     valor_frete = st.number_input(
-        "Frete",
+        "Frete (R$)",
         min_value=0.0,
         value=float(
             pedido.get(
@@ -379,10 +448,11 @@ with col1:
     )
 
 
+
 with col2:
 
     valor_total = st.number_input(
-        "Valor Final",
+        "Valor Final (R$)",
         min_value=0.0,
         value=float(
             pedido.get(
@@ -395,7 +465,9 @@ with col2:
     )
 
 
+
 with col3:
+
 
     status_opcoes = [
         "Recebido",
@@ -453,6 +525,9 @@ if st.button(
 # =====================================================
 # VOLTAR
 # =====================================================
+
+st.divider()
+
 
 if st.button(
     "⬅ Voltar para Pedidos",
