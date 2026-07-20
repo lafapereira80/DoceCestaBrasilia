@@ -1,5 +1,6 @@
 import streamlit as st
 
+
 from services.usuario_service import (
     listar_usuarios,
     salvar_usuario,
@@ -7,9 +8,22 @@ from services.usuario_service import (
     atualizar_usuario
 )
 
-from utils.permissao import administrador
+
+from utils.menu import (
+    configurar_pagina,
+    menu_lateral
+)
 
 
+from utils.permissao import (
+    administrador
+)
+
+
+
+# =====================================================
+# CONFIGURAÇÃO DA PÁGINA
+# =====================================================
 
 st.set_page_config(
     page_title="Usuários",
@@ -20,40 +34,18 @@ st.set_page_config(
 
 
 # =====================================================
-# PERMISSÃO
+# CONTROLE DE ACESSO
 # =====================================================
+
+configurar_pagina()
+
+menu_lateral()
 
 administrador()
 
 
+
 usuario_logado = st.session_state.usuario
-
-
-
-# =====================================================
-# CSS
-# =====================================================
-
-st.markdown(
-"""
-<style>
-
-#MainMenu{
-display:none;
-}
-
-footer{
-display:none;
-}
-
-header{
-display:none;
-}
-
-</style>
-""",
-unsafe_allow_html=True
-)
 
 
 
@@ -84,7 +76,9 @@ st.subheader(
 )
 
 
+
 col1, col2 = st.columns(2)
+
 
 
 with col1:
@@ -122,12 +116,16 @@ novo_perfil = st.selectbox(
 
 
 if st.button(
+
     "💾 Salvar Usuário",
+
     use_container_width=True
+
 ):
 
 
     if not novo_login:
+
 
         st.error(
             "Informe o login."
@@ -138,6 +136,7 @@ if st.button(
 
 
     if not nova_senha:
+
 
         st.error(
             "Informe a senha."
@@ -158,16 +157,21 @@ if st.button(
     )
 
 
+
     if sucesso:
+
 
         st.success(
             "Usuário cadastrado com sucesso!"
         )
 
+
         st.rerun()
 
 
+
     else:
+
 
         st.error(
             mensagem
@@ -183,7 +187,6 @@ st.divider()
 # LISTAGEM
 # =====================================================
 
-
 st.subheader(
     "📋 Usuários cadastrados"
 )
@@ -192,10 +195,13 @@ st.subheader(
 
 try:
 
+
     usuarios = listar_usuarios()
 
 
+
 except Exception as erro:
+
 
     st.error(
         f"Erro ao carregar usuários: {erro}"
@@ -206,6 +212,7 @@ except Exception as erro:
 
 
 if not usuarios:
+
 
     st.info(
         "Nenhum usuário cadastrado."
@@ -219,7 +226,6 @@ if not usuarios:
 # USUÁRIOS
 # =====================================================
 
-
 for usuario in usuarios:
 
 
@@ -227,7 +233,9 @@ for usuario in usuarios:
 
 
         st.markdown(
+
             f"### 👤 {usuario['login']}"
+
         )
 
 
@@ -238,9 +246,11 @@ for usuario in usuarios:
 
         with col1:
 
+
             st.write(
                 "**Perfil:**"
             )
+
 
             st.write(
                 usuario["perfil"]
@@ -250,17 +260,24 @@ for usuario in usuarios:
 
         with col2:
 
+
             st.write(
                 "**Criado em:**"
             )
 
+
             st.write(
 
                 str(
+
                     usuario.get(
+
                         "created_at",
+
                         "-"
+
                     )
+
                 )[:10]
 
             )
@@ -272,12 +289,14 @@ for usuario in usuarios:
 
             if usuario["login"] == usuario_logado["login"]:
 
+
                 st.info(
                     "Usuário atual"
                 )
 
 
             else:
+
 
                 st.warning(
                     "Gerenciar"
@@ -291,7 +310,9 @@ for usuario in usuarios:
 
 
         with st.expander(
+
             "✏️ Editar usuário"
+
         ):
 
 
@@ -329,9 +350,13 @@ for usuario in usuarios:
                 ],
 
                 index=
+
                 0
+
                 if usuario["perfil"] == "Administrador"
+
                 else 1,
+
 
                 key=f"perfil_{usuario['id']}"
 
@@ -350,6 +375,7 @@ for usuario in usuarios:
             ):
 
 
+
                 sucesso, mensagem = atualizar_usuario(
 
                     usuario["id"],
@@ -363,16 +389,21 @@ for usuario in usuarios:
                 )
 
 
+
                 if sucesso:
+
 
                     st.success(
                         "Usuário atualizado!"
                     )
 
+
                     st.rerun()
 
 
+
                 else:
+
 
                     st.error(
                         mensagem
@@ -388,6 +419,7 @@ for usuario in usuarios:
         if usuario["login"] != usuario_logado["login"]:
 
 
+
             confirmar = st.checkbox(
 
                 "Confirmar exclusão",
@@ -397,7 +429,9 @@ for usuario in usuarios:
             )
 
 
+
             if confirmar:
+
 
 
                 if st.button(
@@ -411,6 +445,7 @@ for usuario in usuarios:
                 ):
 
 
+
                     sucesso, mensagem = excluir_usuario(
 
                         usuario["id"]
@@ -418,27 +453,37 @@ for usuario in usuarios:
                     )
 
 
+
                     if sucesso:
 
+
                         st.success(
+
                             "Usuário excluído com sucesso!"
+
                         )
+
 
                         st.rerun()
 
 
+
                     else:
+
 
                         st.error(
                             mensagem
                         )
 
 
+
         else:
 
 
             st.info(
+
                 "🔒 Usuário atualmente conectado não pode ser excluído."
+
             )
 
 
@@ -451,12 +496,17 @@ st.divider()
 # VOLTAR
 # =====================================================
 
-
 if st.button(
+
     "⬅ Voltar ao início",
+
     use_container_width=True
+
 ):
 
+
     st.switch_page(
+
         "pages/99_Admin.py"
+
     )
