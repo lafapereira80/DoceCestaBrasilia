@@ -177,34 +177,6 @@ input{
 ================================ */
 
 
-.stButton button{
-
-
-    background:#8B5A2B;
-
-    color:white;
-
-    border-radius:12px;
-
-    height:45px;
-
-    font-size:15px;
-
-    font-weight:bold;
-
-}
-
-
-
-.stButton button:hover{
-
-
-    background:#6f451f;
-
-
-}
-
-
 
 /* ================================
    CARDS
