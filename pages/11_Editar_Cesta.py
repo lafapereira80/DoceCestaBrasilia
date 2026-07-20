@@ -1,31 +1,81 @@
 import streamlit as st
 
+
 from services.cesta_service import (
     buscar_cesta,
     atualizar_cesta
 )
 
-st.set_page_config(
-    page_title="Editar Cesta",
-    page_icon="✏️",
-    layout="wide"
+
+from utils.menu import (
+    configurar_pagina,
+    menu_lateral
 )
 
+
+from utils.permissao import (
+    administrador_operador
+)
+
+
+
 # =====================================================
-# VERIFICA SE EXISTE CESTA SELECIONADA
+# CONFIGURAÇÃO DA PÁGINA
+# =====================================================
+
+st.set_page_config(
+
+    page_title="Editar Cesta",
+
+    page_icon="✏️",
+
+    layout="wide"
+
+)
+
+
+
+# =====================================================
+# CONTROLE DE ACESSO
+# =====================================================
+
+configurar_pagina()
+
+menu_lateral()
+
+administrador_operador()
+
+
+
+# =====================================================
+# VERIFICA CESTA SELECIONADA
 # =====================================================
 
 if "cesta_editar" not in st.session_state:
 
-    st.error("Nenhuma cesta selecionada.")
 
-    if st.button("⬅ Voltar"):
+    st.error(
+        "Nenhuma cesta selecionada."
+    )
 
-        st.switch_page("pages/04_Cestas.py")
+
+    if st.button(
+        "⬅ Voltar"
+    ):
+
+
+        st.switch_page(
+            "pages/04_Cestas.py"
+        )
+
 
     st.stop()
 
+
+
 cesta_id = st.session_state["cesta_editar"]
+
+
 
 # =====================================================
 # CARREGA DADOS
@@ -33,103 +83,240 @@ cesta_id = st.session_state["cesta_editar"]
 
 try:
 
-    cesta = buscar_cesta(cesta_id)
+
+    cesta = buscar_cesta(
+        cesta_id
+    )
+
 
 except Exception as erro:
 
-    st.error(erro)
+
+    st.error(
+        f"Erro ao carregar cesta: {erro}"
+    )
 
     st.stop()
 
-st.title("✏️ Editar Cesta")
+
+
+# =====================================================
+# TÍTULO
+# =====================================================
+
+st.title(
+    "✏️ Editar Cesta"
+)
+
 
 st.divider()
+
+
 
 # =====================================================
 # FORMULÁRIO
 # =====================================================
 
-with st.form("form_editar_cesta"):
+with st.form(
+    "form_editar_cesta"
+):
+
 
     nome = st.text_input(
+
         "Nome da Cesta",
+
         value=cesta["nome"]
+
     )
+
+
 
     descricao = st.text_area(
+
         "Descrição",
-        value=cesta["descricao"] or ""
+
+        value=cesta.get(
+            "descricao",
+            ""
+        )
+        or ""
+
     )
+
+
 
     preco = st.number_input(
+
         "Preço (R$)",
+
         min_value=0.0,
-        value=float(cesta["preco"]),
+
+        value=float(
+            cesta["preco"]
+        ),
+
         step=1.0
+
     )
+
+
 
     imagem = st.text_input(
+
         "Imagem (URL)",
-        value=cesta["imagem"] or ""
+
+        value=cesta.get(
+            "imagem",
+            ""
+        )
+        or ""
+
     )
 
+
+
     ativa = st.checkbox(
+
         "Cesta ativa",
-        value=cesta["ativa"]
+
+        value=cesta.get(
+            "ativa",
+            True
+        )
+
     )
+
+
 
     col1, col2 = st.columns(2)
 
+
+
     with col1:
 
+
         salvar = st.form_submit_button(
+
             "💾 Salvar Alterações",
+
             use_container_width=True
+
         )
+
+
 
     with col2:
 
+
         cancelar = st.form_submit_button(
+
             "❌ Cancelar",
+
             use_container_width=True
+
         )
 
+
+
 # =====================================================
-# BOTÕES
+# CANCELAR
 # =====================================================
 
 if cancelar:
 
-    st.session_state.pop("cesta_editar", None)
 
-    st.switch_page("pages/04_Cestas.py")
+    st.session_state.pop(
 
+        "cesta_editar",
+
+        None
+
+    )
+
+
+    st.switch_page(
+
+        "pages/04_Cestas.py"
+
+    )
+
+
+
+# =====================================================
+# SALVAR
+# =====================================================
 
 if salvar:
 
+
+
     if nome.strip() == "":
 
-        st.error("Informe o nome da cesta.")
+
+        st.error(
+
+            "Informe o nome da cesta."
+
+        )
+
 
     else:
 
+
         try:
 
+
+
             atualizar_cesta(
+
                 cesta_id,
+
                 nome.strip(),
+
                 descricao.strip(),
+
                 preco,
+
                 imagem.strip(),
+
                 ativa
+
             )
 
-            st.success("Cesta atualizada com sucesso!")
 
-            st.session_state.pop("cesta_editar", None)
 
-            st.switch_page("pages/04_Cestas.py")
+            st.success(
+
+                "Cesta atualizada com sucesso!"
+
+            )
+
+
+
+            st.session_state.pop(
+
+                "cesta_editar",
+
+                None
+
+            )
+
+
+
+            st.switch_page(
+
+                "pages/04_Cestas.py"
+
+            )
+
+
 
         except Exception as erro:
 
-            st.error(erro)
+
+            st.error(
+
+                f"Erro ao atualizar cesta: {erro}"
+
+            )
