@@ -7,6 +7,11 @@ from services.usuario_service import (
 )
 
 
+from utils.menu import (
+    configurar_pagina
+)
+
+
 
 # =====================================================
 # CONFIGURAÇÃO DA PÁGINA
@@ -27,24 +32,33 @@ st.set_page_config(
 
 
 # =====================================================
-# CSS GERAL
+# CONFIGURAÇÃO GERAL
+# =====================================================
+
+configurar_pagina()
+
+
+
+# =====================================================
+# CSS
 # =====================================================
 
 st.markdown(
 """
 <style>
 
-/* =====================================
-   REMOVE ELEMENTOS DO STREAMLIT
-===================================== */
 
+/* REMOVE SIDEBAR */
 
 section[data-testid="stSidebar"]{
 
-    display:none !important;
+    display:none;
 
 }
 
+
+
+/* REMOVE BOTÃO SHOW/HIDE */
 
 [data-testid="collapsedControl"]{
 
@@ -53,65 +67,74 @@ section[data-testid="stSidebar"]{
 }
 
 
+
+/* REMOVE MENU SUPERIOR */
+
 #MainMenu{
 
-    display:none !important;
+    display:none;
 
 }
+
 
 
 header{
 
-    display:none !important;
+    display:none;
 
 }
+
 
 
 footer{
 
-    display:none !important;
+    display:none;
 
 }
 
 
 
-/* =====================================
-   ÁREA PRINCIPAL
-===================================== */
-
+/* CONTAINER PRINCIPAL */
 
 .block-container{
 
+    max-width:900px;
 
-    max-width:600px;
-
-    padding-top:25px;
+    padding-top:20px;
 
     padding-bottom:30px;
-
 
 }
 
 
 
-/* =====================================
-   TÍTULOS
-===================================== */
+/* LOGO */
 
+.logo-container{
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    margin-bottom:10px;
+
+}
+
+
+
+/* TITULOS */
 
 .titulo{
 
-
     text-align:center;
 
-    color:#8B5A2B;
-
-    font-size:30px;
+    font-size:28px;
 
     font-weight:bold;
 
-    margin-top:10px;
-
+    color:#8B5A2B;
 
 }
 
@@ -119,65 +142,49 @@ footer{
 
 .subtitulo{
 
-
     text-align:center;
-
-    color:#777;
 
     font-size:16px;
 
-    margin-bottom:30px;
+    color:#777;
 
-
-}
-
-
-
-/* =====================================
-   CAMPOS
-===================================== */
-
-
-input{
-
-
-    border-radius:10px !important;
-
+    margin-bottom:25px;
 
 }
 
 
 
-div[data-baseweb="input"]{
+/* LOGIN BOX */
 
+.login-box{
 
-    border-radius:10px !important;
+    background:#fffaf5;
 
+    padding:25px;
+
+    border-radius:15px;
+
+    border:1px solid #ead8c7;
 
 }
 
 
 
-/* =====================================
-   BOTÕES
-===================================== */
-
+/* BOTÕES */
 
 .stButton button{
-
 
     background:#8B5A2B;
 
     color:white;
 
-    border-radius:12px;
+    border-radius:10px;
 
     height:45px;
 
+    font-size:15px;
+
     font-weight:bold;
-
-    width:100%;
-
 
 }
 
@@ -185,32 +192,30 @@ div[data-baseweb="input"]{
 
 .stButton button:hover{
 
-
     background:#6f451f;
-
 
 }
 
 
 
-/* =====================================
-   LINKS DO PAINEL
-===================================== */
+/* CARDS */
 
-
-div[data-testid="stPageLink"]{
-
+.card{
 
     background:#fffaf5;
 
-    border-radius:12px;
+    padding:20px;
 
-    padding:10px;
+    border-radius:15px;
 
     border:1px solid #ead8c7;
 
+    text-align:center;
+
+    font-size:18px;
 
 }
+
 
 
 </style>
@@ -220,62 +225,49 @@ unsafe_allow_html=True
 
 
 
-
-
 # =====================================================
-# LOGO CENTRALIZADA
+# LOGO
 # =====================================================
-
 
 logo = Path(
-
     "assets/logo.webp"
-
 )
-
 
 
 if logo.exists():
 
 
-    col1,col2,col3 = st.columns(
+    st.markdown(
 
-        [1,2,1]
+        "<div class='logo-container'>",
+
+        unsafe_allow_html=True
 
     )
 
 
-    with col2:
+    st.image(
+
+        str(logo),
+
+        width=140
+
+    )
 
 
-        st.image(
+    st.markdown(
 
-            str(logo),
+        "</div>",
 
-            width=150
+        unsafe_allow_html=True
 
-        )
+    )
 
-
-
-
-
-# =====================================================
-# CABEÇALHO
-# =====================================================
 
 
 st.markdown(
 
-"""
-<div class="titulo">
-Painel Administrativo
-</div>
-
-<div class="subtitulo">
-Doce Cesta Brasília
-</div>
-""",
+"<div class='titulo'>Painel Administrativo</div>",
 
 unsafe_allow_html=True
 
@@ -283,31 +275,44 @@ unsafe_allow_html=True
 
 
 
+st.markdown(
+
+"<div class='subtitulo'>Doce Cesta Brasília</div>",
+
+unsafe_allow_html=True
+
+)
+
 
 
 # =====================================================
-# CONTROLE DE SESSÃO
+# CONTROLE LOGIN
 # =====================================================
-
 
 if "usuario" not in st.session_state:
 
 
     st.session_state.usuario = None
 # =====================================================
-# TELA DE LOGIN
+# LOGIN
 # =====================================================
 
 
 if st.session_state.usuario is None:
 
 
-
     st.markdown(
-        "<h3 style='text-align:center;'>🔐 Acesso Administrativo</h3>",
+
+        "<div class='login-box'>",
+
         unsafe_allow_html=True
+
     )
 
+
+    st.subheader(
+        "🔐 Acesso Administrativo"
+    )
 
 
     login = st.text_input(
@@ -317,7 +322,6 @@ if st.session_state.usuario is None:
         placeholder="Digite seu usuário"
 
     )
-
 
 
     senha = st.text_input(
@@ -332,13 +336,9 @@ if st.session_state.usuario is None:
 
 
 
-    st.write("")
-
-
-
     entrar = st.button(
 
-        "ENTRAR",
+        "Entrar",
 
         use_container_width=True
 
@@ -347,7 +347,6 @@ if st.session_state.usuario is None:
 
 
     if entrar:
-
 
 
         if not login or not senha:
@@ -359,46 +358,51 @@ if st.session_state.usuario is None:
 
             )
 
-            st.stop()
-
-
-
-
-        usuario = autenticar_usuario(
-
-            login,
-
-            senha
-
-        )
-
-
-
-        if usuario:
-
-
-
-            st.session_state.usuario = usuario
-
-
-            st.rerun()
-
-
 
         else:
 
 
 
-            st.error(
+            usuario = autenticar_usuario(
 
-                "Usuário ou senha inválidos."
+                login,
+
+                senha
 
             )
 
 
 
-    st.stop()
+            if usuario:
 
+
+                st.session_state.usuario = usuario
+
+                st.rerun()
+
+
+
+            else:
+
+
+                st.error(
+
+                    "Usuário ou senha inválidos."
+
+                )
+
+
+
+    st.markdown(
+
+        "</div>",
+
+        unsafe_allow_html=True
+
+    )
+
+
+    st.stop()
 
 
 
@@ -414,20 +418,14 @@ usuario = st.session_state.usuario
 
 
 
-
-st.success(
-
-    f"👤 {usuario['login']} | Perfil: {usuario['perfil']}"
-
-)
-
-
-
+# =====================================================
+# CABEÇALHO USUÁRIO
+# =====================================================
 
 
 col1,col2 = st.columns(
 
-    [3,1]
+    [4,1]
 
 )
 
@@ -436,9 +434,9 @@ col1,col2 = st.columns(
 with col1:
 
 
-    st.caption(
+    st.success(
 
-        "Usuário autenticado no sistema."
+        f"👤 {usuario['login']} | Perfil: {usuario['perfil']}"
 
     )
 
@@ -462,41 +460,37 @@ with col2:
 
         st.session_state.usuario = None
 
-
         st.rerun()
-
 
 
 
 
 st.divider()
 
+
+
 # =====================================================
-# PAINEL DE MÓDULOS
+# TÍTULO DOS MÓDULOS
 # =====================================================
 
 
 st.markdown(
 
-"""
-<h3 style="text-align:center;">
-📂 Módulos do Sistema
-</h3>
-""",
-
-unsafe_allow_html=True
+"### 📂 Módulos do Sistema",
 
 )
 
 
 
 
+
 # =====================================================
-# PRIMEIRA LINHA
+# PRIMEIRA LINHA DE MÓDULOS
 # =====================================================
 
 
 col1,col2,col3 = st.columns(3)
+
 
 
 
@@ -515,6 +509,7 @@ with col1:
 
 
 
+
 with col2:
 
 
@@ -527,6 +522,7 @@ with col2:
         use_container_width=True
 
     )
+
 
 
 
@@ -546,13 +542,13 @@ with col3:
 
 
 
-
 # =====================================================
-# SEGUNDA LINHA
+# SEGUNDA LINHA DE MÓDULOS
 # =====================================================
 
 
 col1,col2,col3 = st.columns(3)
+
 
 
 
@@ -568,6 +564,7 @@ with col1:
         use_container_width=True
 
     )
+
 
 
 
@@ -588,6 +585,17 @@ with col2:
         )
 
 
+    else:
+
+
+        st.info(
+
+            "Sem acesso"
+
+        )
+
+
+
 
 with col3:
 
@@ -606,68 +614,15 @@ with col3:
         )
 
 
+    else:
 
 
+        st.info(
 
-# =====================================================
-# TERCEIRA LINHA
-# =====================================================
-
-
-col1,col2,col3 = st.columns(3)
-
-
-
-with col1:
-
-
-    st.page_link(
-
-        "pages/12_Produtos_da_Cesta.py",
-
-        label="📦 Produtos da Cesta",
-
-        use_container_width=True
-
-    )
-
-
-
-with col2:
-
-
-    st.page_link(
-
-        "pages/14_Configurar_Cesta.py",
-
-        label="⚙️ Configurar Cesta",
-
-        use_container_width=True
-
-    )
-
-
-
-with col3:
-
-
-    if usuario["perfil"] == "Administrador":
-
-
-        st.page_link(
-
-            "pages/08_Admin.py",
-
-            label="🔧 Configurações",
-
-            use_container_width=True
+            "Sem acesso"
 
         )
-
-
-
-
-
+        
 # =====================================================
 # AVISO DE PERFIL
 # =====================================================
@@ -678,11 +633,13 @@ if usuario["perfil"] != "Administrador":
 
     st.info(
 
-        "Perfil Operador: acesso limitado aos módulos operacionais."
+        """
+        👷 Perfil Operador
+
+        Você possui acesso somente aos módulos operacionais.
+        """
 
     )
-
-
 
 
 
@@ -698,14 +655,9 @@ st.divider()
 st.markdown(
 
 """
-<div style="
-text-align:center;
-font-size:12px;
-color:#777;
-padding:10px;
-">
+<div class="rodape">
 
-© 2026 Doce Cesta Brasília<br>
+Doce Cesta Brasília<br>
 Sistema Administrativo
 
 </div>
