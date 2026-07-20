@@ -384,11 +384,12 @@ else:
 if cesta:
 
 
-    col1,col2 = st.columns(
+    col1, col2 = st.columns(
 
         [1,2]
 
     )
+
 
 
     with col1:
@@ -396,11 +397,62 @@ if cesta:
 
         if cesta.get("imagem"):
 
+
+            st.markdown(
+
+            """
+            <style>
+
+            .imagem-cesta img{
+
+                border-radius:15px;
+
+                border:1px solid #ead8c7;
+
+            }
+
+            </style>
+            """,
+
+            unsafe_allow_html=True
+
+            )
+
+
+
+            st.markdown(
+
+                '<div class="imagem-cesta">',
+
+                unsafe_allow_html=True
+
+            )
+
+
             st.image(
 
                 cesta["imagem"],
 
-                use_container_width=True
+                width=220
+
+            )
+
+
+            st.markdown(
+
+                '</div>',
+
+                unsafe_allow_html=True
+
+            )
+
+
+        else:
+
+
+            st.info(
+
+                "Imagem da cesta não cadastrada."
 
             )
 
@@ -411,6 +463,7 @@ if cesta:
 
         if cesta.get("descricao"):
 
+
             st.info(
 
                 cesta["descricao"]
@@ -418,20 +471,47 @@ if cesta:
             )
 
 
-
         if cesta.get("preco") is not None:
 
 
-            st.success(
+            preco = float(
 
-                f"💰 Valor da cesta: R$ {float(cesta['preco']):,.2f}"
-
-                .replace(",", "X")
-                .replace(".", ",")
-                .replace("X", ".")
+                cesta["preco"]
 
             )
-            # ==========================================================
+
+
+            st.markdown(
+
+                f"""
+                <div style="
+                background:#fffaf5;
+                border:1px solid #ead8c7;
+                border-radius:12px;
+                padding:12px;
+                margin-top:10px;
+                ">
+
+                <b>🎁 Valor da cesta</b><br>
+
+                <span style="
+                font-size:22px;
+                color:#8B5A2B;
+                font-weight:bold;
+                ">
+
+                R$ {preco:,.2f}
+
+                </span>
+
+                </div>
+                """,
+
+                unsafe_allow_html=True
+
+            )
+            
+# ==========================================================
 # PERSONALIZAÇÃO DA CESTA
 # ==========================================================
 
