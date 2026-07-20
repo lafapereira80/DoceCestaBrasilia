@@ -5,6 +5,31 @@ import uuid
 
 
 # =====================================================
+# LISTAR CESTAS
+# =====================================================
+
+def listar_cestas():
+
+    resposta = (
+
+        supabase
+
+        .table("cestas")
+
+        .select("*")
+
+        .order("nome")
+
+        .execute()
+
+    )
+
+
+    return resposta.data or []
+
+
+
+# =====================================================
 # UPLOAD IMAGEM DA CESTA
 # =====================================================
 
@@ -17,29 +42,33 @@ def upload_imagem_cesta(arquivo):
 
 
 
-    extensao = arquivo.name.split(".")[-1]
-
-
-    nome_arquivo = (
-
-        f"{uuid.uuid4()}."
-
-        f"{extensao}"
-
-    )
-
-
-
-    caminho = (
-
-        f"cestas/{nome_arquivo}"
-
-    )
-
-
-
     try:
 
+
+        # cria nome único
+
+        extensao = arquivo.name.split(".")[-1]
+
+
+        nome_arquivo = (
+
+            f"{uuid.uuid4()}."
+
+            f"{extensao}"
+
+        )
+
+
+
+        caminho = (
+
+            f"cestas/{nome_arquivo}"
+
+        )
+
+
+
+        # upload para storage
 
         supabase.storage.from_(
 
@@ -55,13 +84,15 @@ def upload_imagem_cesta(arquivo):
 
                 "content-type":
 
-                    arquivo.type
+                arquivo.type
 
             }
 
         )
 
 
+
+        # URL pública
 
         url = (
 
@@ -94,13 +125,21 @@ def upload_imagem_cesta(arquivo):
 
 
 
-
-
 # =====================================================
-# LISTAR CESTAS
+# CADASTRAR CESTA
 # =====================================================
 
-def listar_cestas():
+def cadastrar_cesta(
+
+    nome,
+
+    descricao,
+
+    preco,
+
+    imagem=None
+
+):
 
 
     resposta = (
@@ -109,64 +148,40 @@ def listar_cestas():
 
         .table("cestas")
 
-        .select("*")
+        .insert({
 
-        .order("nome")
+            "nome":
+
+                nome,
+
+
+            "descricao":
+
+                descricao,
+
+
+            "preco":
+
+                preco,
+
+
+            "imagem":
+
+                imagem,
+
+
+            "ativa":
+
+                True
+
+        })
 
         .execute()
 
     )
 
 
-    return resposta.data or []
-
-
-
-
-
-# =====================================================
-# CADASTRAR CESTA
-# =====================================================
-
-def cadastrar_cesta(
-    nome,
-    descricao,
-    preco,
-    imagem
-):
-
-
-    supabase.table("cestas").insert({
-
-
-        "nome":
-
-            nome,
-
-
-        "descricao":
-
-            descricao,
-
-
-        "preco":
-
-            preco,
-
-
-        "imagem":
-
-            imagem,
-
-
-        "ativa":
-
-            True
-
-
-    }).execute()
-
-
+    return resposta.data
 
 
 
@@ -199,15 +214,16 @@ def excluir_cesta(cesta_id):
 
 
 
-
-
 # =====================================================
 # ALTERAR STATUS
 # =====================================================
 
 def alterar_status_cesta(
+
     cesta_id,
+
     ativa
+
 ):
 
 
@@ -236,8 +252,6 @@ def alterar_status_cesta(
         .execute()
 
     )
-
-
 
 
 
@@ -275,19 +289,24 @@ def buscar_cesta(cesta_id):
 
 
 
-
-
 # =====================================================
 # ATUALIZAR CESTA
 # =====================================================
 
 def atualizar_cesta(
+
     cesta_id,
+
     nome,
+
     descricao,
+
     preco,
+
     imagem,
+
     ativa
+
 ):
 
 
@@ -298,7 +317,6 @@ def atualizar_cesta(
         .table("cestas")
 
         .update({
-
 
             "nome":
 
@@ -323,7 +341,6 @@ def atualizar_cesta(
             "ativa":
 
                 ativa
-
 
         })
 
