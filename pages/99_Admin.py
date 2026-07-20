@@ -104,8 +104,6 @@ if not st.session_state.admin_logado:
 
 st.success("Administrador conectado.")
 
-st.info("Selecione um módulo para começar.")
-
 st.subheader("📂 Módulos do Sistema")
 
 col1, col2, col3 = st.columns(3)
