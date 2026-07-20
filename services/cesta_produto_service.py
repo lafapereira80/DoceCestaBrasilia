@@ -8,7 +8,6 @@ from config.supabase import supabase
 
 def listar_produtos_da_cesta(cesta_id):
 
-
     resposta = (
 
         supabase
@@ -26,14 +25,103 @@ def listar_produtos_da_cesta(cesta_id):
 
     )
 
-
     return resposta.data or []
 
 
 
 
 # =====================================================
+# SALVAR PRODUTOS DA CESTA
+# (USADO NA PÁGINA 12)
+# =====================================================
+
+def salvar_produtos_da_cesta(
+    cesta_id,
+    produtos_selecionados
+):
+
+
+    # remove vínculos atuais
+
+    (
+
+        supabase
+
+        .table("cesta_produtos")
+
+        .delete()
+
+        .eq(
+            "cesta_id",
+            cesta_id
+        )
+
+        .execute()
+
+    )
+
+
+
+    ordem = 0
+
+
+
+    for produto_id in produtos_selecionados:
+
+
+        (
+
+            supabase
+
+            .table("cesta_produtos")
+
+            .insert({
+
+                "cesta_id":
+
+                    cesta_id,
+
+
+                "produto_id":
+
+                    produto_id,
+
+
+                "quantidade":
+
+                    1,
+
+
+                "min_escolhas":
+
+                    1,
+
+
+                "max_escolhas":
+
+                    1,
+
+
+                "ordem":
+
+                    ordem
+
+            })
+
+            .execute()
+
+        )
+
+
+        ordem += 1
+
+
+
+
+
+# =====================================================
 # CARREGAR CONFIGURAÇÃO COMPLETA DA CESTA
+# (USADO NO APP.PY)
 # =====================================================
 
 def carregar_configuracao_cesta(cesta_id):
@@ -58,7 +146,6 @@ def carregar_configuracao_cesta(cesta_id):
 
 
     if not resposta.data:
-
 
         return []
 
@@ -92,7 +179,6 @@ def carregar_configuracao_cesta(cesta_id):
         )
 
 
-
         produto = produto_resp.data
 
 
@@ -100,7 +186,6 @@ def carregar_configuracao_cesta(cesta_id):
         if not produto:
 
             continue
-
 
 
 
@@ -137,9 +222,7 @@ def carregar_configuracao_cesta(cesta_id):
 
 
 
-
         if categoria_nome not in categorias:
-
 
 
             categorias[categoria_nome] = {
@@ -189,17 +272,16 @@ def carregar_configuracao_cesta(cesta_id):
 
 
 
+
 # =====================================================
 # SALVAR CONFIGURAÇÃO COMPLETA DA CESTA
+# (USADO NA PÁGINA 14)
 # =====================================================
 
 def salvar_configuracao_cesta(
     cesta_id,
     configuracoes
 ):
-
-
-    # remove configuração antiga
 
 
     (
@@ -229,35 +311,7 @@ def salvar_configuracao_cesta(
 
 
 
-        nome_categoria = categoria["categoria"]
-
-
-
-        min_escolhas = categoria.get(
-
-            "min_escolhas",
-
-            0
-
-        )
-
-
-
-        max_escolhas = categoria.get(
-
-            "max_escolhas",
-
-            0
-
-        )
-
-
-
-        produtos = categoria["produtos"]
-
-
-
-        for produto_id in produtos:
+        for produto_id in categoria["produtos"]:
 
 
 
@@ -270,11 +324,9 @@ def salvar_configuracao_cesta(
                 .insert({
 
 
-
                     "cesta_id":
 
                         cesta_id,
-
 
 
                     "produto_id":
@@ -282,11 +334,9 @@ def salvar_configuracao_cesta(
                         produto_id,
 
 
-
                     "categoria":
 
-                        nome_categoria,
-
+                        categoria["categoria"],
 
 
                     "quantidade":
@@ -294,17 +344,20 @@ def salvar_configuracao_cesta(
                         1,
 
 
-
                     "min_escolhas":
 
-                        min_escolhas,
-
+                        categoria.get(
+                            "min_escolhas",
+                            1
+                        ),
 
 
                     "max_escolhas":
 
-                        max_escolhas,
-
+                        categoria.get(
+                            "max_escolhas",
+                            1
+                        ),
 
 
                     "ordem":
@@ -312,13 +365,11 @@ def salvar_configuracao_cesta(
                         ordem
 
 
-
                 })
 
                 .execute()
 
             )
-
 
 
             ordem += 1
@@ -334,7 +385,6 @@ def salvar_configuracao_cesta(
 def excluir_configuracao_cesta(
     cesta_id
 ):
-
 
     (
 
