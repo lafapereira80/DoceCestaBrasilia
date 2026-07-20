@@ -273,13 +273,13 @@ status = st.selectbox(
     "Status do Pedido",
     [
         "Recebido",
-        "Em análise",
+        "Pago",
         "Desistência",
         "Entregue"
     ],
     index=[
         "Recebido",
-        "Em análise",
+        "pago",
         "Desistência",
         "Entregue"
     ].index(
