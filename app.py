@@ -548,7 +548,7 @@ if cesta:
                 # --------------------------------
 
 
-                if maximo <= 1:
+               if maximo == 1:
 
     escolhido = st.radio(
         "Escolha uma opção",
@@ -559,56 +559,22 @@ if cesta:
 
     selecoes_cliente[categoria] = [escolhido]
 
+else:
 
-                # --------------------------------
-                # MAIS DE UMA ESCOLHA
-                # --------------------------------
-
-
-                else:
-
-
-
-                    escolhidos = st.multiselect(
-
-
-
-                        f"Escolha entre {minimo} e {maximo} opções",
-
-
-
-                        produtos,
-
-
-
-                        format_func=lambda p:
-
-                            p["nome"],
-
-
-
-                        max_selections=maximo,
-
-
-
-                        key=f"multi_{categoria}"
-
-
-
-                    )
-
-
-
-                  if minimo > 0 and len(escolhidos) < minimo:
-
-    st.caption(
-        f"⚠ Escolha pelo menos {minimo} opção(ões)."
+    escolhidos = st.multiselect(
+        f"Escolha entre {minimo} e {maximo} opções",
+        produtos,
+        format_func=lambda p: p["nome"],
+        max_selections=maximo,
+        key=f"multi_{categoria}"
     )
 
+    if len(escolhidos) < minimo:
+        st.warning(
+            f"Escolha pelo menos {minimo} opção(ões)."
+        )
 
-                    selecoes_cliente[categoria] = escolhidos
-
-
+    selecoes_cliente[categoria] = escolhidos
 
     else:
 
