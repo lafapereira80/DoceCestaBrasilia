@@ -39,7 +39,7 @@ configurar_pagina()
 
 
 # =====================================================
-# CSS VISUAL
+# CSS
 # =====================================================
 
 st.markdown(
@@ -47,17 +47,50 @@ st.markdown(
 <style>
 
 
+h1{
+
+font-size:26px !important;
+
+}
+
+
+h2{
+
+font-size:18px !important;
+
+}
+
+
+p,div,span{
+
+font-size:13px;
+
+}
+
+
+
+.stButton button{
+
+height:35px;
+
+font-size:13px;
+
+}
+
+
+
 .titulo{
 
 text-align:center;
 
-font-size:32px;
+font-size:30px;
 
 font-weight:bold;
 
 color:#8B5A2B;
 
 }
+
 
 
 .subtitulo{
@@ -67,6 +100,15 @@ text-align:center;
 color:#777;
 
 }
+
+
+
+.block-container{
+
+padding-top:1rem;
+
+}
+
 
 
 </style>
@@ -85,11 +127,10 @@ logo = Path(
 )
 
 
-
 if logo.exists():
 
 
-    col1, col2, col3 = st.columns(
+    col1,col2,col3 = st.columns(
         [2,1,2]
     )
 
@@ -101,7 +142,7 @@ if logo.exists():
 
             str(logo),
 
-            width=140
+            width=130
 
         )
 
@@ -109,19 +150,18 @@ if logo.exists():
 
 st.markdown(
 
-    "<div class='titulo'>Painel Administrativo</div>",
+"<div class='titulo'>Painel Administrativo</div>",
 
-    unsafe_allow_html=True
+unsafe_allow_html=True
 
 )
 
 
-
 st.markdown(
 
-    "<div class='subtitulo'>Doce Cesta Brasília</div>",
+"<div class='subtitulo'>Doce Cesta Brasília</div>",
 
-    unsafe_allow_html=True
+unsafe_allow_html=True
 
 )
 
@@ -132,7 +172,7 @@ st.divider()
 
 
 # =====================================================
-# CONTROLE DE LOGIN
+# CONTROLE LOGIN
 # =====================================================
 
 if "usuario" not in st.session_state:
@@ -142,7 +182,7 @@ if "usuario" not in st.session_state:
 
 
 # =====================================================
-# TELA LOGIN
+# LOGIN
 # =====================================================
 
 if st.session_state.usuario is None:
@@ -154,11 +194,9 @@ if st.session_state.usuario is None:
     )
 
 
-
     login = st.text_input(
         "Usuário"
     )
-
 
 
     senha = st.text_input(
@@ -171,17 +209,13 @@ if st.session_state.usuario is None:
 
 
 
-    entrar = st.button(
+    if st.button(
 
         "Entrar",
 
         use_container_width=True
 
-    )
-
-
-
-    if entrar:
+    ):
 
 
         usuario = autenticar_usuario(
@@ -193,15 +227,12 @@ if st.session_state.usuario is None:
         )
 
 
-
         if usuario:
 
 
             st.session_state.usuario = usuario
 
-
             st.rerun()
-
 
 
         else:
@@ -228,7 +259,7 @@ usuario = st.session_state.usuario
 
 
 # =====================================================
-# MENU LATERAL NOVO
+# MENU NOVO
 # =====================================================
 
 menu_lateral()
@@ -236,34 +267,38 @@ menu_lateral()
 
 
 # =====================================================
-# IDENTIFICAÇÃO
+# INFORMAÇÕES USUÁRIO
 # =====================================================
 
-st.success(
-
-    f"Usuário conectado: {usuario['login']} | Perfil: {usuario['perfil']}"
-
-)
+col1,col2 = st.columns([4,1])
 
 
-
-# =====================================================
-# SAIR
-# =====================================================
-
-if st.button(
-
-    "🚪 Sair",
-
-    use_container_width=True
-
-):
+with col1:
 
 
-    st.session_state.usuario = None
+    st.success(
+
+        f"👤 {usuario['login']} | Perfil: {usuario['perfil']}"
+
+    )
 
 
-    st.rerun()
+
+with col2:
+
+
+    if st.button(
+
+        "🚪 Sair",
+
+        use_container_width=True
+
+    ):
+
+
+        st.session_state.usuario = None
+
+        st.rerun()
 
 
 
@@ -284,10 +319,10 @@ st.subheader(
 
 
 # =====================================================
-# MÓDULOS DISPONÍVEIS PARA TODOS
+# PRIMEIRA LINHA
 # =====================================================
 
-col1, col2, col3 = st.columns(3)
+col1,col2,col3 = st.columns(3)
 
 
 
@@ -324,6 +359,44 @@ with col2:
 with col3:
 
 
+    st.page_link(
+
+        "pages/04_Cestas.py",
+
+        label="🎁 Cestas",
+
+        use_container_width=True
+
+    )
+
+
+
+# =====================================================
+# SEGUNDA LINHA
+# =====================================================
+
+col1,col2,col3 = st.columns(3)
+
+
+
+with col1:
+
+
+    st.page_link(
+
+        "pages/05_Produtos.py",
+
+        label="🛒 Produtos",
+
+        use_container_width=True
+
+    )
+
+
+
+with col2:
+
+
     if usuario["perfil"] == "Administrador":
 
 
@@ -339,49 +412,10 @@ with col3:
 
 
 
-# =====================================================
-# SOMENTE ADMINISTRADOR
-# =====================================================
-
-if usuario["perfil"] == "Administrador":
+with col3:
 
 
-
-    col1, col2, col3 = st.columns(3)
-
-
-
-    with col1:
-
-
-        st.page_link(
-
-            "pages/04_Cestas.py",
-
-            label="🎁 Cestas",
-
-            use_container_width=True
-
-        )
-
-
-
-    with col2:
-
-
-        st.page_link(
-
-            "pages/05_Produtos.py",
-
-            label="🛒 Produtos",
-
-            use_container_width=True
-
-        )
-
-
-
-    with col3:
+    if usuario["perfil"] == "Administrador":
 
 
         st.page_link(
@@ -396,7 +430,11 @@ if usuario["perfil"] == "Administrador":
 
 
 
-else:
+# =====================================================
+# AVISO OPERADOR
+# =====================================================
+
+if usuario["perfil"] != "Administrador":
 
 
     st.info(
