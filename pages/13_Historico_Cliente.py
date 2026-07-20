@@ -136,7 +136,13 @@ st.divider()
 
 st.subheader("📋 Histórico de Compras")
 
-for pedido in pedidos:
+st.write("Total no histórico:", len(pedidos))
+
+for i, pedido in enumerate(pedidos):
+
+    st.write("Pedido número:", i + 1)
+
+    with st.container(border=True):
 
     with st.container(border=True):
 
