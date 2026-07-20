@@ -19,34 +19,41 @@ st.markdown(
 """
 <style>
 
-#MainMenu{
-display:none;
-}
+/* Esconde menu padrão do Streamlit */
 
-footer{
-display:none;
+#MainMenu{
+    display:none;
 }
 
 header{
-display:none;
+    display:none;
+}
+
+footer{
+    display:none;
 }
 
 
-/* remove menu lateral padrão */
+/* Esconde lista automática de páginas */
+
+[data-testid="stSidebarNav"]{
+    display:none;
+}
+
+
+/* Ajusta o espaço lateral */
 
 section[data-testid="stSidebar"]{
 
-background:#faf7f2;
+    padding-top:20px;
 
 }
 
 
-/* botão menu */
+/* Remove botão de recolher */
 
 [data-testid="collapsedControl"]{
-
-display:none;
-
+    display:none;
 }
 
 
@@ -74,28 +81,10 @@ color:#777;
 
 
 
-.card{
-
-background:white;
-
-border-radius:15px;
-
-padding:25px;
-
-border:1px solid #eee;
-
-text-align:center;
-
-}
-
-
-
 </style>
-
 """,
 unsafe_allow_html=True
 )
-
 
 
 # =====================================================
