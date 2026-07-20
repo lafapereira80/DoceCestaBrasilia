@@ -11,7 +11,6 @@ st.set_page_config(
 )
 
 
-
 # =====================================================
 # CSS
 # =====================================================
@@ -33,6 +32,8 @@ display:none;
 }
 
 
+/* remove menu lateral padrão */
+
 section[data-testid="stSidebar"]{
 
 background:#faf7f2;
@@ -40,7 +41,57 @@ background:#faf7f2;
 }
 
 
+/* botão menu */
+
+[data-testid="collapsedControl"]{
+
+display:none;
+
+}
+
+
+
+.titulo{
+
+text-align:center;
+
+font-size:32px;
+
+font-weight:bold;
+
+color:#8B5A2B;
+
+}
+
+
+.subtitulo{
+
+text-align:center;
+
+color:#777;
+
+}
+
+
+
+.card{
+
+background:white;
+
+border-radius:15px;
+
+padding:25px;
+
+border:1px solid #eee;
+
+text-align:center;
+
+}
+
+
+
 </style>
+
 """,
 unsafe_allow_html=True
 )
@@ -48,7 +99,53 @@ unsafe_allow_html=True
 
 
 # =====================================================
-# LOGIN
+# LOGO
+# =====================================================
+
+
+logo = Path(
+    "assets/logo.webp"
+)
+
+
+if logo.exists():
+
+    col1,col2,col3 = st.columns([2,1,2])
+
+    with col2:
+
+        st.image(
+            str(logo),
+            width=140
+        )
+
+
+
+st.markdown(
+
+"<div class='titulo'>Painel Administrativo</div>",
+
+unsafe_allow_html=True
+
+)
+
+
+st.markdown(
+
+"<div class='subtitulo'>Doce Cesta Brasília</div>",
+
+unsafe_allow_html=True
+
+)
+
+
+
+st.divider()
+
+
+
+# =====================================================
+# CONTROLE LOGIN
 # =====================================================
 
 
@@ -58,32 +155,16 @@ if "usuario" not in st.session_state:
 
 
 
+# =====================================================
+# TELA LOGIN
+# =====================================================
+
+
 if st.session_state.usuario is None:
 
 
-    logo = Path(
-        "assets/logo.webp"
-    )
-
-
-    c1,c2,c3 = st.columns(
-        [2,1,2]
-    )
-
-
-    with c2:
-
-        if logo.exists():
-
-            st.image(
-                str(logo),
-                width=130
-            )
-
-
-
-    st.title(
-        "🔒 Área Administrativa"
+    st.subheader(
+        "🔐 Login"
     )
 
 
@@ -100,14 +181,20 @@ if st.session_state.usuario is None:
 
 
     if st.button(
+
         "Entrar",
+
         use_container_width=True
+
     ):
 
 
         usuario = autenticar_usuario(
+
             login,
+
             senha
+
         )
 
 
@@ -121,6 +208,7 @@ if st.session_state.usuario is None:
 
         else:
 
+
             st.error(
                 "Usuário ou senha inválidos."
             )
@@ -130,12 +218,17 @@ if st.session_state.usuario is None:
 
 
 
+# =====================================================
+# USUÁRIO LOGADO
+# =====================================================
+
+
 usuario = st.session_state.usuario
 
 
 
 # =====================================================
-# MENU LATERAL
+# MENU LATERAL PERSONALIZADO
 # =====================================================
 
 
@@ -143,7 +236,7 @@ with st.sidebar:
 
 
     st.success(
-        f"👤 {usuario['login']}"
+        f"Olá, {usuario['login']}"
     )
 
 
@@ -157,16 +250,20 @@ with st.sidebar:
 
 
     st.page_link(
+
         "pages/02_Pedidos.py",
-        label="Pedidos",
-        icon="📋"
+
+        label="📋 Pedidos"
+
     )
 
 
     st.page_link(
+
         "pages/03_Clientes.py",
-        label="Clientes",
-        icon="👥"
+
+        label="👥 Clientes"
+
     )
 
 
@@ -175,39 +272,51 @@ with st.sidebar:
 
 
         st.page_link(
+
             "pages/04_Cestas.py",
-            label="Cestas",
-            icon="🎁"
+
+            label="🎁 Cestas"
+
         )
 
 
         st.page_link(
+
             "pages/05_Produtos.py",
-            label="Produtos",
-            icon="🛒"
+
+            label="🛒 Produtos"
+
         )
 
 
         st.page_link(
+
             "pages/06_Financeiro.py",
-            label="Financeiro",
-            icon="💰"
+
+            label="💰 Financeiro"
+
         )
 
 
         st.page_link(
+
             "pages/07_Usuarios.py",
-            label="Usuários",
-            icon="👤"
+
+            label="👤 Usuários"
+
         )
+
 
 
     st.divider()
 
 
+
     if st.button(
-        "Sair"
+        "🚪 Sair",
+        use_container_width=True
     ):
+
 
         st.session_state.usuario = None
 
@@ -216,15 +325,112 @@ with st.sidebar:
 
 
 # =====================================================
-# HOME ADMIN
+# PAINEL CENTRAL
 # =====================================================
 
 
-st.title(
-    "Painel Administrativo"
+st.subheader(
+    "📂 Módulos do Sistema"
 )
 
 
-st.write(
-    f"Bem-vindo, {usuario['login']}."
+
+col1,col2,col3 = st.columns(3)
+
+
+
+with col1:
+
+    st.page_link(
+
+        "pages/02_Pedidos.py",
+
+        label="📋 Pedidos",
+
+        use_container_width=True
+
+    )
+
+
+with col2:
+
+    st.page_link(
+
+        "pages/03_Clientes.py",
+
+        label="👥 Clientes",
+
+        use_container_width=True
+
+    )
+
+
+with col3:
+
+    if usuario["perfil"] == "Administrador":
+
+        st.page_link(
+
+            "pages/06_Financeiro.py",
+
+            label="💰 Financeiro",
+
+            use_container_width=True
+
+        )
+
+
+
+col1,col2,col3 = st.columns(3)
+
+
+
+if usuario["perfil"] == "Administrador":
+
+
+    with col1:
+
+        st.page_link(
+
+            "pages/04_Cestas.py",
+
+            label="🎁 Cestas",
+
+            use_container_width=True
+
+        )
+
+
+    with col2:
+
+        st.page_link(
+
+            "pages/05_Produtos.py",
+
+            label="🛒 Produtos",
+
+            use_container_width=True
+
+        )
+
+
+    with col3:
+
+        st.page_link(
+
+            "pages/07_Usuarios.py",
+
+            label="👤 Usuários",
+
+            use_container_width=True
+
+        )
+
+
+
+st.divider()
+
+
+st.caption(
+    "Doce Cesta Brasília - Sistema Administrativo"
 )
