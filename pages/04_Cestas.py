@@ -45,12 +45,122 @@ usuario = st.session_state.usuario
 
 
 # =====================================================
+# CSS COMPACTO
+# =====================================================
+
+st.markdown(
+"""
+<style>
+
+
+h1 {
+
+font-size:24px !important;
+
+margin-bottom:5px;
+
+}
+
+
+h2 {
+
+font-size:18px !important;
+
+margin-top:8px;
+
+margin-bottom:8px;
+
+}
+
+
+h3 {
+
+font-size:15px !important;
+
+}
+
+
+
+p, div, span {
+
+font-size:13px;
+
+}
+
+
+
+.stCaption {
+
+font-size:11px !important;
+
+}
+
+
+
+.stButton button {
+
+height:32px;
+
+padding:2px 8px;
+
+font-size:12px;
+
+}
+
+
+
+input, textarea {
+
+font-size:13px !important;
+
+}
+
+
+
+[data-testid="stVerticalBlockBorderWrapper"] {
+
+padding-top:8px;
+
+padding-bottom:8px;
+
+}
+
+
+
+.block-container {
+
+padding-top:1rem;
+
+padding-bottom:1rem;
+
+}
+
+
+
+hr {
+
+margin-top:8px;
+
+margin-bottom:8px;
+
+}
+
+
+</style>
+""",
+unsafe_allow_html=True
+)
+
+
+
+# =====================================================
 # TÍTULO
 # =====================================================
 
 st.title(
-    "🎁 Cadastro de Cestas"
+    "🎁 Cestas"
 )
+
 
 
 st.divider()
@@ -81,15 +191,21 @@ if usuario["perfil"] == "Administrador":
 
 
         descricao = st.text_area(
-            "Descrição"
+            "Descrição",
+            height=70
         )
 
 
         preco = st.number_input(
+
             "Preço (R$)",
+
             min_value=0.0,
+
             value=0.0,
+
             step=1.0
+
         )
 
 
@@ -99,8 +215,11 @@ if usuario["perfil"] == "Administrador":
 
 
         salvar = st.form_submit_button(
+
             "💾 Cadastrar Cesta",
+
             use_container_width=True
+
         )
 
 
@@ -136,7 +255,9 @@ if usuario["perfil"] == "Administrador":
 
 
                 st.success(
+
                     "Cesta cadastrada com sucesso!"
+
                 )
 
 
@@ -148,7 +269,9 @@ if usuario["perfil"] == "Administrador":
 
 
                 st.error(
+
                     f"Erro ao cadastrar cesta: {erro}"
+
                 )
 
 
@@ -161,7 +284,9 @@ else:
 
 
     st.info(
-        "Modo consulta. Apenas Administradores podem alterar cestas."
+
+        "Modo consulta. Apenas Administradores podem cadastrar novas cestas."
+
     )
 
 
@@ -181,7 +306,9 @@ except Exception as erro:
 
 
     st.error(
+
         f"Erro ao carregar cestas: {erro}"
+
     )
 
 
@@ -222,23 +349,17 @@ else:
 
 
 
-        with st.container(border=True):
+        with st.container(
+            border=True
+        ):
 
 
-            if usuario["perfil"] == "Administrador":
 
+            col1, col2, col3, col4, col5, col6, col7 = st.columns(
 
-                col1, col2, col3, col4, col5, col6, col7 = st.columns(
-                    [5,2,1,1,1,1,1]
-                )
+                [5,2,1,1,1,1,1]
 
-
-            else:
-
-
-                col1, col2, col3 = st.columns(
-                    [5,2,1]
-                )
+            )
 
 
 
@@ -251,7 +372,9 @@ else:
 
 
                 st.write(
+
                     f"**{cesta['nome']}**"
+
                 )
 
 
@@ -259,8 +382,16 @@ else:
                 if cesta.get("descricao"):
 
 
+                    descricao = cesta["descricao"]
+
+
+                    if len(descricao) > 90:
+
+                        descricao = descricao[:90] + "..."
+
+
                     st.caption(
-                        cesta["descricao"]
+                        descricao
                     )
 
 
@@ -283,7 +414,9 @@ else:
 
 
                     st.success(
-                        "Ativa"
+
+                        "✓ Ativa"
+
                     )
 
 
@@ -291,125 +424,130 @@ else:
 
 
                     st.error(
-                        "Inativa"
+
+                        "✕ Inativa"
+
                     )
 
 
 
             # ===========================
-            # AÇÕES ADMIN
+            # AÇÕES
             # ===========================
 
 
-            if usuario["perfil"] == "Administrador":
+            with col4:
 
 
+                if st.button(
 
-                with col4:
+                    "✏️",
 
+                    key=f"editar_{cesta['id']}"
 
-                    if st.button(
+                ):
 
-                        "✏️",
 
-                        key=f"editar_{cesta['id']}"
+                    st.session_state[
 
-                    ):
+                        "cesta_editar"
 
+                    ] = cesta["id"]
 
-                        st.session_state[
-                            "cesta_editar"
-                        ] = cesta["id"]
 
 
+                    st.switch_page(
 
-                        st.switch_page(
+                        "pages/11_Editar_Cesta.py"
 
-                            "pages/11_Editar_Cesta.py"
+                    )
 
-                        )
 
 
+            with col5:
 
 
-                with col5:
+                if st.button(
 
+                    "📦",
 
-                    if st.button(
+                    key=f"produtos_{cesta['id']}"
 
-                        "📦",
+                ):
 
-                        key=f"produtos_{cesta['id']}"
 
-                    ):
+                    st.session_state[
 
+                        "cesta_produtos"
 
-                        st.session_state[
-                            "cesta_produtos"
-                        ] = cesta["id"]
+                    ] = cesta["id"]
 
 
 
-                        st.switch_page(
+                    st.switch_page(
 
-                            "pages/12_Produtos_da_Cesta.py"
+                        "pages/12_Produtos_da_Cesta.py"
 
-                        )
+                    )
 
 
 
+            with col6:
 
-                with col6:
 
+                if st.button(
 
-                    if st.button(
+                    "⚙️",
 
-                        "⚙️",
+                    key=f"config_{cesta['id']}"
 
-                        key=f"config_{cesta['id']}"
+                ):
 
-                    ):
 
+                    st.session_state[
 
-                        st.session_state[
-                            "cesta_produtos"
-                        ] = cesta["id"]
+                        "cesta_produtos"
 
+                    ] = cesta["id"]
 
 
-                        st.switch_page(
 
-                            "pages/13_Configurar_Cesta.py"
+                    st.switch_page(
 
-                        )
+                        "pages/13_Configurar_Cesta.py"
 
+                    )
 
 
 
-                with col7:
+            with col7:
 
 
-                    if st.button(
+                if st.button(
 
-                        "🗑️",
+                    "🗑️",
 
-                        key=f"excluir_{cesta['id']}"
+                    key=f"excluir_{cesta['id']}"
 
-                    ):
+                ):
 
 
-                        sucesso = excluir_cesta(
-                            cesta["id"]
-                        )
+                    excluir_cesta(
 
+                        cesta["id"]
 
-                        st.success(
-                            "Cesta excluída."
-                        )
+                    )
 
 
-                        st.rerun()
+                    st.success(
 
+                        "Cesta excluída."
 
+                    )
 
-        st.divider()
+
+                    st.rerun()
+
+
+
+        st.write("")
