@@ -1,10 +1,17 @@
 import streamlit as st
 from pathlib import Path
 
+
 from services.pedido_service import salvar_pedido
 from services.foto_service import salvar_fotos
+
 from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
+
+from services.produto_service import (
+    listar_produtos,
+    listar_categorias
+)
 
 
 
@@ -18,15 +25,13 @@ st.set_page_config(
 
 
 # ==========================================================
-# CSS - DESIGN CLIENTE MELHORADO
+# CSS - DESIGN CLIENTE
 # ==========================================================
 
 st.markdown(
 """
 <style>
 
-
-/* REMOVE STREAMLIT */
 
 section[data-testid="stSidebar"]{
     display:none;
@@ -54,8 +59,6 @@ footer{
 
 
 
-/* ÁREA PRINCIPAL */
-
 .block-container{
 
     max-width:720px;
@@ -67,8 +70,6 @@ footer{
 }
 
 
-
-/* TEXTOS */
 
 h1{
 
@@ -102,10 +103,7 @@ p, label, div{
 
 
 
-/* =================================================
-   CAMPOS DE TEXTO
-================================================= */
-
+/* CAMPOS */
 
 div[data-baseweb="input"]{
 
@@ -154,8 +152,6 @@ div[data-baseweb="select"] > div{
     border-radius:10px;
 
     border:1px solid #c9b8a8;
-
-    min-height:42px;
 
 }
 
@@ -210,24 +206,6 @@ div[data-testid="stCheckbox"]{
 .stButton button:hover{
 
     background:#6f451f;
-
-}
-
-
-
-/* CAIXAS DAS SEÇÕES */
-
-.caixa-secao{
-
-    background:#fffaf5;
-
-    border-radius:12px;
-
-    padding:15px;
-
-    border:1px solid #ead8c7;
-
-    margin-bottom:15px;
 
 }
 
@@ -311,15 +289,6 @@ st.markdown(
 # ==========================================================
 # CLIENTE
 # ==========================================================
-
-
-st.markdown(
-"""
-<div class="caixa-secao">
-</div>
-""",
-unsafe_allow_html=True
-)
 
 
 st.markdown(
@@ -416,9 +385,7 @@ if cesta:
 
     with col1:
 
-
         if cesta.get("imagem"):
-
 
             st.image(
                 cesta["imagem"],
@@ -429,15 +396,12 @@ if cesta:
 
     with col2:
 
-
         if cesta.get("descricao"):
-
 
             st.info(
                 cesta["descricao"]
             )
-
-      # ==========================================================
+            # ==========================================================
 # PERSONALIZAÇÃO DA CESTA
 # ==========================================================
 
@@ -538,8 +502,10 @@ else:
 
 
 
+
+
 # ==========================================================
-# ADICIONAIS
+# ADICIONAIS DINÂMICOS
 # ==========================================================
 
 
@@ -549,64 +515,164 @@ st.markdown(
 
 
 
+# Busca produtos e categorias
+
+try:
+
+    categorias = listar_categorias()
+
+    produtos = listar_produtos()
+
+
+except Exception as erro:
+
+
+    st.error(
+        f"Erro ao carregar adicionais: {erro}"
+    )
+
+    st.stop()
+
+
+
+# Monta relação categoria -> nome
+
+categorias_dict = {
+
+    categoria["id"]: categoria["nome"]
+
+    for categoria in categorias
+
+}
+
+
+
+# Filtra somente categoria Adicionais
+
+lista_adicionais = []
+
+
+
+for produto in produtos:
+
+
+    nome_categoria = categorias_dict.get(
+
+        produto["categoria_id"],
+
+        ""
+
+    )
+
+
+    if nome_categoria == "Adicionais":
+
+
+        lista_adicionais.append(
+            produto
+        )
+
+
+
+adicionais_selecionados = []
+
+
+
 with st.container(border=True):
 
 
-    col1,col2 = st.columns(2)
+    if not lista_adicionais:
 
 
-
-    with col1:
-
-
-        caneca = st.checkbox(
-            "☕ Caneca"
+        st.info(
+            "Nenhum adicional cadastrado."
         )
 
 
-        polaroid = st.checkbox(
-            "📷 Polaroid"
-        )
+    else:
 
 
-        balao = st.checkbox(
-            "🎈 Balão"
-        )
+        col1,col2 = st.columns(2)
 
 
 
-    with col2:
+        for i, adicional in enumerate(lista_adicionais):
 
 
-        mini_buque = st.checkbox(
-            "💐 Mini Buquê"
-        )
+            coluna = col1 if i % 2 == 0 else col2
 
 
-        mini_buque_flores = st.checkbox(
-            "🌸 Flores Secas"
-        )
+
+            with coluna:
+
+
+                escolhido = st.checkbox(
+
+                    adicional["nome"],
+
+                    key=f"adicional_{adicional['id']}"
+
+                )
+
+
+
+                if escolhido:
+
+
+                    adicionais_selecionados.append(
+                        adicional
+                    )
+
+
 
 
 
 # ==========================================================
-# FOTOS
+# IDENTIFICA POLAROID
 # ==========================================================
 
 
-if polaroid:
+possui_polaroid = any(
+
+
+    "polaroid"
+
+    in
+
+    adicional["nome"].lower()
+
+
+    for adicional in adicionais_selecionados
+
+
+)
+
+
+
+
+
+# ==========================================================
+# ENVIO DE FOTOS POLAROID
+# ==========================================================
+
+
+if possui_polaroid:
 
 
     st.markdown(
-        "### 📷 Envie as fotos"
+        "### 📷 Envie as fotos da Polaroid"
     )
+
 
 
     fotos = st.file_uploader(
 
-        "Fotos para Polaroid",
+
+        "Fotos para impressão",
+
 
         type=[
+
 
             "jpg",
 
@@ -616,9 +682,12 @@ if polaroid:
 
             "webp"
 
+
         ],
 
+
         accept_multiple_files=True
+
 
     )
 
@@ -627,6 +696,8 @@ else:
 
 
     fotos = []
+
+
 
 
 
@@ -659,10 +730,7 @@ with st.container(border=True):
         horizontal=True
 
     )
-
-
-
-# ==========================================================
+    # ==========================================================
 # MENSAGEM
 # ==========================================================
 
@@ -682,6 +750,8 @@ mensagem = st.text_area(
     placeholder="Digite uma mensagem especial..."
 
 )
+
+
 
 
 
@@ -705,6 +775,8 @@ pedido_especial = st.text_area(
     placeholder="Exemplo: entregar pela manhã..."
 
 )
+
+
 
 
 
@@ -767,6 +839,8 @@ with col2:
 
 
 
+
+
 # ==========================================================
 # BOTÃO
 # ==========================================================
@@ -788,12 +862,15 @@ enviar = st.button(
 
 
 
+
+
 # ==========================================================
 # PROCESSAMENTO
 # ==========================================================
 
 
 if enviar:
+
 
 
     if not nome.strip():
@@ -826,44 +903,33 @@ if enviar:
 
 
 
+
+
+    # ======================================================
+    # ADICIONAIS SELECIONADOS
+    # ======================================================
+
+
     adicionais = []
 
 
 
-    if caneca:
+    for adicional in adicionais_selecionados:
+
 
         adicionais.append(
-            "Caneca"
+
+            adicional["nome"]
+
         )
 
 
-    if polaroid:
-
-        adicionais.append(
-            "Polaroid"
-        )
 
 
-    if balao:
 
-        adicionais.append(
-            "Balão"
-        )
-
-
-    if mini_buque:
-
-        adicionais.append(
-            "Mini Buquê"
-        )
-
-
-    if mini_buque_flores:
-
-        adicionais.append(
-            "Mini Buquê Flores Secas"
-        )
-
+    # ======================================================
+    # PRODUTOS ESCOLHIDOS DA CESTA
+    # ======================================================
 
 
     produtos_escolhidos = []
@@ -873,18 +939,30 @@ if enviar:
     for categoria,itens in selecoes_cliente.items():
 
 
+
         for item in itens:
+
 
 
             produtos_escolhidos.append(
 
+
                 f"{categoria}: {item['nome']}"
+
 
             )
 
 
 
+
+
+    # ======================================================
+    # DADOS DO PEDIDO
+    # ======================================================
+
+
     dados = {
+
 
 
         "cliente_nome":
@@ -892,9 +970,11 @@ if enviar:
             nome,
 
 
+
         "cliente_cpf":
 
             cpf,
+
 
 
         "cliente_telefone":
@@ -902,9 +982,11 @@ if enviar:
             telefone,
 
 
+
         "cesta_id":
 
             cesta["id"],
+
 
 
         "cesta_nome":
@@ -912,18 +994,25 @@ if enviar:
             cesta["nome"],
 
 
+
         "produtos":
 
             "\n".join(
+
                 produtos_escolhidos
+
             ),
+
 
 
         "adicionais":
 
             ", ".join(
+
                 adicionais
+
             ),
+
 
 
         "pagamento":
@@ -931,9 +1020,11 @@ if enviar:
             pagamento,
 
 
+
         "mensagem":
 
             mensagem,
+
 
 
         "pedido_especial":
@@ -941,9 +1032,11 @@ if enviar:
             pedido_especial,
 
 
+
         "endereco":
 
             endereco,
+
 
 
         "data_entrega":
@@ -951,9 +1044,11 @@ if enviar:
             str(data_entrega),
 
 
+
         "periodo_entrega":
 
             periodo_entrega,
+
 
 
         "status":
@@ -961,9 +1056,11 @@ if enviar:
             "Recebido",
 
 
+
         "valor_frete":
 
             0,
+
 
 
         "valor_total":
@@ -974,9 +1071,15 @@ if enviar:
 
 
 
+
+
     sucesso,pedido_id = salvar_pedido(
+
         dados
+
     )
+
+
 
 
 
@@ -984,7 +1087,14 @@ if enviar:
 
 
 
-        if polaroid and fotos:
+
+        # ==================================================
+        # SALVA FOTOS POLAROID
+        # ==================================================
+
+
+        if possui_polaroid and fotos:
+
 
 
             try:
@@ -999,7 +1109,9 @@ if enviar:
                 )
 
 
+
             except Exception as erro:
+
 
 
                 st.warning(
@@ -1010,13 +1122,18 @@ if enviar:
 
 
 
+
+
         st.success(
+
             "🎉 Pedido enviado com sucesso!"
+
         )
 
 
 
         st.info(
+
 """
 ❤️ Obrigado por escolher a **Doce Cesta Brasília**!
 
@@ -1027,8 +1144,12 @@ Nossa equipe entrará em contato para confirmar:
 ✅ Valor do frete  
 ✅ Valor final da cesta  
 ✅ Detalhes da entrega
+
 """
+
         )
+
+
 
 
 
@@ -1040,6 +1161,8 @@ Nossa equipe entrará em contato para confirmar:
             f"Erro ao salvar pedido: {pedido_id}"
 
         )
+
+
 
 
 
