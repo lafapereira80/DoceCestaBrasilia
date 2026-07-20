@@ -129,3 +129,182 @@ with c4:
     )
 
 st.divider()
+
+# =====================================================
+# HISTÓRICO DOS PEDIDOS
+# =====================================================
+
+st.subheader("📋 Histórico de Compras")
+
+for pedido in pedidos:
+
+    with st.container(border=True):
+
+        st.markdown(
+            f"## 🎁 {pedido.get('cesta_nome','-')}"
+        )
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+
+            st.write("**Data da entrega**")
+            st.write(pedido.get("data_entrega","-"))
+
+        with col2:
+
+            st.write("**Status**")
+            st.write(pedido.get("status","-"))
+
+        with col3:
+
+            st.write("**Pagamento**")
+            st.write(pedido.get("pagamento","-"))
+
+        st.divider()
+
+        # ==========================================
+        # PRODUTOS ESCOLHIDOS
+        # ==========================================
+
+        st.write("### 📦 Produtos da Cesta")
+
+        produtos = pedido.get("produtos","")
+
+        if produtos:
+
+            st.code(produtos)
+
+        else:
+
+            st.info("Nenhum produto registrado.")
+
+        # ==========================================
+
+        st.write("### 🎀 Adicionais")
+
+        adicionais = pedido.get("adicionais","")
+
+        if adicionais:
+
+            st.success(adicionais)
+
+        else:
+
+            st.info("Nenhum adicional.")
+
+        # ==========================================
+
+        st.write("### 💌 Mensagem")
+
+        mensagem = pedido.get("mensagem","")
+
+        if mensagem:
+
+            st.text_area(
+
+                "Mensagem",
+
+                value=mensagem,
+
+                disabled=True,
+
+                height=90,
+
+                key=f"msg_{pedido['id']}",
+
+                label_visibility="collapsed"
+
+            )
+
+        else:
+
+            st.info("Sem mensagem.")
+
+        # ==========================================
+
+        st.write("### ✨ Pedido Especial")
+
+        especial = pedido.get("pedido_especial","")
+
+        if especial:
+
+            st.text_area(
+
+                "Pedido Especial",
+
+                value=especial,
+
+                disabled=True,
+
+                height=90,
+
+                key=f"esp_{pedido['id']}",
+
+                label_visibility="collapsed"
+
+            )
+
+        else:
+
+            st.info("Nenhum pedido especial.")
+
+        # ==========================================
+
+        st.write("### 📍 Endereço")
+
+        st.text_area(
+
+            "Endereço",
+
+            value=pedido.get("endereco",""),
+
+            disabled=True,
+
+            height=90,
+
+            key=f"end_{pedido['id']}",
+
+            label_visibility="collapsed"
+
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            st.metric(
+
+                "Frete",
+
+                f"R$ {float(pedido.get('valor_frete') or 0):,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
+
+            )
+
+        with col2:
+
+            st.metric(
+
+                "Valor Total",
+
+                f"R$ {float(pedido.get('valor_total') or 0):,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
+
+            )
+
+        # ==========================================
+
+        st.write("### 📷 Fotos")
+
+        if pedido.get("foto_excluida"):
+
+            st.success(
+                "Fotos removidas automaticamente após a conclusão do pedido."
+            )
+
+        else:
+
+            st.info(
+                "Fotos ainda disponíveis."
+            )
+
+    st.divider()
