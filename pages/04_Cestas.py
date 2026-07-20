@@ -4,7 +4,8 @@ import streamlit as st
 from services.cesta_service import (
     listar_cestas,
     cadastrar_cesta,
-    excluir_cesta
+    excluir_cesta,
+    upload_imagem_cesta
 )
 
 
@@ -20,10 +21,18 @@ from utils.permissao import (
 
 
 
+# =====================================================
+# CONFIGURAÇÃO DA PÁGINA
+# =====================================================
+
 st.set_page_config(
+
     page_title="Cestas",
+
     page_icon="🎁",
+
     layout="wide"
+
 )
 
 
@@ -62,6 +71,7 @@ margin-bottom:5px;
 }
 
 
+
 h2 {
 
 font-size:18px !important;
@@ -71,6 +81,7 @@ margin-top:8px;
 margin-bottom:8px;
 
 }
+
 
 
 h3 {
@@ -158,7 +169,9 @@ unsafe_allow_html=True
 # =====================================================
 
 st.title(
+
     "🎁 Cestas"
+
 )
 
 
@@ -174,26 +187,39 @@ st.divider()
 if usuario["perfil"] == "Administrador":
 
 
+
     st.subheader(
+
         "➕ Nova Cesta"
+
     )
 
 
 
     with st.form(
+
         "nova_cesta"
+
     ):
 
 
+
         nome = st.text_input(
+
             "Nome da Cesta"
+
         )
+
 
 
         descricao = st.text_area(
+
             "Descrição",
+
             height=70
+
         )
+
 
 
         preco = st.number_input(
@@ -204,14 +230,46 @@ if usuario["perfil"] == "Administrador":
 
             value=0.0,
 
-            step=1.0
+            step=1.0,
+
+            format="%.2f"
 
         )
 
 
-        imagem = st.text_input(
-            "Imagem (URL)"
+
+        imagem_arquivo = st.file_uploader(
+
+            "📷 Foto da Cesta",
+
+            type=[
+
+                "jpg",
+
+                "jpeg",
+
+                "png",
+
+                "webp"
+
+            ]
+
         )
+
+
+
+        if imagem_arquivo:
+
+
+
+            st.image(
+
+                imagem_arquivo,
+
+                width=220
+
+            )
+
 
 
         salvar = st.form_submit_button(
@@ -222,8 +280,6 @@ if usuario["perfil"] == "Administrador":
 
         )
 
-
-
     if salvar:
 
 
@@ -231,7 +287,9 @@ if usuario["perfil"] == "Administrador":
 
 
             st.error(
+
                 "Informe o nome da cesta."
+
             )
 
 
@@ -241,6 +299,29 @@ if usuario["perfil"] == "Administrador":
             try:
 
 
+                # =====================================
+                # ENVIA FOTO PARA O STORAGE
+                # =====================================
+
+                imagem_url = None
+
+
+
+                if imagem_arquivo:
+
+
+                    imagem_url = upload_imagem_cesta(
+
+                        imagem_arquivo
+
+                    )
+
+
+
+                # =====================================
+                # CADASTRA CESTA
+                # =====================================
+
                 cadastrar_cesta(
 
                     nome.strip(),
@@ -249,9 +330,10 @@ if usuario["perfil"] == "Administrador":
 
                     preco,
 
-                    imagem.strip()
+                    imagem_url
 
                 )
+
 
 
                 st.success(
@@ -259,6 +341,7 @@ if usuario["perfil"] == "Administrador":
                     "Cesta cadastrada com sucesso!"
 
                 )
+
 
 
                 st.rerun()
@@ -317,7 +400,9 @@ except Exception as erro:
 
 
 st.subheader(
+
     "📋 Cestas Cadastradas"
+
 )
 
 
@@ -330,7 +415,9 @@ if not cestas:
 
 
     st.info(
+
         "Nenhuma cesta cadastrada."
+
     )
 
 
@@ -343,14 +430,19 @@ else:
 
 
         ativa = cesta.get(
+
             "ativa",
+
             True
+
         )
 
 
 
         with st.container(
+
             border=True
+
         ):
 
 
@@ -385,13 +477,33 @@ else:
                     descricao = cesta["descricao"]
 
 
+
                     if len(descricao) > 90:
+
 
                         descricao = descricao[:90] + "..."
 
 
+
                     st.caption(
+
                         descricao
+
+                    )
+
+
+
+                # FOTO PEQUENA DA CESTA
+
+                if cesta.get("imagem"):
+
+
+                    st.image(
+
+                        cesta["imagem"],
+
+                        width=120
+
                     )
 
 
@@ -428,8 +540,6 @@ else:
                         "✕ Inativa"
 
                     )
-
-
 
             # ===========================
             # AÇÕES
@@ -532,22 +642,55 @@ else:
                 ):
 
 
-                    excluir_cesta(
 
-                        cesta["id"]
-
-                    )
+                    try:
 
 
-                    st.success(
+                        excluir_cesta(
 
-                        "Cesta excluída."
+                            cesta["id"]
 
-                    )
+                        )
 
 
-                    st.rerun()
+
+                        st.success(
+
+                            "Cesta excluída."
+
+                        )
+
+
+
+                        st.rerun()
+
+
+
+                    except Exception as erro:
+
+
+                        st.error(
+
+                            f"Erro ao excluir cesta: {erro}"
+
+                        )
 
 
 
         st.write("")
+
+
+
+# =====================================================
+# RODAPÉ
+# =====================================================
+
+st.divider()
+
+
+
+st.caption(
+
+    "Doce Cesta Brasília - Cadastro de Cestas"
+
+)
