@@ -20,6 +20,10 @@ from utils.permissao import (
 
 
 
+# =====================================================
+# CONFIGURAÇÃO DA PÁGINA
+# =====================================================
+
 st.set_page_config(
     page_title="Pedidos",
     page_icon="📋",
@@ -29,7 +33,7 @@ st.set_page_config(
 
 
 # =====================================================
-# CONFIGURAÇÕES
+# CONTROLE DE ACESSO
 # =====================================================
 
 configurar_pagina()
@@ -40,13 +44,74 @@ administrador_operador()
 
 
 
+usuario = st.session_state.usuario
+
+
+
+# =====================================================
+# CSS COMPACTO
+# =====================================================
+
+st.markdown(
+"""
+<style>
+
+
+h1{
+    font-size:26px !important;
+    margin-bottom:5px;
+}
+
+
+h2{
+    font-size:18px !important;
+}
+
+
+h3{
+    font-size:16px !important;
+}
+
+
+p, div, span{
+    font-size:13px;
+}
+
+
+.stButton button{
+
+    font-size:12px;
+
+    padding:3px 8px;
+
+}
+
+
+[data-testid="stVerticalBlockBorderWrapper"]{
+
+    padding:8px;
+
+}
+
+
+</style>
+""",
+unsafe_allow_html=True
+)
+
+
+
+# =====================================================
+# TÍTULO
+# =====================================================
+
 st.title(
     "📋 Gestão de Pedidos"
 )
 
 
-st.write(
-    "Pedidos em andamento do sistema."
+st.caption(
+    "Controle dos pedidos em andamento."
 )
 
 
@@ -65,7 +130,6 @@ try:
 
 except Exception as erro:
 
-
     st.error(
         f"Erro ao carregar pedidos: {erro}"
     )
@@ -75,7 +139,6 @@ except Exception as erro:
 
 
 if not pedidos:
-
 
     st.info(
         "Nenhum pedido em andamento."
@@ -115,16 +178,14 @@ if "created_at" in df.columns:
 # =====================================================
 
 st.subheader(
-    "🔍 Pesquisar"
+    "🔍 Pesquisar cliente"
 )
 
 
+
 pesquisa = st.text_input(
-
-    "Nome do cliente",
-
-    placeholder="Digite o nome..."
-
+    "",
+    placeholder="Digite o nome do cliente..."
 )
 
 
@@ -144,7 +205,32 @@ if pesquisa.strip():
 
 
 # =====================================================
-# MOSTRAR PEDIDOS
+# FUNÇÃO STATUS
+# =====================================================
+
+def status_visual(status):
+
+    if status == "Pago":
+
+        return "🟢 Pago"
+
+
+    if status == "Recebido":
+
+        return "🟡 Recebido"
+
+
+    if status == "Desistência":
+
+        return "🔴 Desistência"
+
+
+    return status
+
+
+
+# =====================================================
+# LISTAGEM
 # =====================================================
 
 def mostrar_lista(
@@ -177,94 +263,26 @@ def mostrar_lista(
 
 
 
-    cab1, cab2, cab3, cab4, cab5, cab6, cab7 = st.columns(
-        [3, 2, 2, 2, 1.5, 1.5, 2]
-    )
-
-
-
-    with cab1:
-
-        st.write(
-            "**Cliente**"
-        )
-
-
-    with cab2:
-
-        st.write(
-            "**Telefone**"
-        )
-
-
-    with cab3:
-
-        st.write(
-            "**Cesta**"
-        )
-
-
-    with cab4:
-
-        st.write(
-            "**Entrega**"
-        )
-
-
-    with cab5:
-
-        st.write(
-            "**Status**"
-        )
-
-
-    with cab6:
-
-        st.write(
-            "**Valor**"
-        )
-
-
-    with cab7:
-
-        st.write(
-            "**Ações**"
-        )
-
-
-
-    st.divider()
-
-
-
     for _, pedido in pedidos_status.iterrows():
 
 
         with st.container(border=True):
 
 
-            col1, col2, col3, col4, col5, col6, col7 = st.columns(
-                [3, 2, 2, 2, 1.5, 1.5, 2]
+            col1, col2, col3, col4, col5 = st.columns(
+                [3.5,2.5,1.8,1.5,1.2]
             )
 
 
 
             with col1:
 
-
                 st.write(
-                    pedido.get(
-                        "cliente_nome",
-                        "-"
-                    )
+                    f"**{pedido.get('cliente_nome','-')}**"
                 )
 
 
-
-            with col2:
-
-
-                st.write(
+                st.caption(
                     pedido.get(
                         "cliente_telefone",
                         "-"
@@ -273,13 +291,27 @@ def mostrar_lista(
 
 
 
-            with col3:
-
+            with col2:
 
                 st.write(
-                    pedido.get(
-                        "cesta_nome",
-                        "-"
+                    f"🎁 {pedido.get('cesta_nome','-')}"
+                )
+
+
+                st.caption(
+                    f"Entrega: {pedido.get('data_entrega','-')}"
+                )
+
+
+
+            with col3:
+
+                st.write(
+                    status_visual(
+                        pedido.get(
+                            "status",
+                            "-"
+                        )
                     )
                 )
 
@@ -287,59 +319,30 @@ def mostrar_lista(
 
             with col4:
 
+                valor = float(
+                    pedido.get(
+                        "valor_total",
+                        0
+                    )
+                    or 0
+                )
+
+
+                valor_formatado = (
+                    f"R$ {valor:,.2f}"
+                    .replace(",", "X")
+                    .replace(".", ",")
+                    .replace("X",".")
+                )
+
 
                 st.write(
-                    pedido.get(
-                        "data_entrega",
-                        "-"
-                    )
+                    valor_formatado
                 )
 
 
 
             with col5:
-
-
-                st.write(
-                    pedido.get(
-                        "status",
-                        "-"
-                    )
-                )
-
-
-
-            with col6:
-
-
-                valor = float(
-
-                    pedido.get(
-                        "valor_total",
-                        0
-                    )
-
-                    or 0
-
-                )
-
-
-                st.write(
-
-                    f"R$ {valor:,.2f}"
-
-                    .replace(",", "X")
-
-                    .replace(".", ",")
-
-                    .replace("X",".")
-
-                )
-
-
-
-            with col7:
-
 
 
                 if st.button(
@@ -360,11 +363,8 @@ def mostrar_lista(
 
 
                     st.switch_page(
-
                         "pages/09_Detalhes_Pedido.py"
-
                     )
-
 
 
 
@@ -383,31 +383,22 @@ def mostrar_lista(
 
 
                         sucesso, mensagem = (
-
                             excluir_pedido_completo(
-
                                 pedido["id"]
-
                             )
-
                         )
 
 
-
                         if sucesso:
-
 
                             st.success(
                                 mensagem
                             )
 
-
                             st.rerun()
 
 
-
                         else:
-
 
                             st.error(
                                 mensagem
@@ -415,12 +406,8 @@ def mostrar_lista(
 
 
 
-        st.divider()
-
-
-
 # =====================================================
-# STATUS
+# STATUS DOS PEDIDOS
 # =====================================================
 
 
@@ -450,20 +437,23 @@ mostrar_lista(
 
     "Desistência",
 
-    permitir_exclusao=
-
-    st.session_state.usuario["perfil"]
-
-    ==
-
-    "Administrador"
+    permitir_exclusao=(
+        usuario["perfil"]
+        ==
+        "Administrador"
+    )
 
 )
 
 
 
+# =====================================================
+# TOTAL
+# =====================================================
+
+st.divider()
+
+
 st.caption(
-
     f"Total de pedidos ativos: {len(df)}"
-
 )
