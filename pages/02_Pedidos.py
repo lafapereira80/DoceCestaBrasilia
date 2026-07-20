@@ -25,8 +25,7 @@ st.divider()
 
 
 # ==========================================================
-# CARREGA PEDIDOS ATIVOS
-# Não retorna Entregues
+# CARREGA PEDIDOS
 # ==========================================================
 
 try:
@@ -59,7 +58,7 @@ df = pd.DataFrame(pedidos)
 
 
 # ==========================================================
-# ORDENAÇÃO POR DATA
+# ORDENAÇÃO
 # ==========================================================
 
 if "created_at" in df.columns:
@@ -79,7 +78,7 @@ if "created_at" in df.columns:
 # PESQUISA
 # ==========================================================
 
-st.subheader("🔍 Pesquisar Pedidos")
+st.subheader("🔍 Pesquisar")
 
 
 pesquisa = st.text_input(
@@ -103,16 +102,18 @@ if pesquisa.strip():
 
 
 # ==========================================================
-# FUNÇÃO PARA MOSTRAR CARDS
+# MOSTRAR PEDIDOS
 # ==========================================================
 
-def mostrar_cards(
+def mostrar_lista(
     titulo,
     status_filtro,
     permitir_exclusao=False
 ):
 
+
     st.subheader(titulo)
+
 
 
     pedidos_status = df[
@@ -131,31 +132,53 @@ def mostrar_cards(
 
 
 
+    # Cabeçalho
+
+    cab1, cab2, cab3, cab4, cab5, cab6, cab7 = st.columns(
+        [3, 2, 2, 2, 1.5, 1.5, 2]
+    )
+
+
+    with cab1:
+        st.write("**Cliente**")
+
+    with cab2:
+        st.write("**Telefone**")
+
+    with cab3:
+        st.write("**Cesta**")
+
+    with cab4:
+        st.write("**Entrega**")
+
+    with cab5:
+        st.write("**Status**")
+
+    with cab6:
+        st.write("**Valor**")
+
+    with cab7:
+        st.write("**Ações**")
+
+
+
+    st.divider()
+
+
+
     for _, pedido in pedidos_status.iterrows():
 
 
         with st.container(border=True):
 
 
-            col1, col2, col3, col4 = st.columns(
-                [1, 3, 2, 2]
+            col1, col2, col3, col4, col5, col6, col7 = st.columns(
+                [3, 2, 2, 2, 1.5, 1.5, 2]
             )
 
 
 
             with col1:
-
-                st.write(
-                    f"### #{pedido['id']}"
-                )
-
-
-
-            with col2:
-
-                st.write(
-                    "**Cliente**"
-                )
 
                 st.write(
                     pedido.get(
@@ -166,11 +189,18 @@ def mostrar_cards(
 
 
 
-            with col3:
+            with col2:
 
                 st.write(
-                    "**Cesta**"
+                    pedido.get(
+                        "cliente_telefone",
+                        "-"
+                    )
                 )
+
+
+
+            with col3:
 
                 st.write(
                     pedido.get(
@@ -184,10 +214,6 @@ def mostrar_cards(
             with col4:
 
                 st.write(
-                    "**Entrega**"
-                )
-
-                st.write(
                     pedido.get(
                         "data_entrega",
                         "-"
@@ -196,19 +222,7 @@ def mostrar_cards(
 
 
 
-            st.divider()
-
-
-
-            col1, col2, col3 = st.columns(3)
-
-
-
-            with col1:
-
-                st.write(
-                    "📌 Status"
-                )
+            with col5:
 
                 st.write(
                     pedido.get(
@@ -219,22 +233,7 @@ def mostrar_cards(
 
 
 
-            with col2:
-
-                st.write(
-                    "📞 Telefone"
-                )
-
-                st.write(
-                    pedido.get(
-                        "cliente_telefone",
-                        "-"
-                    )
-                )
-
-
-
-            with col3:
+            with col6:
 
                 valor = float(
                     pedido.get(
@@ -242,10 +241,6 @@ def mostrar_cards(
                         0
                     )
                     or 0
-                )
-
-                st.write(
-                    "💰 Valor"
                 )
 
                 st.write(
@@ -257,20 +252,13 @@ def mostrar_cards(
 
 
 
-            st.divider()
+            with col7:
 
-
-
-            col1, col2 = st.columns(2)
-
-
-
-            with col1:
 
                 if st.button(
-                    "👁️ Abrir Pedido",
+                    "👁️",
                     key=f"abrir_{pedido['id']}",
-                    use_container_width=True
+                    help="Abrir pedido"
                 ):
 
                     st.session_state[
@@ -284,16 +272,13 @@ def mostrar_cards(
 
 
 
-            with col2:
-
-
                 if permitir_exclusao:
 
 
                     if st.button(
-                        "🗑️ Excluir Pedido",
+                        "🗑️",
                         key=f"excluir_{pedido['id']}",
-                        use_container_width=True
+                        help="Excluir pedido"
                     ):
 
 
@@ -326,35 +311,30 @@ def mostrar_cards(
 
 
 # ==========================================================
-# CARDS DE STATUS
+# STATUS
 # ==========================================================
 
-
-mostrar_cards(
+mostrar_lista(
     "📥 Pedidos Recebidos",
     "Recebido"
 )
 
 
 
-mostrar_cards(
+mostrar_lista(
     "💰 Pedidos Pagos",
     "Pago"
 )
 
 
 
-mostrar_cards(
+mostrar_lista(
     "❌ Desistências",
     "Desistência",
     permitir_exclusao=True
 )
 
 
-
-# ==========================================================
-# RODAPÉ
-# ==========================================================
 
 st.caption(
     f"Total de pedidos ativos: {len(df)}"
