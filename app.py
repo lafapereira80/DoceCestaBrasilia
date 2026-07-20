@@ -153,7 +153,7 @@ cesta = st.selectbox(
 
 )
 
-st.divider()
+
 
 # ==========================================================
 # INFORMAÇÕES DA CESTA
