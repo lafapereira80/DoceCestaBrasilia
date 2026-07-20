@@ -48,6 +48,96 @@ administrador_operador()
 
 
 # =====================================================
+# CSS COMPACTO
+# =====================================================
+
+st.markdown(
+"""
+<style>
+
+
+h1 {
+
+font-size:24px !important;
+
+margin-bottom:5px;
+
+}
+
+
+h2 {
+
+font-size:18px !important;
+
+margin-top:8px;
+
+margin-bottom:8px;
+
+}
+
+
+p, div, span {
+
+font-size:13px;
+
+}
+
+
+
+label {
+
+font-size:13px !important;
+
+}
+
+
+
+.stButton button {
+
+height:34px;
+
+font-size:13px;
+
+padding:4px 10px;
+
+}
+
+
+
+input, textarea {
+
+font-size:13px !important;
+
+}
+
+
+
+.block-container {
+
+padding-top:1rem;
+
+padding-bottom:1rem;
+
+}
+
+
+
+textarea {
+
+min-height:70px !important;
+
+}
+
+
+
+</style>
+""",
+unsafe_allow_html=True
+)
+
+
+
+# =====================================================
 # VERIFICA CESTA SELECIONADA
 # =====================================================
 
@@ -93,8 +183,11 @@ except Exception as erro:
 
 
     st.error(
+
         f"Erro ao carregar cesta: {erro}"
+
     )
+
 
     st.stop()
 
@@ -106,6 +199,11 @@ except Exception as erro:
 
 st.title(
     "✏️ Editar Cesta"
+)
+
+
+st.caption(
+    "Atualize as informações da cesta cadastrada."
 )
 
 
@@ -122,13 +220,39 @@ with st.form(
 ):
 
 
-    nome = st.text_input(
+    col1,col2 = st.columns(2)
 
-        "Nome da Cesta",
 
-        value=cesta["nome"]
 
-    )
+    with col1:
+
+
+        nome = st.text_input(
+
+            "Nome da Cesta",
+
+            value=cesta["nome"]
+
+        )
+
+
+
+    with col2:
+
+
+        preco = st.number_input(
+
+            "Preço (R$)",
+
+            min_value=0.0,
+
+            value=float(
+                cesta["preco"]
+            ),
+
+            step=1.0
+
+        )
 
 
 
@@ -140,23 +264,9 @@ with st.form(
             "descricao",
             ""
         )
-        or ""
+        or "",
 
-    )
-
-
-
-    preco = st.number_input(
-
-        "Preço (R$)",
-
-        min_value=0.0,
-
-        value=float(
-            cesta["preco"]
-        ),
-
-        step=1.0
+        height=80
 
     )
 
@@ -189,7 +299,11 @@ with st.form(
 
 
 
-    col1, col2 = st.columns(2)
+    st.divider()
+
+
+
+    col1,col2 = st.columns(2)
 
 
 
@@ -198,7 +312,7 @@ with st.form(
 
         salvar = st.form_submit_button(
 
-            "💾 Salvar Alterações",
+            "💾 Salvar",
 
             use_container_width=True
 
@@ -216,6 +330,8 @@ with st.form(
             use_container_width=True
 
         )
+
+
 
 
 
