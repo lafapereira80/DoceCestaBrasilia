@@ -20,11 +20,13 @@ from utils.menu import (
 
 st.set_page_config(
 
-    page_title="Administrador",
+    page_title="Área Administrativa",
 
     page_icon="🔒",
 
-    layout="wide"
+    layout="wide",
+
+    initial_sidebar_state="collapsed"
 
 )
 
@@ -46,77 +48,38 @@ st.markdown(
 """
 <style>
 
-
-h1{
-
-font-size:26px !important;
-
+/* REMOVE SIDEBAR */
+section[data-testid="stSidebar"]{
+    display:none;
 }
 
 
-h2{
-
-font-size:18px !important;
-
+/* REMOVE BOTÃO SHOW/HIDE */
+[data-testid="collapsedControl"]{
+    display:none;
 }
 
 
-p,div,span{
-
-font-size:13px;
-
+/* REMOVE MENU SUPERIOR */
+#MainMenu{
+    visibility:hidden;
 }
 
 
-
-.stButton button{
-
-height:35px;
-
-font-size:13px;
-
+header{
+    visibility:hidden;
 }
 
 
-
-.titulo{
-
-text-align:center;
-
-font-size:30px;
-
-font-weight:bold;
-
-color:#8B5A2B;
-
+footer{
+    visibility:hidden;
 }
-
-
-
-.subtitulo{
-
-text-align:center;
-
-color:#777;
-
-}
-
-
-
-.block-container{
-
-padding-top:1rem;
-
-}
-
 
 
 </style>
 """,
 unsafe_allow_html=True
 )
-
-
 
 # =====================================================
 # LOGO
