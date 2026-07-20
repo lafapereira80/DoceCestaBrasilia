@@ -736,45 +736,6 @@ else:
 
 st.markdown(
 
-"### 💳 Pagamento"
-
-)
-
-
-
-with st.container(border=True):
-
-
-    pagamento = st.radio(
-
-
-        "Forma de pagamento",
-
-
-        [
-
-            "Pix",
-
-            "Cartão de Crédito"
-
-        ],
-
-
-        horizontal=True,
-
-
-        key="forma_pagamento"
-
-    )
-  
-
-# ==========================================================
-# PAGAMENTO
-# ==========================================================
-
-
-st.markdown(
-
     "### 💳 Pagamento"
 
 )
