@@ -1,22 +1,37 @@
 import streamlit as st
 from pathlib import Path
 
-from services.usuario_service import autenticar_usuario
 
-from utils.menu import configurar_pagina, menu_lateral
+from services.usuario_service import (
+    autenticar_usuario
+)
 
 
-
-st.set_page_config(
-    page_title="Administrador",
-    page_icon="🔒",
-    layout="wide"
+from utils.menu import (
+    configurar_pagina,
+    menu_lateral
 )
 
 
 
 # =====================================================
-# CONFIGURAÇÃO VISUAL
+# CONFIGURAÇÃO DA PÁGINA
+# =====================================================
+
+st.set_page_config(
+
+    page_title="Administrador",
+
+    page_icon="🔒",
+
+    layout="wide"
+
+)
+
+
+
+# =====================================================
+# CONFIGURAÇÃO GERAL
 # =====================================================
 
 configurar_pagina()
@@ -24,12 +39,13 @@ configurar_pagina()
 
 
 # =====================================================
-# CSS
+# CSS VISUAL
 # =====================================================
 
 st.markdown(
 """
 <style>
+
 
 .titulo{
 
@@ -52,6 +68,7 @@ color:#777;
 
 }
 
+
 </style>
 """,
 unsafe_allow_html=True
@@ -68,34 +85,43 @@ logo = Path(
 )
 
 
+
 if logo.exists():
 
-    col1,col2,col3 = st.columns([2,1,2])
+
+    col1, col2, col3 = st.columns(
+        [2,1,2]
+    )
 
 
     with col2:
 
+
         st.image(
+
             str(logo),
+
             width=140
+
         )
 
 
 
 st.markdown(
 
-"<div class='titulo'>Painel Administrativo</div>",
+    "<div class='titulo'>Painel Administrativo</div>",
 
-unsafe_allow_html=True
+    unsafe_allow_html=True
 
 )
 
 
+
 st.markdown(
 
-"<div class='subtitulo'>Doce Cesta Brasília</div>",
+    "<div class='subtitulo'>Doce Cesta Brasília</div>",
 
-unsafe_allow_html=True
+    unsafe_allow_html=True
 
 )
 
@@ -106,7 +132,7 @@ st.divider()
 
 
 # =====================================================
-# CONTROLE LOGIN
+# CONTROLE DE LOGIN
 # =====================================================
 
 if "usuario" not in st.session_state:
@@ -116,10 +142,11 @@ if "usuario" not in st.session_state:
 
 
 # =====================================================
-# LOGIN
+# TELA LOGIN
 # =====================================================
 
 if st.session_state.usuario is None:
+
 
 
     st.subheader(
@@ -127,25 +154,34 @@ if st.session_state.usuario is None:
     )
 
 
+
     login = st.text_input(
         "Usuário"
     )
 
 
+
     senha = st.text_input(
+
         "Senha",
+
         type="password"
+
     )
 
 
 
-    if st.button(
+    entrar = st.button(
 
         "Entrar",
 
         use_container_width=True
 
-    ):
+    )
+
+
+
+    if entrar:
 
 
         usuario = autenticar_usuario(
@@ -157,19 +193,26 @@ if st.session_state.usuario is None:
         )
 
 
+
         if usuario:
 
 
             st.session_state.usuario = usuario
 
+
             st.rerun()
+
 
 
         else:
 
+
             st.error(
+
                 "Usuário ou senha inválidos."
+
             )
+
 
 
     st.stop()
@@ -185,7 +228,7 @@ usuario = st.session_state.usuario
 
 
 # =====================================================
-# MENU NOVO
+# MENU LATERAL NOVO
 # =====================================================
 
 menu_lateral()
@@ -193,21 +236,63 @@ menu_lateral()
 
 
 # =====================================================
-# PAINEL CENTRAL
+# IDENTIFICAÇÃO
 # =====================================================
 
+st.success(
 
-st.subheader(
-    "📂 Módulos do Sistema"
+    f"Usuário conectado: {usuario['login']} | Perfil: {usuario['perfil']}"
+
 )
 
 
 
-col1,col2,col3 = st.columns(3)
+# =====================================================
+# SAIR
+# =====================================================
+
+if st.button(
+
+    "🚪 Sair",
+
+    use_container_width=True
+
+):
+
+
+    st.session_state.usuario = None
+
+
+    st.rerun()
+
+
+
+st.divider()
+
+
+
+# =====================================================
+# MÓDULOS
+# =====================================================
+
+st.subheader(
+
+    "📂 Módulos do Sistema"
+
+)
+
+
+
+# =====================================================
+# MÓDULOS DISPONÍVEIS PARA TODOS
+# =====================================================
+
+col1, col2, col3 = st.columns(3)
 
 
 
 with col1:
+
 
     st.page_link(
 
@@ -223,6 +308,7 @@ with col1:
 
 with col2:
 
+
     st.page_link(
 
         "pages/03_Clientes.py",
@@ -237,7 +323,9 @@ with col2:
 
 with col3:
 
+
     if usuario["perfil"] == "Administrador":
+
 
         st.page_link(
 
@@ -251,14 +339,20 @@ with col3:
 
 
 
-col1,col2,col3 = st.columns(3)
-
-
+# =====================================================
+# SOMENTE ADMINISTRADOR
+# =====================================================
 
 if usuario["perfil"] == "Administrador":
 
 
+
+    col1, col2, col3 = st.columns(3)
+
+
+
     with col1:
+
 
         st.page_link(
 
@@ -274,6 +368,7 @@ if usuario["perfil"] == "Administrador":
 
     with col2:
 
+
         st.page_link(
 
             "pages/05_Produtos.py",
@@ -288,6 +383,7 @@ if usuario["perfil"] == "Administrador":
 
     with col3:
 
+
         st.page_link(
 
             "pages/07_Usuarios.py",
@@ -300,10 +396,23 @@ if usuario["perfil"] == "Administrador":
 
 
 
+else:
+
+
+    st.info(
+
+        "Perfil Operador: acesso aos módulos operacionais."
+
+    )
+
+
+
 st.divider()
 
 
 
 st.caption(
+
     "Doce Cesta Brasília - Sistema Administrativo"
+
 )
