@@ -1,6 +1,7 @@
 from config.supabase import supabase
 
 
+
 # =====================================================
 # LISTAR CATEGORIAS
 # =====================================================
@@ -11,14 +12,13 @@ def listar_categorias():
         supabase
         .table("categorias")
         .select("*")
+        .order("nome")
         .execute()
     )
 
-    print("RESPOSTA:", resposta)
-
-    print("DADOS:", resposta.data)
-
     return resposta.data or []
+
+
 
 # =====================================================
 # LISTAR PRODUTOS
@@ -37,6 +37,46 @@ def listar_produtos():
     return resposta.data or []
 
 
+
+# =====================================================
+# LISTAR PRODUTOS POR CATEGORIA
+# =====================================================
+
+def listar_produtos_por_categoria(
+    categoria_id
+):
+
+    resposta = (
+
+        supabase
+
+        .table("produtos")
+
+        .select("*")
+
+        .eq(
+            "categoria_id",
+            categoria_id
+        )
+
+        .eq(
+            "ativo",
+            True
+        )
+
+        .order(
+            "nome"
+        )
+
+        .execute()
+
+    )
+
+
+    return resposta.data or []
+
+
+
 # =====================================================
 # CADASTRAR PRODUTO
 # =====================================================
@@ -50,23 +90,33 @@ def cadastrar_produto(
     supabase.table("produtos").insert({
 
         "categoria_id": categoria_id,
+
         "nome": nome,
+
         "preco": preco,
+
         "ativo": True
 
     }).execute()
+
 
 
 # =====================================================
 # EXCLUIR PRODUTO
 # =====================================================
 
-def excluir_produto(produto_id):
+def excluir_produto(
+    produto_id
+):
 
     supabase.table("produtos")\
         .delete()\
-        .eq("id", produto_id)\
+        .eq(
+            "id",
+            produto_id
+        )\
         .execute()
+
 
 
 # =====================================================
@@ -83,25 +133,44 @@ def alterar_status(
         "ativo": ativo
 
     }).eq(
+
         "id",
         produto_id
+
     ).execute()
+
+
+
 # =====================================================
 # BUSCAR PRODUTO
 # =====================================================
 
-def buscar_produto(produto_id):
+def buscar_produto(
+    produto_id
+):
 
     resposta = (
+
         supabase
+
         .table("produtos")
+
         .select("*")
-        .eq("id", produto_id)
+
+        .eq(
+            "id",
+            produto_id
+        )
+
         .single()
+
         .execute()
+
     )
 
+
     return resposta.data
+
 
 
 # =====================================================
@@ -119,9 +188,16 @@ def atualizar_produto(
     supabase.table("produtos").update({
 
         "categoria_id": categoria_id,
+
         "nome": nome,
+
         "preco": preco,
+
         "ativo": ativo
 
-    }).eq("id", produto_id).execute()
+    }).eq(
 
+        "id",
+        produto_id
+
+    ).execute()
