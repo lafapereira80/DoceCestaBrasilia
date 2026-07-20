@@ -49,6 +49,84 @@ administrador_operador()
 
 
 # =====================================================
+# CSS COMPACTO
+# =====================================================
+
+st.markdown(
+"""
+<style>
+
+
+h1 {
+
+font-size:24px !important;
+
+margin-bottom:5px;
+
+}
+
+
+h2 {
+
+font-size:18px !important;
+
+}
+
+
+
+p, div, span {
+
+font-size:13px;
+
+}
+
+
+
+label {
+
+font-size:13px !important;
+
+}
+
+
+
+.stButton button {
+
+height:34px;
+
+font-size:13px;
+
+padding:4px 10px;
+
+}
+
+
+
+input {
+
+font-size:13px !important;
+
+}
+
+
+
+.block-container {
+
+padding-top:1rem;
+
+padding-bottom:1rem;
+
+}
+
+
+</style>
+""",
+unsafe_allow_html=True
+)
+
+
+
+# =====================================================
 # VERIFICA PRODUTO SELECIONADO
 # =====================================================
 
@@ -98,8 +176,11 @@ except Exception as erro:
 
 
     st.error(
+
         f"Erro ao carregar produto: {erro}"
+
     )
+
 
     st.stop()
 
@@ -114,19 +195,24 @@ st.title(
 )
 
 
+st.caption(
+    "Atualize as informações do produto."
+)
+
+
 st.divider()
 
 
 
 # =====================================================
-# IDENTIFICA CATEGORIA ATUAL
+# IDENTIFICA CATEGORIA
 # =====================================================
 
 indice_categoria = 0
 
 
 
-for i, categoria in enumerate(categorias):
+for i,categoria in enumerate(categorias):
 
 
     if categoria["id"] == produto["categoria_id"]:
@@ -147,58 +233,84 @@ with st.form(
 ):
 
 
-    categoria = st.selectbox(
-
-        "Categoria",
-
-        categorias,
-
-        index=indice_categoria,
-
-        format_func=lambda c: c["nome"]
-
-    )
+    col1,col2 = st.columns(2)
 
 
 
-    nome = st.text_input(
-
-        "Nome do Produto",
-
-        value=produto["nome"]
-
-    )
+    with col1:
 
 
+        categoria = st.selectbox(
 
-    preco = st.number_input(
+            "Categoria",
 
-        "Preço",
+            categorias,
 
-        min_value=0.0,
+            index=indice_categoria,
 
-        value=float(produto["preco"]),
+            format_func=lambda c:c["nome"]
 
-        step=1.0
-
-    )
-
-
-
-    ativo = st.checkbox(
-
-        "Produto ativo",
-
-        value=produto.get(
-            "ativo",
-            True
         )
 
-    )
+
+
+    with col2:
+
+
+        nome = st.text_input(
+
+            "Nome do Produto",
+
+            value=produto["nome"]
+
+        )
 
 
 
-    col1, col2 = st.columns(2)
+    col1,col2 = st.columns(2)
+
+
+
+    with col1:
+
+
+        preco = st.number_input(
+
+            "Preço (R$)",
+
+            min_value=0.0,
+
+            value=float(
+                produto["preco"]
+            ),
+
+            step=1.0
+
+        )
+
+
+
+    with col2:
+
+
+        ativo = st.checkbox(
+
+            "Produto ativo",
+
+            value=produto.get(
+                "ativo",
+                True
+            )
+
+        )
+
+
+
+    st.divider()
+
+
+
+    col1,col2 = st.columns(2)
 
 
 
@@ -207,7 +319,7 @@ with st.form(
 
         salvar = st.form_submit_button(
 
-            "💾 Salvar Alterações",
+            "💾 Salvar",
 
             use_container_width=True
 
@@ -253,11 +365,10 @@ if cancelar:
 
 
 # =====================================================
-# SALVAR ALTERAÇÃO
+# SALVAR
 # =====================================================
 
 if salvar:
-
 
 
     if nome.strip() == "":
