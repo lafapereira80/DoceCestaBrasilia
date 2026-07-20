@@ -39,7 +39,28 @@ try:
         .execute()
     )
 
-    pedidos = resposta.data if resposta.data else []
+    pedidos = resposta.data or []
+
+except Exception as erro:
+
+    st.error(f"Erro ao carregar histórico: {erro}")
+
+    st.stop()
+
+
+st.write("Quantidade de pedidos encontrados:", len(pedidos))
+
+for pedido in pedidos:
+    st.write(
+        "ID:",
+        pedido["id"],
+        "| CPF:",
+        pedido["cliente_cpf"],
+        "| Status:",
+        pedido["status"],
+        "| Data:",
+        pedido["created_at"]
+    )
 
 except Exception as erro:
 
