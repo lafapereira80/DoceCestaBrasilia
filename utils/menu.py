@@ -1,6 +1,11 @@
 import streamlit as st
 
 
+
+# =====================================================
+# CONFIGURA VISUAL DO STREAMLIT
+# =====================================================
+
 def configurar_pagina():
 
     st.markdown(
@@ -11,17 +16,28 @@ def configurar_pagina():
             display:none;
         }
 
-        footer {
-            display:none;
-        }
 
         header {
             display:none;
         }
 
-        [data-testid="stSidebar"] {
+
+        footer {
             display:none;
         }
+
+
+        /* Esconde somente o menu automático */
+        [data-testid="stSidebarNav"] {
+            display:none;
+        }
+
+
+        /* Remove botão de recolher */
+        [data-testid="collapsedControl"] {
+            display:none;
+        }
+
 
         </style>
         """,
@@ -29,6 +45,10 @@ def configurar_pagina():
     )
 
 
+
+# =====================================================
+# MENU LATERAL PERSONALIZADO
+# =====================================================
 
 def menu_lateral():
 
@@ -50,86 +70,118 @@ def menu_lateral():
 
 
 
-    st.sidebar.title(
-        "🍓 Doce Cesta Brasília"
-    )
+    with st.sidebar:
 
 
-    st.sidebar.write(
-        f"Usuário: {usuario['login']}"
-    )
-
-
-    st.sidebar.divider()
-
-
-
-    st.sidebar.page_link(
-        "pages/01_Inicio.py",
-        label="🏠 Início"
-    )
-
-
-    if perfil in [
-        "Administrador",
-        "Operador"
-    ]:
-
-
-        st.sidebar.page_link(
-            "pages/02_Pedidos.py",
-            label="📦 Pedidos"
+        st.title(
+            "🍓 Doce Cesta Brasília"
         )
 
 
-        st.sidebar.page_link(
-            "pages/03_Clientes.py",
-            label="👥 Clientes"
+        st.success(
+            f"Olá, {usuario['login']}"
         )
 
 
-        st.sidebar.page_link(
-            "pages/04_Cestas.py",
-            label="🧺 Cestas"
+        st.caption(
+            f"Perfil: {perfil}"
         )
 
 
-        st.sidebar.page_link(
-            "pages/05_Produtos.py",
-            label="🍫 Produtos"
-        )
+        st.divider()
 
 
 
-    if perfil == "Administrador":
+        st.page_link(
 
-
-        st.sidebar.page_link(
-            "pages/06_Financeiro.py",
-            label="💰 Financeiro"
-        )
-
-
-        st.sidebar.page_link(
-            "pages/07_Usuarios.py",
-            label="👤 Usuários"
-        )
-
-
-        st.sidebar.page_link(
             "pages/99_Admin.py",
-            label="⚙️ Administração"
+
+            label="🏠 Administração"
+
         )
 
 
-    st.sidebar.divider()
+
+        if perfil in [
+
+            "Administrador",
+            "Operador"
+
+        ]:
+
+
+            st.page_link(
+
+                "pages/02_Pedidos.py",
+
+                label="📦 Pedidos"
+
+            )
+
+
+            st.page_link(
+
+                "pages/03_Clientes.py",
+
+                label="👥 Clientes"
+
+            )
+
+
+            st.page_link(
+
+                "pages/04_Cestas.py",
+
+                label="🧺 Cestas"
+
+            )
+
+
+            st.page_link(
+
+                "pages/05_Produtos.py",
+
+                label="🍫 Produtos"
+
+            )
 
 
 
-    if st.sidebar.button(
-        "🚪 Sair"
-    ):
+        if perfil == "Administrador":
 
-        st.session_state.usuario = None
 
-        st.rerun()
+            st.page_link(
+
+                "pages/06_Financeiro.py",
+
+                label="💰 Financeiro"
+
+            )
+
+
+            st.page_link(
+
+                "pages/07_Usuarios.py",
+
+                label="👤 Usuários"
+
+            )
+
+
+
+        st.divider()
+
+
+
+        if st.button(
+
+            "🚪 Sair",
+
+            use_container_width=True
+
+        ):
+
+
+            st.session_state.usuario = None
+
+            st.rerun()
