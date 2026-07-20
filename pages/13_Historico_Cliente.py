@@ -1,11 +1,13 @@
 import streamlit as st
 from config.supabase import supabase
 
+
 st.set_page_config(
     page_title="Histórico do Cliente",
     page_icon="👤",
     layout="wide"
 )
+
 
 # =====================================================
 # VERIFICA SE VEIO DA TELA CLIENTES
@@ -21,10 +23,12 @@ if "cliente_cpf" not in st.session_state:
 
     st.stop()
 
+
 cpf = st.session_state["cliente_cpf"]
 
+
 # =====================================================
-# BUSCA TODOS OS PEDIDOS DO CLIENTE
+# BUSCA TODOS OS PEDIDOS ENTREGUES DO CLIENTE
 # =====================================================
 
 try:
@@ -41,6 +45,7 @@ try:
 
     pedidos = resposta.data or []
 
+
 except Exception as erro:
 
     st.error(f"Erro ao carregar histórico: {erro}")
@@ -48,22 +53,22 @@ except Exception as erro:
     st.stop()
 
 
-except Exception as erro:
 
-    st.error(f"Erro ao carregar histórico: {erro}")
-    st.stop()
-    
 if not pedidos:
 
-    st.warning("Cliente sem pedidos.")
+    st.warning("Cliente sem pedidos entregues.")
 
     st.stop()
 
+
+
 cliente = pedidos[0]
+
 
 st.title("👤 Histórico do Cliente")
 
 st.divider()
+
 
 # =====================================================
 # RESUMO DO CLIENTE
@@ -71,10 +76,12 @@ st.divider()
 
 total_pedidos = len(pedidos)
 
+
 valor_total = sum(
     float(p.get("valor_total") or 0)
     for p in pedidos
 )
+
 
 ticket_medio = (
     valor_total / total_pedidos
@@ -82,30 +89,48 @@ ticket_medio = (
     else 0
 )
 
-ultima_compra = pedidos[0].get("data_entrega", "-")
+
+ultima_compra = pedidos[0].get(
+    "data_entrega",
+    "-"
+)
+
+
 
 st.subheader("👤 Dados do Cliente")
 
+
 col1, col2 = st.columns(2)
+
 
 with col1:
 
     st.write("**Nome**")
-    st.write(cliente["cliente_nome"])
+    st.write(cliente.get("cliente_nome", "-"))
 
     st.write("**CPF**")
-    st.write(cliente["cliente_cpf"])
+    st.write(cliente.get("cliente_cpf", "-"))
+
 
 with col2:
 
     st.write("**Telefone**")
-    st.write(cliente["cliente_telefone"])
+    st.write(cliente.get("cliente_telefone", "-"))
+
+
 
 st.divider()
 
+
+# =====================================================
+# RESUMO
+# =====================================================
+
 st.subheader("📊 Resumo")
 
+
 c1, c2, c3, c4 = st.columns(4)
+
 
 with c1:
 
@@ -114,19 +139,28 @@ with c1:
         total_pedidos
     )
 
+
 with c2:
 
     st.metric(
         "Valor Gasto",
-        f"R$ {valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        f"R$ {valor_total:,.2f}"
+        .replace(",", "X")
+        .replace(".", ",")
+        .replace("X", ".")
     )
+
 
 with c3:
 
     st.metric(
         "Ticket Médio",
-        f"R$ {ticket_medio:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        f"R$ {ticket_medio:,.2f}"
+        .replace(",", "X")
+        .replace(".", ",")
+        .replace("X", ".")
     )
+
 
 with c4:
 
@@ -135,7 +169,11 @@ with c4:
         str(ultima_compra)
     )
 
+
+
 st.divider()
+
+
 
 # =====================================================
 # HISTÓRICO DOS PEDIDOS
@@ -143,46 +181,67 @@ st.divider()
 
 st.subheader("📋 Histórico de Compras")
 
-st.write("Total no histórico:", len(pedidos))
+
+st.info(
+    f"Total de compras entregues encontradas: {len(pedidos)}"
+)
+
+
 
 for i, pedido in enumerate(pedidos):
 
-    st.write("Pedido número:", i + 1)
 
     with st.container(border=True):
 
-    with st.container(border=True):
 
         st.markdown(
             f"## 🎁 {pedido.get('cesta_nome','-')}"
         )
 
+
+        st.caption(
+            f"Pedido {i + 1}"
+        )
+
+
         col1, col2, col3 = st.columns(3)
+
 
         with col1:
 
             st.write("**Data da entrega**")
-            st.write(pedido.get("data_entrega","-"))
+            st.write(
+                pedido.get("data_entrega","-")
+            )
+
 
         with col2:
 
             st.write("**Status**")
-            st.write(pedido.get("status","-"))
+            st.write(
+                pedido.get("status","-")
+            )
+
 
         with col3:
 
             st.write("**Pagamento**")
-            st.write(pedido.get("pagamento","-"))
+            st.write(
+                pedido.get("pagamento","-")
+            )
+
 
         st.divider()
 
-        # ==========================================
-        # PRODUTOS ESCOLHIDOS
-        # ==========================================
 
         st.write("### 📦 Produtos da Cesta")
 
-        produtos = pedido.get("produtos","")
+
+        produtos = pedido.get(
+            "produtos",
+            ""
+        )
+
 
         if produtos:
 
@@ -190,13 +249,20 @@ for i, pedido in enumerate(pedidos):
 
         else:
 
-            st.info("Nenhum produto registrado.")
+            st.info(
+                "Nenhum produto registrado."
+            )
 
-        # ==========================================
+
 
         st.write("### 🎀 Adicionais")
 
-        adicionais = pedido.get("adicionais","")
+
+        adicionais = pedido.get(
+            "adicionais",
+            ""
+        )
+
 
         if adicionais:
 
@@ -204,109 +270,110 @@ for i, pedido in enumerate(pedidos):
 
         else:
 
-            st.info("Nenhum adicional.")
+            st.info(
+                "Nenhum adicional."
+            )
 
-        # ==========================================
+
 
         st.write("### 💌 Mensagem")
 
-        mensagem = pedido.get("mensagem","")
+
+        mensagem = pedido.get(
+            "mensagem",
+            ""
+        )
+
 
         if mensagem:
 
             st.text_area(
-
                 "Mensagem",
-
                 value=mensagem,
-
                 disabled=True,
-
                 height=90,
-
                 key=f"msg_{pedido['id']}",
-
                 label_visibility="collapsed"
-
             )
 
         else:
 
-            st.info("Sem mensagem.")
+            st.info(
+                "Sem mensagem."
+            )
 
-        # ==========================================
+
 
         st.write("### ✨ Pedido Especial")
 
-        especial = pedido.get("pedido_especial","")
+
+        especial = pedido.get(
+            "pedido_especial",
+            ""
+        )
+
 
         if especial:
 
             st.text_area(
-
                 "Pedido Especial",
-
                 value=especial,
-
                 disabled=True,
-
                 height=90,
-
                 key=f"esp_{pedido['id']}",
-
                 label_visibility="collapsed"
-
             )
 
         else:
 
-            st.info("Nenhum pedido especial.")
+            st.info(
+                "Nenhum pedido especial."
+            )
 
-        # ==========================================
+
 
         st.write("### 📍 Endereço")
 
+
         st.text_area(
-
             "Endereço",
-
             value=pedido.get("endereco",""),
-
             disabled=True,
-
             height=90,
-
             key=f"end_{pedido['id']}",
-
             label_visibility="collapsed"
-
         )
 
+
+
         col1, col2 = st.columns(2)
+
 
         with col1:
 
             st.metric(
-
                 "Frete",
-
-                f"R$ {float(pedido.get('valor_frete') or 0):,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
-
+                f"R$ {float(pedido.get('valor_frete') or 0):,.2f}"
+                .replace(",", "X")
+                .replace(".", ",")
+                .replace("X",".")
             )
+
 
         with col2:
 
             st.metric(
-
                 "Valor Total",
-
-                f"R$ {float(pedido.get('valor_total') or 0):,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
-
+                f"R$ {float(pedido.get('valor_total') or 0):,.2f}"
+                .replace(",", "X")
+                .replace(".", ",")
+                .replace("X",".")
             )
 
-        # ==========================================
+
 
         st.write("### 📷 Fotos")
+
 
         if pedido.get("foto_excluida"):
 
@@ -320,7 +387,11 @@ for i, pedido in enumerate(pedidos):
                 "Fotos ainda disponíveis."
             )
 
+
     st.divider()
+
+
+
 # =====================================================
 # VOLTAR
 # =====================================================
@@ -335,6 +406,7 @@ if st.button(
         "cliente_cpf",
         None
     )
+
 
     st.switch_page(
         "pages/03_Clientes.py"
