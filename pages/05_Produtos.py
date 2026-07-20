@@ -22,10 +22,18 @@ from utils.permissao import (
 
 
 
+# =====================================================
+# CONFIGURAÇÃO
+# =====================================================
+
 st.set_page_config(
+
     page_title="Produtos",
+
     page_icon="🛒",
+
     layout="wide"
+
 )
 
 
@@ -47,11 +55,99 @@ usuario = st.session_state.usuario
 
 
 # =====================================================
+# CSS COMPACTO
+# =====================================================
+
+st.markdown(
+"""
+<style>
+
+
+h1 {
+
+font-size:24px !important;
+
+margin-bottom:5px;
+
+}
+
+
+h2 {
+
+font-size:18px !important;
+
+margin-top:8px;
+
+margin-bottom:8px;
+
+}
+
+
+p, div, span {
+
+font-size:13px;
+
+}
+
+
+.stCaption {
+
+font-size:11px !important;
+
+}
+
+
+.stButton button {
+
+height:32px;
+
+padding:2px 8px;
+
+font-size:12px;
+
+}
+
+
+[data-testid="stVerticalBlockBorderWrapper"] {
+
+padding-top:8px;
+
+padding-bottom:8px;
+
+}
+
+
+.block-container {
+
+padding-top:1rem;
+
+padding-bottom:1rem;
+
+}
+
+
+hr {
+
+margin-top:8px;
+
+margin-bottom:8px;
+
+}
+
+
+</style>
+""",
+unsafe_allow_html=True
+)
+
+
+
+# =====================================================
 # TÍTULO
 # =====================================================
 
 st.title(
-    "🛒 Cadastro de Produtos"
+    "🛒 Produtos"
 )
 
 
@@ -65,15 +161,20 @@ st.divider()
 
 try:
 
+
     categorias = listar_categorias()
+
 
 
 except Exception as erro:
 
 
     st.error(
+
         f"Erro ao carregar categorias: {erro}"
+
     )
+
 
     st.stop()
 
@@ -83,8 +184,11 @@ if not categorias:
 
 
     st.warning(
+
         "Nenhuma categoria cadastrada."
+
     )
+
 
     st.stop()
 
@@ -108,20 +212,34 @@ if usuario["perfil"] == "Administrador":
     ):
 
 
-        categoria = st.selectbox(
-
-            "Categoria",
-
-            categorias,
-
-            format_func=lambda c: c["nome"]
-
-        )
+        col1,col2 = st.columns(2)
 
 
-        nome = st.text_input(
-            "Nome do Produto"
-        )
+
+        with col1:
+
+
+            categoria = st.selectbox(
+
+                "Categoria",
+
+                categorias,
+
+                format_func=lambda c:c["nome"]
+
+            )
+
+
+
+        with col2:
+
+
+            nome = st.text_input(
+
+                "Nome do Produto"
+
+            )
+
 
 
         preco = st.number_input(
@@ -137,9 +255,10 @@ if usuario["perfil"] == "Administrador":
         )
 
 
+
         salvar = st.form_submit_button(
 
-            "💾 Cadastrar Produto",
+            "💾 Cadastrar",
 
             use_container_width=True
 
@@ -154,7 +273,9 @@ if usuario["perfil"] == "Administrador":
 
 
             st.error(
+
                 "Informe o nome do produto."
+
             )
 
 
@@ -176,7 +297,9 @@ if usuario["perfil"] == "Administrador":
 
 
                 st.success(
-                    "Produto cadastrado com sucesso!"
+
+                    "Produto cadastrado!"
+
                 )
 
 
@@ -188,7 +311,9 @@ if usuario["perfil"] == "Administrador":
 
 
                 st.error(
+
                     f"Erro ao cadastrar produto: {erro}"
+
                 )
 
 
@@ -196,7 +321,9 @@ else:
 
 
     st.info(
-        "Modo consulta. Apenas Administradores podem alterar produtos."
+
+        "Modo consulta. Apenas Administradores podem cadastrar produtos."
+
     )
 
 
@@ -220,25 +347,29 @@ except Exception as erro:
 
 
     st.error(
+
         f"Erro ao carregar produtos: {erro}"
+
     )
+
 
     st.stop()
 
 
 
 # =====================================================
-# ORGANIZA PRODUTOS POR CATEGORIA
+# ORGANIZA CATEGORIAS
 # =====================================================
 
-categorias_dict = {}
+categorias_dict = {
 
 
-for categoria in categorias:
+    categoria["id"]:categoria["nome"]
 
-    categorias_dict[
-        categoria["id"]
-    ] = categoria["nome"]
+
+    for categoria in categorias
+
+}
 
 
 
@@ -248,8 +379,11 @@ produtos_por_categoria = {}
 
 for categoria in categorias:
 
+
     produtos_por_categoria[
+
         categoria["nome"]
+
     ] = []
 
 
@@ -266,18 +400,13 @@ for produto in produtos:
     )
 
 
-    if nome_categoria not in produtos_por_categoria:
+    produtos_por_categoria.setdefault(
 
+        nome_categoria,
 
-        produtos_por_categoria[
-            nome_categoria
-        ] = []
+        []
 
-
-
-    produtos_por_categoria[
-        nome_categoria
-    ].append(produto)
+    ).append(produto)
 
 
 
@@ -302,38 +431,33 @@ st.subheader(
 
 
 # =====================================================
-# EXIBE PRODUTOS
+# LISTAGEM
 # =====================================================
 
 for nome_categoria in ordem_categorias:
 
 
-    if nome_categoria not in produtos_por_categoria:
+    lista = produtos_por_categoria.get(
+
+        nome_categoria,
+
+        []
+
+    )
+
+
+
+    if not lista:
 
         continue
 
 
 
     st.subheader(
+
         f"📦 {nome_categoria}"
+
     )
-
-
-
-    lista = produtos_por_categoria[
-        nome_categoria
-    ]
-
-
-
-    if len(lista) == 0:
-
-
-        st.info(
-            "Nenhum produto cadastrado."
-        )
-
-        continue
 
 
 
@@ -341,21 +465,26 @@ for nome_categoria in ordem_categorias:
 
 
         ativo = produto.get(
+
             "ativo",
+
             True
+
         )
 
 
 
-        with st.container(border=True):
+        with st.container(
+            border=True
+        ):
 
 
             if usuario["perfil"] == "Administrador":
 
 
-                col1, col2, col3, col4, col5, col6 = st.columns(
+                col1,col2,col3,col4,col5,col6 = st.columns(
 
-                    [5,2,2,1,1,1]
+                    [5,2,1.5,0.6,0.6,0.6]
 
                 )
 
@@ -363,30 +492,24 @@ for nome_categoria in ordem_categorias:
             else:
 
 
-                col1, col2, col3 = st.columns(
+                col1,col2,col3 = st.columns(
 
-                    [5,2,2]
+                    [5,2,1]
 
                 )
 
 
-
-            # ==========================================
-            # Nome
-            # ==========================================
 
             with col1:
 
 
                 st.write(
+
                     f"**{produto['nome']}**"
+
                 )
 
 
-
-            # ==========================================
-            # Preço
-            # ==========================================
 
             with col2:
 
@@ -399,10 +522,6 @@ for nome_categoria in ordem_categorias:
 
 
 
-            # ==========================================
-            # Status
-            # ==========================================
-
             with col3:
 
 
@@ -410,7 +529,9 @@ for nome_categoria in ordem_categorias:
 
 
                     st.success(
-                        "Ativo"
+
+                        "✓ Ativo"
+
                     )
 
 
@@ -418,14 +539,12 @@ for nome_categoria in ordem_categorias:
 
 
                     st.error(
-                        "Inativo"
+
+                        "✕ Inativo"
+
                     )
 
 
-
-            # ==========================================
-            # AÇÕES ADMIN
-            # ==========================================
 
             if usuario["perfil"] == "Administrador":
 
@@ -444,7 +563,9 @@ for nome_categoria in ordem_categorias:
 
 
                         st.session_state[
+
                             "produto_editar"
+
                         ] = produto["id"]
 
 
@@ -503,7 +624,7 @@ for nome_categoria in ordem_categorias:
 
                         st.success(
 
-                            "Produto excluído com sucesso!"
+                            "Produto excluído!"
 
                         )
 
@@ -512,4 +633,4 @@ for nome_categoria in ordem_categorias:
 
 
 
-    st.divider()
+    st.write("")
