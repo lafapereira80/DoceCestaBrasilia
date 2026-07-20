@@ -548,38 +548,16 @@ if cesta:
                 # --------------------------------
 
 
-                if maximo == 1:
+                if maximo <= 1:
 
+    escolhido = st.radio(
+        "Escolha uma opção",
+        produtos,
+        format_func=lambda p: p["nome"],
+        key=f"radio_{categoria}"
+    )
 
-
-                    escolhido = st.radio(
-
-
-                        "Escolha uma opção",
-
-
-                        produtos,
-
-
-                        format_func=lambda p:
-
-                            p["nome"],
-
-
-                        key=f"radio_{categoria}"
-
-                    )
-
-
-
-                    selecoes_cliente[categoria] = [
-
-
-                        escolhido
-
-
-                    ]
-
+    selecoes_cliente[categoria] = [escolhido]
 
 
                 # --------------------------------
@@ -621,16 +599,11 @@ if cesta:
 
 
 
-                    if len(escolhidos) < minimo:
+                  if minimo > 0 and len(escolhidos) < minimo:
 
-
-
-                        st.warning(
-
-                            f"Escolha pelo menos {minimo} opção(ões)."
-
-                        )
-
+    st.caption(
+        f"⚠ Escolha pelo menos {minimo} opção(ões)."
+    )
 
 
                     selecoes_cliente[categoria] = escolhidos
@@ -1171,7 +1144,7 @@ if enviar:
 
 
 
-    for grupo in configuracao:
+    for grupo in configuracao or []:
 
 
 
