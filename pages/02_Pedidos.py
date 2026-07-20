@@ -49,7 +49,7 @@ usuario = st.session_state.usuario
 
 
 # =====================================================
-# CSS COMPACTO + CORES DOS CARDS
+# CSS COMPACTO
 # =====================================================
 
 st.markdown(
@@ -87,54 +87,9 @@ p, div, span{
 }
 
 
+[data-testid="stVerticalBlockBorderWrapper"]{
 
-/* CARD BASE */
-
-.card-pedido{
-
-    border-radius:10px;
-
-    padding:10px;
-
-    margin-bottom:12px;
-
-    border:1px solid #cccccc;
-
-}
-
-
-
-/* RECEBIDOS */
-
-.card-recebido{
-
-    background-color:#fff8dc;
-
-    border-left:6px solid #e6b800;
-
-}
-
-
-
-/* PAGOS */
-
-.card-pago{
-
-    background-color:#e8f8e8;
-
-    border-left:6px solid #28a745;
-
-}
-
-
-
-/* DESISTÊNCIA */
-
-.card-desistencia{
-
-    background-color:#ffeaea;
-
-    border-left:6px solid #dc3545;
+    padding:8px;
 
 }
 
@@ -227,6 +182,7 @@ st.subheader(
 )
 
 
+
 pesquisa = st.text_input(
     "",
     placeholder="Digite o nome do cliente..."
@@ -249,7 +205,7 @@ if pesquisa.strip():
 
 
 # =====================================================
-# STATUS VISUAL
+# FUNÇÃO STATUS
 # =====================================================
 
 def status_visual(status):
@@ -310,33 +266,7 @@ def mostrar_lista(
     for _, pedido in pedidos_status.iterrows():
 
 
-        classe_card = ""
-
-
-        if status_filtro == "Recebido":
-
-            classe_card = "card-recebido"
-
-
-        elif status_filtro == "Pago":
-
-            classe_card = "card-pago"
-
-
-        elif status_filtro == "Desistência":
-
-            classe_card = "card-desistencia"
-
-
-
-        st.markdown(
-            f"<div class='card-pedido {classe_card}'>",
-            unsafe_allow_html=True
-        )
-
-
-
-        with st.container():
+        with st.container(border=True):
 
 
             col1, col2, col3, col4, col5 = st.columns(
@@ -389,30 +319,20 @@ def mostrar_lista(
 
             with col4:
 
-
                 valor = float(
-
                     pedido.get(
                         "valor_total",
                         0
                     )
-
                     or 0
-
                 )
 
 
-
                 valor_formatado = (
-
                     f"R$ {valor:,.2f}"
-
                     .replace(",", "X")
-
                     .replace(".", ",")
-
                     .replace("X",".")
-
                 )
 
 
@@ -423,7 +343,6 @@ def mostrar_lista(
 
 
             with col5:
-
 
 
                 if st.button(
@@ -464,19 +383,13 @@ def mostrar_lista(
 
 
                         sucesso, mensagem = (
-
                             excluir_pedido_completo(
-
                                 pedido["id"]
-
                             )
-
                         )
 
 
-
                         if sucesso:
-
 
                             st.success(
                                 mensagem
@@ -485,20 +398,11 @@ def mostrar_lista(
                             st.rerun()
 
 
-
                         else:
-
 
                             st.error(
                                 mensagem
                             )
-
-
-
-        st.markdown(
-            "</div>",
-            unsafe_allow_html=True
-        )
 
 
 
@@ -534,13 +438,9 @@ mostrar_lista(
     "Desistência",
 
     permitir_exclusao=(
-
         usuario["perfil"]
-
         ==
-
         "Administrador"
-
     )
 
 )
