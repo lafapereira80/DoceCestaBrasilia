@@ -5,13 +5,13 @@ from pathlib import Path
 from services.pedido_service import salvar_pedido
 from services.foto_service import salvar_fotos
 from services.cesta_service import listar_cestas
-from services.cesta_produto_service import carregar_configuracao_cesta
+from services.configuracao_cesta_service import carregar_configuracao_cesta
 from services.produto_service import listar_produtos_por_categoria
 
 
 
 # ==========================================================
-# CONFIGURAÇÃO
+# CONFIGURAÇÃO DA PÁGINA
 # ==========================================================
 
 st.set_page_config(
@@ -111,7 +111,19 @@ div[data-baseweb="input"]{
 
 
 
+input{
+
+    height:42px !important;
+
+    font-size:15px !important;
+
+}
+
+
+
 textarea{
+
+    font-size:15px !important;
 
     border-radius:10px !important;
 
@@ -119,339 +131,7 @@ textarea{
 
 
 
-div[data-testid="stCheckbox"]{
-
-    background:#fffaf5;
-
-    padding:8px;
-
-    border-radius:8px;
-
-}
-
-
-
-.stButton button{
-
-    background:#8B5A2B;
-
-    color:white;
-
-    border-radius:12px;
-
-    height:52px;
-
-    font-size:16px;
-
-    font-weight:bold;
-
-    width:100%;
-
-}
-
-
-</style>
-""",
-unsafe_allow_html=True
-)
-
-
-
-# ==========================================================
-# LOGO
-# ==========================================================
-
-logo = Path(
-    "assets/logo.webp"
-)
-
-
-if logo.exists():
-
-    col1,col2,col3 = st.columns([2,1,2])
-
-
-    with col2:
-
-        st.image(
-            str(logo),
-            width=130
-        )
-
-
-
-st.markdown(
-"""
-<h1 style="
-text-align:center;
-color:#8B5A2B;
-">
-Doce Cesta Brasília
-</h1>
-""",
-unsafe_allow_html=True
-)
-
-
-
-st.markdown(
-"""
-<p style="
-text-align:center;
-">
-Cestas personalizadas para momentos especiais 💝
-</p>
-""",
-unsafe_allow_html=True
-)
-
-
-
-# ==========================================================
-# CLIENTE
-# ==========================================================
-
-st.markdown(
-"### 📝 Faça seu pedido"
-)
-
-
-st.markdown(
-"### 👤 Seus dados"
-)
-
-
-
-col1,col2 = st.columns(2)
-
-
-
-with col1:
-
-    nome = st.text_input(
-
-        "Nome completo *",
-
-        placeholder="Digite seu nome"
-
-    )
-
-
-
-with col2:
-
-    telefone = st.text_input(
-
-        "Telefone *",
-
-        placeholder="(61) 99999-9999"
-
-    )
-
-
-
-cpf = st.text_input(
-
-    "CPF *",
-
-    placeholder="000.000.000-00"
-
-)
-
-
-
-# ==========================================================
-# CESTAS
-# ==========================================================
-
-try:
-
-    cestas = listar_cestas()
-
-
-except Exception as erro:
-
-    st.error(
-        f"Erro ao carregar cestas: {erro}"
-    )
-
-    cestas = []
-
-
-
-st.markdown(
-"### 🎁 Escolha sua cesta"
-)
-
-
-
-cesta = None
-
-
-
-if cestas:
-
-
-    cesta = st.selectbox(
-
-        "Selecione a cesta",
-
-        cestas,
-
-        format_func=lambda x:
-            x["nome"]
-
-    )
-
-
-else:
-
-
-    st.warning(
-        "Nenhuma cesta cadastrada no momento."
-    )
-
-
-
-# ==========================================================
-# VISUAL DA CESTA
-# ==========================================================
-
-if cesta:
-
-
-    col1,col2 = st.columns([1,2])
-
-
-    with col1:
-
-
-        if cesta.get("imagem"):
-
-            st.image(
-
-                cesta["imagem"],
-
-                use_container_width=True
-
-            )
-
-
-    with col2:
-
-
-        if cesta.get("descricao"):
-
-            st.info(
-
-                cesta["descricao"]
-
-            )
-
-import streamlit as st
-from pathlib import Path
-
-
-from services.pedido_service import salvar_pedido
-from services.foto_service import salvar_fotos
-from services.cesta_service import listar_cestas
-from services.cesta_produto_service import carregar_configuracao_cesta
-from services.produto_service import listar_produtos_por_categoria
-
-
-
-# ==========================================================
-# CONFIGURAÇÃO
-# ==========================================================
-
-st.set_page_config(
-
-    page_title="Doce Cesta Brasília",
-
-    page_icon="🎁",
-
-    layout="centered",
-
-    initial_sidebar_state="collapsed"
-
-)
-
-
-
-# ==========================================================
-# CSS
-# ==========================================================
-
-st.markdown(
-"""
-<style>
-
-section[data-testid="stSidebar"]{
-    display:none;
-}
-
-[data-testid="collapsedControl"]{
-    display:none;
-}
-
-header{
-    visibility:hidden;
-}
-
-footer{
-    visibility:hidden;
-}
-
-#MainMenu{
-    visibility:hidden;
-}
-
-
-.block-container{
-
-    max-width:720px;
-
-    padding-top:15px;
-
-    padding-bottom:30px;
-
-}
-
-
-h1{
-
-    font-size:26px !important;
-
-}
-
-
-h2{
-
-    font-size:20px !important;
-
-}
-
-
-h3{
-
-    font-size:17px !important;
-
-    color:#8B5A2B;
-
-}
-
-
-p,label,div{
-
-    font-size:14px;
-
-}
-
-
-
-div[data-baseweb="input"]{
-
-    background:white;
+div[data-baseweb="select"] > div{
 
     border-radius:10px;
 
@@ -461,14 +141,6 @@ div[data-baseweb="input"]{
 
 
 
-textarea{
-
-    border-radius:10px !important;
-
-}
-
-
-
 div[data-testid="stCheckbox"]{
 
     background:#fffaf5;
@@ -500,6 +172,15 @@ div[data-testid="stCheckbox"]{
 }
 
 
+
+.stButton button:hover{
+
+    background:#6f451f;
+
+}
+
+
+
 </style>
 """,
 unsafe_allow_html=True
@@ -524,8 +205,11 @@ if logo.exists():
     with col2:
 
         st.image(
+
             str(logo),
+
             width=130
+
         )
 
 
@@ -535,6 +219,7 @@ st.markdown(
 <h1 style="
 text-align:center;
 color:#8B5A2B;
+margin-bottom:0;
 ">
 Doce Cesta Brasília
 </h1>
@@ -548,6 +233,7 @@ st.markdown(
 """
 <p style="
 text-align:center;
+margin-top:5px;
 ">
 Cestas personalizadas para momentos especiais 💝
 </p>
@@ -558,13 +244,18 @@ unsafe_allow_html=True
 
 
 # ==========================================================
-# CLIENTE
+# FORMULÁRIO
 # ==========================================================
 
 st.markdown(
 "### 📝 Faça seu pedido"
 )
 
+
+
+# ==========================================================
+# DADOS DO CLIENTE
+# ==========================================================
 
 st.markdown(
 "### 👤 Seus dados"
@@ -582,7 +273,9 @@ with col1:
 
         "Nome completo *",
 
-        placeholder="Digite seu nome"
+        placeholder="Digite seu nome",
+
+        key="cliente_nome"
 
     )
 
@@ -594,7 +287,9 @@ with col2:
 
         "Telefone *",
 
-        placeholder="(61) 99999-9999"
+        placeholder="(61) 99999-9999",
+
+        key="cliente_telefone"
 
     )
 
@@ -604,14 +299,16 @@ cpf = st.text_input(
 
     "CPF *",
 
-    placeholder="000.000.000-00"
+    placeholder="000.000.000-00",
+
+    key="cliente_cpf"
 
 )
 
 
 
 # ==========================================================
-# CESTAS
+# CARREGAR CESTAS
 # ==========================================================
 
 try:
@@ -648,8 +345,9 @@ if cestas:
 
         cestas,
 
-        format_func=lambda x:
-            x["nome"]
+        format_func=lambda c: c["nome"],
+
+        key="cesta_selecionada"
 
     )
 
@@ -658,14 +356,14 @@ else:
 
 
     st.warning(
+
         "Nenhuma cesta cadastrada no momento."
+
     )
-
-
-
+    # ==========================================================
+# DADOS VISUAIS DA CESTA
 # ==========================================================
-# VISUAL DA CESTA
-# ==========================================================
+
 
 if cesta:
 
@@ -678,6 +376,7 @@ if cesta:
 
         if cesta.get("imagem"):
 
+
             st.image(
 
                 cesta["imagem"],
@@ -687,23 +386,848 @@ if cesta:
             )
 
 
+
     with col2:
 
 
         if cesta.get("descricao"):
+
 
             st.info(
 
                 cesta["descricao"]
 
             )
+
+
+
+# ==========================================================
+# PERSONALIZAÇÃO DA CESTA
+# ==========================================================
+
+
+st.markdown(
+"### 🍓 Personalize sua cesta"
+)
+
+
+
+selecoes_cliente = {}
+
+
+
+if cesta:
+
+
+    configuracao = carregar_configuracao_cesta(
+
+        cesta["id"]
+
+    )
+
+
+    if configuracao:
+
+
+        for grupo in configuracao:
+
+
+            categoria = grupo["categoria"]
+
+
+            produtos = grupo.get(
+
+                "produtos",
+
+                []
+
+            )
+
+
+            minimo = grupo.get(
+
+                "min_escolhas",
+
+                0
+
+            )
+
+
+            maximo = grupo.get(
+
+                "max_escolhas",
+
+                1
+
+            )
+
+
+
+            with st.container(border=True):
+
+
+                st.markdown(
+
+                    f"### {categoria}"
+
+                )
+
+
+
+                # ======================================
+                # ESCOLHA ÚNICA
+                # ======================================
+
+
+                if maximo == 1:
+
+
+
+                    escolhido = st.radio(
+
+
+                        "Escolha uma opção",
+
+
+                        produtos,
+
+
+                        format_func=lambda p: p["nome"],
+
+
+                        key=f"radio_{cesta['id']}_{categoria}"
+
+                    )
+
+
+
+                    selecoes_cliente[categoria] = [
+
+                        escolhido
+
+                    ]
+
+
+
+                # ======================================
+                # MULTIPLAS ESCOLHAS
+                # ======================================
+
+
+                else:
+
+
+
+                    escolhidos = st.multiselect(
+
+
+                        f"Escolha entre {minimo} e {maximo} opções",
+
+
+                        produtos,
+
+
+                        format_func=lambda p: p["nome"],
+
+
+                        max_selections=maximo,
+
+
+                        key=f"multi_{cesta['id']}_{categoria}"
+
+                    )
+
+
+
+                    if len(escolhidos) < minimo:
+
+
+                        st.warning(
+
+                            f"A categoria {categoria} precisa de pelo menos {minimo} escolha(s)."
+
+                        )
+
+
+
+                    selecoes_cliente[categoria] = escolhidos
+
+
+
+    else:
+
+
+        st.info(
+
+            "Esta cesta ainda não possui produtos configurados."
+
+        )
+
+
+
+else:
+
+
+    st.info(
+
+        "Escolha uma cesta para personalizar os produtos."
+
+    )
+
+
+
+
+
+# ==========================================================
+# ADICIONAIS
+# ==========================================================
+
+
+st.markdown(
+"### 🎀 Adicionais"
+)
+
+
+
+try:
+
+
+    adicionais_cadastrados = listar_produtos_por_categoria(
+
+        "Adicionais"
+
+    )
+
+
+except Exception as erro:
+
+
+    adicionais_cadastrados = []
+
+
+    st.error(
+
+        f"Erro ao carregar adicionais: {erro}"
+
+    )
+
+
+
+adicionais_selecionados = []
+
+
+polaroid = False
+
+
+
+with st.container(border=True):
+
+
+    if adicionais_cadastrados:
+
+
+
+        colunas = st.columns(2)
+
+
+
+        for indice, adicional in enumerate(adicionais_cadastrados):
+
+
+            with colunas[indice % 2]:
+
+
+                marcado = st.checkbox(
+
+
+                    adicional["nome"],
+
+
+                    key=f"add_{adicional['id']}"
+
+                )
+
+
+
+                if marcado:
+
+
+                    adicionais_selecionados.append(
+
+                        adicional["nome"]
+
+                    )
+
+
+
+                    if adicional["nome"].lower().strip() == "polaroid":
+
+
+                        polaroid = True
+
+
+
+    else:
+
+
+        st.info(
+
+            "Nenhum adicional cadastrado."
+
+        )
+
+
+
+
+
+# ==========================================================
+# FOTOS POLAROID
+# ==========================================================
+
+
+if polaroid:
+
+
+    st.markdown(
+
+        "### 📷 Fotos da Polaroid"
+
+    )
+
+
+    fotos = st.file_uploader(
+
+
+        "Selecione as imagens",
+
+
+        type=[
+
+            "jpg",
+
+            "jpeg",
+
+            "png",
+
+            "webp"
+
+        ],
+
+
+        accept_multiple_files=True,
+
+
+        key="upload_polaroid"
+
+    )
+
+
+else:
+
+
+    fotos = []
+
+
+
+# ==========================================================
+# PAGAMENTO
+# ==========================================================
+
+
+st.markdown(
+
+"### 💳 Pagamento"
+
+)
+
+
+
+with st.container(border=True):
+
+
+    pagamento = st.radio(
+
+
+        "Forma de pagamento",
+
+
+        [
+
+            "Pix",
+
+            "Cartão de Crédito"
+
+        ],
+
+
+        horizontal=True,
+
+
+        key="forma_pagamento"
+
+    )
+    # ==========================================================
+# DADOS VISUAIS DA CESTA
+# ==========================================================
+
+if cesta:
+
+
+    col1, col2 = st.columns(
+        [1, 2]
+    )
+
+
+    with col1:
+
+
+        if cesta.get("imagem"):
+
+
+            st.image(
+
+                cesta["imagem"],
+
+                use_container_width=True
+
+            )
+
+
+
+    with col2:
+
+
+        if cesta.get("descricao"):
+
+
+            st.info(
+
+                cesta["descricao"]
+
+            )
+
+
+
+# ==========================================================
+# PERSONALIZAÇÃO DA CESTA
+# ==========================================================
+
+
+st.markdown(
+    "### 🍓 Personalize sua cesta"
+)
+
+
+
+selecoes_cliente = {}
+
+
+
+if cesta:
+
+
+    configuracao = carregar_configuracao_cesta(
+
+        cesta["id"]
+
+    )
+
+
+
+    if configuracao:
+
+
+
+        categorias_processadas = set()
+
+
+
+        for grupo in configuracao:
+
+
+
+            categoria = grupo.get(
+
+                "categoria",
+
+                "Sem Categoria"
+
+            )
+
+
+            produtos = grupo.get(
+
+                "produtos",
+
+                []
+
+            )
+
+
+            minimo = grupo.get(
+
+                "min_escolhas",
+
+                0
+
+            )
+
+
+            maximo = grupo.get(
+
+                "max_escolhas",
+
+                1
+
+            )
+
+
+
+            # evita criar widgets duplicados
+
+            if categoria in categorias_processadas:
+
+                continue
+
+
+
+            categorias_processadas.add(
+
+                categoria
+
+            )
+
+
+
+            with st.container(border=True):
+
+
+                st.markdown(
+
+                    f"**{categoria}**"
+
+                )
+
+
+
+                # ===============================
+                # ESCOLHA ÚNICA
+                # ===============================
+
+
+                if maximo == 1:
+
+
+
+                    escolhido = st.radio(
+
+
+                        "Escolha uma opção",
+
+
+                        produtos,
+
+
+                        format_func=lambda p:
+
+                            p["nome"],
+
+
+                        key=f"radio_{categoria}"
+
+                    )
+
+
+
+                    selecoes_cliente[categoria] = [
+
+
+                        escolhido
+
+                    ]
+
+
+
+                # ===============================
+                # MULTIPLAS ESCOLHAS
+                # ===============================
+
+
+                else:
+
+
+
+                    escolhidos = st.multiselect(
+
+
+
+                        f"Escolha entre {minimo} e {maximo} opções",
+
+
+
+                        produtos,
+
+
+
+                        format_func=lambda p:
+
+                            p["nome"],
+
+
+
+                        max_selections=maximo,
+
+
+
+                        key=f"multi_{categoria}"
+
+
+
+                    )
+
+
+
+                    if len(escolhidos) < minimo:
+
+
+
+                        st.warning(
+
+                            f"Escolha pelo menos {minimo} opção(ões)."
+
+                        )
+
+
+
+                    selecoes_cliente[categoria] = escolhidos
+
+
+
+    else:
+
+
+        st.info(
+
+            "Esta cesta ainda não possui produtos configurados."
+
+        )
+
+
+
+else:
+
+
+    st.info(
+
+        "Escolha uma cesta para personalizar os produtos."
+
+    )
+
+
+
+# ==========================================================
+# ADICIONAIS DINÂMICOS
+# ==========================================================
+
+
+st.markdown(
+
+    "### 🎀 Adicionais"
+
+)
+
+
+
+try:
+
+
+    adicionais_cadastrados = listar_produtos_por_categoria(
+
+        "Adicionais"
+
+    )
+
+
+except Exception as erro:
+
+
+    adicionais_cadastrados = []
+
+
+    st.error(
+
+        f"Erro ao carregar adicionais: {erro}"
+
+    )
+
+
+
+adicionais_selecionados = []
+
+
+polaroid = False
+
+
+
+with st.container(border=True):
+
+
+    if adicionais_cadastrados:
+
+
+        colunas = st.columns(2)
+
+
+
+        for indice, adicional in enumerate(adicionais_cadastrados):
+
+
+            coluna = colunas[
+
+                indice % 2
+
+            ]
+
+
+
+            with coluna:
+
+
+                marcado = st.checkbox(
+
+
+                    adicional["nome"],
+
+
+                    key=f"adicional_{adicional['id']}"
+
+                )
+
+
+
+                if marcado:
+
+
+                    adicionais_selecionados.append(
+
+                        adicional["nome"]
+
+                    )
+
+
+
+                    if adicional["nome"].lower().strip() == "polaroid":
+
+
+                        polaroid = True
+
+
+
+    else:
+
+
+        st.info(
+
+            "Nenhum adicional cadastrado."
+
+        )
+
+
+
+# ==========================================================
+# FOTOS POLAROID
+# ==========================================================
+
+
+if polaroid:
+
+
+    st.markdown(
+
+        "### 📷 Envie as fotos para a Polaroid"
+
+    )
+
+
+
+    fotos = st.file_uploader(
+
+
+        "Selecione as imagens",
+
+
+        type=[
+
+            "jpg",
+
+            "jpeg",
+
+            "png",
+
+            "webp"
+
+        ],
+
+
+        accept_multiple_files=True
+
+    )
+
+
+else:
+
+
+    fotos = []
+
+# ==========================================================
+# PAGAMENTO
+# ==========================================================
+
+
+st.markdown(
+
+    "### 💳 Pagamento"
+
+)
+
+
+
+with st.container(border=True):
+
+
+    pagamento = st.radio(
+
+
+        "Forma de pagamento",
+
+
+        [
+
+            "Pix",
+
+            "Cartão de Crédito"
+
+        ],
+
+
+        horizontal=True,
+
+
+        key="pagamento"
+
+    )
+
+
 
 # ==========================================================
 # MENSAGEM
 # ==========================================================
 
+
 st.markdown(
-"### 💌 Mensagem"
+
+    "### 💌 Mensagem"
+
 )
 
 
@@ -717,11 +1241,12 @@ mensagem = st.text_area(
     height=100,
 
 
-    placeholder="Digite uma mensagem especial..."
+    placeholder="Digite uma mensagem especial...",
 
+
+    key="mensagem"
 
 )
-
 
 
 
@@ -729,8 +1254,11 @@ mensagem = st.text_area(
 # PEDIDO ESPECIAL
 # ==========================================================
 
+
 st.markdown(
-"### ✨ Pedido especial"
+
+    "### ✨ Pedido especial"
+
 )
 
 
@@ -744,11 +1272,12 @@ pedido_especial = st.text_area(
     height=100,
 
 
-    placeholder="Exemplo: entregar pela manhã..."
+    placeholder="Exemplo: entregar pela manhã...",
 
+
+    key="pedido_especial"
 
 )
-
 
 
 
@@ -756,8 +1285,11 @@ pedido_especial = st.text_area(
 # ENTREGA
 # ==========================================================
 
+
 st.markdown(
-"### 📍 Entrega"
+
+    "### 📍 Entrega"
+
 )
 
 
@@ -771,14 +1303,16 @@ endereco = st.text_area(
     height=100,
 
 
-    placeholder="Informe o endereço completo..."
+    placeholder="Informe o endereço completo...",
 
+
+    key="endereco"
 
 )
 
 
 
-col1,col2 = st.columns(2)
+col1, col2 = st.columns(2)
 
 
 
@@ -787,7 +1321,9 @@ with col1:
 
     data_entrega = st.date_input(
 
-        "📅 Data de entrega"
+
+        "📅 Data"
+
 
     )
 
@@ -812,14 +1348,15 @@ with col2:
 
         ]
 
-    )
 
+    )
 
 
 
 # ==========================================================
 # BOTÃO ENVIAR
 # ==========================================================
+
 
 st.divider()
 
@@ -834,25 +1371,26 @@ enviar = st.button(
     use_container_width=True,
 
 
-    type="primary"
+    type="primary",
 
+
+    key="botao_enviar"
 
 )
 
 
 
+# ==========================================================
+# PROCESSAMENTO
+# ==========================================================
 
-# ==========================================================
-# PROCESSAMENTO DO PEDIDO
-# ==========================================================
 
 if enviar:
 
 
-
-    # ======================================================
-    # VALIDAÇÕES BÁSICAS
-    # ======================================================
+    # -------------------------------
+    # VALIDAÇÕES
+    # -------------------------------
 
 
     if not nome.strip():
@@ -907,10 +1445,9 @@ if enviar:
 
 
 
-
-    # ======================================================
-    # VALIDAÇÃO DAS ESCOLHAS
-    # ======================================================
+    # -------------------------------
+    # VALIDAR ESCOLHAS
+    # -------------------------------
 
 
     configuracao = carregar_configuracao_cesta(
@@ -924,7 +1461,11 @@ if enviar:
     for grupo in configuracao or []:
 
 
-        categoria = grupo["categoria"]
+        categoria = grupo.get(
+
+            "categoria"
+
+        )
 
 
         minimo = grupo.get(
@@ -951,7 +1492,7 @@ if enviar:
 
             st.error(
 
-                f"A categoria {categoria} precisa de pelo menos {minimo} escolha(s)."
+                f"A categoria {categoria} exige pelo menos {minimo} escolha(s)."
 
             )
 
@@ -959,18 +1500,16 @@ if enviar:
 
 
 
-
-    # ======================================================
-    # MONTA LISTA DE PRODUTOS
-    # ======================================================
+    # -------------------------------
+    # PRODUTOS ESCOLHIDOS
+    # -------------------------------
 
 
     produtos_escolhidos = []
 
 
 
-    for categoria,itens in selecoes_cliente.items():
-
+    for categoria, itens in selecoes_cliente.items():
 
 
         for item in itens:
@@ -986,10 +1525,9 @@ if enviar:
 
 
 
-
-    # ======================================================
-    # DADOS PARA SUPABASE
-    # ======================================================
+    # -------------------------------
+    # MONTA PEDIDO
+    # -------------------------------
 
 
     dados = {
@@ -1010,24 +1548,18 @@ if enviar:
         "cesta_nome": cesta["nome"],
 
 
-        "produtos":
+        "produtos": "\n".join(
 
-            "\n".join(
+            produtos_escolhidos
 
-                produtos_escolhidos
-
-            ),
+        ),
 
 
+        "adicionais": ", ".join(
 
-        "adicionais":
+            adicionais_selecionados
 
-            ", ".join(
-
-                adicionais_selecionados
-
-            ),
-
+        ),
 
 
         "pagamento": pagamento,
@@ -1042,7 +1574,11 @@ if enviar:
         "endereco": endereco,
 
 
-        "data_entrega": str(data_entrega),
+        "data_entrega": str(
+
+            data_entrega
+
+        ),
 
 
         "periodo_entrega": periodo_entrega,
@@ -1056,31 +1592,45 @@ if enviar:
 
         "valor_total": 0
 
-
     }
 
 
 
+    # -------------------------------
+    # SALVA PEDIDO
+    # -------------------------------
 
-    # ======================================================
-    # SALVAR PEDIDO
-    # ======================================================
+
+    try:
 
 
-    sucesso, pedido_id = salvar_pedido(
+        sucesso, pedido_id = salvar_pedido(
 
-        dados
+            dados
 
-    )
+        )
+
+
+    except Exception as erro:
+
+
+        st.error(
+
+            f"Erro ao gravar pedido: {erro}"
+
+        )
+
+        st.stop()
 
 
 
     if sucesso:
 
 
-        # ==================================================
+
+        # -------------------------------
         # SALVAR FOTOS
-        # ==================================================
+        # -------------------------------
 
 
         if polaroid and fotos:
@@ -1103,7 +1653,7 @@ if enviar:
 
                 st.warning(
 
-                    f"Pedido salvo, mas erro ao salvar fotos: {erro}"
+                    f"Pedido salvo, mas erro nas fotos: {erro}"
 
                 )
 
@@ -1145,9 +1695,12 @@ Nossa equipe entrará em contato para confirmar:
 
         )
 
+
+
 # ==========================================================
 # RODAPÉ
 # ==========================================================
+
 
 st.divider()
 
@@ -1172,12 +1725,6 @@ unsafe_allow_html=True
 
 )
 
-
-
-
-# ==========================================================
-# ACESSO ADMINISTRATIVO
-# ==========================================================
 
 
 st.page_link(
