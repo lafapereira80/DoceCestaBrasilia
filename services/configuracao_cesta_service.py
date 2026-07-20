@@ -1,20 +1,46 @@
 from config.supabase import supabase
 
 
+
 # =====================================================
-# CARREGA CONFIGURAÇÃO DA CESTA
+# CARREGAR CONFIGURAÇÃO DA CESTA
 # =====================================================
 
 def carregar_configuracao_cesta(cesta_id):
 
-    # Busca produtos vinculados à cesta
+
     resposta = (
+
         supabase
+
         .table("cesta_produtos")
-        .select("*")
-        .eq("cesta_id", cesta_id)
+
+        .select(
+            """
+            *,
+            produtos (
+                id,
+                nome,
+                preco,
+                ativo,
+                categoria_id
+            )
+            """
+        )
+
+        .eq(
+            "cesta_id",
+            cesta_id
+        )
+
+        .order(
+            "ordem"
+        )
+
         .execute()
+
     )
+
 
 
     if not resposta.data:
@@ -30,23 +56,9 @@ def carregar_configuracao_cesta(cesta_id):
     for item in resposta.data:
 
 
-        produto_id = item["produto_id"]
-
-
-
-        # Busca produto
-        produto_resp = (
-            supabase
-            .table("produtos")
-            .select("*")
-            .eq("id", produto_id)
-            .single()
-            .execute()
+        produto = item.get(
+            "produtos"
         )
-
-
-
-        produto = produto_resp.data
 
 
 
@@ -56,32 +68,47 @@ def carregar_configuracao_cesta(cesta_id):
 
 
 
-        # Busca categoria
-        categoria_resp = (
-            supabase
-            .table("categorias")
-            .select("nome")
-            .eq(
-                "id",
-                produto["categoria_id"]
-            )
-            .single()
-            .execute()
+        categoria_nome = item.get(
+            "categoria"
         )
 
 
 
-        if not categoria_resp.data:
-
-            continue
+        if not categoria_nome:
 
 
+            categoria_resp = (
 
-        categoria_nome = categoria_resp.data["nome"]
+                supabase
+
+                .table("categorias")
+
+                .select("nome")
+
+                .eq(
+                    "id",
+                    produto["categoria_id"]
+                )
+
+                .single()
+
+                .execute()
+
+            )
+
+
+            if categoria_resp.data:
+
+                categoria_nome = categoria_resp.data["nome"]
+
+
+            else:
+
+                categoria_nome = "Sem Categoria"
 
 
 
-        # Cria agrupamento por categoria
+
         if categoria_nome not in categorias:
 
 
@@ -91,14 +118,12 @@ def carregar_configuracao_cesta(cesta_id):
                 "categoria": categoria_nome,
 
 
-                # quantidade mínima obrigatória
                 "min_escolhas": item.get(
                     "min_escolhas",
-                    0
+                    1
                 ),
 
 
-                # quantidade máxima permitida
                 "max_escolhas": item.get(
                     "max_escolhas",
                     1
@@ -108,6 +133,7 @@ def carregar_configuracao_cesta(cesta_id):
                 "produtos": []
 
             }
+
 
 
 
@@ -123,6 +149,7 @@ def carregar_configuracao_cesta(cesta_id):
 
 
 
+
 # =====================================================
 # SALVAR CONFIGURAÇÃO DA CESTA
 # =====================================================
@@ -133,16 +160,18 @@ def salvar_configuracao_cesta(
 ):
 
 
-    # Remove configuração anterior
-
     (
         supabase
+
         .table("cesta_produtos")
+
         .delete()
+
         .eq(
             "cesta_id",
             cesta_id
         )
+
         .execute()
     )
 
@@ -152,26 +181,16 @@ def salvar_configuracao_cesta(
 
 
 
+    ordem = 0
+
+
+
     for grupo in configuracoes:
-
-
-        categoria_id = grupo["categoria_id"]
-
-
-        min_escolhas = grupo.get(
-            "min_escolhas",
-            0
-        )
-
-
-        max_escolhas = grupo.get(
-            "max_escolhas",
-            1
-        )
 
 
 
         for produto_id in grupo["produtos"]:
+
 
 
             registros.append({
@@ -183,13 +202,26 @@ def salvar_configuracao_cesta(
                 "produto_id": produto_id,
 
 
-                "min_escolhas": min_escolhas,
+                "categoria": grupo["categoria"],
 
 
-                "max_escolhas": max_escolhas
+                "min_escolhas": grupo["min_escolhas"],
+
+
+                "max_escolhas": grupo["max_escolhas"],
+
+
+                "quantidade": grupo["max_escolhas"],
+
+
+                "ordem": ordem
 
 
             })
+
+
+            ordem += 1
+
 
 
 
@@ -197,8 +229,13 @@ def salvar_configuracao_cesta(
 
 
         (
+
             supabase
+
             .table("cesta_produtos")
+
             .insert(registros)
+
             .execute()
+
         )
