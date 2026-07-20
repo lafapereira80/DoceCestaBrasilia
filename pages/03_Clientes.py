@@ -1,7 +1,20 @@
 import streamlit as st
-import pandas as pd
+
 
 from config.supabase import supabase
+
+
+from utils.menu import (
+    configurar_pagina,
+    menu_lateral
+)
+
+
+from utils.permissao import (
+    administrador_operador
+)
+
+
 
 st.set_page_config(
     page_title="Clientes",
@@ -9,11 +22,37 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("👥 Clientes")
 
-st.write("Clientes que já concluíram pelo menos um pedido.")
+
+# =====================================================
+# CONTROLE DE ACESSO
+# =====================================================
+
+configurar_pagina()
+
+menu_lateral()
+
+administrador_operador()
+
+
+
+# =====================================================
+# TÍTULO
+# =====================================================
+
+st.title(
+    "👥 Clientes"
+)
+
+
+st.write(
+    "Clientes que já concluíram pelo menos um pedido."
+)
+
 
 st.divider()
+
+
 
 # =====================================================
 # BUSCA PEDIDOS ENTREGUES
@@ -21,22 +60,44 @@ st.divider()
 
 try:
 
+
     resposta = (
+
         supabase
+
         .table("pedidos")
+
         .select("*")
-        .eq("status", "Entregue")
-        .order("cliente_nome")
+
+        .eq(
+            "status",
+            "Entregue"
+        )
+
+        .order(
+            "cliente_nome"
+        )
+
         .execute()
+
     )
+
 
     pedidos = resposta.data or []
 
+
+
 except Exception as erro:
 
-    st.error(f"Erro ao carregar clientes: {erro}")
+
+    st.error(
+        f"Erro ao carregar clientes: {erro}"
+    )
+
 
     st.stop()
+
+
 
 # =====================================================
 # SEM CLIENTES
@@ -44,9 +105,15 @@ except Exception as erro:
 
 if not pedidos:
 
-    st.info("Nenhum cliente encontrado.")
+
+    st.info(
+        "Nenhum cliente encontrado."
+    )
+
 
     st.stop()
+
+
 
 # =====================================================
 # AGRUPA POR CPF
@@ -54,68 +121,182 @@ if not pedidos:
 
 clientes = {}
 
+
+
 for pedido in pedidos:
+
 
     cpf = pedido["cliente_cpf"]
 
+
+
     if cpf not in clientes:
+
 
         clientes[cpf] = {
 
-            "nome": pedido["cliente_nome"],
 
-            "cpf": cpf,
+            "nome":
 
-            "telefone": pedido["cliente_telefone"],
+            pedido["cliente_nome"],
 
-            "quantidade": 0
+
+            "cpf":
+
+            cpf,
+
+
+            "telefone":
+
+            pedido["cliente_telefone"],
+
+
+            "quantidade":
+
+            0
+
 
         }
 
+
+
     clientes[cpf]["quantidade"] += 1
 
+
+
 # =====================================================
-# TABELA
+# LISTAGEM
 # =====================================================
 
-st.subheader("📋 Clientes")
+st.subheader(
+    "📋 Clientes"
+)
 
-for cliente in clientes.values():
 
-    col1, col2, col3, col4, col5 = st.columns(
-        [3,2,2,1,1]
+
+cab1, cab2, cab3, cab4, cab5 = st.columns(
+    [3,2,2,1,1]
+)
+
+
+with cab1:
+
+    st.write(
+        "**Nome**"
     )
 
-    with col1:
 
-        st.write(cliente["nome"])
+with cab2:
 
-    with col2:
+    st.write(
+        "**CPF**"
+    )
 
-        st.write(cliente["cpf"])
 
-    with col3:
+with cab3:
 
-        st.write(cliente["telefone"])
+    st.write(
+        "**Telefone**"
+    )
 
-    with col4:
 
-        st.write(cliente["quantidade"])
+with cab4:
 
-    with col5:
+    st.write(
+        "**Pedidos**"
+    )
 
-        if st.button(
-            "📖",
-            key=f"hist_{cliente['cpf']}",
-            help="Histórico do Cliente"
-        ):
 
-            st.session_state["cliente_cpf"] = cliente["cpf"]
+with cab5:
 
-            st.switch_page(
-                "pages/13_Historico_Cliente.py"
-            )
+    st.write(
+        "**Ação**"
+    )
+
+
 
 st.divider()
 
-st.caption(f"Total de clientes: {len(clientes)}")
+
+
+for cliente in clientes.values():
+
+
+    with st.container(border=True):
+
+
+        col1, col2, col3, col4, col5 = st.columns(
+            [3,2,2,1,1]
+        )
+
+
+
+        with col1:
+
+            st.write(
+                cliente["nome"]
+            )
+
+
+
+        with col2:
+
+            st.write(
+                cliente["cpf"]
+            )
+
+
+
+        with col3:
+
+            st.write(
+                cliente["telefone"]
+            )
+
+
+
+        with col4:
+
+            st.write(
+                cliente["quantidade"]
+            )
+
+
+
+        with col5:
+
+
+            if st.button(
+
+                "📖",
+
+                key=f"hist_{cliente['cpf']}",
+
+                help="Histórico do Cliente"
+
+            ):
+
+
+                st.session_state[
+                    "cliente_cpf"
+                ] = cliente["cpf"]
+
+
+
+                st.switch_page(
+
+                    "pages/13_Historico_Cliente.py"
+
+                )
+
+
+
+st.divider()
+
+
+
+st.caption(
+
+    f"Total de clientes: {len(clientes)}"
+
+)
