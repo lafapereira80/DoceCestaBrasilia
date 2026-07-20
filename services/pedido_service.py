@@ -31,6 +31,7 @@ def salvar_pedido(dados):
 
 # =====================================================
 # LISTAR TODOS OS PEDIDOS
+# Usado para relatórios e consultas gerais
 # =====================================================
 
 def listar_pedidos():
@@ -39,6 +40,41 @@ def listar_pedidos():
         supabase
         .table("pedidos")
         .select("*")
+        .order(
+            "created_at",
+            desc=True
+        )
+        .execute()
+    )
+
+
+    return resposta.data or []
+
+
+
+# =====================================================
+# LISTAR PEDIDOS ATIVOS
+#
+# Não retorna pedidos Entregues
+#
+# Aparece na página 02_Pedidos.py
+#
+# Status:
+# Recebido
+# Pago
+# Desistência
+# =====================================================
+
+def listar_pedidos_ativos():
+
+    resposta = (
+        supabase
+        .table("pedidos")
+        .select("*")
+        .neq(
+            "status",
+            "Entregue"
+        )
         .order(
             "created_at",
             desc=True
@@ -111,6 +147,7 @@ def atualizar_pedido(
 
 # =====================================================
 # EXCLUIR PEDIDO COMPLETO
+#
 # Remove:
 # 1 - Fotos do Storage
 # 2 - Registros pedido_fotos
@@ -122,14 +159,14 @@ def excluir_pedido_completo(pedido_id):
     try:
 
 
-        # ---------------------------------------------
-        # Busca fotos vinculadas
-        # ---------------------------------------------
+        # =============================================
+        # Busca fotos vinculadas ao pedido
+        # =============================================
 
         fotos = (
             supabase
             .table("pedido_fotos")
-            .select("*")
+            .select("arquivo")
             .eq(
                 "pedido_id",
                 pedido_id
@@ -138,47 +175,50 @@ def excluir_pedido_completo(pedido_id):
         )
 
 
-        # ---------------------------------------------
-        # Remove arquivos do Storage
-        # ---------------------------------------------
+
+        arquivos = []
+
+
 
         if fotos.data:
-
-            arquivos = []
 
 
             for foto in fotos.data:
 
-                caminho = foto.get(
+
+                arquivo = foto.get(
                     "arquivo"
                 )
 
 
-                if caminho:
+                if arquivo:
 
                     arquivos.append(
-                        caminho
+                        arquivo
                     )
 
 
-            if arquivos:
 
-                (
-                    supabase
-                    .storage
-                    .from_(
-                        "pedido_fotos"
-                    )
-                    .remove(
-                        arquivos
-                    )
+        # =============================================
+        # Remove arquivos do Storage
+        # =============================================
+
+        if arquivos:
+
+
+            supabase.storage \
+                .from_(
+                    "pedido_fotos"
+                ) \
+                .remove(
+                    arquivos
                 )
 
 
 
-        # ---------------------------------------------
-        # Remove registros da tabela pedido_fotos
-        # ---------------------------------------------
+        # =============================================
+        # Remove registros de fotos
+        # =============================================
 
         (
             supabase
@@ -193,9 +233,9 @@ def excluir_pedido_completo(pedido_id):
 
 
 
-        # ---------------------------------------------
-        # Remove pedido principal
-        # ---------------------------------------------
+        # =============================================
+        # Remove pedido
+        # =============================================
 
         (
             supabase
@@ -207,6 +247,7 @@ def excluir_pedido_completo(pedido_id):
             )
             .execute()
         )
+
 
 
         return True, "Pedido excluído com sucesso"
