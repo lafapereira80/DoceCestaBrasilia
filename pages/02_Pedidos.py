@@ -20,10 +20,6 @@ from utils.permissao import (
 
 
 
-# =====================================================
-# CONFIGURAÇÃO DA PÁGINA
-# =====================================================
-
 st.set_page_config(
     page_title="Pedidos",
     page_icon="📋",
@@ -33,7 +29,7 @@ st.set_page_config(
 
 
 # =====================================================
-# CONTROLE DE ACESSO
+# CONFIGURAÇÃO
 # =====================================================
 
 configurar_pagina()
@@ -44,52 +40,47 @@ administrador_operador()
 
 
 
-usuario = st.session_state.usuario
-
-
-
 # =====================================================
-# CSS COMPACTO
+# CSS
 # =====================================================
 
 st.markdown(
 """
 <style>
 
-
 h1{
     font-size:26px !important;
-    margin-bottom:5px;
 }
 
 
 h2{
-    font-size:18px !important;
+    font-size:20px !important;
 }
 
 
-h3{
-    font-size:16px !important;
-}
+div[data-testid="stVerticalBlockBorderWrapper"]{
 
+    border-radius:12px;
 
-p, div, span{
-    font-size:13px;
+    padding:12px;
+
+    margin-bottom:18px;
+
 }
 
 
 .stButton button{
 
-    font-size:12px;
+    font-size:13px;
 
-    padding:3px 8px;
+    padding:5px 10px;
 
 }
 
 
-[data-testid="stVerticalBlockBorderWrapper"]{
+p, span, div{
 
-    padding:8px;
+    font-size:13px;
 
 }
 
@@ -111,7 +102,7 @@ st.title(
 
 
 st.caption(
-    "Controle dos pedidos em andamento."
+    "Pedidos em andamento do sistema."
 )
 
 
@@ -160,7 +151,6 @@ df = pd.DataFrame(
 
 if "created_at" in df.columns:
 
-
     df["created_at"] = pd.to_datetime(
         df["created_at"]
     )
@@ -178,20 +168,21 @@ if "created_at" in df.columns:
 # =====================================================
 
 st.subheader(
-    "🔍 Pesquisar cliente"
+    "🔍 Pesquisa"
 )
 
 
-
 pesquisa = st.text_input(
-    "",
+
+    "Nome do cliente",
+
     placeholder="Digite o nome do cliente..."
+
 )
 
 
 
 if pesquisa.strip():
-
 
     df = df[
         df["cliente_nome"]
@@ -205,32 +196,7 @@ if pesquisa.strip():
 
 
 # =====================================================
-# FUNÇÃO STATUS
-# =====================================================
-
-def status_visual(status):
-
-    if status == "Pago":
-
-        return "🟢 Pago"
-
-
-    if status == "Recebido":
-
-        return "🟡 Recebido"
-
-
-    if status == "Desistência":
-
-        return "🔴 Desistência"
-
-
-    return status
-
-
-
-# =====================================================
-# LISTAGEM
+# FUNÇÃO LISTAGEM
 # =====================================================
 
 def mostrar_lista(
@@ -240,10 +206,9 @@ def mostrar_lista(
 ):
 
 
-    st.subheader(
-        titulo
+    st.markdown(
+        f"## {titulo}"
     )
-
 
 
     pedidos_status = df[
@@ -254,7 +219,6 @@ def mostrar_lista(
 
     if pedidos_status.empty:
 
-
         st.info(
             "Nenhum pedido encontrado."
         )
@@ -263,26 +227,32 @@ def mostrar_lista(
 
 
 
+    st.caption(
+        f"{len(pedidos_status)} pedido(s)"
+    )
+
+
+
     for _, pedido in pedidos_status.iterrows():
+
 
 
         with st.container(border=True):
 
 
-            col1, col2, col3, col4, col5 = st.columns(
-                [3.5,2.5,1.8,1.5,1.2]
+            col1,col2,col3,col4 = st.columns(
+                [3,2,2,2]
             )
 
 
 
             with col1:
 
-                st.write(
-                    f"**{pedido.get('cliente_nome','-')}**"
+                st.markdown(
+                    f"**👤 {pedido.get('cliente_nome','-')}**"
                 )
 
-
-                st.caption(
+                st.write(
                     pedido.get(
                         "cliente_telefone",
                         "-"
@@ -293,25 +263,29 @@ def mostrar_lista(
 
             with col2:
 
-                st.write(
-                    f"🎁 {pedido.get('cesta_nome','-')}"
+                st.markdown(
+                    "**🎁 Cesta**"
                 )
 
-
-                st.caption(
-                    f"Entrega: {pedido.get('data_entrega','-')}"
+                st.write(
+                    pedido.get(
+                        "cesta_nome",
+                        "-"
+                    )
                 )
 
 
 
             with col3:
 
+                st.markdown(
+                    "**📅 Entrega**"
+                )
+
                 st.write(
-                    status_visual(
-                        pedido.get(
-                            "status",
-                            "-"
-                        )
+                    pedido.get(
+                        "data_entrega",
+                        "-"
                     )
                 )
 
@@ -319,39 +293,84 @@ def mostrar_lista(
 
             with col4:
 
+
                 valor = float(
+
                     pedido.get(
                         "valor_total",
                         0
                     )
+
                     or 0
+
                 )
 
 
-                valor_formatado = (
-                    f"R$ {valor:,.2f}"
-                    .replace(",", "X")
-                    .replace(".", ",")
-                    .replace("X",".")
+                st.markdown(
+                    "**💰 Valor**"
                 )
 
 
                 st.write(
-                    valor_formatado
+
+                    f"R$ {valor:,.2f}"
+
+                    .replace(",", "X")
+
+                    .replace(".", ",")
+
+                    .replace("X",".")
+
                 )
 
 
 
-            with col5:
+            st.divider()
+
+
+
+            col1,col2,col3 = st.columns(
+                [2,2,6]
+            )
+
+
+
+            with col1:
+
+                st.markdown(
+                    "**Status**"
+                )
+
+                if pedido["status"] == "Pago":
+
+                    st.success(
+                        "💰 Pago"
+                    )
+
+                elif pedido["status"] == "Recebido":
+
+                    st.warning(
+                        "📥 Recebido"
+                    )
+
+                else:
+
+                    st.error(
+                        pedido["status"]
+                    )
+
+
+
+            with col2:
 
 
                 if st.button(
 
-                    "👁️",
+                    "👁️ Abrir Pedido",
 
                     key=f"abrir_{pedido['id']}",
 
-                    help="Abrir pedido"
+                    use_container_width=True
 
                 ):
 
@@ -361,11 +380,13 @@ def mostrar_lista(
                     ] = pedido["id"]
 
 
-
                     st.switch_page(
                         "pages/09_Detalhes_Pedido.py"
                     )
 
+
+
+            with col3:
 
 
                 if permitir_exclusao:
@@ -373,20 +394,25 @@ def mostrar_lista(
 
                     if st.button(
 
-                        "🗑️",
+                        "🗑️ Excluir Pedido",
 
                         key=f"excluir_{pedido['id']}",
 
-                        help="Excluir pedido"
+                        use_container_width=True
 
                     ):
 
 
                         sucesso, mensagem = (
+
                             excluir_pedido_completo(
+
                                 pedido["id"]
+
                             )
+
                         )
+
 
 
                         if sucesso:
@@ -406,10 +432,13 @@ def mostrar_lista(
 
 
 
-# =====================================================
-# STATUS DOS PEDIDOS
-# =====================================================
+        st.write("")
 
+
+
+# =====================================================
+# LISTAS POR STATUS
+# =====================================================
 
 mostrar_lista(
 
@@ -437,23 +466,23 @@ mostrar_lista(
 
     "Desistência",
 
-    permitir_exclusao=(
-        usuario["perfil"]
-        ==
-        "Administrador"
-    )
+    permitir_exclusao=
+
+    st.session_state.usuario["perfil"]
+
+    ==
+
+    "Administrador"
 
 )
 
 
 
-# =====================================================
-# TOTAL
-# =====================================================
-
 st.divider()
 
 
 st.caption(
+
     f"Total de pedidos ativos: {len(df)}"
+
 )
