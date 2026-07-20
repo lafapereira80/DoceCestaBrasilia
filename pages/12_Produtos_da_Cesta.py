@@ -54,6 +54,99 @@ administrador_operador()
 
 
 # =====================================================
+# CSS COMPACTO
+# =====================================================
+
+st.markdown(
+"""
+<style>
+
+
+h1 {
+
+font-size:24px !important;
+
+margin-bottom:5px;
+
+}
+
+
+
+h2 {
+
+font-size:17px !important;
+
+margin-top:8px;
+
+margin-bottom:5px;
+
+}
+
+
+
+p, div, span {
+
+font-size:13px;
+
+}
+
+
+
+label {
+
+font-size:13px !important;
+
+}
+
+
+
+.stCheckbox {
+
+margin-bottom:-8px;
+
+}
+
+
+
+.stButton button {
+
+height:34px;
+
+font-size:13px;
+
+padding:4px 10px;
+
+}
+
+
+
+.block-container {
+
+padding-top:1rem;
+
+padding-bottom:1rem;
+
+}
+
+
+
+hr {
+
+margin-top:8px;
+
+margin-bottom:8px;
+
+}
+
+
+</style>
+""",
+unsafe_allow_html=True
+)
+
+
+
+# =====================================================
 # VERIFICA CESTA SELECIONADA
 # =====================================================
 
@@ -92,6 +185,11 @@ st.title(
 )
 
 
+st.caption(
+    "Selecione os produtos que fazem parte desta cesta."
+)
+
+
 st.divider()
 
 
@@ -105,10 +203,14 @@ try:
 
     categorias = listar_categorias()
 
+
     produtos = listar_produtos()
 
+
     produtos_da_cesta = listar_produtos_da_cesta(
+
         cesta_id
+
     )
 
 
@@ -116,15 +218,18 @@ except Exception as erro:
 
 
     st.error(
+
         f"Erro ao carregar dados: {erro}"
+
     )
+
 
     st.stop()
 
 
 
 # =====================================================
-# ORGANIZA PRODUTOS POR CATEGORIA
+# ORGANIZA PRODUTOS
 # =====================================================
 
 categorias_dict = {
@@ -147,7 +252,9 @@ for categoria in categorias:
 
 
     produtos_por_categoria[
+
         categoria["nome"]
+
     ] = []
 
 
@@ -164,7 +271,6 @@ for produto in produtos:
     )
 
 
-
     produtos_por_categoria.setdefault(
 
         nome_categoria,
@@ -176,12 +282,14 @@ for produto in produtos:
 
 
 # =====================================================
-# PRODUTOS JÁ VINCULADOS
+# PRODUTOS VINCULADOS
 # =====================================================
 
 produtos_marcados = [
 
+
     item["produto_id"]
+
 
     for item in produtos_da_cesta
 
@@ -190,7 +298,7 @@ produtos_marcados = [
 
 
 # =====================================================
-# CHECKBOXES
+# SELEÇÃO
 # =====================================================
 
 selecionados = []
@@ -229,43 +337,58 @@ for categoria in ordem:
 
 
 
-    for produto in produtos_por_categoria[categoria]:
+    produtos_lista = produtos_por_categoria[categoria]
+
+
+
+    col1,col2 = st.columns(2)
+
+
+
+    for index, produto in enumerate(produtos_lista):
 
 
         marcado = produto["id"] in produtos_marcados
 
 
 
-        escolhido = st.checkbox(
-
-            produto["nome"],
-
-            value=marcado,
-
-            key=f"produto_{produto['id']}"
-
-        )
+        with col1 if index % 2 == 0 else col2:
 
 
+            escolhido = st.checkbox(
 
-        if escolhido:
+                produto["nome"],
 
+                value=marcado,
 
-            selecionados.append(
-
-                produto["id"]
+                key=f"produto_{produto['id']}"
 
             )
 
 
 
-    st.divider()
+            if escolhido:
+
+
+                selecionados.append(
+
+                    produto["id"]
+
+                )
+
+
+
+    st.write("")
 
 
 
 # =====================================================
 # BOTÕES
 # =====================================================
+
+st.divider()
+
+
 
 col1,col2 = st.columns(2)
 
@@ -276,7 +399,7 @@ with col1:
 
     if st.button(
 
-        "💾 Salvar Produtos da Cesta",
+        "💾 Salvar Produtos",
 
         use_container_width=True
 
@@ -298,10 +421,9 @@ with col1:
 
             st.success(
 
-                "Produtos da cesta atualizados com sucesso!"
+                "Produtos da cesta atualizados!"
 
             )
-
 
 
             st.rerun()
@@ -339,7 +461,6 @@ with col2:
             None
 
         )
-
 
 
         st.switch_page(
