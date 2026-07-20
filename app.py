@@ -766,47 +766,7 @@ with st.container(border=True):
         key="forma_pagamento"
 
     )
-    # ==========================================================
-# DADOS VISUAIS DA CESTA
-# ==========================================================
-
-if cesta:
-
-
-    col1, col2 = st.columns(
-        [1, 2]
-    )
-
-
-    with col1:
-
-
-        if cesta.get("imagem"):
-
-
-            st.image(
-
-                cesta["imagem"],
-
-                use_container_width=True
-
-            )
-
-
-
-    with col2:
-
-
-        if cesta.get("descricao"):
-
-
-            st.info(
-
-                cesta["descricao"]
-
-            )
-
-
+  
 
 # ==========================================================
 # PERSONALIZAÇÃO DA CESTA
