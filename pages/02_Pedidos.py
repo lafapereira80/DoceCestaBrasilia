@@ -29,7 +29,7 @@ st.set_page_config(
 
 
 # =====================================================
-# CONFIGURAÇÃO
+# CONFIGURAÇÕES
 # =====================================================
 
 configurar_pagina()
@@ -54,33 +54,68 @@ h1{
 
 
 h2{
-    font-size:20px !important;
+    font-size:18px !important;
 }
 
 
-div[data-testid="stVerticalBlockBorderWrapper"]{
-
-    border-radius:12px;
-
-    padding:12px;
-
-    margin-bottom:18px;
-
+p, div, span{
+    font-size:13px;
 }
 
 
 .stButton button{
 
-    font-size:13px;
+    font-size:12px;
 
-    padding:5px 10px;
+    padding:4px 8px;
 
 }
 
 
-p, span, div{
 
-    font-size:13px;
+.card-recebido{
+
+    background:#fff8dc;
+
+    border-left:6px solid #e0b000;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    margin-bottom:12px;
+
+}
+
+
+
+.card-pago{
+
+    background:#e9f7ef;
+
+    border-left:6px solid #28a745;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    margin-bottom:12px;
+
+}
+
+
+
+.card-desistencia{
+
+    background:#fdecea;
+
+    border-left:6px solid #dc3545;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    margin-bottom:12px;
 
 }
 
@@ -151,6 +186,7 @@ df = pd.DataFrame(
 
 if "created_at" in df.columns:
 
+
     df["created_at"] = pd.to_datetime(
         df["created_at"]
     )
@@ -168,7 +204,7 @@ if "created_at" in df.columns:
 # =====================================================
 
 st.subheader(
-    "🔍 Pesquisa"
+    "🔍 Pesquisar"
 )
 
 
@@ -176,7 +212,7 @@ pesquisa = st.text_input(
 
     "Nome do cliente",
 
-    placeholder="Digite o nome do cliente..."
+    placeholder="Digite o nome..."
 
 )
 
@@ -196,7 +232,7 @@ if pesquisa.strip():
 
 
 # =====================================================
-# FUNÇÃO LISTAGEM
+# LISTAGEM
 # =====================================================
 
 def mostrar_lista(
@@ -206,9 +242,10 @@ def mostrar_lista(
 ):
 
 
-    st.markdown(
-        f"## {titulo}"
+    st.subheader(
+        titulo
     )
+
 
 
     pedidos_status = df[
@@ -227,209 +264,204 @@ def mostrar_lista(
 
 
 
-    st.caption(
-        f"{len(pedidos_status)} pedido(s)"
-    )
-
-
-
     for _, pedido in pedidos_status.iterrows():
 
 
 
-        with st.container(border=True):
+        if status_filtro == "Recebido":
+
+            classe = "card-recebido"
 
 
-            col1,col2,col3,col4 = st.columns(
-                [3,2,2,2]
+        elif status_filtro == "Pago":
+
+            classe = "card-pago"
+
+
+        else:
+
+            classe = "card-desistencia"
+
+
+
+
+        st.markdown(
+
+            f"<div class='{classe}'>",
+
+            unsafe_allow_html=True
+
+        )
+
+
+
+        col1, col2, col3, col4, col5, col6, col7 = st.columns(
+            [3,2,2,2,1.5,1.5,2]
+        )
+
+
+
+        with col1:
+
+            st.write(
+                f"**{pedido.get('cliente_nome','-')}**"
             )
 
 
 
-            with col1:
+        with col2:
 
-                st.markdown(
-                    f"**👤 {pedido.get('cliente_nome','-')}**"
+            st.write(
+                pedido.get(
+                    "cliente_telefone",
+                    "-"
                 )
-
-                st.write(
-                    pedido.get(
-                        "cliente_telefone",
-                        "-"
-                    )
-                )
-
-
-
-            with col2:
-
-                st.markdown(
-                    "**🎁 Cesta**"
-                )
-
-                st.write(
-                    pedido.get(
-                        "cesta_nome",
-                        "-"
-                    )
-                )
-
-
-
-            with col3:
-
-                st.markdown(
-                    "**📅 Entrega**"
-                )
-
-                st.write(
-                    pedido.get(
-                        "data_entrega",
-                        "-"
-                    )
-                )
-
-
-
-            with col4:
-
-
-                valor = float(
-
-                    pedido.get(
-                        "valor_total",
-                        0
-                    )
-
-                    or 0
-
-                )
-
-
-                st.markdown(
-                    "**💰 Valor**"
-                )
-
-
-                st.write(
-
-                    f"R$ {valor:,.2f}"
-
-                    .replace(",", "X")
-
-                    .replace(".", ",")
-
-                    .replace("X",".")
-
-                )
-
-
-
-            st.divider()
-
-
-
-            col1,col2,col3 = st.columns(
-                [2,2,6]
             )
 
 
 
-            with col1:
+        with col3:
 
-                st.markdown(
-                    "**Status**"
+            st.write(
+                pedido.get(
+                    "cesta_nome",
+                    "-"
+                )
+            )
+
+
+
+        with col4:
+
+            st.write(
+                pedido.get(
+                    "data_entrega",
+                    "-"
+                )
+            )
+
+
+
+        with col5:
+
+            st.write(
+                pedido.get(
+                    "status",
+                    "-"
+                )
+            )
+
+
+
+        with col6:
+
+
+            valor = float(
+
+                pedido.get(
+                    "valor_total",
+                    0
                 )
 
-                if pedido["status"] == "Pago":
+                or 0
 
-                    st.success(
-                        "💰 Pago"
-                    )
-
-                elif pedido["status"] == "Recebido":
-
-                    st.warning(
-                        "📥 Recebido"
-                    )
-
-                else:
-
-                    st.error(
-                        pedido["status"]
-                    )
+            )
 
 
+            st.write(
 
-            with col2:
+                f"R$ {valor:,.2f}"
+
+                .replace(",", "X")
+
+                .replace(".", ",")
+
+                .replace("X",".")
+
+            )
+
+
+
+        with col7:
+
+
+            if st.button(
+
+                "👁️",
+
+                key=f"abrir_{pedido['id']}",
+
+                help="Abrir pedido"
+
+            ):
+
+
+                st.session_state[
+                    "pedido_aberto"
+                ] = pedido["id"]
+
+
+                st.switch_page(
+
+                    "pages/09_Detalhes_Pedido.py"
+
+                )
+
+
+
+
+            if permitir_exclusao:
 
 
                 if st.button(
 
-                    "👁️ Abrir Pedido",
+                    "🗑️",
 
-                    key=f"abrir_{pedido['id']}",
+                    key=f"excluir_{pedido['id']}",
 
-                    use_container_width=True
+                    help="Excluir pedido"
 
                 ):
 
 
-                    st.session_state[
-                        "pedido_aberto"
-                    ] = pedido["id"]
+                    sucesso, mensagem = (
 
+                        excluir_pedido_completo(
 
-                    st.switch_page(
-                        "pages/09_Detalhes_Pedido.py"
+                            pedido["id"]
+
+                        )
+
                     )
 
 
 
-            with col3:
+                    if sucesso:
 
 
-                if permitir_exclusao:
+                        st.success(
+                            mensagem
+                        )
+
+                        st.rerun()
 
 
-                    if st.button(
 
-                        "🗑️ Excluir Pedido",
+                    else:
 
-                        key=f"excluir_{pedido['id']}",
-
-                        use_container_width=True
-
-                    ):
-
-
-                        sucesso, mensagem = (
-
-                            excluir_pedido_completo(
-
-                                pedido["id"]
-
-                            )
-
+                        st.error(
+                            mensagem
                         )
 
 
 
-                        if sucesso:
+        st.markdown(
 
-                            st.success(
-                                mensagem
-                            )
+            "</div>",
 
-                            st.rerun()
+            unsafe_allow_html=True
 
-
-                        else:
-
-                            st.error(
-                                mensagem
-                            )
-
+        )
 
 
         st.write("")
@@ -437,8 +469,9 @@ def mostrar_lista(
 
 
 # =====================================================
-# LISTAS POR STATUS
+# STATUS
 # =====================================================
+
 
 mostrar_lista(
 
@@ -476,9 +509,6 @@ mostrar_lista(
 
 )
 
-
-
-st.divider()
 
 
 st.caption(
