@@ -514,7 +514,7 @@ else:
 
                     st.switch_page(
 
-                        "pages/13_Configurar_Cesta.py"
+                        "pages/14_Configurar_Cesta.py"
 
                     )
 
