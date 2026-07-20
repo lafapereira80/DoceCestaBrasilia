@@ -15,7 +15,7 @@ from utils.menu import (
 
 
 from utils.permissao import (
-    administrador
+    administrador_operador
 )
 
 
@@ -44,7 +44,7 @@ configurar_pagina()
 
 menu_lateral()
 
-administrador()
+administrador_operador()
 
 
 
@@ -74,9 +74,7 @@ if "produto_editar" not in st.session_state:
 
 
 
-produto_id = st.session_state[
-    "produto_editar"
-]
+produto_id = st.session_state["produto_editar"]
 
 
 
@@ -121,7 +119,7 @@ st.divider()
 
 
 # =====================================================
-# FORMULÁRIO
+# IDENTIFICA CATEGORIA ATUAL
 # =====================================================
 
 indice_categoria = 0
@@ -140,6 +138,9 @@ for i, categoria in enumerate(categorias):
 
 
 
+# =====================================================
+# FORMULÁRIO
+# =====================================================
 
 with st.form(
     "form_editar_produto"
@@ -176,9 +177,7 @@ with st.form(
 
         min_value=0.0,
 
-        value=float(
-            produto["preco"]
-        ),
+        value=float(produto["preco"]),
 
         step=1.0
 
@@ -190,13 +189,16 @@ with st.form(
 
         "Produto ativo",
 
-        value=produto["ativo"]
+        value=produto.get(
+            "ativo",
+            True
+        )
 
     )
 
 
 
-    col1,col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
 
 
@@ -251,7 +253,7 @@ if cancelar:
 
 
 # =====================================================
-# SALVAR
+# SALVAR ALTERAÇÃO
 # =====================================================
 
 if salvar:
@@ -272,6 +274,7 @@ if salvar:
 
 
         try:
+
 
 
             atualizar_produto(
