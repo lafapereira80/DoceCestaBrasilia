@@ -20,6 +20,10 @@ from utils.permissao import (
 
 
 
+# =====================================================
+# CONFIGURAÇÃO DA PÁGINA
+# =====================================================
+
 st.set_page_config(
     page_title="Pedidos",
     page_icon="📋",
@@ -29,7 +33,7 @@ st.set_page_config(
 
 
 # =====================================================
-# CONFIGURAÇÕES
+# CONTROLE DE ACESSO
 # =====================================================
 
 configurar_pagina()
@@ -40,21 +44,32 @@ administrador_operador()
 
 
 
+usuario = st.session_state.usuario
+
+
+
 # =====================================================
-# CSS
+# CSS COMPACTO + CORES DOS CARDS
 # =====================================================
 
 st.markdown(
 """
 <style>
 
+
 h1{
     font-size:26px !important;
+    margin-bottom:5px;
 }
 
 
 h2{
     font-size:18px !important;
+}
+
+
+h3{
+    font-size:16px !important;
 }
 
 
@@ -67,55 +82,59 @@ p, div, span{
 
     font-size:12px;
 
-    padding:4px 8px;
+    padding:3px 8px;
 
 }
 
 
+
+/* CARD BASE */
+
+.card-pedido{
+
+    border-radius:10px;
+
+    padding:10px;
+
+    margin-bottom:12px;
+
+    border:1px solid #cccccc;
+
+}
+
+
+
+/* RECEBIDOS */
 
 .card-recebido{
 
-    background:#fff8dc;
+    background-color:#fff8dc;
 
-    border-left:6px solid #e0b000;
-
-    padding:12px;
-
-    border-radius:10px;
-
-    margin-bottom:12px;
+    border-left:6px solid #e6b800;
 
 }
 
 
+
+/* PAGOS */
 
 .card-pago{
 
-    background:#e9f7ef;
+    background-color:#e8f8e8;
 
     border-left:6px solid #28a745;
-
-    padding:12px;
-
-    border-radius:10px;
-
-    margin-bottom:12px;
 
 }
 
 
 
+/* DESISTÊNCIA */
+
 .card-desistencia{
 
-    background:#fdecea;
+    background-color:#ffeaea;
 
     border-left:6px solid #dc3545;
-
-    padding:12px;
-
-    border-radius:10px;
-
-    margin-bottom:12px;
 
 }
 
@@ -137,7 +156,7 @@ st.title(
 
 
 st.caption(
-    "Pedidos em andamento do sistema."
+    "Controle dos pedidos em andamento."
 )
 
 
@@ -204,21 +223,19 @@ if "created_at" in df.columns:
 # =====================================================
 
 st.subheader(
-    "🔍 Pesquisar"
+    "🔍 Pesquisar cliente"
 )
 
 
 pesquisa = st.text_input(
-
-    "Nome do cliente",
-
-    placeholder="Digite o nome..."
-
+    "",
+    placeholder="Digite o nome do cliente..."
 )
 
 
 
 if pesquisa.strip():
+
 
     df = df[
         df["cliente_nome"]
@@ -228,6 +245,31 @@ if pesquisa.strip():
             case=False
         )
     ]
+
+
+
+# =====================================================
+# STATUS VISUAL
+# =====================================================
+
+def status_visual(status):
+
+    if status == "Pago":
+
+        return "🟢 Pago"
+
+
+    if status == "Recebido":
+
+        return "🟡 Recebido"
+
+
+    if status == "Desistência":
+
+        return "🔴 Desistência"
+
+
+    return status
 
 
 
@@ -256,6 +298,7 @@ def mostrar_lista(
 
     if pedidos_status.empty:
 
+
         st.info(
             "Nenhum pedido encontrado."
         )
@@ -267,209 +310,200 @@ def mostrar_lista(
     for _, pedido in pedidos_status.iterrows():
 
 
+        classe_card = ""
+
 
         if status_filtro == "Recebido":
 
-            classe = "card-recebido"
+            classe_card = "card-recebido"
 
 
         elif status_filtro == "Pago":
 
-            classe = "card-pago"
+            classe_card = "card-pago"
 
 
-        else:
+        elif status_filtro == "Desistência":
 
-            classe = "card-desistencia"
-
+            classe_card = "card-desistencia"
 
 
 
         st.markdown(
-
-            f"<div class='{classe}'>",
-
+            f"<div class='card-pedido {classe_card}'>",
             unsafe_allow_html=True
-
         )
 
 
 
-        col1, col2, col3, col4, col5, col6, col7 = st.columns(
-            [3,2,2,2,1.5,1.5,2]
-        )
+        with st.container():
 
 
-
-        with col1:
-
-            st.write(
-                f"**{pedido.get('cliente_nome','-')}**"
+            col1, col2, col3, col4, col5 = st.columns(
+                [3.5,2.5,1.8,1.5,1.2]
             )
 
 
 
-        with col2:
+            with col1:
 
-            st.write(
-                pedido.get(
-                    "cliente_telefone",
-                    "-"
-                )
-            )
-
-
-
-        with col3:
-
-            st.write(
-                pedido.get(
-                    "cesta_nome",
-                    "-"
-                )
-            )
-
-
-
-        with col4:
-
-            st.write(
-                pedido.get(
-                    "data_entrega",
-                    "-"
-                )
-            )
-
-
-
-        with col5:
-
-            st.write(
-                pedido.get(
-                    "status",
-                    "-"
-                )
-            )
-
-
-
-        with col6:
-
-
-            valor = float(
-
-                pedido.get(
-                    "valor_total",
-                    0
+                st.write(
+                    f"**{pedido.get('cliente_nome','-')}**"
                 )
 
-                or 0
 
-            )
-
-
-            st.write(
-
-                f"R$ {valor:,.2f}"
-
-                .replace(",", "X")
-
-                .replace(".", ",")
-
-                .replace("X",".")
-
-            )
+                st.caption(
+                    pedido.get(
+                        "cliente_telefone",
+                        "-"
+                    )
+                )
 
 
 
-        with col7:
+            with col2:
+
+                st.write(
+                    f"🎁 {pedido.get('cesta_nome','-')}"
+                )
 
 
-            if st.button(
-
-                "👁️",
-
-                key=f"abrir_{pedido['id']}",
-
-                help="Abrir pedido"
-
-            ):
+                st.caption(
+                    f"Entrega: {pedido.get('data_entrega','-')}"
+                )
 
 
-                st.session_state[
-                    "pedido_aberto"
-                ] = pedido["id"]
+
+            with col3:
+
+                st.write(
+                    status_visual(
+                        pedido.get(
+                            "status",
+                            "-"
+                        )
+                    )
+                )
 
 
-                st.switch_page(
 
-                    "pages/09_Detalhes_Pedido.py"
+            with col4:
+
+
+                valor = float(
+
+                    pedido.get(
+                        "valor_total",
+                        0
+                    )
+
+                    or 0
 
                 )
 
 
 
+                valor_formatado = (
 
-            if permitir_exclusao:
+                    f"R$ {valor:,.2f}"
+
+                    .replace(",", "X")
+
+                    .replace(".", ",")
+
+                    .replace("X",".")
+
+                )
+
+
+                st.write(
+                    valor_formatado
+                )
+
+
+
+            with col5:
+
 
 
                 if st.button(
 
-                    "🗑️",
+                    "👁️",
 
-                    key=f"excluir_{pedido['id']}",
+                    key=f"abrir_{pedido['id']}",
 
-                    help="Excluir pedido"
+                    help="Abrir pedido"
 
                 ):
 
 
-                    sucesso, mensagem = (
+                    st.session_state[
+                        "pedido_aberto"
+                    ] = pedido["id"]
 
-                        excluir_pedido_completo(
 
-                            pedido["id"]
 
-                        )
-
+                    st.switch_page(
+                        "pages/09_Detalhes_Pedido.py"
                     )
 
 
 
-                    if sucesso:
+                if permitir_exclusao:
 
 
-                        st.success(
-                            mensagem
+                    if st.button(
+
+                        "🗑️",
+
+                        key=f"excluir_{pedido['id']}",
+
+                        help="Excluir pedido"
+
+                    ):
+
+
+                        sucesso, mensagem = (
+
+                            excluir_pedido_completo(
+
+                                pedido["id"]
+
+                            )
+
                         )
 
-                        st.rerun()
+
+
+                        if sucesso:
+
+
+                            st.success(
+                                mensagem
+                            )
+
+                            st.rerun()
 
 
 
-                    else:
+                        else:
 
-                        st.error(
-                            mensagem
-                        )
+
+                            st.error(
+                                mensagem
+                            )
 
 
 
         st.markdown(
-
             "</div>",
-
             unsafe_allow_html=True
-
         )
-
-
-        st.write("")
 
 
 
 # =====================================================
-# STATUS
+# STATUS DOS PEDIDOS
 # =====================================================
 
 
@@ -499,20 +533,27 @@ mostrar_lista(
 
     "Desistência",
 
-    permitir_exclusao=
+    permitir_exclusao=(
 
-    st.session_state.usuario["perfil"]
+        usuario["perfil"]
 
-    ==
+        ==
 
-    "Administrador"
+        "Administrador"
+
+    )
 
 )
 
 
 
+# =====================================================
+# TOTAL
+# =====================================================
+
+st.divider()
+
+
 st.caption(
-
     f"Total de pedidos ativos: {len(df)}"
-
 )
