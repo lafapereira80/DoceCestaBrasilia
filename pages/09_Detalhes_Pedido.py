@@ -85,15 +85,14 @@ st.divider()
 # =====================================================
 
 st.subheader("🎁 Informações do Pedido")
-col1, col2, col3 = st.columns(3)
 
-with col1:
+
 st.write("**Cesta**")
 st.write(pedido["cesta_nome"])
-with col2:
+
 st.write("**Pagamento**")
 st.write(pedido["pagamento"])
-with col3:
+
 st.write("**Status**")
 st.write(pedido["status"])
 
