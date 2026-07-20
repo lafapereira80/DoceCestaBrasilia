@@ -52,7 +52,7 @@ st.markdown(
 
 section[data-testid="stSidebar"]{
 
-    display:none;
+    display:none !important;
 
 }
 
@@ -72,53 +72,35 @@ section[data-testid="stSidebar"]{
 
 #MainMenu{
 
-    display:none;
+    display:none !important;
 
 }
-
 
 
 header{
 
-    display:none;
+    display:none !important;
 
 }
-
 
 
 footer{
 
-    display:none;
+    display:none !important;
 
 }
 
 
 
-/* CONTAINER PRINCIPAL */
+/* CONTAINER */
 
 .block-container{
 
-    max-width:900px;
+    max-width:700px;
 
     padding-top:20px;
 
-    padding-bottom:30px;
-
-}
-
-
-
-/* LOGO */
-
-.logo-container{
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    margin-bottom:10px;
+    padding-bottom:40px;
 
 }
 
@@ -136,6 +118,8 @@ footer{
 
     color:#8B5A2B;
 
+    margin-top:15px;
+
 }
 
 
@@ -148,23 +132,39 @@ footer{
 
     color:#777;
 
-    margin-bottom:25px;
+    margin-bottom:30px;
 
 }
 
 
 
-/* LOGIN BOX */
+/* LOGIN SEM CAIXA */
 
-.login-box{
+.login-area{
 
-    background:#fffaf5;
+    background:transparent;
 
-    padding:25px;
+    border:none;
 
-    border-radius:15px;
+    padding:0;
 
-    border:1px solid #ead8c7;
+}
+
+
+
+/* INPUTS */
+
+div[data-baseweb="input"]{
+
+    border-radius:10px;
+
+}
+
+
+
+input{
+
+    font-size:15px !important;
 
 }
 
@@ -182,9 +182,11 @@ footer{
 
     height:45px;
 
-    font-size:15px;
+    font-size:16px;
 
     font-weight:bold;
+
+    width:100%;
 
 }
 
@@ -198,21 +200,11 @@ footer{
 
 
 
-/* CARDS */
+/* LINKS DOS MÓDULOS */
 
-.card{
+div[data-testid="stPageLink"] button{
 
-    background:#fffaf5;
-
-    padding:20px;
-
-    border-radius:15px;
-
-    border:1px solid #ead8c7;
-
-    text-align:center;
-
-    font-size:18px;
+    border-radius:12px;
 
 }
 
@@ -229,39 +221,35 @@ unsafe_allow_html=True
 # LOGO
 # =====================================================
 
+
 logo = Path(
+
     "assets/logo.webp"
+
 )
+
 
 
 if logo.exists():
 
 
-    st.markdown(
+    col1,col2,col3 = st.columns(
 
-        "<div class='logo-container'>",
-
-        unsafe_allow_html=True
+        [1,1,1]
 
     )
 
 
-    st.image(
-
-        str(logo),
-
-        width=140
-
-    )
+    with col2:
 
 
-    st.markdown(
+        st.image(
 
-        "</div>",
+            str(logo),
 
-        unsafe_allow_html=True
+            width=140
 
-    )
+        )
 
 
 
@@ -286,15 +274,17 @@ unsafe_allow_html=True
 
 
 # =====================================================
-# CONTROLE LOGIN
+# CONTROLE DE LOGIN
 # =====================================================
+
 
 if "usuario" not in st.session_state:
 
 
     st.session_state.usuario = None
+
 # =====================================================
-# LOGIN
+# TELA DE LOGIN
 # =====================================================
 
 
@@ -302,11 +292,8 @@ if st.session_state.usuario is None:
 
 
     st.markdown(
-
-        "<div class='login-box'>",
-
+        "<div class='login-area'>",
         unsafe_allow_html=True
-
     )
 
 
@@ -322,6 +309,7 @@ if st.session_state.usuario is None:
         placeholder="Digite seu usuário"
 
     )
+
 
 
     senha = st.text_input(
@@ -349,47 +337,33 @@ if st.session_state.usuario is None:
     if entrar:
 
 
-        if not login or not senha:
+        usuario = autenticar_usuario(
+
+            login,
+
+            senha
+
+        )
 
 
-            st.warning(
 
-                "Informe usuário e senha."
+        if usuario:
 
-            )
+
+            st.session_state.usuario = usuario
+
+            st.rerun()
+
 
 
         else:
 
 
+            st.error(
 
-            usuario = autenticar_usuario(
-
-                login,
-
-                senha
+                "Usuário ou senha inválidos."
 
             )
-
-
-
-            if usuario:
-
-
-                st.session_state.usuario = usuario
-
-                st.rerun()
-
-
-
-            else:
-
-
-                st.error(
-
-                    "Usuário ou senha inválidos."
-
-                )
 
 
 
@@ -406,8 +380,6 @@ if st.session_state.usuario is None:
 
 
 
-
-
 # =====================================================
 # USUÁRIO LOGADO
 # =====================================================
@@ -417,10 +389,13 @@ usuario = st.session_state.usuario
 
 
 
-
 # =====================================================
 # CABEÇALHO USUÁRIO
 # =====================================================
+
+
+st.divider()
+
 
 
 col1,col2 = st.columns(
@@ -464,33 +439,37 @@ with col2:
 
 
 
-
 st.divider()
 
 
 
 # =====================================================
-# TÍTULO DOS MÓDULOS
+# MENU PRINCIPAL
 # =====================================================
 
 
-st.markdown(
+st.subheader(
 
-"### 📂 Módulos do Sistema",
+    "📂 Módulos do Sistema"
 
 )
 
 
 
+st.caption(
+
+    "Selecione o módulo que deseja acessar."
+
+)
+
 
 
 # =====================================================
-# PRIMEIRA LINHA DE MÓDULOS
+# LINHA 1
 # =====================================================
 
 
 col1,col2,col3 = st.columns(3)
-
 
 
 
@@ -509,7 +488,6 @@ with col1:
 
 
 
-
 with col2:
 
 
@@ -522,7 +500,6 @@ with col2:
         use_container_width=True
 
     )
-
 
 
 
@@ -541,14 +518,12 @@ with col3:
 
 
 
-
 # =====================================================
-# SEGUNDA LINHA DE MÓDULOS
+# LINHA 2
 # =====================================================
 
 
 col1,col2,col3 = st.columns(3)
-
 
 
 
@@ -564,7 +539,6 @@ with col1:
         use_container_width=True
 
     )
-
 
 
 
@@ -596,7 +570,6 @@ with col2:
 
 
 
-
 with col3:
 
 
@@ -622,8 +595,7 @@ with col3:
             "Sem acesso"
 
         )
-        
-# =====================================================
+        # =====================================================
 # AVISO DE PERFIL
 # =====================================================
 
@@ -631,13 +603,9 @@ with col3:
 if usuario["perfil"] != "Administrador":
 
 
-    st.info(
+    st.warning(
 
-        """
-        👷 Perfil Operador
-
-        Você possui acesso somente aos módulos operacionais.
-        """
+        "⚠️ Perfil Operador: acesso limitado aos módulos operacionais."
 
     )
 
