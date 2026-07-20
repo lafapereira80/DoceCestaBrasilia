@@ -85,31 +85,56 @@ st.divider()
 
 st.subheader("🎁 Informações do Pedido")
 
-col1, col2 = st.columns(2)
+st.write("**Cesta**")
+st.write(pedido["cesta_nome"])
 
-with col1:
+st.write("**Pagamento**")
+st.write(pedido["pagamento"])
 
-    st.write("**Cesta**")
-    st.write(pedido["cesta_nome"])
-
-    st.write("**Tipo de pão**")
-    st.write(pedido["pao"])
-
-    st.write("**Espalhável**")
-    st.write(pedido["espalhavel"])
-
-with col2:
-
-    st.write("**Bebida**")
-    st.write(pedido["bebida"])
-
-    st.write("**Pagamento**")
-    st.write(pedido["pagamento"])
-
-    st.write("**Status**")
-    st.write(pedido["status"])
+st.write("**Status**")
+st.write(pedido["status"])
 
 st.divider()
+
+st.subheader("🛒 Produtos Escolhidos")
+
+produtos = pedido.get("produtos", "")
+
+if produtos:
+
+    for linha in produtos.split("\n"):
+
+        st.write("• " + linha)
+
+else:
+
+    st.info("Nenhum produto registrado.")
+
+st.divider()
+
+st.subheader("✨ Pedidos Especiais")
+
+pedido_especial = pedido.get("pedido_especial", "")
+
+if pedido_especial:
+
+    st.text_area(
+
+        "Pedidos especiais",
+
+        value=pedido_especial,
+
+        disabled=True,
+
+        height=120,
+
+        key="pedido_especial"
+
+    )
+
+else:
+
+    st.info("Nenhum pedido especial.")
 
 # =====================================================
 # ADICIONAIS
@@ -177,8 +202,8 @@ with col1:
 
 with col2:
 
-    st.write("**Horário**")
-    st.write(pedido["horario_entrega"])
+    st.write("**Período**")
+st.write(pedido.get("periodo_entrega", ""))
 
 st.divider()
 
