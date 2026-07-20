@@ -308,3 +308,21 @@ for pedido in pedidos:
             )
 
     st.divider()
+# =====================================================
+# VOLTAR
+# =====================================================
+
+if st.button(
+    "⬅ Voltar para Clientes",
+    use_container_width=True,
+    key="voltar_clientes"
+):
+
+    st.session_state.pop(
+        "cliente_cpf",
+        None
+    )
+
+    st.switch_page(
+        "pages/03_Clientes.py"
+    )
