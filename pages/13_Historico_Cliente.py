@@ -39,14 +39,13 @@ try:
         .execute()
     )
 
-    pedidos = resposta.data or []
+    pedidos = resposta.data if resposta.data else []
 
 except Exception as erro:
 
     st.error(f"Erro ao carregar histórico: {erro}")
-
     st.stop()
-
+    
 if not pedidos:
 
     st.warning("Cliente sem pedidos.")
