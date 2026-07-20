@@ -1,10 +1,23 @@
 import streamlit as st
 import pandas as pd
 
+
 from services.pedido_service import (
     listar_pedidos_ativos,
     excluir_pedido_completo
 )
+
+
+from utils.menu import (
+    configurar_pagina,
+    menu_lateral
+)
+
+
+from utils.permissao import (
+    administrador_operador
+)
+
 
 
 st.set_page_config(
@@ -14,19 +27,36 @@ st.set_page_config(
 )
 
 
-st.title("📋 Gestão de Pedidos")
+
+# =====================================================
+# CONFIGURAÇÕES
+# =====================================================
+
+configurar_pagina()
+
+menu_lateral()
+
+administrador_operador()
+
+
+
+st.title(
+    "📋 Gestão de Pedidos"
+)
+
 
 st.write(
     "Pedidos em andamento do sistema."
 )
 
+
 st.divider()
 
 
 
-# ==========================================================
+# =====================================================
 # CARREGA PEDIDOS
-# ==========================================================
+# =====================================================
 
 try:
 
@@ -34,6 +64,7 @@ try:
 
 
 except Exception as erro:
+
 
     st.error(
         f"Erro ao carregar pedidos: {erro}"
@@ -45,6 +76,7 @@ except Exception as erro:
 
 if not pedidos:
 
+
     st.info(
         "Nenhum pedido em andamento."
     )
@@ -53,19 +85,23 @@ if not pedidos:
 
 
 
-df = pd.DataFrame(pedidos)
+df = pd.DataFrame(
+    pedidos
+)
 
 
 
-# ==========================================================
+# =====================================================
 # ORDENAÇÃO
-# ==========================================================
+# =====================================================
 
 if "created_at" in df.columns:
+
 
     df["created_at"] = pd.to_datetime(
         df["created_at"]
     )
+
 
     df = df.sort_values(
         "created_at",
@@ -74,21 +110,27 @@ if "created_at" in df.columns:
 
 
 
-# ==========================================================
+# =====================================================
 # PESQUISA
-# ==========================================================
+# =====================================================
 
-st.subheader("🔍 Pesquisar")
+st.subheader(
+    "🔍 Pesquisar"
+)
 
 
 pesquisa = st.text_input(
+
     "Nome do cliente",
+
     placeholder="Digite o nome..."
+
 )
 
 
 
 if pesquisa.strip():
+
 
     df = df[
         df["cliente_nome"]
@@ -101,9 +143,9 @@ if pesquisa.strip():
 
 
 
-# ==========================================================
+# =====================================================
 # MOSTRAR PEDIDOS
-# ==========================================================
+# =====================================================
 
 def mostrar_lista(
     titulo,
@@ -112,7 +154,9 @@ def mostrar_lista(
 ):
 
 
-    st.subheader(titulo)
+    st.subheader(
+        titulo
+    )
 
 
 
@@ -124,6 +168,7 @@ def mostrar_lista(
 
     if pedidos_status.empty:
 
+
         st.info(
             "Nenhum pedido encontrado."
         )
@@ -132,33 +177,59 @@ def mostrar_lista(
 
 
 
-    # Cabeçalho
-
     cab1, cab2, cab3, cab4, cab5, cab6, cab7 = st.columns(
         [3, 2, 2, 2, 1.5, 1.5, 2]
     )
 
 
+
     with cab1:
-        st.write("**Cliente**")
+
+        st.write(
+            "**Cliente**"
+        )
+
 
     with cab2:
-        st.write("**Telefone**")
+
+        st.write(
+            "**Telefone**"
+        )
+
 
     with cab3:
-        st.write("**Cesta**")
+
+        st.write(
+            "**Cesta**"
+        )
+
 
     with cab4:
-        st.write("**Entrega**")
+
+        st.write(
+            "**Entrega**"
+        )
+
 
     with cab5:
-        st.write("**Status**")
+
+        st.write(
+            "**Status**"
+        )
+
 
     with cab6:
-        st.write("**Valor**")
+
+        st.write(
+            "**Valor**"
+        )
+
 
     with cab7:
-        st.write("**Ações**")
+
+        st.write(
+            "**Ações**"
+        )
 
 
 
@@ -180,6 +251,7 @@ def mostrar_lista(
 
             with col1:
 
+
                 st.write(
                     pedido.get(
                         "cliente_nome",
@@ -190,6 +262,7 @@ def mostrar_lista(
 
 
             with col2:
+
 
                 st.write(
                     pedido.get(
@@ -202,6 +275,7 @@ def mostrar_lista(
 
             with col3:
 
+
                 st.write(
                     pedido.get(
                         "cesta_nome",
@@ -212,6 +286,7 @@ def mostrar_lista(
 
 
             with col4:
+
 
                 st.write(
                     pedido.get(
@@ -224,6 +299,7 @@ def mostrar_lista(
 
             with col5:
 
+
                 st.write(
                     pedido.get(
                         "status",
@@ -235,19 +311,29 @@ def mostrar_lista(
 
             with col6:
 
+
                 valor = float(
+
                     pedido.get(
                         "valor_total",
                         0
                     )
+
                     or 0
+
                 )
 
+
                 st.write(
+
                     f"R$ {valor:,.2f}"
+
                     .replace(",", "X")
+
                     .replace(".", ",")
+
                     .replace("X",".")
+
                 )
 
 
@@ -255,20 +341,30 @@ def mostrar_lista(
             with col7:
 
 
+
                 if st.button(
+
                     "👁️",
+
                     key=f"abrir_{pedido['id']}",
+
                     help="Abrir pedido"
+
                 ):
+
 
                     st.session_state[
                         "pedido_aberto"
                     ] = pedido["id"]
 
 
+
                     st.switch_page(
+
                         "pages/09_Detalhes_Pedido.py"
+
                     )
+
 
 
 
@@ -276,29 +372,42 @@ def mostrar_lista(
 
 
                     if st.button(
+
                         "🗑️",
+
                         key=f"excluir_{pedido['id']}",
+
                         help="Excluir pedido"
+
                     ):
 
 
                         sucesso, mensagem = (
+
                             excluir_pedido_completo(
+
                                 pedido["id"]
+
                             )
+
                         )
 
 
+
                         if sucesso:
+
 
                             st.success(
                                 mensagem
                             )
 
+
                             st.rerun()
 
 
+
                         else:
+
 
                             st.error(
                                 mensagem
@@ -310,32 +419,51 @@ def mostrar_lista(
 
 
 
-# ==========================================================
+# =====================================================
 # STATUS
-# ==========================================================
+# =====================================================
+
 
 mostrar_lista(
+
     "📥 Pedidos Recebidos",
+
     "Recebido"
+
 )
 
 
 
 mostrar_lista(
+
     "💰 Pedidos Pagos",
+
     "Pago"
+
 )
 
 
 
 mostrar_lista(
+
     "❌ Desistências",
+
     "Desistência",
-    permitir_exclusao=True
+
+    permitir_exclusao=
+
+    st.session_state.usuario["perfil"]
+
+    ==
+
+    "Administrador"
+
 )
 
 
 
 st.caption(
+
     f"Total de pedidos ativos: {len(df)}"
+
 )
