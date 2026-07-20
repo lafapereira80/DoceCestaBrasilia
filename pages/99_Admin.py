@@ -7,11 +7,6 @@ from services.usuario_service import (
 )
 
 
-from utils.menu import (
-    configurar_pagina
-)
-
-
 
 # =====================================================
 # CONFIGURAÇÃO DA PÁGINA
@@ -32,93 +27,91 @@ st.set_page_config(
 
 
 # =====================================================
-# CONFIGURAÇÃO GERAL
-# =====================================================
-
-configurar_pagina()
-
-
-
-# =====================================================
-# CSS
+# CSS GERAL
 # =====================================================
 
 st.markdown(
 """
 <style>
 
-/* ================================
-   REMOVE ELEMENTOS STREAMLIT
-================================ */
+/* =====================================
+   REMOVE ELEMENTOS DO STREAMLIT
+===================================== */
+
 
 section[data-testid="stSidebar"]{
-    display:none;
+
+    display:none !important;
+
 }
 
 
 [data-testid="collapsedControl"]{
+
     display:none !important;
+
 }
 
 
 #MainMenu{
-    display:none;
+
+    display:none !important;
+
 }
 
 
 header{
-    display:none;
+
+    display:none !important;
+
 }
 
 
 footer{
-    display:none;
+
+    display:none !important;
+
 }
 
 
 
-/* ================================
-   PÁGINA
-================================ */
+/* =====================================
+   ÁREA PRINCIPAL
+===================================== */
 
 
 .block-container{
 
-    max-width:850px;
 
-    padding-top:30px;
+    max-width:600px;
+
+    padding-top:25px;
+
+    padding-bottom:30px;
+
 
 }
 
 
 
-/* ================================
-   LOGO
-================================ */
-
-
-.logo-area{
-
-    text-align:center;
-
-}
-
-
-
-/* ================================
+/* =====================================
    TÍTULOS
-================================ */
+===================================== */
 
 
 .titulo{
 
+
     text-align:center;
 
-    font-size:32px;
+    color:#8B5A2B;
+
+    font-size:30px;
 
     font-weight:bold;
 
-    color:#8B5A2B;
+    margin-top:10px;
+
 
 }
 
@@ -126,61 +119,83 @@ footer{
 
 .subtitulo{
 
-    text-align:center;
 
-    font-size:18px;
+    text-align:center;
 
     color:#777;
 
+    font-size:16px;
+
     margin-bottom:30px;
 
-}
-
-
-
-/* ================================
-   LOGIN
-================================ */
-
-
-.login-box{
-
-    background:#fffaf5;
-
-    padding:30px;
-
-    border-radius:18px;
-
-    border:1px solid #ead8c7;
 
 }
 
 
 
-/* ================================
+/* =====================================
    CAMPOS
-================================ */
+===================================== */
 
 
 input{
 
-    height:42px !important;
 
     border-radius:10px !important;
+
 
 }
 
 
 
-/* ================================
+div[data-baseweb="input"]{
+
+
+    border-radius:10px !important;
+
+
+}
+
+
+
+/* =====================================
    BOTÕES
-================================ */
+===================================== */
+
+
+.stButton button{
+
+
+    background:#8B5A2B;
+
+    color:white;
+
+    border-radius:12px;
+
+    height:45px;
+
+    font-weight:bold;
+
+    width:100%;
+
+
+}
 
 
 
-/* ================================
-   CARDS
-================================ */
+.stButton button:hover{
+
+
+    background:#6f451f;
+
+
+}
+
+
+
+/* =====================================
+   LINKS DO PAINEL
+===================================== */
 
 
 div[data-testid="stPageLink"]{
@@ -188,15 +203,14 @@ div[data-testid="stPageLink"]{
 
     background:#fffaf5;
 
-    border-radius:15px;
+    border-radius:12px;
 
-    padding:15px;
+    padding:10px;
 
     border:1px solid #ead8c7;
 
 
 }
-
 
 
 </style>
@@ -207,13 +221,16 @@ unsafe_allow_html=True
 
 
 
+
 # =====================================================
-# LOGO
+# LOGO CENTRALIZADA
 # =====================================================
 
 
 logo = Path(
+
     "assets/logo.webp"
+
 )
 
 
@@ -221,27 +238,31 @@ logo = Path(
 if logo.exists():
 
 
-    st.markdown(
-        "<div class='logo-area'>",
-        unsafe_allow_html=True
-    )
+    col1,col2,col3 = st.columns(
 
-
-    st.image(
-
-        str(logo),
-
-        width=150
+        [1,2,1]
 
     )
 
 
-    st.markdown(
-        "</div>",
-        unsafe_allow_html=True
-    )
+    with col2:
 
 
+        st.image(
+
+            str(logo),
+
+            width=150
+
+        )
+
+
+
+
+
+# =====================================================
+# CABEÇALHO
+# =====================================================
 
 
 st.markdown(
@@ -254,7 +275,6 @@ Painel Administrativo
 <div class="subtitulo">
 Doce Cesta Brasília
 </div>
-
 """,
 
 unsafe_allow_html=True
@@ -264,20 +284,18 @@ unsafe_allow_html=True
 
 
 
+
 # =====================================================
-# CONTROLE LOGIN
+# CONTROLE DE SESSÃO
 # =====================================================
+
 
 if "usuario" not in st.session_state:
 
 
     st.session_state.usuario = None
-
-
-
-
 # =====================================================
-# LOGIN
+# TELA DE LOGIN
 # =====================================================
 
 
@@ -286,16 +304,8 @@ if st.session_state.usuario is None:
 
 
     st.markdown(
-
-        "<div class='login-box'>",
-
+        "<h3 style='text-align:center;'>🔐 Acesso Administrativo</h3>",
         unsafe_allow_html=True
-
-    )
-
-
-    st.subheader(
-        "🔐 Acesso Administrativo"
     )
 
 
@@ -322,6 +332,10 @@ if st.session_state.usuario is None:
 
 
 
+    st.write("")
+
+
+
     entrar = st.button(
 
         "ENTRAR",
@@ -332,17 +346,21 @@ if st.session_state.usuario is None:
 
 
 
-    st.markdown(
-
-        "</div>",
-
-        unsafe_allow_html=True
-
-    )
-
-
-
     if entrar:
+
+
+
+        if not login or not senha:
+
+
+            st.warning(
+
+                "Informe usuário e senha."
+
+            )
+
+            st.stop()
+
 
 
 
@@ -359,13 +377,16 @@ if st.session_state.usuario is None:
         if usuario:
 
 
+
             st.session_state.usuario = usuario
+
 
             st.rerun()
 
 
 
         else:
+
 
 
             st.error(
@@ -377,6 +398,7 @@ if st.session_state.usuario is None:
 
 
     st.stop()
+
 
 
 
@@ -403,40 +425,75 @@ st.success(
 
 
 
-if st.button(
+col1,col2 = st.columns(
 
-    "🚪 Sair",
+    [3,1]
 
-    use_container_width=True
-
-):
+)
 
 
-    st.session_state.usuario = None
 
-    st.rerun()
+with col1:
+
+
+    st.caption(
+
+        "Usuário autenticado no sistema."
+
+    )
+
+
+
+with col2:
+
+
+    sair = st.button(
+
+        "🚪 Sair",
+
+        use_container_width=True
+
+    )
+
+
+
+    if sair:
+
+
+        st.session_state.usuario = None
+
+
+        st.rerun()
+
 
 
 
 
 st.divider()
 
-
-
-
-
 # =====================================================
-# MÓDULOS
+# PAINEL DE MÓDULOS
 # =====================================================
 
 
-st.subheader(
+st.markdown(
 
-    "📂 Módulos do Sistema"
+"""
+<h3 style="text-align:center;">
+📂 Módulos do Sistema
+</h3>
+""",
+
+unsafe_allow_html=True
 
 )
 
 
+
+
+# =====================================================
+# PRIMEIRA LINHA
+# =====================================================
 
 
 col1,col2,col3 = st.columns(3)
@@ -455,6 +512,7 @@ with col1:
         use_container_width=True
 
     )
+
 
 
 with col2:
@@ -487,6 +545,11 @@ with col3:
 
 
 
+
+
+# =====================================================
+# SEGUNDA LINHA
+# =====================================================
 
 
 col1,col2,col3 = st.columns(3)
@@ -546,12 +609,76 @@ with col3:
 
 
 
+# =====================================================
+# TERCEIRA LINHA
+# =====================================================
+
+
+col1,col2,col3 = st.columns(3)
+
+
+
+with col1:
+
+
+    st.page_link(
+
+        "pages/12_Produtos_da_Cesta.py",
+
+        label="📦 Produtos da Cesta",
+
+        use_container_width=True
+
+    )
+
+
+
+with col2:
+
+
+    st.page_link(
+
+        "pages/14_Configurar_Cesta.py",
+
+        label="⚙️ Configurar Cesta",
+
+        use_container_width=True
+
+    )
+
+
+
+with col3:
+
+
+    if usuario["perfil"] == "Administrador":
+
+
+        st.page_link(
+
+            "pages/08_Admin.py",
+
+            label="🔧 Configurações",
+
+            use_container_width=True
+
+        )
+
+
+
+
+
+# =====================================================
+# AVISO DE PERFIL
+# =====================================================
+
+
 if usuario["perfil"] != "Administrador":
 
 
     st.info(
 
-        "Perfil Operador: acesso somente aos módulos operacionais."
+        "Perfil Operador: acesso limitado aos módulos operacionais."
 
     )
 
@@ -559,12 +686,31 @@ if usuario["perfil"] != "Administrador":
 
 
 
+# =====================================================
+# RODAPÉ
+# =====================================================
+
+
 st.divider()
 
 
 
-st.caption(
+st.markdown(
 
-    "Doce Cesta Brasília - Sistema Administrativo"
+"""
+<div style="
+text-align:center;
+font-size:12px;
+color:#777;
+padding:10px;
+">
+
+© 2026 Doce Cesta Brasília<br>
+Sistema Administrativo
+
+</div>
+""",
+
+unsafe_allow_html=True
 
 )
