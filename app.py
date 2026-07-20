@@ -25,7 +25,7 @@ st.set_page_config(
 
 
 # ==========================================================
-# CSS - DESIGN CLIENTE
+# CSS
 # ==========================================================
 
 st.markdown(
@@ -71,6 +71,9 @@ footer{
 
 
 
+/* TITULOS */
+
+
 h1{
 
     font-size:26px !important;
@@ -95,7 +98,7 @@ h3{
 
 
 
-p, label, div{
+p,label,div{
 
     font-size:14px;
 
@@ -104,6 +107,7 @@ p, label, div{
 
 
 /* CAMPOS */
+
 
 div[data-baseweb="input"]{
 
@@ -147,27 +151,21 @@ textarea{
 
 /* SELECT */
 
+
 div[data-baseweb="select"] > div{
 
     border-radius:10px;
 
     border:1px solid #c9b8a8;
 
-}
-
-
-
-/* RADIO */
-
-div[role="radiogroup"]{
-
-    gap:12px;
+    min-height:42px;
 
 }
 
 
 
 /* CHECKBOX */
+
 
 div[data-testid="stCheckbox"]{
 
@@ -181,7 +179,19 @@ div[data-testid="stCheckbox"]{
 
 
 
+/* RADIO */
+
+
+div[role="radiogroup"]{
+
+    gap:12px;
+
+}
+
+
+
 /* BOTÃO */
+
 
 .stButton button{
 
@@ -211,8 +221,29 @@ div[data-testid="stCheckbox"]{
 
 
 
+/* SEÇÕES */
+
+
+.caixa-secao{
+
+    background:#fffaf5;
+
+    border-radius:12px;
+
+    padding:15px;
+
+    border:1px solid #ead8c7;
+
+    margin-bottom:15px;
+
+}
+
+
+
 </style>
+
 """,
+
 unsafe_allow_html=True
 )
 
@@ -239,9 +270,13 @@ if logo.exists():
 
     with col2:
 
+
         st.image(
+
             str(logo),
+
             width=130
+
         )
 
 
@@ -276,18 +311,7 @@ unsafe_allow_html=True
 
 
 # ==========================================================
-# FORMULÁRIO
-# ==========================================================
-
-
-st.markdown(
-"### 📝 Faça seu pedido"
-)
-
-
-
-# ==========================================================
-# CLIENTE
+# DADOS CLIENTE
 # ==========================================================
 
 
@@ -338,6 +362,7 @@ try:
 
 except Exception as erro:
 
+
     st.error(
         f"Erro ao carregar cestas: {erro}"
     )
@@ -347,6 +372,7 @@ except Exception as erro:
 
 
 if not cestas:
+
 
     st.warning(
         "Nenhuma cesta cadastrada."
@@ -373,6 +399,9 @@ cesta = st.selectbox(
 
 )
 
+# ==========================================================
+# IMAGEM E DESCRIÇÃO DA CESTA
+# ==========================================================
 
 
 if cesta:
@@ -385,29 +414,41 @@ if cesta:
 
     with col1:
 
+
         if cesta.get("imagem"):
 
+
             st.image(
+
                 cesta["imagem"],
+
                 use_container_width=True
+
             )
 
 
 
     with col2:
 
+
         if cesta.get("descricao"):
 
+
             st.info(
+
                 cesta["descricao"]
+
             )
-            # ==========================================================
+
+
+
+# ==========================================================
 # PERSONALIZAÇÃO DA CESTA
 # ==========================================================
 
 
 st.markdown(
-    "### 🍓 Personalize sua cesta"
+"### 🍓 Personalize sua cesta"
 )
 
 
@@ -502,10 +543,8 @@ else:
 
 
 
-
-
 # ==========================================================
-# ADICIONAIS DINÂMICOS
+# ADICIONAIS DINÂMICOS DO BANCO
 # ==========================================================
 
 
@@ -515,13 +554,21 @@ st.markdown(
 
 
 
-# Busca produtos e categorias
+adicionais_selecionados = []
+
+
+
+polaroid = False
+
+
 
 try:
+
 
     categorias = listar_categorias()
 
     produtos = listar_produtos()
+
 
 
 except Exception as erro:
@@ -535,128 +582,144 @@ except Exception as erro:
 
 
 
-# Monta relação categoria -> nome
+# encontra categoria Adicionais
 
-categorias_dict = {
-
-    categoria["id"]: categoria["nome"]
-
-    for categoria in categorias
-
-}
+categoria_adicionais_id = None
 
 
 
-# Filtra somente categoria Adicionais
-
-lista_adicionais = []
+for categoria in categorias:
 
 
+    if categoria["nome"].lower() == "adicionais".lower():
 
-for produto in produtos:
+        categoria_adicionais_id = categoria["id"]
 
-
-    nome_categoria = categorias_dict.get(
-
-        produto["categoria_id"],
-
-        ""
-
-    )
-
-
-    if nome_categoria == "Adicionais":
-
-
-        lista_adicionais.append(
-            produto
-        )
+        break
 
 
 
-adicionais_selecionados = []
+produtos_adicionais = []
 
 
 
-with st.container(border=True):
+if categoria_adicionais_id:
 
 
-    if not lista_adicionais:
+    for produto in produtos:
 
 
-        st.info(
-            "Nenhum adicional cadastrado."
-        )
+        if (
+
+            produto["categoria_id"]
+            ==
+            categoria_adicionais_id
+
+            and
+
+            produto.get("ativo", True)
+
+        ):
 
 
-    else:
+            produtos_adicionais.append(produto)
+
+
+
+if produtos_adicionais:
+
+
+    with st.container(border=True):
 
 
         col1,col2 = st.columns(2)
 
 
 
-        for i, adicional in enumerate(lista_adicionais):
-
-
-            coluna = col1 if i % 2 == 0 else col2
+        metade = len(produtos_adicionais)//2 + 1
 
 
 
-            with coluna:
+        coluna1 = produtos_adicionais[:metade]
+
+        coluna2 = produtos_adicionais[metade:]
 
 
-                escolhido = st.checkbox(
 
-                    adicional["nome"],
+        with col1:
 
-                    key=f"adicional_{adicional['id']}"
+
+            for produto in coluna1:
+
+
+                marcado = st.checkbox(
+
+                    produto["nome"],
+
+                    key=f"adicional_{produto['id']}"
 
                 )
 
 
-
-                if escolhido:
+                if marcado:
 
 
                     adicionais_selecionados.append(
-                        adicional
+                        produto
                     )
 
 
+                    if produto["nome"].lower() == "polaroid".lower():
+
+                        polaroid = True
+
+
+
+
+        with col2:
+
+
+            for produto in coluna2:
+
+
+                marcado = st.checkbox(
+
+                    produto["nome"],
+
+                    key=f"adicional_{produto['id']}"
+
+                )
+
+
+                if marcado:
+
+
+                    adicionais_selecionados.append(
+                        produto
+                    )
+
+
+                    if produto["nome"].lower() == "polaroid".lower():
+
+                        polaroid = True
+
+
+
+else:
+
+
+    st.info(
+        "Nenhum adicional cadastrado."
+    )
 
 
 
 # ==========================================================
-# IDENTIFICA POLAROID
+# FOTOS POLAROID
 # ==========================================================
 
 
-possui_polaroid = any(
-
-
-    "polaroid"
-
-    in
-
-    adicional["nome"].lower()
-
-
-    for adicional in adicionais_selecionados
-
-
-)
-
-
-
-
-
-# ==========================================================
-# ENVIO DE FOTOS POLAROID
-# ==========================================================
-
-
-if possui_polaroid:
+if polaroid:
 
 
     st.markdown(
@@ -664,15 +727,11 @@ if possui_polaroid:
     )
 
 
-
     fotos = st.file_uploader(
 
-
-        "Fotos para impressão",
-
+        "Selecionar fotos",
 
         type=[
-
 
             "jpg",
 
@@ -682,12 +741,9 @@ if possui_polaroid:
 
             "webp"
 
-
         ],
 
-
         accept_multiple_files=True
-
 
     )
 
@@ -696,8 +752,6 @@ else:
 
 
     fotos = []
-
-
 
 
 
@@ -730,7 +784,8 @@ with st.container(border=True):
         horizontal=True
 
     )
-    # ==========================================================
+
+# ==========================================================
 # MENSAGEM
 # ==========================================================
 
@@ -750,8 +805,6 @@ mensagem = st.text_area(
     placeholder="Digite uma mensagem especial..."
 
 )
-
-
 
 
 
@@ -775,8 +828,6 @@ pedido_especial = st.text_area(
     placeholder="Exemplo: entregar pela manhã..."
 
 )
-
-
 
 
 
@@ -839,8 +890,6 @@ with col2:
 
 
 
-
-
 # ==========================================================
 # BOTÃO
 # ==========================================================
@@ -859,8 +908,6 @@ enviar = st.button(
     type="primary"
 
 )
-
-
 
 
 
@@ -903,33 +950,9 @@ if enviar:
 
 
 
-
-
-    # ======================================================
-    # ADICIONAIS SELECIONADOS
-    # ======================================================
-
-
-    adicionais = []
-
-
-
-    for adicional in adicionais_selecionados:
-
-
-        adicionais.append(
-
-            adicional["nome"]
-
-        )
-
-
-
-
-
-    # ======================================================
-    # PRODUTOS ESCOLHIDOS DA CESTA
-    # ======================================================
+    # ------------------------------------------
+    # PRODUTOS ESCOLHIDOS
+    # ------------------------------------------
 
 
     produtos_escolhidos = []
@@ -939,30 +962,43 @@ if enviar:
     for categoria,itens in selecoes_cliente.items():
 
 
-
         for item in itens:
-
 
 
             produtos_escolhidos.append(
 
-
                 f"{categoria}: {item['nome']}"
-
 
             )
 
 
 
+    # ------------------------------------------
+    # ADICIONAIS
+    # ------------------------------------------
 
 
-    # ======================================================
-    # DADOS DO PEDIDO
-    # ======================================================
+    nomes_adicionais = []
+
+
+
+    for adicional in adicionais_selecionados:
+
+
+        nomes_adicionais.append(
+
+            adicional["nome"]
+
+        )
+
+
+
+    # ------------------------------------------
+    # DADOS PARA SUPABASE
+    # ------------------------------------------
 
 
     dados = {
-
 
 
         "cliente_nome":
@@ -970,11 +1006,9 @@ if enviar:
             nome,
 
 
-
         "cliente_cpf":
 
             cpf,
-
 
 
         "cliente_telefone":
@@ -982,17 +1016,14 @@ if enviar:
             telefone,
 
 
-
         "cesta_id":
 
             cesta["id"],
 
 
-
         "cesta_nome":
 
             cesta["nome"],
-
 
 
         "produtos":
@@ -1004,15 +1035,13 @@ if enviar:
             ),
 
 
-
         "adicionais":
 
             ", ".join(
 
-                adicionais
+                nomes_adicionais
 
             ),
-
 
 
         "pagamento":
@@ -1020,11 +1049,9 @@ if enviar:
             pagamento,
 
 
-
         "mensagem":
 
             mensagem,
-
 
 
         "pedido_especial":
@@ -1032,11 +1059,9 @@ if enviar:
             pedido_especial,
 
 
-
         "endereco":
 
             endereco,
-
 
 
         "data_entrega":
@@ -1044,11 +1069,9 @@ if enviar:
             str(data_entrega),
 
 
-
         "periodo_entrega":
 
             periodo_entrega,
-
 
 
         "status":
@@ -1056,11 +1079,9 @@ if enviar:
             "Recebido",
 
 
-
         "valor_frete":
 
             0,
-
 
 
         "valor_total":
@@ -1068,8 +1089,6 @@ if enviar:
             0
 
     }
-
-
 
 
 
@@ -1081,20 +1100,16 @@ if enviar:
 
 
 
-
-
     if sucesso:
 
 
 
-
-        # ==================================================
+        # ----------------------------------
         # SALVA FOTOS POLAROID
-        # ==================================================
+        # ----------------------------------
 
 
-        if possui_polaroid and fotos:
-
+        if polaroid and fotos:
 
 
             try:
@@ -1109,9 +1124,7 @@ if enviar:
                 )
 
 
-
             except Exception as erro:
-
 
 
                 st.warning(
@@ -1119,8 +1132,6 @@ if enviar:
                     f"Pedido salvo, mas houve erro nas fotos: {erro}"
 
                 )
-
-
 
 
 
@@ -1151,8 +1162,6 @@ Nossa equipe entrará em contato para confirmar:
 
 
 
-
-
     else:
 
 
@@ -1161,8 +1170,6 @@ Nossa equipe entrará em contato para confirmar:
             f"Erro ao salvar pedido: {pedido_id}"
 
         )
-
-
 
 
 
