@@ -34,6 +34,7 @@ try:
         .table("pedidos")
         .select("*")
         .eq("cliente_cpf", cpf)
+        .eq("status", "Entregue")
         .order("created_at", desc=True)
         .execute()
     )
