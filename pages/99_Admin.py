@@ -3,12 +3,24 @@ from pathlib import Path
 
 from services.usuario_service import autenticar_usuario
 
+from utils.menu import configurar_pagina, menu_lateral
+
+
 
 st.set_page_config(
     page_title="Administrador",
     page_icon="🔒",
     layout="wide"
 )
+
+
+
+# =====================================================
+# CONFIGURAÇÃO VISUAL
+# =====================================================
+
+configurar_pagina()
+
 
 
 # =====================================================
@@ -18,45 +30,6 @@ st.set_page_config(
 st.markdown(
 """
 <style>
-
-/* Esconde menu padrão do Streamlit */
-
-#MainMenu{
-    display:none;
-}
-
-header{
-    display:none;
-}
-
-footer{
-    display:none;
-}
-
-
-/* Esconde lista automática de páginas */
-
-[data-testid="stSidebarNav"]{
-    display:none;
-}
-
-
-/* Ajusta o espaço lateral */
-
-section[data-testid="stSidebar"]{
-
-    padding-top:20px;
-
-}
-
-
-/* Remove botão de recolher */
-
-[data-testid="collapsedControl"]{
-    display:none;
-}
-
-
 
 .titulo{
 
@@ -79,18 +52,16 @@ color:#777;
 
 }
 
-
-
 </style>
 """,
 unsafe_allow_html=True
 )
 
 
+
 # =====================================================
 # LOGO
 # =====================================================
-
 
 logo = Path(
     "assets/logo.webp"
@@ -100,6 +71,7 @@ logo = Path(
 if logo.exists():
 
     col1,col2,col3 = st.columns([2,1,2])
+
 
     with col2:
 
@@ -137,7 +109,6 @@ st.divider()
 # CONTROLE LOGIN
 # =====================================================
 
-
 if "usuario" not in st.session_state:
 
     st.session_state.usuario = None
@@ -145,9 +116,8 @@ if "usuario" not in st.session_state:
 
 
 # =====================================================
-# TELA LOGIN
+# LOGIN
 # =====================================================
-
 
 if st.session_state.usuario is None:
 
@@ -197,7 +167,6 @@ if st.session_state.usuario is None:
 
         else:
 
-
             st.error(
                 "Usuário ou senha inválidos."
             )
@@ -211,105 +180,15 @@ if st.session_state.usuario is None:
 # USUÁRIO LOGADO
 # =====================================================
 
-
 usuario = st.session_state.usuario
 
 
 
 # =====================================================
-# MENU LATERAL PERSONALIZADO
+# MENU NOVO
 # =====================================================
 
-
-with st.sidebar:
-
-
-    st.success(
-        f"Olá, {usuario['login']}"
-    )
-
-
-    st.caption(
-        usuario["perfil"]
-    )
-
-
-    st.divider()
-
-
-
-    st.page_link(
-
-        "pages/02_Pedidos.py",
-
-        label="📋 Pedidos"
-
-    )
-
-
-    st.page_link(
-
-        "pages/03_Clientes.py",
-
-        label="👥 Clientes"
-
-    )
-
-
-
-    if usuario["perfil"] == "Administrador":
-
-
-        st.page_link(
-
-            "pages/04_Cestas.py",
-
-            label="🎁 Cestas"
-
-        )
-
-
-        st.page_link(
-
-            "pages/05_Produtos.py",
-
-            label="🛒 Produtos"
-
-        )
-
-
-        st.page_link(
-
-            "pages/06_Financeiro.py",
-
-            label="💰 Financeiro"
-
-        )
-
-
-        st.page_link(
-
-            "pages/07_Usuarios.py",
-
-            label="👤 Usuários"
-
-        )
-
-
-
-    st.divider()
-
-
-
-    if st.button(
-        "🚪 Sair",
-        use_container_width=True
-    ):
-
-
-        st.session_state.usuario = None
-
-        st.rerun()
+menu_lateral()
 
 
 
@@ -341,6 +220,7 @@ with col1:
     )
 
 
+
 with col2:
 
     st.page_link(
@@ -352,6 +232,7 @@ with col2:
         use_container_width=True
 
     )
+
 
 
 with col3:
@@ -390,6 +271,7 @@ if usuario["perfil"] == "Administrador":
         )
 
 
+
     with col2:
 
         st.page_link(
@@ -401,6 +283,7 @@ if usuario["perfil"] == "Administrador":
             use_container_width=True
 
         )
+
 
 
     with col3:
@@ -418,6 +301,7 @@ if usuario["perfil"] == "Administrador":
 
 
 st.divider()
+
 
 
 st.caption(
