@@ -113,7 +113,7 @@ for cliente in clientes.values():
             st.session_state["cliente_cpf"] = cliente["cpf"]
 
             st.switch_page(
-                "pages/14_Historico_Cliente.py"
+                "pages/13_Historico_Cliente.py"
             )
 
 st.divider()
