@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
 
 from config.supabase import supabase
 
@@ -17,7 +16,7 @@ st.set_page_config(
 
 
 # =====================================================
-# CSS - REMOVER MENU STREAMLIT
+# REMOVER ELEMENTOS STREAMLIT
 # =====================================================
 
 st.markdown(
@@ -42,6 +41,7 @@ st.markdown(
 )
 
 
+
 # =====================================================
 # BUSCAR PEDIDOS
 # =====================================================
@@ -56,7 +56,9 @@ def carregar_pedidos():
         .execute()
     )
 
-    return pd.DataFrame(resposta.data)
+    return pd.DataFrame(
+        resposta.data
+    )
 
 
 
@@ -69,13 +71,14 @@ st.title("💰 Financeiro")
 st.divider()
 
 
+
 # =====================================================
-# CARREGAMENTO
+# CARREGAR DADOS
 # =====================================================
 
 df = carregar_pedidos()
-st.write("Colunas encontradas no Supabase:")
-st.write(df.columns.tolist())
+
+
 
 if df.empty:
 
@@ -88,7 +91,7 @@ if df.empty:
 
 
 # =====================================================
-# TRATAMENTO DOS DADOS
+# TRATAMENTO
 # =====================================================
 
 df["created_at"] = pd.to_datetime(
@@ -96,10 +99,16 @@ df["created_at"] = pd.to_datetime(
 )
 
 
-df["ano"] = df["created_at"].dt.year
+df["ano"] = (
+    df["created_at"]
+    .dt.year
+)
 
 
-df["mes"] = df["created_at"].dt.month
+df["mes"] = (
+    df["created_at"]
+    .dt.month
+)
 
 
 
@@ -110,14 +119,24 @@ df["valor_total"] = pd.to_numeric(
 
 
 
+df["valor_frete"] = pd.to_numeric(
+    df["valor_frete"],
+    errors="coerce"
+).fillna(0)
+
+
+
 # =====================================================
 # FILTROS
 # =====================================================
 
-st.subheader("🔎 Filtros")
+st.subheader(
+    "🔎 Filtros"
+)
 
 
 col1, col2 = st.columns(2)
+
 
 
 with col1:
@@ -127,7 +146,8 @@ with col1:
         reverse=True
     )
 
-    ano_selecionado = st.selectbox(
+
+    ano = st.selectbox(
         "Ano",
         ["Todos"] + list(anos)
     )
@@ -135,6 +155,7 @@ with col1:
 
 
 with col2:
+
 
     meses = {
         1:"Janeiro",
@@ -152,7 +173,7 @@ with col2:
     }
 
 
-    mes_selecionado = st.selectbox(
+    mes = st.selectbox(
         "Mês",
         ["Todos"] + list(meses.values())
     )
@@ -163,20 +184,19 @@ df_filtrado = df.copy()
 
 
 
-if ano_selecionado != "Todos":
+if ano != "Todos":
 
     df_filtrado = df_filtrado[
-        df_filtrado["ano"] == ano_selecionado
+        df_filtrado["ano"] == ano
     ]
 
 
 
-if mes_selecionado != "Todos":
+if mes != "Todos":
 
     numero_mes = [
-        chave
-        for chave, valor in meses.items()
-        if valor == mes_selecionado
+        k for k,v in meses.items()
+        if v == mes
     ][0]
 
 
@@ -194,18 +214,21 @@ st.divider()
 # INDICADORES
 # =====================================================
 
-st.subheader("📊 Resumo financeiro")
+st.subheader(
+    "📊 Resumo financeiro"
+)
 
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 
 
 with col1:
 
-    faturamento = df_filtrado[
-        "valor_total"
-    ].sum()
+    faturamento = (
+        df_filtrado["valor_total"]
+        .sum()
+    )
 
 
     st.metric(
@@ -217,21 +240,38 @@ with col1:
 
 with col2:
 
-    pedidos = len(df_filtrado)
+    frete = (
+        df_filtrado["valor_frete"]
+        .sum()
+    )
 
 
     st.metric(
-        "Pedidos realizados",
-        pedidos
+        "Fretes recebidos",
+        f"R$ {frete:,.2f}"
     )
 
 
 
 with col3:
 
+    quantidade = len(
+        df_filtrado
+    )
+
+
+    st.metric(
+        "Pedidos",
+        quantidade
+    )
+
+
+
+with col4:
+
     ticket = (
-        faturamento / pedidos
-        if pedidos > 0
+        faturamento / quantidade
+        if quantidade > 0
         else 0
     )
 
@@ -248,27 +288,36 @@ st.divider()
 
 
 # =====================================================
-# FATURAMENTO POR PERÍODO
+# FATURAMENTO POR MÊS
 # =====================================================
 
 st.subheader(
-    "📅 Faturamento por mês"
+    "📅 Faturamento mensal"
 )
 
 
 faturamento_mes = (
+
     df_filtrado
+
     .groupby(
-        df_filtrado["created_at"].dt.strftime("%m/%Y")
-    )["valor_total"]
+        df_filtrado["created_at"]
+        .dt.strftime("%m/%Y")
+    )
+
+    ["valor_total"]
+
     .sum()
+
     .reset_index()
+
 )
+
 
 
 faturamento_mes.columns = [
     "Mês",
-    "Valor"
+    "Faturamento"
 ]
 
 
@@ -293,32 +342,40 @@ st.subheader(
 
 
 
-if "cesta" in df_filtrado.columns:
+if "cesta_nome" in df_filtrado.columns:
 
 
     cestas = (
+
         df_filtrado
-        .groupby("cesta")
-        .size()
-        .reset_index(
-            name="Quantidade"
+
+        .groupby(
+            "cesta_nome"
         )
+
+        .size()
+
+        .reset_index(
+            name="Quantidade vendida"
+        )
+
         .sort_values(
-            "Quantidade",
+            "Quantidade vendida",
             ascending=False
         )
+
     )
+
+
+    cestas.columns = [
+        "Cesta",
+        "Quantidade vendida"
+    ]
 
 
     st.dataframe(
         cestas,
         use_container_width=True
-    )
-
-else:
-
-    st.info(
-        "Campo cesta não encontrado."
     )
 
 
@@ -328,7 +385,7 @@ st.divider()
 
 
 # =====================================================
-# ADICIONAIS VENDIDOS
+# ADICIONAIS
 # =====================================================
 
 st.subheader(
@@ -340,50 +397,55 @@ st.subheader(
 if "adicionais" in df_filtrado.columns:
 
 
-    lista_adicionais = []
+    lista = []
 
 
     for item in df_filtrado["adicionais"]:
 
+
         if item:
 
-            if isinstance(item, list):
+            texto = str(item)
 
-                lista_adicionais.extend(item)
 
-            else:
+            partes = texto.split(",")
 
-                partes = str(item).split(",")
 
-                lista_adicionais.extend(
-                    [
-                        p.strip()
-                        for p in partes
-                    ]
+            for p in partes:
+
+                lista.append(
+                    p.strip()
                 )
 
 
 
-    if lista_adicionais:
-
-
-        adicionais = pd.DataFrame(
-            lista_adicionais,
-            columns=["Adicional"]
-        )
+    if lista:
 
 
         adicionais = (
-            adicionais
-            .groupby("Adicional")
-            .size()
-            .reset_index(
-                name="Quantidade"
+
+            pd.DataFrame(
+                lista,
+                columns=[
+                    "Adicional"
+                ]
             )
+
+            .groupby(
+                "Adicional"
+            )
+
+            .size()
+
+            .reset_index(
+                name="Quantidade vendida"
+            )
+
             .sort_values(
-                "Quantidade",
+                "Quantidade vendida",
                 ascending=False
             )
+
         )
 
 
@@ -396,15 +458,8 @@ if "adicionais" in df_filtrado.columns:
     else:
 
         st.info(
-            "Nenhum adicional vendido."
+            "Nenhum adicional encontrado."
         )
-
-
-else:
-
-    st.info(
-        "Campo adicionais não encontrado."
-    )
 
 
 
@@ -413,34 +468,48 @@ st.divider()
 
 
 # =====================================================
-# DETALHAMENTO DOS PEDIDOS
+# DETALHAMENTO
 # =====================================================
 
 st.subheader(
-    "📋 Detalhamento financeiro"
+    "📋 Detalhamento dos pedidos"
 )
 
 
+
 colunas = [
+
     "created_at",
-    "nome",
-    "cesta",
-    "valor_total"
+    "cliente_nome",
+    "cesta_nome",
+    "valor_frete",
+    "valor_total",
+    "status"
+
 ]
 
 
-colunas_existentes = [
+
+colunas_ok = [
+
     c for c in colunas
     if c in df_filtrado.columns
+
 ]
+
 
 
 st.dataframe(
+
     df_filtrado[
-        colunas_existentes
-    ].sort_values(
+        colunas_ok
+    ]
+
+    .sort_values(
         "created_at",
         ascending=False
     ),
+
     use_container_width=True
+
 )
