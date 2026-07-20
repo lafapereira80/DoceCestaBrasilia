@@ -74,7 +74,8 @@ st.divider()
 # =====================================================
 
 df = carregar_pedidos()
-
+st.write("Colunas encontradas no Supabase:")
+st.write(df.columns.tolist())
 
 if df.empty:
 
