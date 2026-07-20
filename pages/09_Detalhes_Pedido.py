@@ -59,19 +59,20 @@ st.divider()
 
 st.subheader("👤 Cliente")
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
 
     st.write("**Nome**")
 
     st.write(pedido["cliente_nome"])
+with col2:
 
     st.write("**CPF**")
 
     st.write(pedido["cliente_cpf"])
 
-with col2:
+with col3:
 
     st.write("**Telefone**")
 
