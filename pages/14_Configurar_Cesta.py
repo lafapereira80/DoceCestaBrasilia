@@ -73,21 +73,37 @@ st.markdown(
 
 h1{
 
-font-size:26px !important;
+    font-size:26px !important;
 
 }
 
 
 h2{
 
-font-size:20px !important;
+    font-size:20px !important;
 
 }
 
 
+h3{
+
+    font-size:17px !important;
+
+}
+
+
+
 .stButton button{
 
-border-radius:10px;
+    border-radius:10px;
+
+}
+
+
+
+[data-testid="stVerticalBlockBorderWrapper"]{
+
+    padding:15px;
 
 }
 
@@ -108,9 +124,11 @@ st.title(
 )
 
 
+
 st.caption(
-    "Defina quais produtos estarão disponíveis e quantas opções o cliente poderá escolher."
+    "Configure os produtos disponíveis e as regras de escolha do cliente."
 )
+
 
 
 st.divider()
@@ -118,7 +136,7 @@ st.divider()
 
 
 # =====================================================
-# CARREGAMENTO
+# CARREGAMENTO DOS DADOS
 # =====================================================
 
 try:
@@ -126,7 +144,9 @@ try:
 
     cestas = listar_cestas()
 
+
     produtos = listar_produtos()
+
 
     categorias = listar_categorias()
 
@@ -136,7 +156,9 @@ except Exception as erro:
 
 
     st.error(
+
         f"Erro ao carregar dados: {erro}"
+
     )
 
     st.stop()
@@ -147,7 +169,9 @@ if not cestas:
 
 
     st.warning(
+
         "Nenhuma cesta cadastrada."
+
     )
 
     st.stop()
@@ -158,7 +182,9 @@ if not produtos:
 
 
     st.warning(
+
         "Nenhum produto cadastrado."
+
     )
 
     st.stop()
@@ -169,10 +195,9 @@ if not produtos:
 # ESCOLHA DA CESTA
 # =====================================================
 
-
 cesta = st.selectbox(
 
-    "🎁 Escolha a cesta para configurar",
+    "🎁 Selecione a cesta",
 
     cestas,
 
@@ -196,18 +221,24 @@ cesta_id = cesta["id"]
 
 st.divider()
 
+
+
 # =====================================================
-# PRODUTOS JÁ CONFIGURADOS
+# PRODUTOS JÁ VINCULADOS
 # =====================================================
 
 try:
 
+
     produtos_vinculados = listar_produtos_da_cesta(
+
         cesta_id
+
     )
 
 
 except Exception:
+
 
     produtos_vinculados = []
 
@@ -224,9 +255,8 @@ produtos_marcados = [
 
 
 # =====================================================
-# ORGANIZA PRODUTOS POR CATEGORIA
+# MAPA DE CATEGORIAS
 # =====================================================
-
 
 categorias_dict = {
 
@@ -242,23 +272,18 @@ categorias_dict = {
 
 
 
+# =====================================================
+# ORGANIZA PRODUTOS POR CATEGORIA
+# =====================================================
+
 produtos_por_categoria = {}
-
-
-
-for categoria in categorias:
-
-
-    produtos_por_categoria[
-        categoria["nome"]
-    ] = []
 
 
 
 for produto in produtos:
 
 
-    nome_categoria = categorias_dict.get(
+    categoria_nome = categorias_dict.get(
 
         produto["categoria_id"],
 
@@ -267,29 +292,63 @@ for produto in produtos:
     )
 
 
-    produtos_por_categoria.setdefault(
+    if categoria_nome not in produtos_por_categoria:
 
-        nome_categoria,
 
-        []
+        produtos_por_categoria[categoria_nome] = []
 
-    ).append(produto)
 
+
+    produtos_por_categoria[categoria_nome].append(
+
+        produto
+
+    )
 
 
 
 # =====================================================
-# CONFIGURAÇÃO
+# CATEGORIAS COM LIMITE DE ESCOLHA
+# =====================================================
+
+categorias_com_limite = [
+
+    "Pães",
+
+    "Bebidas",
+
+    "Espalháveis"
+
+]
+
+
+# =====================================================
+# CONFIGURAÇÃO DOS PRODUTOS
 # =====================================================
 
 
 st.subheader(
-    "📦 Produtos disponíveis"
+    "📦 Produtos disponíveis na cesta"
 )
 
 
+
 st.info(
-    "Selecione os produtos que farão parte desta cesta e defina quantas opções o cliente poderá escolher."
+    """
+Selecione os produtos que farão parte da cesta.
+
+Para:
+🍞 Pães  
+🥤 Bebidas  
+🍓 Espalháveis  
+
+será possível definir quantidades de escolha do cliente.
+
+Para:
+🎀 Adicionais
+
+o cliente poderá escolher livremente.
+"""
 )
 
 
@@ -300,7 +359,6 @@ configuracoes = []
 
 ordem_categorias = [
 
-
     "Pães",
 
     "Bebidas",
@@ -309,21 +367,27 @@ ordem_categorias = [
 
     "Adicionais"
 
-
 ]
 
 
 
-# adiciona categorias extras caso existam
+# adiciona outras categorias se existirem
 
 for categoria in produtos_por_categoria:
 
 
     if categoria not in ordem_categorias:
 
+
         ordem_categorias.append(
+
             categoria
+
         )
+
+
+
+ordem = 1
 
 
 
@@ -333,17 +397,21 @@ for categoria_nome in ordem_categorias:
 
     if categoria_nome not in produtos_por_categoria:
 
+
         continue
 
 
 
     lista_produtos = produtos_por_categoria[
+
         categoria_nome
+
     ]
 
 
 
     if not lista_produtos:
+
 
         continue
 
@@ -353,65 +421,105 @@ for categoria_nome in ordem_categorias:
 
 
         st.markdown(
+
             f"### 📦 {categoria_nome}"
+
         )
 
 
 
-        col1,col2 = st.columns(2)
+        # =================================================
+        # REGRA DE ESCOLHA
+        # =================================================
+
+
+        if categoria_nome in categorias_com_limite:
 
 
 
-        with col1:
-
-
-            minimo = st.number_input(
-
-                "Mínimo de escolhas",
-
-                min_value=0,
-
-                value=1,
-
-                step=1,
-
-                key=f"min_{categoria_nome}"
-
-            )
+            col1, col2 = st.columns(2)
 
 
 
-        with col2:
+            with col1:
 
 
-            maximo = st.number_input(
+                minimo = st.number_input(
 
-                "Máximo de escolhas",
+                    "Mínimo de escolhas",
 
-                min_value=1,
+                    min_value=0,
 
-                value=1,
+                    value=1,
 
-                step=1,
+                    step=1,
 
-                key=f"max_{categoria_nome}"
+                    key=f"min_{categoria_nome}"
 
-            )
-
-
-
-        if maximo < minimo:
-
-
-            st.warning(
-
-                "O máximo não pode ser menor que o mínimo."
-
-            )
+                )
 
 
 
-        selecionados_categoria = []
+            with col2:
+
+
+                maximo = st.number_input(
+
+                    "Máximo de escolhas",
+
+                    min_value=1,
+
+                    value=1,
+
+                    step=1,
+
+                    key=f"max_{categoria_nome}"
+
+                )
+
+
+
+            if maximo < minimo:
+
+
+                st.warning(
+
+                    "O máximo não pode ser menor que o mínimo."
+
+                )
+
+
+
+        else:
+
+
+
+            # Adicionais não possuem limite
+
+
+            minimo = 0
+
+
+            maximo = 99
+
+
+
+            if categoria_nome == "Adicionais":
+
+
+                st.info(
+
+                    "Cliente poderá escolher livremente os adicionais."
+
+                )
+
+
+
+        st.divider()
+
+
+
+        produtos_selecionados = []
 
 
 
@@ -423,7 +531,7 @@ for categoria_nome in ordem_categorias:
 
 
 
-            escolhido = st.checkbox(
+            selecionado = st.checkbox(
 
                 produto["nome"],
 
@@ -435,10 +543,10 @@ for categoria_nome in ordem_categorias:
 
 
 
-            if escolhido:
+            if selecionado:
 
 
-                selecionados_categoria.append(
+                produtos_selecionados.append(
 
                     produto["id"]
 
@@ -446,163 +554,163 @@ for categoria_nome in ordem_categorias:
 
 
 
-        if selecionados_categoria:
+        # =================================================
+        # MONTA CONFIGURAÇÃO
+        # =================================================
 
 
-
-            configuracoes.append({
-
-
-                "categoria": categoria_nome,
+        if produtos_selecionados:
 
 
-                "min_escolhas": minimo,
+            for produto_id in produtos_selecionados:
 
 
-                "max_escolhas": maximo,
+                configuracoes.append({
 
 
-                "produtos": selecionados_categoria
+                    "cesta_id":
+
+                        cesta_id,
 
 
-            })
+                    "produto_id":
+
+                        produto_id,
+
+
+                    "categoria":
+
+                        categoria_nome,
+
+
+                    "min_escolhas":
+
+                        minimo,
+
+
+                    "max_escolhas":
+
+                        maximo,
+
+
+                    "ordem":
+
+                        ordem
+
+                })
+
+
+                ordem += 1
 
 
 
     st.divider()
 
+
 # =====================================================
-# CONFIGURAÇÃO DE ESCOLHAS POR CATEGORIA
+# RESUMO DA CONFIGURAÇÃO
 # =====================================================
 
 
 st.divider()
 
 
+
 st.subheader(
-    "⚙️ Limites de escolha por categoria"
+    "📋 Resumo da configuração"
 )
 
 
 
-st.info(
-    "Defina quantos itens o cliente poderá escolher dentro de cada categoria."
-)
+if configuracoes:
 
 
 
-configuracoes = []
+    resumo = {}
 
 
 
-for categoria_nome, produtos_categoria in produtos_por_categoria.items():
+    for item in configuracoes:
 
 
-    with st.container(border=True):
+
+        categoria = item["categoria"]
 
 
-        st.markdown(
-            f"### 📦 {categoria_nome}"
-        )
+
+        if categoria not in resumo:
 
 
-        st.write(
-            "Produtos disponíveis:"
-        )
+            resumo[categoria] = {
+
+                "quantidade": 0,
+
+                "min": item["min_escolhas"],
+
+                "max": item["max_escolhas"]
+
+            }
 
 
-        lista_produtos = []
+
+        resumo[categoria]["quantidade"] += 1
 
 
-        for produto in produtos_categoria:
 
 
-            lista_produtos.append(
-                produto["id"]
+
+    for categoria, dados in resumo.items():
+
+
+        with st.container(border=True):
+
+
+            st.write(
+
+                f"**{categoria}**"
+
             )
 
 
             st.write(
-                f"• {produto['nome']}"
-            )
 
-
-
-        col1, col2 = st.columns(2)
-
-
-
-        with col1:
-
-
-            min_escolhas = st.number_input(
-
-                "Mínimo de escolhas",
-
-                min_value=0,
-
-                value=1,
-
-                step=1,
-
-                key=f"min_{categoria_nome}"
+                f"Produtos selecionados: {dados['quantidade']}"
 
             )
 
 
 
-        with col2:
+            if categoria in categorias_com_limite:
 
 
-            max_escolhas = st.number_input(
+                st.write(
 
-                "Máximo de escolhas",
+                    f"Escolha do cliente: "
+                    f"{dados['min']} até {dados['max']}"
 
-                min_value=1,
-
-                value=1,
-
-                step=1,
-
-                key=f"max_{categoria_nome}"
-
-            )
+                )
 
 
+            else:
 
-        if max_escolhas < min_escolhas:
 
+                st.write(
 
-            st.warning(
+                    "Escolha livre"
 
-                "O máximo não pode ser menor que o mínimo."
-
-            )
+                )
 
 
 
-        configuracoes.append({
-
-            "categoria":
-
-                categoria_nome,
+else:
 
 
-            "produtos":
 
-                lista_produtos,
+    st.info(
 
+        "Nenhum produto selecionado para esta cesta."
 
-            "min_escolhas":
-
-                min_escolhas,
-
-
-            "max_escolhas":
-
-                max_escolhas
-
-        })
+    )
 
 
 
@@ -622,6 +730,7 @@ col1, col2 = st.columns(2)
 with col1:
 
 
+
     salvar = st.button(
 
         "💾 Salvar Configuração",
@@ -633,6 +742,7 @@ with col1:
 
 
 with col2:
+
 
 
     voltar = st.button(
@@ -653,6 +763,7 @@ with col2:
 if voltar:
 
 
+
     st.session_state.pop(
 
         "cesta_configurar",
@@ -660,6 +771,7 @@ if voltar:
         None
 
     )
+
 
 
     st.switch_page(
@@ -678,7 +790,24 @@ if voltar:
 if salvar:
 
 
+
+    if not configuracoes:
+
+
+
+        st.error(
+
+            "Selecione pelo menos um produto."
+
+        )
+
+
+        st.stop()
+
+
+
     try:
+
 
 
         salvar_configuracao_cesta(
@@ -690,11 +819,13 @@ if salvar:
         )
 
 
+
         st.success(
 
             "Configuração da cesta salva com sucesso!"
 
         )
+
 
 
         st.session_state.pop(
@@ -704,6 +835,7 @@ if salvar:
             None
 
         )
+
 
 
         st.switch_page(
@@ -717,63 +849,12 @@ if salvar:
     except Exception as erro:
 
 
+
         st.error(
 
             f"Erro ao salvar configuração: {erro}"
 
         )
-        # =====================================================
-# RESUMO DA CONFIGURAÇÃO
-# =====================================================
-
-
-st.divider()
-
-
-
-st.subheader(
-    "📋 Resumo da configuração"
-)
-
-
-
-if configuracoes:
-
-
-    for item in configuracoes:
-
-
-        with st.container(border=True):
-
-
-            st.write(
-                f"**{item['categoria']}**"
-            )
-
-
-            st.write(
-
-                f"Mínimo: {item['min_escolhas']} | "
-                f"Máximo: {item['max_escolhas']}"
-
-            )
-
-
-            st.write(
-
-                f"Produtos vinculados: {len(item['produtos'])}"
-
-            )
-
-
-else:
-
-
-    st.info(
-
-        "Nenhuma configuração criada."
-
-    )
 
 
 
@@ -791,15 +872,3 @@ st.caption(
     "Doce Cesta Brasília - Configuração de Cestas"
 
 )
-
-
-
-# =====================================================
-# GARANTE LIMPEZA DE ESTADO
-# =====================================================
-
-
-if "limpar_configuracao" in st.session_state:
-
-
-    del st.session_state["limpar_configuracao"]
