@@ -1,7 +1,20 @@
 import streamlit as st
 import pandas as pd
 
+
 from config.supabase import supabase
+
+
+from utils.menu import (
+    configurar_pagina,
+    menu_lateral
+)
+
+
+from utils.permissao import (
+    administrador_operador
+)
+
 
 
 # =====================================================
@@ -15,30 +28,33 @@ st.set_page_config(
 )
 
 
+
 # =====================================================
-# REMOVER ELEMENTOS STREAMLIT
+# CONTROLE DE ACESSO
 # =====================================================
 
-st.markdown(
-    """
-    <style>
+configurar_pagina()
 
-    #MainMenu {
-        visibility: hidden;
-    }
+menu_lateral()
 
-    footer {
-        visibility: hidden;
-    }
+administrador_operador()
 
-    header {
-        visibility: hidden;
-    }
 
-    </style>
-    """,
-    unsafe_allow_html=True
+
+usuario = st.session_state.usuario
+
+
+
+# =====================================================
+# TÍTULO
+# =====================================================
+
+st.title(
+    "💰 Financeiro"
 )
+
+
+st.divider()
 
 
 
@@ -49,12 +65,19 @@ st.markdown(
 @st.cache_data(ttl=60)
 def carregar_pedidos():
 
+
     resposta = (
+
         supabase
+
         .table("pedidos")
+
         .select("*")
+
         .execute()
+
     )
+
 
     return pd.DataFrame(
         resposta.data
@@ -63,24 +86,29 @@ def carregar_pedidos():
 
 
 # =====================================================
-# TÍTULO
+# CARREGAMENTO
 # =====================================================
 
-st.title("💰 Financeiro")
-
-st.divider()
+try:
 
 
+    df = carregar_pedidos()
 
-# =====================================================
-# CARREGAR DADOS
-# =====================================================
 
-df = carregar_pedidos()
+
+except Exception as erro:
+
+
+    st.error(
+        f"Erro ao carregar pedidos: {erro}"
+    )
+
+    st.stop()
 
 
 
 if df.empty:
+
 
     st.warning(
         "Nenhum pedido encontrado."
@@ -91,7 +119,7 @@ if df.empty:
 
 
 # =====================================================
-# TRATAMENTO
+# TRATAMENTO DOS DADOS
 # =====================================================
 
 df["created_at"] = pd.to_datetime(
@@ -99,10 +127,12 @@ df["created_at"] = pd.to_datetime(
 )
 
 
+
 df["ano"] = (
     df["created_at"]
     .dt.year
 )
+
 
 
 df["mes"] = (
@@ -113,16 +143,23 @@ df["mes"] = (
 
 
 df["valor_total"] = pd.to_numeric(
+
     df["valor_total"],
+
     errors="coerce"
+
 ).fillna(0)
 
 
 
 df["valor_frete"] = pd.to_numeric(
+
     df["valor_frete"],
+
     errors="coerce"
+
 ).fillna(0)
+
 
 
 
@@ -135,21 +172,31 @@ st.subheader(
 )
 
 
+
 col1, col2 = st.columns(2)
 
 
 
 with col1:
 
+
     anos = sorted(
-        df["ano"].unique(),
+
+        df["ano"]
+
+        .unique(),
+
         reverse=True
+
     )
 
 
-    ano = st.selectbox(
+    ano_selecionado = st.selectbox(
+
         "Ano",
+
         ["Todos"] + list(anos)
+
     )
 
 
@@ -158,24 +205,41 @@ with col2:
 
 
     meses = {
+
         1:"Janeiro",
+
         2:"Fevereiro",
+
         3:"Março",
+
         4:"Abril",
+
         5:"Maio",
+
         6:"Junho",
+
         7:"Julho",
+
         8:"Agosto",
+
         9:"Setembro",
+
         10:"Outubro",
+
         11:"Novembro",
+
         12:"Dezembro"
+
     }
 
 
-    mes = st.selectbox(
+
+    mes_selecionado = st.selectbox(
+
         "Mês",
+
         ["Todos"] + list(meses.values())
+
     )
 
 
@@ -184,24 +248,44 @@ df_filtrado = df.copy()
 
 
 
-if ano != "Todos":
+if ano_selecionado != "Todos":
+
 
     df_filtrado = df_filtrado[
-        df_filtrado["ano"] == ano
+
+        df_filtrado["ano"]
+
+        ==
+
+        ano_selecionado
+
     ]
 
 
 
-if mes != "Todos":
+if mes_selecionado != "Todos":
+
 
     numero_mes = [
-        k for k,v in meses.items()
-        if v == mes
+
+        chave
+
+        for chave, valor in meses.items()
+
+        if valor == mes_selecionado
+
     ][0]
 
 
+
     df_filtrado = df_filtrado[
-        df_filtrado["mes"] == numero_mes
+
+        df_filtrado["mes"]
+
+        ==
+
+        numero_mes
+
     ]
 
 
@@ -211,12 +295,13 @@ st.divider()
 
 
 # =====================================================
-# INDICADORES
+# RESUMO
 # =====================================================
 
 st.subheader(
     "📊 Resumo financeiro"
 )
+
 
 
 col1, col2, col3, col4 = st.columns(4)
@@ -225,60 +310,86 @@ col1, col2, col3, col4 = st.columns(4)
 
 with col1:
 
+
     faturamento = (
+
         df_filtrado["valor_total"]
+
         .sum()
+
     )
 
 
     st.metric(
+
         "Faturamento",
+
         f"R$ {faturamento:,.2f}"
+
     )
 
 
 
 with col2:
 
-    frete = (
+
+    fretes = (
+
         df_filtrado["valor_frete"]
+
         .sum()
+
     )
 
 
     st.metric(
-        "Fretes recebidos",
-        f"R$ {frete:,.2f}"
+
+        "Fretes",
+
+        f"R$ {fretes:,.2f}"
+
     )
 
 
 
 with col3:
 
-    quantidade = len(
+
+    pedidos = len(
         df_filtrado
     )
 
 
     st.metric(
+
         "Pedidos",
-        quantidade
+
+        pedidos
+
     )
 
 
 
 with col4:
 
+
     ticket = (
-        faturamento / quantidade
-        if quantidade > 0
+
+        faturamento / pedidos
+
+        if pedidos > 0
+
         else 0
+
     )
 
 
     st.metric(
+
         "Ticket médio",
+
         f"R$ {ticket:,.2f}"
+
     )
 
 
@@ -296,13 +407,17 @@ st.subheader(
 )
 
 
+
 faturamento_mes = (
 
     df_filtrado
 
     .groupby(
+
         df_filtrado["created_at"]
+
         .dt.strftime("%m/%Y")
+
     )
 
     ["valor_total"]
@@ -316,14 +431,21 @@ faturamento_mes = (
 
 
 faturamento_mes.columns = [
+
     "Mês",
+
     "Faturamento"
+
 ]
 
 
+
 st.dataframe(
+
     faturamento_mes,
+
     use_container_width=True
+
 )
 
 
@@ -356,26 +478,47 @@ if "cesta_nome" in df_filtrado.columns:
         .size()
 
         .reset_index(
+
             name="Quantidade vendida"
+
         )
 
         .sort_values(
+
             "Quantidade vendida",
+
             ascending=False
+
         )
 
     )
 
 
     cestas.columns = [
+
         "Cesta",
+
         "Quantidade vendida"
+
     ]
 
 
     st.dataframe(
+
         cestas,
+
         use_container_width=True
+
+    )
+
+
+else:
+
+
+    st.warning(
+
+        "Campo cesta_nome não encontrado."
+
     )
 
 
@@ -397,68 +540,88 @@ st.subheader(
 if "adicionais" in df_filtrado.columns:
 
 
-    lista = []
+    lista_adicionais = []
 
 
-    for item in df_filtrado["adicionais"]:
+
+    for adicional in df_filtrado["adicionais"]:
 
 
-        if item:
-
-            texto = str(item)
+        if adicional:
 
 
-            partes = texto.split(",")
+            texto = str(adicional)
 
 
-            for p in partes:
+            itens = texto.split(",")
 
-                lista.append(
-                    p.strip()
+
+
+            for item in itens:
+
+
+                lista_adicionais.append(
+
+                    item.strip()
+
                 )
 
 
 
-    if lista:
+    if lista_adicionais:
 
 
-        adicionais = (
+        tabela_adicionais = (
 
             pd.DataFrame(
-                lista,
-                columns=[
-                    "Adicional"
-                ]
+
+                lista_adicionais,
+
+                columns=["Adicional"]
+
             )
 
             .groupby(
+
                 "Adicional"
+
             )
 
             .size()
 
             .reset_index(
+
                 name="Quantidade vendida"
+
             )
 
             .sort_values(
+
                 "Quantidade vendida",
+
                 ascending=False
+
             )
 
         )
 
 
         st.dataframe(
-            adicionais,
+
+            tabela_adicionais,
+
             use_container_width=True
+
         )
 
 
     else:
 
+
         st.info(
-            "Nenhum adicional encontrado."
+
+            "Nenhum adicional vendido."
+
         )
 
 
@@ -472,7 +635,7 @@ st.divider()
 # =====================================================
 
 st.subheader(
-    "📋 Detalhamento dos pedidos"
+    "📋 Detalhamento financeiro"
 )
 
 
@@ -480,20 +643,28 @@ st.subheader(
 colunas = [
 
     "created_at",
+
     "cliente_nome",
+
     "cesta_nome",
+
     "valor_frete",
+
     "valor_total",
+
     "status"
 
 ]
 
 
 
-colunas_ok = [
+colunas_existentes = [
 
-    c for c in colunas
-    if c in df_filtrado.columns
+    coluna
+
+    for coluna in colunas
+
+    if coluna in df_filtrado.columns
 
 ]
 
@@ -502,12 +673,17 @@ colunas_ok = [
 st.dataframe(
 
     df_filtrado[
-        colunas_ok
+
+        colunas_existentes
+
     ]
 
     .sort_values(
+
         "created_at",
+
         ascending=False
+
     ),
 
     use_container_width=True
