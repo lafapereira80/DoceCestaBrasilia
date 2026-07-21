@@ -1190,37 +1190,26 @@ if adicionais_pedido:
 
 
 
-            col_nome, col_valor = st.columns([3,1])
+            st.write(
+    f"• {nome} (Preço sob consulta)"
+)
 
 
+valor_digitado = st.number_input(
 
-            with col_nome:
+    "Valor",
 
+    min_value=0.0,
 
-                st.write(
+    value=valor_anterior,
 
-                    f"• {nome} (Preço sob consulta)"
+    step=1.0,
 
-                )
+    key=f"consulta_{nome}",
 
+    label_visibility="collapsed"
 
-
-            with col_valor:
-
-
-                valor_digitado = st.number_input(
-
-                    "",
-
-                    min_value=0.0,
-
-                    value=valor_anterior,
-
-                    step=1.0,
-
-                    key=f"consulta_{nome}"
-
-                )
+)
 
 
 
