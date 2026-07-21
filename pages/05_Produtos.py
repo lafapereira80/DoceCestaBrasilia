@@ -1,7 +1,6 @@
 import streamlit as st
 
 
-
 from services.produto_service import (
 
     listar_produtos,
@@ -15,7 +14,6 @@ from services.produto_service import (
 )
 
 
-
 from utils.menu import (
 
     configurar_pagina,
@@ -23,7 +21,6 @@ from utils.menu import (
     menu_lateral
 
 )
-
 
 
 from utils.permissao import (
@@ -93,7 +90,7 @@ st.markdown(
 
 h1{
 
-    font-size:24px !important;
+    font-size:26px !important;
 
 }
 
@@ -101,7 +98,7 @@ h1{
 
 h2{
 
-    font-size:18px !important;
+    font-size:20px !important;
 
 }
 
@@ -109,13 +106,13 @@ h2{
 
 h3{
 
-    font-size:15px !important;
+    font-size:16px !important;
 
 }
 
 
 
-p, div, span{
+p, span, div, label{
 
     font-size:13px;
 
@@ -128,6 +125,8 @@ p, div, span{
     height:34px;
 
     font-size:13px;
+
+    border-radius:8px;
 
 }
 
@@ -143,9 +142,17 @@ input, textarea{
 
 [data-testid="stVerticalBlockBorderWrapper"]{
 
-    padding-top:10px;
+    padding:12px;
 
-    padding-bottom:10px;
+}
+
+
+
+hr{
+
+    margin-top:8px;
+
+    margin-bottom:8px;
 
 }
 
@@ -169,6 +176,12 @@ st.title(
 
 )
 
+
+st.caption(
+
+    "Gerenciamento de produtos por categoria"
+
+)
 
 
 st.divider()
@@ -205,7 +218,7 @@ except Exception as erro:
 
 
 # =====================================================
-# NOVO PRODUTO
+# CADASTRO NOVO PRODUTO
 # =====================================================
 
 if usuario["perfil"] == "Administrador":
@@ -265,13 +278,10 @@ if usuario["perfil"] == "Administrador":
             )
 
 
-
         else:
 
 
-
             categoria = None
-
 
 
             st.warning(
@@ -282,27 +292,30 @@ if usuario["perfil"] == "Administrador":
 
 
 
-
-
-        # =====================================================
+        # =================================================
         # PREÇO
-        # =====================================================
+        # =================================================
+
 
         preco_consulta = False
 
 
 
-        if categoria and categoria["nome"].lower().strip() == "adicionais":
+        if categoria:
 
 
 
-            preco_consulta = st.checkbox(
+            if categoria["nome"].lower().strip() == "adicionais":
 
-                "☐ Preço sob consulta",
 
-                help="Use quando o valor será informado posteriormente."
 
-            )
+                preco_consulta = st.checkbox(
+
+                    "☐ Preço sob consulta",
+
+                    help="Somente para adicionais sem valor definido."
+
+                )
 
 
 
@@ -316,7 +329,7 @@ if usuario["perfil"] == "Administrador":
 
             st.info(
 
-                "Este produto será cadastrado como Preço sob consulta."
+                "Produto será salvo como: Preço sob consulta."
 
             )
 
@@ -360,14 +373,6 @@ if usuario["perfil"] == "Administrador":
 
         )
 
-
-
-
-
-# =====================================================
-# CONTINUA NA PARTE 2
-# ====================================================
-        
 # =====================================================
 # SALVAR PRODUTO
 # =====================================================
@@ -378,7 +383,6 @@ if salvar:
 
 
     if not nome.strip():
-
 
 
         st.error(
@@ -396,7 +400,6 @@ if salvar:
     if not categoria:
 
 
-
         st.error(
 
             "Selecione uma categoria."
@@ -410,7 +413,7 @@ if salvar:
 
 
     # =================================================
-    # VALIDAÇÃO PREÇO ADICIONAIS
+    # VALIDAÇÃO PREÇO SOB CONSULTA
     # =================================================
 
 
@@ -418,18 +421,15 @@ if salvar:
 
 
 
-        if preco is not None and preco == 0:
+        if preco == 0:
 
 
 
             st.warning(
 
-                "Para adicionais informe um valor "
-                "ou marque 'Preço sob consulta'."
+                "Informe um valor ou marque 'Preço sob consulta'."
 
             )
-
-
 
             st.stop()
 
@@ -552,7 +552,69 @@ except Exception as erro:
 
 
 # =====================================================
-# EXIBIÇÃO DOS PRODUTOS
+# AGRUPA PRODUTOS POR CATEGORIA
+# =====================================================
+
+
+produtos_agrupados = {}
+
+
+
+for produto in produtos:
+
+
+
+    categoria_produto = produto.get(
+
+        "categorias"
+
+    )
+
+
+
+    if categoria_produto:
+
+
+
+        nome_categoria = categoria_produto.get(
+
+            "nome",
+
+            "Sem Categoria"
+
+        )
+
+
+
+    else:
+
+
+
+        nome_categoria = "Sem Categoria"
+
+
+
+
+    if nome_categoria not in produtos_agrupados:
+
+
+
+        produtos_agrupados[nome_categoria] = []
+
+
+
+    produtos_agrupados[nome_categoria].append(
+
+        produto
+
+    )
+
+
+
+
+
+# =====================================================
+# EXIBIÇÃO AGRUPADA
 # =====================================================
 
 
@@ -566,227 +628,31 @@ if not produtos:
 
     )
 
-
-
 else:
 
 
 
-    for produto in produtos:
+    for categoria_nome, lista_produtos in produtos_agrupados.items():
 
 
 
-        with st.container(border=True):
-
-
-
-            col1,col2,col3,col4 = st.columns(
-
-                [5,2,2,1]
-
-            )
-
-
-
-            # ==========================
-            # DADOS
-            # ==========================
-
-
-            with col1:
-
-
-
-                st.write(
-
-                    f"**{produto['nome']}**"
-
-                )
-
-
-
-                categoria = produto.get(
-
-                    "categorias"
-
-                )
-
-
-
-                if categoria:
-
-
-
-                    st.caption(
-
-                        f"Categoria: {categoria['nome']}"
-
-                    )
-
-
-
-                descricao_produto = produto.get(
-
-                    "descricao"
-
-                )
-
-
-
-                if descricao_produto:
-
-
-
-                    st.caption(
-
-                        descricao_produto
-
-                    )
-
-
-
-
-
-            # ==========================
-            # PREÇO
-            # ==========================
-
-
-            with col2:
-
-
-
-                preco_produto = produto.get(
-
-                    "preco"
-
-                )
-
-
-
-                if preco_produto is None:
-
-
-
-                    st.warning(
-
-                        "Preço sob consulta"
-
-                    )
-
-
-
-                else:
-
-
-
-                    try:
-
-
-
-                        valor = float(
-
-                            preco_produto
-
-                        )
-
-
-
-                        valor_formatado = (
-
-                            f"R$ {valor:,.2f}"
-
-                            .replace(",", "X")
-
-                            .replace(".", ",")
-
-                            .replace("X",".")
-
-                        )
-
-
-
-                        st.write(
-
-                            valor_formatado
-# =====================================================
-# EXIBIÇÃO DOS PRODUTOS AGRUPADOS POR CATEGORIA
-# =====================================================
-
-
-if not produtos:
-
-
-    st.info(
-
-        "Nenhum produto cadastrado."
-
-    )
-
-
-else:
-
-
-    # =================================================
-    # AGRUPA PRODUTOS POR CATEGORIA
-    # =================================================
-
-    produtos_por_categoria = {}
-
-
-
-    for produto in produtos:
-
-
-        categoria = produto.get("categorias")
-
-
-        if categoria:
-
-
-            nome_categoria = categoria["nome"]
-
-
-        else:
-
-
-            nome_categoria = "Sem Categoria"
-
-
-
-        if nome_categoria not in produtos_por_categoria:
-
-
-            produtos_por_categoria[nome_categoria] = []
-
-
-
-        produtos_por_categoria[nome_categoria].append(produto)
-
-
-
-
-
-    # =================================================
-    # MOSTRA CADA CATEGORIA
-    # =================================================
-
-
-    for categoria_nome, lista_produtos in produtos_por_categoria.items():
-
+        # =================================================
+        # CABEÇALHO DA CATEGORIA
+        # =================================================
 
 
         st.markdown(
 
             f"""
             <div style="
-            background:#8B5A2B;
-            color:white;
-            padding:8px 12px;
-            border-radius:10px;
-            margin-top:15px;
-            margin-bottom:10px;
-            font-weight:bold;
+                background:#8B5A2B;
+                color:white;
+                padding:8px 12px;
+                border-radius:10px;
+                margin-top:15px;
+                margin-bottom:10px;
+                font-weight:bold;
+                font-size:15px;
             ">
             📂 {categoria_nome}
             </div>
@@ -802,10 +668,15 @@ else:
 
 
 
-            with st.container(border=True):
+            with st.container(
+
+                border=True
+
+            ):
 
 
-                col1,col2,col3,col4 = st.columns(
+
+                col1, col2, col3, col4 = st.columns(
 
                     [5,2,2,1]
 
@@ -813,9 +684,9 @@ else:
 
 
 
-                # ==========================
-                # PRODUTO
-                # ==========================
+                # =========================================
+                # NOME / DESCRIÇÃO
+                # =========================================
 
 
                 with col1:
@@ -830,13 +701,21 @@ else:
 
 
 
-                    if produto.get("descricao"):
+                    descricao = produto.get(
+
+                        "descricao"
+
+                    )
+
+
+
+                    if descricao:
 
 
 
                         st.caption(
 
-                            produto["descricao"]
+                            descricao
 
                         )
 
@@ -844,9 +723,9 @@ else:
 
 
 
-                # ==========================
+                # =========================================
                 # PREÇO
-                # ==========================
+                # =========================================
 
 
                 with col2:
@@ -872,41 +751,62 @@ else:
                         )
 
 
+
                     else:
 
 
 
-                        valor = float(preco)
+                        try:
 
 
 
-                        valor_formatado = (
+                            valor = float(
 
-                            f"R$ {valor:,.2f}"
+                                preco
 
-                            .replace(",", "X")
-
-                            .replace(".", ",")
-
-                            .replace("X",".")
-
-                        )
+                            )
 
 
 
-                        st.write(
+                            valor_formatado = (
 
-                            valor_formatado
+                                f"R$ {valor:,.2f}"
 
-                        )
+                                .replace(",", "X")
+
+                                .replace(".", ",")
+
+                                .replace("X",".")
+
+                            )
+
+
+
+                            st.write(
+
+                                valor_formatado
+
+                            )
+
+
+
+                        except:
+
+
+
+                            st.warning(
+
+                                "Sob consulta"
+
+                            )
 
 
 
 
 
-                # ==========================
+                # =========================================
                 # STATUS
-                # ==========================
+                # =========================================
 
 
                 with col3:
@@ -930,6 +830,7 @@ else:
                         )
 
 
+
                     else:
 
 
@@ -944,9 +845,9 @@ else:
 
 
 
-                # ==========================
+                # =========================================
                 # EXCLUIR
-                # ==========================
+                # =========================================
 
 
                 with col4:
@@ -1000,3 +901,18 @@ else:
 
 
             st.write("")
+
+# =====================================================
+# RODAPÉ DO MÓDULO
+# =====================================================
+
+
+st.divider()
+
+
+
+st.caption(
+
+    "🛒 Cadastro de produtos - Doce Cesta Brasília"
+
+)
