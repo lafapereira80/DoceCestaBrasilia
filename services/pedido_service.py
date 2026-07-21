@@ -11,15 +11,10 @@ def salvar_pedido(dados):
     try:
 
         resposta = (
-
             supabase
-
             .table("pedidos")
-
             .insert(dados)
-
             .execute()
-
         )
 
 
@@ -27,7 +22,6 @@ def salvar_pedido(dados):
 
 
         return True, pedido_id
-
 
 
     except Exception as erro:
@@ -75,6 +69,8 @@ def listar_pedidos():
 
 # =====================================================
 # LISTAR PEDIDOS ATIVOS
+#
+# Não retorna Entregues
 # =====================================================
 
 def listar_pedidos_ativos():
@@ -152,15 +148,83 @@ def buscar_pedido(pedido_id):
 
 
 # =====================================================
-# ATUALIZAR ATENDIMENTO DO PEDIDO
+# BUSCAR PREÇO DA CESTA
+#
+# Usa tabela cestas
+# Campo: preco
+# =====================================================
+
+def buscar_preco_cesta(cesta_id):
+
+
+    if not cesta_id:
+
+
+        return 0
+
+
+
+    resposta = (
+
+        supabase
+
+        .table("cestas")
+
+        .select(
+
+            "preco"
+
+        )
+
+        .eq(
+
+            "id",
+
+            cesta_id
+
+        )
+
+        .single()
+
+        .execute()
+
+    )
+
+
+
+    if not resposta.data:
+
+
+        return 0
+
+
+
+    return float(
+
+        resposta.data.get(
+
+            "preco",
+
+            0
+
+        )
+
+        or 0
+
+    )
+
+
+
+
+
+# =====================================================
+# ATUALIZAR PEDIDO
 #
 # Atualiza:
 # - Status
 # - Frete
 # - Valor total
 # - Desconto
-# - Itens preço sob consulta
-#
 # =====================================================
 
 def atualizar_pedido(
@@ -173,43 +237,9 @@ def atualizar_pedido(
 
     valor_total,
 
-    desconto=0,
-
-    itens_consulta=None
+    desconto=0
 
 ):
-
-
-    dados = {
-
-
-        "status":
-
-            status,
-
-
-        "valor_frete":
-
-            valor_frete,
-
-
-        "valor_total":
-
-            valor_total,
-
-
-        "desconto":
-
-            desconto,
-
-
-        "itens_consulta":
-
-            itens_consulta
-
-
-    }
-
 
 
     resposta = (
@@ -218,7 +248,28 @@ def atualizar_pedido(
 
         .table("pedidos")
 
-        .update(dados)
+        .update({
+
+            "status":
+
+                status,
+
+
+            "valor_frete":
+
+                valor_frete,
+
+
+            "valor_total":
+
+                valor_total,
+
+
+            "desconto":
+
+                desconto
+
+        })
 
         .eq(
 
@@ -243,7 +294,6 @@ def atualizar_pedido(
 # ATUALIZAR ANOTAÇÃO INTERNA
 #
 # Uso administrativo
-#
 # =====================================================
 
 def atualizar_anotacao_pedido(
@@ -289,21 +339,63 @@ def atualizar_anotacao_pedido(
 
 
 # =====================================================
+# ATUALIZAR ITENS SOB CONSULTA
+#
+# Salva valores informados pelo administrador
+# =====================================================
+
+def atualizar_itens_consulta(
+
+    pedido_id,
+
+    itens
+
+):
+
+
+    resposta = (
+
+        supabase
+
+        .table("pedidos")
+
+        .update({
+
+            "itens_consulta":
+
+                itens
+
+        })
+
+        .eq(
+
+            "id",
+
+            pedido_id
+
+        )
+
+        .execute()
+
+    )
+
+
+    return resposta.data
+
+
+
+
+
+# =====================================================
 # EXCLUIR PEDIDO COMPLETO
 #
 # Remove:
 # 1 - Fotos Storage
 # 2 - Registros pedido_fotos
 # 3 - Pedido
-#
 # =====================================================
 
-def excluir_pedido_completo(
-
-    pedido_id
-
-):
-
+def excluir_pedido_completo(pedido_id):
 
     try:
 
@@ -314,11 +406,7 @@ def excluir_pedido_completo(
 
             .table("pedido_fotos")
 
-            .select(
-
-                "arquivo"
-
-            )
+            .select("arquivo")
 
             .eq(
 
@@ -359,7 +447,6 @@ def excluir_pedido_completo(
                         arquivo
 
                     )
-
 
 
 
