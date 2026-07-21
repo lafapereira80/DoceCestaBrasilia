@@ -16,7 +16,6 @@ from services.produto_service import (
 )
 
 
-
 from utils.menu import (
 
     configurar_pagina,
@@ -24,7 +23,6 @@ from utils.menu import (
     menu_lateral
 
 )
-
 
 
 from utils.permissao import (
@@ -67,8 +65,6 @@ usuario = st.session_state.usuario
 
 
 
-
-
 # =====================================================
 # CSS
 # =====================================================
@@ -77,65 +73,61 @@ st.markdown(
 """
 <style>
 
+.block-container {
 
-.block-container{
-
-    padding-top:1rem;
-
-    padding-bottom:1rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
 
 }
 
 
-h1{
+h1 {
 
-    font-size:26px !important;
-
-}
-
-
-h2{
-
-    font-size:20px !important;
+    font-size: 26px !important;
 
 }
 
 
-h3{
+h2 {
 
-    font-size:16px !important;
-
-}
-
-
-p, span, div, label{
-
-    font-size:13px;
+    font-size: 20px !important;
 
 }
 
 
-.stButton button{
+h3 {
 
-    height:34px;
-
-    font-size:13px;
-
-    border-radius:8px;
+    font-size: 16px !important;
 
 }
 
 
-input, textarea{
+p, span, div, label {
 
-    font-size:13px !important;
+    font-size: 13px;
 
 }
 
 
-[data-testid="stVerticalBlockBorderWrapper"]{
+.stButton button {
 
-    padding:12px;
+    height: 34px;
+    font-size: 13px;
+    border-radius: 8px;
+
+}
+
+
+input, textarea {
+
+    font-size: 13px !important;
+
+}
+
+
+[data-testid="stVerticalBlockBorderWrapper"] {
+
+    padding: 12px;
 
 }
 
@@ -148,16 +140,11 @@ unsafe_allow_html=True
 
 
 
-
-
 # =====================================================
 # TÍTULO
 # =====================================================
 
-st.title(
-    "🛒 Produtos"
-)
-
+st.title("🛒 Produtos")
 
 
 st.caption(
@@ -165,39 +152,26 @@ st.caption(
 )
 
 
-
 st.divider()
 
 
 
-
-
 # =====================================================
-# CARREGA CATEGORIAS
+# CARREGAR CATEGORIAS
 # =====================================================
 
 try:
 
-
     categorias = listar_categorias()
-
 
 
 except Exception as erro:
 
-
     st.error(
-
         f"Erro ao carregar categorias: {erro}"
-
     )
 
-
     categorias = []
-
-
-
-
 
 
 
@@ -208,43 +182,27 @@ except Exception as erro:
 if usuario["perfil"] == "Administrador":
 
 
-
     st.subheader(
         "➕ Novo Produto"
     )
 
 
-
-    with st.form(
-        "novo_produto"
-    ):
-
+    with st.form("novo_produto"):
 
 
         nome = st.text_input(
-
             "Nome do Produto"
-
         )
-
 
 
         descricao = st.text_area(
-
             "Descrição",
-
             height=70,
-
             placeholder="Descrição do produto..."
-
         )
 
 
-
-
-
         if categorias:
-
 
 
             categoria = st.selectbox(
@@ -258,53 +216,35 @@ if usuario["perfil"] == "Administrador":
             )
 
 
-
         else:
-
 
 
             categoria = None
 
-
             st.warning(
-
                 "Nenhuma categoria cadastrada."
-
             )
-
-
 
 
 
         # =================================================
         # REGRA DE PREÇO
-        # Somente categoria Adicionais possui valor
+        # Apenas Adicionais possui valor
         # =================================================
-
 
         categoria_nome = ""
 
 
-
         if categoria:
 
-
             categoria_nome = (
-
                 categoria["nome"]
-
                 .strip()
-
                 .lower()
-
             )
 
 
-
-
-
         if categoria_nome == "adicionais":
-
 
 
             tipo_preco = st.radio(
@@ -324,25 +264,18 @@ if usuario["perfil"] == "Administrador":
             )
 
 
-
             if tipo_preco == "Preço sob consulta":
-
 
 
                 preco = None
 
 
-
                 st.info(
-
                     "O valor será informado posteriormente no pedido."
-
                 )
 
 
-
             else:
-
 
 
                 preco = st.number_input(
@@ -360,9 +293,7 @@ if usuario["perfil"] == "Administrador":
                 )
 
 
-
         else:
-
 
 
             tipo_preco = "Incluso na cesta"
@@ -372,19 +303,17 @@ if usuario["perfil"] == "Administrador":
 
 
             st.info(
-
                 "Produto incluso na composição da cesta."
-
             )
-                    ativo = st.checkbox(
+
+
+        ativo = st.checkbox(
 
             "Produto ativo",
 
             value=True
 
         )
-
-
 
 
         salvar = st.form_submit_button(
@@ -394,47 +323,30 @@ if usuario["perfil"] == "Administrador":
             use_container_width=True
 
         )
-
-
-
-
-
-# =====================================================
+        # =====================================================
 # SALVAR PRODUTO
 # =====================================================
 
 if salvar:
 
 
-
     if not nome.strip():
 
-
-
         st.error(
-
             "Informe o nome do produto."
-
         )
 
         st.stop()
-
 
 
 
     if not categoria:
 
-
-
         st.error(
-
             "Selecione uma categoria."
-
         )
 
         st.stop()
-
-
 
 
 
@@ -450,10 +362,6 @@ if salvar:
 
 
 
-
-
-    # Somente adicionais precisam de preço
-
     if (
 
         categoria_nome == "adicionais"
@@ -468,22 +376,15 @@ if salvar:
 
     ):
 
-
-
         st.error(
-
             "Informe o valor do adicional."
-
         )
 
         st.stop()
 
 
 
-
-
     try:
-
 
 
         cadastrar_produto(
@@ -503,29 +404,20 @@ if salvar:
         )
 
 
-
         st.success(
-
             "Produto cadastrado com sucesso!"
-
         )
-
 
 
         st.rerun()
 
 
 
-
-
     except Exception as erro:
 
 
-
         st.error(
-
             f"Erro ao cadastrar produto: {erro}"
-
         )
 
 
@@ -533,14 +425,9 @@ if salvar:
 else:
 
 
-
     st.info(
-
         "Modo consulta. Apenas Administradores podem cadastrar produtos."
-
     )
-
-
 
 
 
@@ -552,9 +439,7 @@ st.divider()
 
 
 st.subheader(
-
     "📋 Produtos Cadastrados"
-
 )
 
 
@@ -570,9 +455,7 @@ except Exception as erro:
 
 
     st.error(
-
         f"Erro ao carregar produtos: {erro}"
-
     )
 
 
@@ -581,9 +464,8 @@ except Exception as erro:
 
 
 
-
 # =====================================================
-# AGRUPAR PRODUTOS POR CATEGORIA
+# AGRUPAR POR CATEGORIA
 # =====================================================
 
 produtos_agrupados = {}
@@ -594,9 +476,7 @@ for produto in produtos:
 
 
     categoria_produto = produto.get(
-
         "categorias"
-
     )
 
 
@@ -620,7 +500,6 @@ for produto in produtos:
 
 
 
-
     if nome_categoria not in produtos_agrupados:
 
 
@@ -628,35 +507,25 @@ for produto in produtos:
 
 
 
-
     produtos_agrupados[nome_categoria].append(
-
         produto
-
     )
 
 
 
-
-
 # =====================================================
-# EXIBIÇÃO DOS PRODUTOS
+# EXIBIÇÃO
 # =====================================================
 
 if not produtos:
 
 
-
     st.info(
-
         "Nenhum produto cadastrado."
-
     )
 
 
-
 else:
-
 
 
     for categoria_nome, lista_produtos in produtos_agrupados.items():
@@ -667,7 +536,7 @@ else:
 
             f"""
             <div style="
-                background-color:#8B5A2B;
+                background:#8B5A2B;
                 color:white;
                 padding:8px 12px;
                 border-radius:10px;
@@ -697,12 +566,11 @@ else:
                     [5,2,1.5,2.5]
 
                 )
-                                # =====================================
-                # NOME / DESCRIÇÃO
-                # =====================================
+                                # =================================================
+                # NOME E DESCRIÇÃO
+                # =================================================
 
                 with col1:
-
 
 
                     st.write(
@@ -712,9 +580,7 @@ else:
                     )
 
 
-
                     if produto.get("descricao"):
-
 
 
                         st.caption(
@@ -726,13 +592,11 @@ else:
 
 
 
-
-                # =====================================
+                # =================================================
                 # PREÇO
-                # =====================================
+                # =================================================
 
                 with col2:
-
 
 
                     categoria_atual = (
@@ -746,8 +610,7 @@ else:
                     )
 
 
-
-                    tipo_preco = produto.get(
+                    tipo_preco_produto = produto.get(
 
                         "tipo_preco",
 
@@ -757,16 +620,13 @@ else:
 
 
 
-
-
-                    # Apenas categoria Adicionais mostra preço
+                    # Somente Adicionais exibem preço
 
                     if categoria_atual == "adicionais":
 
 
 
-                        if tipo_preco == "Preço sob consulta":
-
+                        if tipo_preco_produto == "Preço sob consulta":
 
 
                             st.warning(
@@ -776,25 +636,24 @@ else:
                             )
 
 
-
                         else:
 
 
-
-                            preco = produto.get(
+                            preco_produto = produto.get(
 
                                 "preco"
 
                             )
 
 
-
-                            if preco is not None:
-
+                            if preco_produto is not None:
 
 
-                                valor = float(preco)
+                                valor = float(
 
+                                    preco_produto
+
+                                )
 
 
                                 valor_formatado = (
@@ -810,7 +669,6 @@ else:
                                 )
 
 
-
                                 st.write(
 
                                     valor_formatado
@@ -819,7 +677,6 @@ else:
 
 
                             else:
-
 
 
                                 st.warning(
@@ -833,7 +690,6 @@ else:
                     else:
 
 
-
                         st.info(
 
                             "Incluso na cesta"
@@ -844,12 +700,11 @@ else:
 
 
 
-                # =====================================
+                # =================================================
                 # STATUS
-                # =====================================
+                # =================================================
 
                 with col3:
-
 
 
                     if produto.get(
@@ -861,7 +716,6 @@ else:
                     ):
 
 
-
                         st.success(
 
                             "🟢 Ativo"
@@ -869,9 +723,7 @@ else:
                         )
 
 
-
                     else:
-
 
 
                         st.error(
@@ -884,15 +736,14 @@ else:
 
 
 
-                # =====================================
+                # =================================================
                 # BOTÕES DE AÇÃO
-                # =====================================
+                # =================================================
 
                 with col4:
 
 
-
-                    btn1, btn2, btn3 = st.columns(
+                    btn_editar, btn_status, btn_excluir = st.columns(
 
                         3
 
@@ -900,7 +751,7 @@ else:
 
 
 
-                    with btn1:
+                    with btn_editar:
 
 
                         editar = st.button(
@@ -915,7 +766,7 @@ else:
 
 
 
-                    with btn2:
+                    with btn_status:
 
 
                         status = st.button(
@@ -926,7 +777,9 @@ else:
 
                                 True
 
-                            ) else "🟢",
+                            )
+
+                            else "🟢",
 
                             key=f"status_{produto['id']}",
 
@@ -936,7 +789,7 @@ else:
 
 
 
-                    with btn3:
+                    with btn_excluir:
 
 
                         excluir = st.button(
@@ -952,10 +805,9 @@ else:
 
 
 
-
-                # =====================================
-                # AÇÕES
-                # =====================================
+                # =================================================
+                # AÇÕES DOS BOTÕES
+                # =================================================
 
 
                 if editar:
@@ -964,13 +816,11 @@ else:
                     st.session_state["produto_editar"] = produto["id"]
 
 
-
                     st.switch_page(
 
                         "pages/10_Editar_Produto.py"
 
                     )
-
 
 
 
@@ -1031,7 +881,7 @@ else:
                             f"Erro ao alterar status: {erro}"
 
                         )
-                                     if excluir:
+                                 if excluir:
 
 
                     try:
@@ -1070,8 +920,6 @@ else:
 
 
 
-
-
 # =====================================================
 # RODAPÉ
 # =====================================================
@@ -1084,4 +932,4 @@ st.caption(
 
     "🛒 Cadastro de produtos - Doce Cesta Brasília"
 
-)   
+)       
