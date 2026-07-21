@@ -3,7 +3,8 @@ import streamlit as st
 
 from services.pedido_service import (
     buscar_pedido,
-    atualizar_pedido
+    atualizar_pedido,
+    atualizar_anotacao_pedido
 )
 
 
@@ -25,23 +26,7 @@ from utils.permissao import (
 
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA
-# =====================================================
-
-st.set_page_config(
-
-    page_title="Detalhes Pedido",
-
-    page_icon="📋",
-
-    layout="wide"
-
-)
-
-
-
-# =====================================================
-# CONTROLE DE ACESSO
+# CONFIGURAÇÃO
 # =====================================================
 
 configurar_pagina()
@@ -56,8 +41,9 @@ usuario = st.session_state.usuario
 
 
 
+
 # =====================================================
-# AJUSTE VISUAL INTERNO
+# AJUSTE VISUAL
 # =====================================================
 
 st.markdown(
@@ -120,6 +106,7 @@ unsafe_allow_html=True
 
 
 
+
 # =====================================================
 # VALIDA PEDIDO
 # =====================================================
@@ -144,7 +131,9 @@ if "pedido_aberto" not in st.session_state:
 
 
 
+
 pedido_id = st.session_state["pedido_aberto"]
+
 
 
 
@@ -164,10 +153,22 @@ except Exception as erro:
 
 
     st.error(
-        erro
+        f"Erro ao buscar pedido: {erro}"
     )
 
     st.stop()
+
+
+
+if not pedido:
+
+
+    st.error(
+        "Pedido não encontrado."
+    )
+
+    st.stop()
+
 
 
 
@@ -180,9 +181,12 @@ st.title(
 )
 
 
+
 st.caption(
     f"Status atual: {pedido.get('status','-')}"
 )
+
+
 
 
 
@@ -196,7 +200,7 @@ st.markdown(
 
 
 
-col1,col2,col3 = st.columns(3)
+col1, col2, col3 = st.columns(3)
 
 
 
@@ -245,6 +249,7 @@ with col3:
 
 
 
+
 # =====================================================
 # PEDIDO
 # =====================================================
@@ -255,7 +260,7 @@ st.markdown(
 
 
 
-col1,col2,col3,col4 = st.columns(4)
+col1, col2, col3, col4 = st.columns(4)
 
 
 
@@ -317,13 +322,11 @@ with col4:
         )
     )
 
-
-
 # =====================================================
 # PRODUTOS E ADICIONAIS
 # =====================================================
 
-col1,col2 = st.columns(2)
+col1, col2 = st.columns(2)
 
 
 
@@ -361,6 +364,7 @@ with col1:
 
 
 
+
 with col2:
 
 
@@ -392,11 +396,13 @@ with col2:
 
 
 
+
+
 # =====================================================
-# TEXTOS
+# TEXTOS DO CLIENTE
 # =====================================================
 
-col1,col2 = st.columns(2)
+col1, col2 = st.columns(2)
 
 
 
@@ -427,6 +433,7 @@ with col1:
 
 
 
+
 with col2:
 
 
@@ -451,6 +458,8 @@ with col2:
         key="especial_view"
 
     )
+
+
 
 
 
@@ -483,6 +492,8 @@ st.text_area(
 
 
 
+
+
 # =====================================================
 # FOTOS
 # =====================================================
@@ -497,7 +508,9 @@ try:
 
 
     fotos = listar_fotos(
+
         pedido["id"]
+
     )
 
 
@@ -509,7 +522,7 @@ try:
 
 
 
-        for i,foto in enumerate(fotos):
+        for i, foto in enumerate(fotos):
 
 
             with colunas[i % 4]:
@@ -532,6 +545,7 @@ try:
                 )
 
 
+
     else:
 
 
@@ -550,9 +564,107 @@ except Exception as erro:
 
 
 
+
+
+# =====================================================
+# ANOTAÇÕES INTERNAS
+# =====================================================
+
+st.divider()
+
+
+st.markdown(
+    "### 📝 Anotações Internas"
+)
+
+
+st.caption(
+    "Campo exclusivo para controle administrativo."
+)
+
+
+
+anotacao_atual = pedido.get(
+
+    "anotacoes_internas",
+
+    ""
+
+) or ""
+
+
+
+anotacao = st.text_area(
+
+    "Observações do administrador",
+
+    value=anotacao_atual,
+
+    height=120,
+
+    placeholder="""
+Exemplos:
+
+- Cliente confirmou entrega após 18h
+- Aguardar pagamento
+- Alteração solicitada pelo cliente
+- Observação da montagem da cesta
+""",
+
+    key="anotacao_interna"
+
+)
+
+
+
+
+if st.button(
+
+    "💾 Salvar Anotações",
+
+    use_container_width=True
+
+):
+
+
+    try:
+
+
+        atualizar_anotacao_pedido(
+
+            pedido["id"],
+
+            anotacao
+
+        )
+
+
+        st.success(
+
+            "✅ Anotação salva com sucesso!"
+
+        )
+
+
+        st.rerun()
+
+
+
+    except Exception as erro:
+
+
+        st.error(
+
+            f"Erro ao salvar anotação: {erro}"
+
+        )
+
 # =====================================================
 # ATENDIMENTO
 # =====================================================
+
+st.divider()
+
 
 st.markdown(
     "### 🚚 Atendimento"
@@ -560,7 +672,7 @@ st.markdown(
 
 
 
-col1,col2,col3 = st.columns(3)
+col1, col2, col3 = st.columns(3)
 
 
 
@@ -576,8 +688,11 @@ with col1:
         value=float(
 
             pedido.get(
+
                 "valor_frete",
+
                 0
+
             )
 
             or 0
@@ -587,6 +702,7 @@ with col1:
         step=1.0
 
     )
+
 
 
 
@@ -602,8 +718,11 @@ with col2:
         value=float(
 
             pedido.get(
+
                 "valor_total",
+
                 0
+
             )
 
             or 0
@@ -613,6 +732,7 @@ with col2:
         step=1.0
 
     )
+
 
 
 
@@ -645,6 +765,7 @@ with col3:
 
     if status_atual not in status_opcoes:
 
+
         status_atual = "Recebido"
 
 
@@ -665,6 +786,8 @@ with col3:
 
 
 
+
+
 if st.button(
 
     "💾 Salvar Atendimento",
@@ -674,25 +797,43 @@ if st.button(
 ):
 
 
-    atualizar_pedido(
-
-        pedido["id"],
-
-        status,
-
-        valor_frete,
-
-        valor_total
-
-    )
+    try:
 
 
-    st.success(
-        "✅ Pedido atualizado!"
-    )
+        atualizar_pedido(
+
+            pedido["id"],
+
+            status,
+
+            valor_frete,
+
+            valor_total
+
+        )
 
 
-    st.rerun()
+        st.success(
+
+            "✅ Pedido atualizado!"
+
+        )
+
+
+        st.rerun()
+
+
+
+    except Exception as erro:
+
+
+        st.error(
+
+            f"Erro ao atualizar pedido: {erro}"
+
+        )
+
+
 
 
 
