@@ -1161,61 +1161,80 @@ if adicionais_pedido:
 
             )
 
-# ---------------------------------------------
-# ADICIONAL PREÇO SOB CONSULTA
-# ---------------------------------------------
+        # ---------------------------------------------
+        # ADICIONAL PREÇO SOB CONSULTA
+        # ---------------------------------------------
+
+
+        else:
+
+
+            valor_anterior = float(
+
+                itens_consulta_salvos.get(
+
+                    nome,
+
+                    0
+
+                )
+
+                or 0
+
+            )
+
+
+            col_nome, col_valor = st.columns([3, 1])
+
+
+            with col_nome:
+
+                st.write(
+
+                    f"• {nome} (Preço sob consulta) -"
+
+                )
+
+
+            with col_valor:
+
+                valor_digitado = st.number_input(
+
+                    "Valor",
+
+                    min_value=0.0,
+
+                    value=valor_anterior,
+
+                    step=1.0,
+
+                    key=f"consulta_{nome}",
+
+                    label_visibility="collapsed"
+
+                )
+
+
+            itens_consulta[nome] = valor_digitado
+
+
+            valor_itens_consulta += valor_digitado
+
+
+            valor_adicionais += valor_digitado
+
+
+
 
 
 else:
 
 
-    valor_anterior = float(
+    st.info(
 
-        itens_consulta_salvos.get(
-
-            nome,
-
-            0
-
-        )
-
-        or 0
+        "Nenhum adicional."
 
     )
-
-
-    st.write(
-
-        f"• {nome} (Preço sob consulta)"
-
-    )
-
-
-    valor_digitado = st.number_input(
-
-        "Valor",
-
-        min_value=0.0,
-
-        value=valor_anterior,
-
-        step=1.0,
-
-        key=f"consulta_{nome}",
-
-        label_visibility="collapsed"
-
-    )
-
-
-    itens_consulta[nome] = valor_digitado
-
-
-    valor_itens_consulta += valor_digitado
-
-
-    valor_adicionais += valor_digitado
-
 # =====================================================
 # FRETE / DESCONTO / STATUS
 # =====================================================
