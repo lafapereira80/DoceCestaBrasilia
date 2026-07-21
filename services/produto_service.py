@@ -37,6 +37,7 @@ def listar_produtos():
 
 
 
+
 # =====================================================
 # LISTAR CATEGORIAS
 # =====================================================
@@ -60,6 +61,7 @@ def listar_categorias():
 
 
     return resposta.data or []
+
 
 
 
@@ -90,8 +92,11 @@ def listar_produtos_por_categoria(
         )
 
         .eq(
+
             "categorias.nome",
+
             categoria_nome
+
         )
 
         .order("nome")
@@ -103,6 +108,10 @@ def listar_produtos_por_categoria(
 
     return resposta.data or []
 
+
+
+
+
 # =====================================================
 # CADASTRAR PRODUTO
 # =====================================================
@@ -112,6 +121,8 @@ def cadastrar_produto(
     categoria_id,
 
     nome,
+
+    descricao,
 
     preco,
 
@@ -131,6 +142,11 @@ def cadastrar_produto(
         "nome":
 
             nome,
+
+
+        "descricao":
+
+            descricao,
 
 
         "preco":
@@ -216,6 +232,8 @@ def atualizar_produto(
 
     nome,
 
+    descricao,
+
     preco,
 
     ativo
@@ -234,6 +252,11 @@ def atualizar_produto(
         "nome":
 
             nome,
+
+
+        "descricao":
+
+            descricao,
 
 
         "preco":
@@ -272,4 +295,3 @@ def atualizar_produto(
 
 
     return resposta.data
-    
