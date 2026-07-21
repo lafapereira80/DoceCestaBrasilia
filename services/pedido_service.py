@@ -2,6 +2,7 @@ from config.supabase import supabase
 from services.pedido_adicional_service import salvar_adicionais_pedido
 
 
+
 # =====================================================
 # SALVAR PEDIDO
 # =====================================================
@@ -55,6 +56,9 @@ def salvar_pedido(dados):
 
 
         return False, str(erro)
+
+
+
 
 
 # =====================================================
@@ -137,6 +141,11 @@ def listar_pedidos_ativos():
 
 # =====================================================
 # BUSCAR PEDIDO PELO ID
+#
+# Retorna:
+# - dados do pedido
+# - adicionais vinculados
+# - fotos vinculadas
 # =====================================================
 
 def buscar_pedido(pedido_id):
@@ -148,7 +157,24 @@ def buscar_pedido(pedido_id):
 
         .table("pedidos")
 
-        .select("*")
+        .select(
+
+            """
+            *,
+            pedido_adicionais(
+                id,
+                produto_id,
+                nome_produto,
+                quantidade,
+                valor_unitario
+            ),
+            pedido_fotos(
+                id,
+                arquivo
+            )
+            """
+
+        )
 
         .eq(
 
@@ -507,6 +533,30 @@ def excluir_pedido_completo(pedido_id):
             supabase
 
             .table("pedido_fotos")
+
+            .delete()
+
+            .eq(
+
+                "pedido_id",
+
+                pedido_id
+
+            )
+
+            .execute()
+
+        )
+
+
+
+
+
+        (
+
+            supabase
+
+            .table("pedido_adicionais")
 
             .delete()
 
