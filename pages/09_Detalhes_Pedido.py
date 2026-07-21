@@ -9,6 +9,11 @@ from services.pedido_service import (
 )
 
 
+from services.pedido_adicional_service import (
+    listar_adicionais_pedido
+)
+
+
 from services.foto_service import (
     listar_fotos
 )
@@ -16,16 +21,6 @@ from services.foto_service import (
 
 from services.cesta_service import (
     buscar_cesta
-)
-
-
-from services.produto_service import (
-    listar_produtos
-)
-
-
-from services.pedido_adicional_service import (
-    listar_adicionais_pedido
 )
 
 
@@ -38,8 +33,6 @@ from utils.menu import (
 from utils.permissao import (
     administrador_operador
 )
-
-
 
 
 
@@ -71,17 +64,23 @@ st.markdown(
 
 
 h1 {
+
     font-size:26px !important;
+
 }
 
 
 h2 {
+
     font-size:18px !important;
+
 }
 
 
 h3 {
+
     font-size:15px !important;
+
 }
 
 
@@ -90,6 +89,7 @@ p, div, span {
     font-size:13px;
 
 }
+
 
 
 .stButton button {
@@ -106,8 +106,6 @@ p, div, span {
 """,
 unsafe_allow_html=True
 )
-
-
 
 
 
@@ -139,10 +137,7 @@ if "pedido_aberto" not in st.session_state:
 
 
 
-
 pedido_id = st.session_state["pedido_aberto"]
-
-
 
 
 
@@ -156,7 +151,9 @@ try:
 
 
     pedido = buscar_pedido(
+
         pedido_id
+
     )
 
 
@@ -164,8 +161,11 @@ except Exception as erro:
 
 
     st.error(
+
         f"Erro ao buscar pedido: {erro}"
+
     )
+
 
     st.stop()
 
@@ -177,12 +177,13 @@ if not pedido:
 
 
     st.error(
+
         "Pedido não encontrado."
+
     )
 
 
     st.stop()
-
 
 
 
@@ -211,7 +212,7 @@ except Exception as erro:
 
     st.warning(
 
-        f"Erro ao carregar adicionais do pedido: {erro}"
+        f"Erro ao carregar adicionais: {erro}"
 
     )
 
@@ -219,21 +220,43 @@ except Exception as erro:
 
 
 
-
 # =====================================================
-# CARREGA PRODUTOS
+# NORMALIZA ITENS SOB CONSULTA
 # =====================================================
 
-try:
+itens_consulta_salvos = pedido.get(
+
+    "itens_consulta",
+
+    {}
+
+)
 
 
-    produtos_cadastrados = listar_produtos()
+
+if isinstance(
+
+    itens_consulta_salvos,
+
+    str
+
+):
 
 
-except:
+    try:
 
 
-    produtos_cadastrados = []
+        itens_consulta_salvos = json.loads(
+
+            itens_consulta_salvos
+
+        )
+
+
+    except:
+
+
+        itens_consulta_salvos = {}
 
 
 
@@ -245,8 +268,11 @@ except:
 # =====================================================
 
 st.title(
+
     "📋 Detalhes do Pedido"
+
 )
+
 
 
 st.caption(
@@ -254,15 +280,13 @@ st.caption(
     f"Status atual: {pedido.get('status','-')}"
 
 )
-
 # =====================================================
 # CLIENTE
 # =====================================================
 
 st.markdown(
-"### 👤 Cliente"
+    "### 👤 Cliente"
 )
-
 
 
 col1, col2, col3 = st.columns(3)
@@ -271,40 +295,64 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
 
+
     st.write("**Nome**")
 
+
     st.write(
+
         pedido.get(
+
             "cliente_nome",
+
             "-"
+
         )
+
     )
+
 
 
 
 with col2:
 
+
     st.write("**CPF**")
 
+
     st.write(
+
         pedido.get(
+
             "cliente_cpf",
+
             "-"
+
         )
+
     )
+
 
 
 
 with col3:
 
+
     st.write("**Telefone**")
 
+
     st.write(
+
         pedido.get(
+
             "cliente_telefone",
+
             "-"
+
         )
+
     )
+
 
 
 
@@ -316,7 +364,7 @@ with col3:
 # =====================================================
 
 st.markdown(
-"### 🎁 Pedido"
+    "### 🎁 Pedido"
 )
 
 
@@ -325,54 +373,89 @@ col1, col2, col3, col4 = st.columns(4)
 
 
 
+
 with col1:
+
 
     st.write("**Cesta**")
 
+
     st.write(
+
         pedido.get(
+
             "cesta_nome",
+
             "-"
+
         )
+
     )
+
+
 
 
 
 with col2:
 
+
     st.write("**Pagamento**")
 
+
     st.write(
+
         pedido.get(
+
             "pagamento",
+
             "-"
+
         )
+
     )
+
+
 
 
 
 with col3:
 
+
     st.write("**Data entrega**")
 
+
     st.write(
+
         pedido.get(
+
             "data_entrega",
+
             "-"
+
         )
+
     )
+
+
 
 
 
 with col4:
 
+
     st.write("**Período**")
 
+
     st.write(
+
         pedido.get(
+
             "periodo_entrega",
+
             "-"
+
         )
+
     )
 
 
@@ -396,11 +479,14 @@ col1, col2 = st.columns(2)
 # PRODUTOS DA CESTA
 # =====================================================
 
+
 with col1:
 
 
     st.markdown(
+
         "### 🛒 Produtos"
+
     )
 
 
@@ -443,8 +529,9 @@ with col1:
 
 
 # =====================================================
-# ADICIONAIS NOVA ESTRUTURA
+# ADICIONAIS DA NOVA TABELA
 # =====================================================
+
 
 with col2:
 
@@ -474,6 +561,7 @@ with col2:
             )
 
 
+
             valor = adicional.get(
 
                 "valor_unitario"
@@ -485,11 +573,15 @@ with col2:
             if valor is None:
 
 
+
                 st.write(
 
-                    f"• {nome} - Preço sob consulta"
+                    f"• {nome} "
+
+                    "(Preço sob consulta)"
 
                 )
+
 
 
             else:
@@ -521,134 +613,313 @@ with col2:
     else:
 
 
+
         st.info(
 
             "Nenhum adicional."
 
         )
 
-  # =====================================================
-# ITENS PREÇO SOB CONSULTA
+
+
+
+
+
+
+# =====================================================
+# TEXTOS DO CLIENTE
 # =====================================================
 
 
-st.markdown(
-    "#### ⚠️ Itens com preço sob consulta"
-)
+col1, col2 = st.columns(2)
 
 
 
-itens_consulta = {}
+with col1:
 
 
+    st.markdown(
 
-valor_itens_consulta = 0.0
+        "### 💌 Mensagem"
 
-
-
-
-
-dados_salvos = pedido.get(
-
-    "itens_consulta",
-
-    {}
-
-)
+    )
 
 
+    st.text_area(
 
-if dados_salvos:
+        "",
 
+        value=pedido.get(
 
+            "mensagem",
 
-    try:
+            ""
 
+        ),
 
-        if isinstance(
+        disabled=True,
 
-            dados_salvos,
+        height=80,
 
-            str
-
-        ):
-
-
-            dados_salvos = json.loads(
-
-                dados_salvos
-
-            )
-
-
-    except:
-
-
-        dados_salvos = {}
-
-
-
-else:
-
-
-    dados_salvos = {}
-
-
-
-
-
-
-
-encontrou_consulta = False
-
-
-
-
-
-for adicional in adicionais_pedido:
-
-
-
-    produto_id = adicional.get(
-
-        "produto_id"
+        key="mensagem_view"
 
     )
 
 
 
-    produto_cadastro = None
+
+
+with col2:
+
+
+    st.markdown(
+
+        "### ✨ Pedido Especial"
+
+    )
+
+
+    st.text_area(
+
+        "",
+
+        value=pedido.get(
+
+            "pedido_especial",
+
+            ""
+
+        ),
+
+        disabled=True,
+
+        height=80,
+
+        key="especial_view"
+
+    )
 
 
 
 
 
-    for produto in produtos_cadastrados:
+
+
+# =====================================================
+# ENDEREÇO
+# =====================================================
+
+
+st.markdown(
+
+    "### 📍 Endereço"
+
+)
 
 
 
-        if str(produto.get("id")) == str(produto_id):
+st.text_area(
+
+    "",
+
+    value=pedido.get(
+
+        "endereco",
+
+        ""
+
+    ),
+
+    disabled=True,
+
+    height=80,
+
+    key="endereco_view"
+
+)
+# =====================================================
+# FOTOS POLAROID
+# =====================================================
 
 
-            produto_cadastro = produto
+st.markdown(
 
+    "### 📷 Fotos da Polaroid"
 
-            break
-
-
-
-
-
-
-    if produto_cadastro:
+)
 
 
 
-        tipo_preco = produto_cadastro.get(
+try:
 
-            "tipo_preco",
 
-            "Preço definido"
+    fotos = listar_fotos(
+
+        pedido["id"]
+
+    )
+
+
+
+    if fotos:
+
+
+        colunas = st.columns(4)
+
+
+
+        for i, foto in enumerate(fotos):
+
+
+            with colunas[i % 4]:
+
+
+                st.image(
+
+                    foto.get("url"),
+
+                    caption=foto.get(
+
+                        "nome_original",
+
+                        "Foto"
+
+                    ),
+
+                    use_container_width=True
+
+                )
+
+
+
+    else:
+
+
+        st.info(
+
+            "Nenhuma foto cadastrada."
+
+        )
+
+
+
+except Exception as erro:
+
+
+    st.error(
+
+        f"Erro ao carregar fotos: {erro}"
+
+    )
+
+
+
+
+
+
+
+# =====================================================
+# ANOTAÇÕES INTERNAS
+# =====================================================
+
+
+st.divider()
+
+
+
+st.markdown(
+
+    "### 📝 Anotações Internas"
+
+)
+
+
+
+st.caption(
+
+    "Campo exclusivo para controle administrativo."
+
+)
+
+
+
+anotacao_atual = pedido.get(
+
+    "anotacoes_internas",
+
+    ""
+
+) or ""
+
+
+
+
+
+anotacao = st.text_area(
+
+    "Observações do administrador",
+
+    value=anotacao_atual,
+
+    height=120,
+
+    placeholder="""
+
+Exemplos:
+
+- Cliente confirmou entrega após 18h
+- Aguardar pagamento
+- Alteração solicitada pelo cliente
+- Observação da montagem da cesta
+
+""",
+
+    key="anotacao_interna"
+
+)
+
+
+
+
+
+if st.button(
+
+    "💾 Salvar Anotações",
+
+    use_container_width=True
+
+):
+
+
+    try:
+
+
+        atualizar_anotacao_pedido(
+
+            pedido["id"],
+
+            anotacao
+
+        )
+
+
+        st.success(
+
+            "✅ Anotação salva com sucesso!"
+
+        )
+
+
+        st.rerun()
+
+
+
+    except Exception as erro:
+
+
+        st.error(
+
+            f"Erro ao salvar anotação: {erro}"
 
         )
 
@@ -656,109 +927,41 @@ for adicional in adicionais_pedido:
 
 
 
-        if tipo_preco == "Preço sob consulta":
 
 
-
-            encontrou_consulta = True
-
-
-
-            nome_produto = produto_cadastro.get(
-
-                "nome",
-
-                adicional.get(
-
-                    "nome_produto",
-
-                    "Produto"
-
-                )
-
-            )
-
-
-
-
-
-            valor_anterior = float(
-
-
-                dados_salvos.get(
-
-                    nome_produto,
-
-                    0
-
-                )
-
-                or 0
-
-            )
-
-
-
-
-
-
-            valor = st.number_input(
-
-
-
-                nome_produto,
-
-
-
-                min_value=0.0,
-
-
-
-                value=valor_anterior,
-
-
-
-                step=1.0,
-
-
-
-                key=f"consulta_{produto_id}"
-
-
-
-            )
-
-
-
-
-
-            itens_consulta[nome_produto] = valor
-
-
-
-            valor_itens_consulta += valor
-
-
-
-
-
-
-if not encontrou_consulta:
-
-
-    st.info(
-
-        "Nenhum item aguardando preço."
-
-    )
 # =====================================================
-# CÁLCULO DOS VALORES BASE
+# FECHAMENTO FINANCEIRO
 # =====================================================
 
 
-# -------------------------------
+st.divider()
+
+
+
+st.markdown(
+
+    "### 💰 Fechamento Financeiro"
+
+)
+
+
+
+st.caption(
+
+    "Valores calculados automaticamente conforme cadastro dos produtos."
+
+)
+
+
+
+
+
+
+
+# =====================================================
 # VALOR DA CESTA
-# -------------------------------
+# =====================================================
+
 
 valor_cesta = 0.0
 
@@ -795,7 +998,8 @@ try:
             )
 
 
-except:
+
+except Exception:
 
 
     valor_cesta = 0.0
@@ -804,52 +1008,210 @@ except:
 
 
 
-# -------------------------------
-# VALOR DOS ADICIONAIS
+st.markdown(
+
+    "#### 🎁 Cesta"
+
+)
+
+
+
+col1, col2 = st.columns(2)
+
+
+
+with col1:
+
+
+    st.write(
+
+        pedido.get(
+
+            "cesta_nome",
+
+            "-"
+
+        )
+
+    )
+
+
+
+with col2:
+
+
+    st.write(
+
+        f"R$ {valor_cesta:,.2f}"
+
+        .replace(",", "X")
+
+        .replace(".", ",")
+
+        .replace("X",".")
+
+    )
+
+
+
+
+
+
+
+# =====================================================
+# ADICIONAIS FINANCEIRO
 # NOVA ESTRUTURA
-# -------------------------------
+# =====================================================
+
+
+st.markdown(
+
+    "#### 🎀 Adicionais"
+
+)
+
+
 
 valor_adicionais = 0.0
 
 
 
-for adicional in adicionais_pedido:
+itens_consulta = {}
 
 
-    valor = adicional.get(
 
-        "valor_unitario"
-
-    )
+valor_itens_consulta = 0.0
 
 
-    if valor is not None:
 
 
-        try:
+
+if adicionais_pedido:
 
 
-            valor_adicionais += float(
 
-                valor
+    for adicional in adicionais_pedido:
+
+
+
+        nome = adicional.get(
+
+            "nome_produto",
+
+            "-"
+
+        )
+
+
+
+        valor = adicional.get(
+
+            "valor_unitario"
+
+        )
+
+
+
+        if valor is not None:
+
+
+
+            valor = float(valor)
+
+
+
+            valor_adicionais += valor
+
+
+
+            st.write(
+
+                f"• {nome} - R$ {valor:,.2f}"
+
+                .replace(",", "X")
+
+                .replace(".", ",")
+
+                .replace("X",".")
 
             )
 
 
-        except:
+
+        else:
 
 
-            pass
-# =====================================================
-# FRETE / DESCONTO / TOTAL
+
+            valor_anterior = 0.0
+
+
+
+            if nome in itens_consulta_salvos:
+
+
+                valor_anterior = float(
+
+                    itens_consulta_salvos.get(
+
+                        nome,
+
+                        0
+
+                    )
+
+                )
+
+
+
+
+
+            valor = st.number_input(
+
+                nome,
+
+                min_value=0.0,
+
+                value=valor_anterior,
+
+                step=1.0,
+
+                key=f"consulta_{nome}"
+
+            )
+
+
+
+            itens_consulta[nome] = valor
+
+
+
+            valor_itens_consulta += valor
+
+
+
+
+
+else:
+
+
+    st.info(
+
+        "Nenhum adicional."
+
+    )
+    # =====================================================
+# FRETE / DESCONTO / STATUS
 # =====================================================
 
 
 st.divider()
 
 
+
 st.markdown(
+
     "### 🚚 Atendimento"
+
 )
 
 
@@ -896,6 +1258,7 @@ with col1:
 
 
 
+
 with col2:
 
 
@@ -924,6 +1287,7 @@ with col2:
         key="desconto"
 
     )
+
 
 
 
@@ -965,7 +1329,6 @@ with col3:
 
 
 
-
     status = st.selectbox(
 
         "Status",
@@ -979,7 +1342,6 @@ with col3:
         )
 
     )
-
 
 
 
@@ -1016,8 +1378,6 @@ valor_total_calculado = (
 
 
 
-
-
 if valor_total_calculado < 0:
 
 
@@ -1025,6 +1385,11 @@ if valor_total_calculado < 0:
 
 
 
+
+
+# =====================================================
+# RESUMO
+# =====================================================
 
 
 st.markdown(
@@ -1041,12 +1406,14 @@ col1, col2 = st.columns(2)
 
 
 
+
+
 with col1:
 
 
     st.write(
 
-        "Valor da cesta"
+        "🎁 Cesta"
 
     )
 
@@ -1067,7 +1434,7 @@ with col1:
 
     st.write(
 
-        "Adicionais"
+        "🎀 Adicionais"
 
     )
 
@@ -1094,7 +1461,7 @@ with col2:
 
     st.write(
 
-        "Itens sob consulta"
+        "⚠️ Sob consulta"
 
     )
 
@@ -1115,7 +1482,7 @@ with col2:
 
     st.write(
 
-        "Frete"
+        "🚚 Frete"
 
     )
 
@@ -1138,6 +1505,7 @@ with col2:
 
 
 
+
 st.success(
 
     f"💰 Valor Total: R$ {valor_total_calculado:,.2f}"
@@ -1149,8 +1517,6 @@ st.success(
     .replace("X",".")
 
 )
-
-
 
 
 
@@ -1193,24 +1559,24 @@ if st.button(
 
 
 
+
         from config.supabase import supabase
+
+
 
 
 
         supabase.table("pedidos").update({
 
+            "itens_consulta":
 
-            "itens_consulta": itens_consulta
-
-
+                itens_consulta
 
         }).eq(
-
 
             "id",
 
             pedido["id"]
-
 
         ).execute()
 
@@ -1231,9 +1597,7 @@ if st.button(
 
 
 
-
     except Exception as erro:
-
 
 
         st.error(
@@ -1241,7 +1605,6 @@ if st.button(
             f"Erro ao atualizar pedido: {erro}"
 
         )
-
 
 
 
