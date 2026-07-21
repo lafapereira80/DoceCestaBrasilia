@@ -1,15 +1,11 @@
 import streamlit as st
-from pathlib import Path
-from datetime import datetime
 
 
 from services.cesta_service import (
     buscar_cesta,
-    atualizar_cesta
+    atualizar_cesta,
+    upload_imagem_cesta
 )
-
-
-from config.supabase import supabase
 
 
 from utils.menu import (
@@ -25,27 +21,8 @@ from utils.permissao import (
 
 
 
-
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA
-# =====================================================
-
-st.set_page_config(
-
-    page_title="Editar Cesta",
-
-    page_icon="✏️",
-
-    layout="wide"
-
-)
-
-
-
-
-
-# =====================================================
-# CONTROLE DE ACESSO
+# CONFIGURAÇÃO
 # =====================================================
 
 configurar_pagina()
@@ -53,7 +30,6 @@ configurar_pagina()
 menu_lateral()
 
 administrador_operador()
-
 
 
 
@@ -66,51 +42,28 @@ st.markdown(
 """
 <style>
 
-
 .block-container{
-
     padding-top:1rem;
-
     padding-bottom:1rem;
-
 }
-
-
 
 h1{
-
     font-size:24px !important;
-
 }
-
-
 
 p, div, span{
-
     font-size:13px;
-
 }
-
-
 
 .stButton button{
-
     height:36px;
-
     font-size:13px;
-
     border-radius:8px;
-
 }
-
-
 
 input, textarea{
-
     font-size:13px !important;
-
 }
-
 
 </style>
 """,
@@ -120,38 +73,26 @@ unsafe_allow_html=True
 
 
 
-
 # =====================================================
-# VALIDA CESTA
+# VERIFICA CESTA
 # =====================================================
 
 if "cesta_editar" not in st.session_state:
 
 
-    st.error(
-
+    st.warning(
         "Nenhuma cesta selecionada."
-
     )
 
 
-    if st.button(
-
-        "⬅ Voltar"
-
-    ):
-
+    if st.button("⬅ Voltar"):
 
         st.switch_page(
-
             "pages/04_Cestas.py"
-
         )
 
 
     st.stop()
-
-
 
 
 
@@ -160,45 +101,33 @@ cesta_id = st.session_state["cesta_editar"]
 
 
 
-
 # =====================================================
-# BUSCA DADOS
+# BUSCA CESTA
 # =====================================================
 
 try:
 
-
     cesta = buscar_cesta(
-
         cesta_id
-
     )
+
+
+    if not cesta:
+
+        st.error(
+            "Cesta não encontrada."
+        )
+
+        st.stop()
 
 
 except Exception as erro:
 
-
     st.error(
-
         f"Erro ao carregar cesta: {erro}"
-
     )
 
-
     st.stop()
-
-
-
-
-
-imagem_atual = cesta.get(
-
-    "imagem",
-
-    ""
-
-) or ""
-
 
 
 
@@ -208,117 +137,64 @@ imagem_atual = cesta.get(
 # =====================================================
 
 st.title(
-
     "✏️ Editar Cesta"
-
 )
-
 
 st.caption(
-
-    "Atualize os dados da cesta e substitua a imagem quando necessário."
-
+    "Atualize os dados da cesta."
 )
-
 
 st.divider()
 
 
 
 
-
 # =====================================================
-# CAMPOS DA CESTA
+# CAMPOS
 # =====================================================
 
 col1, col2 = st.columns(2)
 
 
-
 with col1:
 
-
     nome = st.text_input(
-
         "Nome da Cesta",
-
-        value=cesta.get(
-
-            "nome",
-
-            ""
-
-        )
-
+        value=cesta.get("nome","")
     )
-
 
 
 with col2:
 
-
     preco = st.number_input(
-
         "Preço (R$)",
-
         min_value=0.0,
-
         value=float(
-
-            cesta.get(
-
-                "preco",
-
-                0
-
-            )
-
+            cesta.get("preco",0)
         ),
-
         step=1.0
-
     )
-
-
 
 
 
 descricao = st.text_area(
-
     "Descrição",
-
-    value=cesta.get(
-
-        "descricao",
-
-        ""
-
-    ) or "",
-
-    height=90
-
+    value=cesta.get("descricao","") or "",
+    height=100
 )
-
-
 
 
 
 ativa = st.checkbox(
-
     "Cesta ativa",
-
-    value=cesta.get(
-
-        "ativa",
-
-        True
-
-    )
-
+    value=cesta.get("ativa",True)
 )
 
+
+
+
 # =====================================================
-# IMAGEM DA CESTA
+# IMAGEM
 # =====================================================
 
 st.divider()
@@ -328,80 +204,46 @@ st.subheader(
 )
 
 
+imagem_atual = cesta.get(
+    "imagem",
+    ""
+)
+
 
 if imagem_atual:
 
-
     st.image(
-
         imagem_atual,
-
         width=220
-
     )
-
-
-    st.caption(
-
-        "Imagem atual"
-
-    )
-
 
 else:
 
-
     st.info(
-
-        "Esta cesta ainda não possui imagem cadastrada."
-
+        "Sem imagem cadastrada."
     )
 
 
 
-
-
-nova_foto = st.file_uploader(
-
-    "Enviar nova foto da cesta",
-
+nova_imagem = st.file_uploader(
+    "Trocar imagem",
     type=[
-
-        "jpg",
-
-        "jpeg",
-
         "png",
-
+        "jpg",
+        "jpeg",
         "webp"
-
     ]
-
 )
 
 
 
-
-
-if nova_foto:
-
+if nova_imagem:
 
     st.image(
-
-        nova_foto,
-
+        nova_imagem,
         width=220,
-
         caption="Nova imagem"
-
     )
-
-
-
-
-
-st.divider()
-
 
 
 
@@ -410,32 +252,26 @@ st.divider()
 # BOTÕES
 # =====================================================
 
+st.divider()
+
+
 col1, col2 = st.columns(2)
 
 
 
 with col1:
 
-
     salvar = st.button(
-
-        "💾 Salvar Alterações",
-
+        "💾 Salvar",
         use_container_width=True
-
     )
-
 
 
 with col2:
 
-
     cancelar = st.button(
-
         "❌ Cancelar",
-
         use_container_width=True
-
     )
 
 
@@ -450,41 +286,33 @@ if cancelar:
 
 
     st.session_state.pop(
-
         "cesta_editar",
-
         None
-
     )
 
 
     st.switch_page(
-
         "pages/04_Cestas.py"
-
     )
 
+
+
+
+
 # =====================================================
-# SALVAR ALTERAÇÕES
+# SALVAR
 # =====================================================
 
 if salvar:
 
 
-
     if not nome.strip():
 
-
         st.error(
-
             "Informe o nome da cesta."
-
         )
 
-
         st.stop()
-
-
 
 
 
@@ -492,189 +320,74 @@ if salvar:
 
 
 
+    # NOVA IMAGEM
 
-
-    # =================================================
-    # ENVIA NOVA IMAGEM PARA O STORAGE
-    # =================================================
-
-    if nova_foto:
-
+    if nova_imagem:
 
 
         try:
 
-
-
-            extensao = Path(
-
-                nova_foto.name
-
-            ).suffix.lower()
-
-
-
-            nome_arquivo = (
-
-                f"{cesta_id}_"
-
-                f"{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-                f"{extensao}"
-
+            imagem = upload_imagem_cesta(
+                nova_imagem
             )
-
-
-
-            caminho = nome_arquivo
-
-
-
-
-
-            supabase.storage \
-
-                .from_(
-
-                    "cestas"
-
-                ) \
-
-                .upload(
-
-                    caminho,
-
-                    nova_foto.getvalue(),
-
-                    {
-
-                        "content-type":
-
-                        nova_foto.type
-
-                    }
-
-                )
-
-
-
-
-
-            imagem = (
-
-                supabase.storage
-
-                .from_(
-
-                    "cestas"
-
-                )
-
-                .get_public_url(
-
-                    caminho
-
-                )
-
-            )
-
 
 
         except Exception as erro:
 
 
-
             st.error(
-
-                f"Erro ao enviar imagem: {erro}"
-
+                f"Erro no upload: {erro}"
             )
-
 
             st.stop()
 
 
 
 
-
-    # =================================================
-    # ATUALIZA BANCO
-    # =================================================
-
     try:
-
 
 
         atualizar_cesta(
 
-
-
             cesta_id,
-
-
 
             nome.strip(),
 
-
-
             descricao.strip(),
-
-
 
             preco,
 
-
-
             imagem,
 
-
-
             ativa
-
-
 
         )
 
 
 
         st.success(
-
             "Cesta atualizada com sucesso!"
-
         )
-
 
 
         st.session_state.pop(
-
             "cesta_editar",
-
             None
-
         )
-
 
 
         st.switch_page(
-
             "pages/04_Cestas.py"
-
         )
-
-
 
 
 
     except Exception as erro:
 
 
-
         st.error(
-
             f"Erro ao atualizar cesta: {erro}"
-
         )
-
 
 
 
@@ -685,10 +398,6 @@ if salvar:
 
 st.divider()
 
-
-
 st.caption(
-
     "🎁 Edição de Cestas - Doce Cesta Brasília"
-
-            )
+)
