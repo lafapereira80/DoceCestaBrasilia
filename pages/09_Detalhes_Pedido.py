@@ -224,13 +224,38 @@ except Exception as erro:
 # NORMALIZA ITENS SOB CONSULTA
 # =====================================================
 
+# =====================================================
+# ITENS CONSULTA SALVOS
+# =====================================================
+
 itens_consulta_salvos = pedido.get(
-
     "itens_consulta",
-
     {}
-
 )
+
+
+if not itens_consulta_salvos:
+
+    itens_consulta_salvos = {}
+
+
+elif isinstance(itens_consulta_salvos, str):
+
+    try:
+
+        itens_consulta_salvos = json.loads(
+            itens_consulta_salvos
+        )
+
+    except:
+
+        itens_consulta_salvos = {}
+
+
+
+if not isinstance(itens_consulta_salvos, dict):
+
+    itens_consulta_salvos = {}
 
 
 
