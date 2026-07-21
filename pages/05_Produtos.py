@@ -656,34 +656,29 @@ if not produtos:
     )
 
 
-
 else:
-
 
 
     for categoria_nome, lista_produtos in produtos_agrupados.items():
 
 
-
-st.markdown(
-    f"""
-    <div style="
-        background-color:#8B5A2B;
-        color:white;
-        padding:8px 12px;
-        border-radius:10px;
-        margin-top:15px;
-        margin-bottom:10px;
-        font-weight:bold;
-        font-size:15px;
-    ">
-        📂 {categoria_nome}
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-
+        st.markdown(
+            f"""
+            <div style="
+                background-color:#8B5A2B;
+                color:white;
+                padding:8px 12px;
+                border-radius:10px;
+                margin-top:15px;
+                margin-bottom:10px;
+                font-weight:bold;
+                font-size:15px;
+            ">
+                📂 {categoria_nome}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 
         for produto in lista_produtos:
