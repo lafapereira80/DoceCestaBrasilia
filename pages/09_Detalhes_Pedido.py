@@ -1161,80 +1161,60 @@ if adicionais_pedido:
 
             )
 
-        # ---------------------------------------------
-        # ADICIONAL PREÇO SOB CONSULTA
-        # ---------------------------------------------
-
-
-        else:
-
-
-            valor_anterior = float(
-
-                itens_consulta_salvos.get(
-
-                    nome,
-
-                    0
-
-                )
-
-                or 0
-
-            )
-
-
-            col_nome, col_valor = st.columns([1, 1])
-
-
-            with col_nome:
-
-                st.write(
-
-                    f"• {nome} (Preço sob consulta) -"
-
-                )
-
-
-            with col_valor:
-
-                valor_digitado = st.number_input(
-
-                    "Valor",
-
-                    min_value=0.0,
-
-                    value=valor_anterior,
-
-                    step=1.0,
-
-                    key=f"consulta_{nome}",
-
-                    label_visibility="collapsed"
-
-                )
-
-
-            itens_consulta[nome] = valor_digitado
-
-
-            valor_itens_consulta += valor_digitado
-
-
-            valor_adicionais += valor_digitado
-
-
-
+# ---------------------------------------------
+# ADICIONAL PREÇO SOB CONSULTA
+# ---------------------------------------------
 
 
 else:
 
 
-    st.info(
+    valor_anterior = float(
 
-        "Nenhum adicional."
+        itens_consulta_salvos.get(
+
+            nome,
+
+            0
+
+        )
+
+        or 0
 
     )
+
+
+    st.write(
+
+        f"• {nome} (Preço sob consulta)"
+
+    )
+
+
+    valor_digitado = st.number_input(
+
+        "Valor",
+
+        min_value=0.0,
+
+        value=valor_anterior,
+
+        step=1.0,
+
+        key=f"consulta_{nome}",
+
+        label_visibility="collapsed"
+
+    )
+
+
+    itens_consulta[nome] = valor_digitado
+
+
+    valor_itens_consulta += valor_digitado
+
+
+    valor_adicionais += valor_digitado
 
 # =====================================================
 # FRETE / DESCONTO / STATUS
