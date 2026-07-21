@@ -22,9 +22,13 @@ from utils.permissao import (
 # =====================================================
 
 st.set_page_config(
+
     page_title="Financeiro",
+
     page_icon="💰",
+
     layout="wide"
+
 )
 
 
@@ -40,8 +44,70 @@ menu_lateral()
 administrador_operador()
 
 
-
 usuario = st.session_state.usuario
+
+
+
+# =====================================================
+# CSS
+# =====================================================
+
+st.markdown(
+"""
+<style>
+
+
+h1{
+
+    font-size:26px !important;
+
+}
+
+
+h2{
+
+    font-size:20px !important;
+
+}
+
+
+h3{
+
+    font-size:16px !important;
+
+}
+
+
+p, div, span{
+
+    font-size:13px;
+
+}
+
+
+
+.stButton button{
+
+    font-size:13px;
+
+    padding:5px 10px;
+
+}
+
+
+
+[data-testid="stMetricValue"]{
+
+    font-size:22px;
+
+}
+
+
+
+</style>
+""",
+unsafe_allow_html=True
+)
 
 
 
@@ -54,12 +120,17 @@ st.title(
 )
 
 
+st.caption(
+    "Controle de faturamento, vendas e resultados."
+)
+
+
 st.divider()
 
 
 
 # =====================================================
-# BUSCAR PEDIDOS
+# CARREGAR PEDIDOS
 # =====================================================
 
 @st.cache_data(ttl=60)
@@ -79,20 +150,53 @@ def carregar_pedidos():
     )
 
 
-    return pd.DataFrame(
-        resposta.data
+    return resposta.data or []
+
+
+
+
+
+@st.cache_data(ttl=60)
+def carregar_adicionais():
+
+
+    resposta = (
+
+        supabase
+
+        .table("pedido_adicionais")
+
+        .select(
+            """
+            pedido_id,
+            nome_produto,
+            quantidade,
+            valor_unitario
+            """
+        )
+
+        .execute()
+
     )
+
+
+    return resposta.data or []
+
+
 
 
 
 # =====================================================
-# CARREGAMENTO
+# BUSCA DOS DADOS
 # =====================================================
 
 try:
 
 
-    df = carregar_pedidos()
+    pedidos = carregar_pedidos()
+
+
+    adicionais = carregar_adicionais()
 
 
 
@@ -100,21 +204,51 @@ except Exception as erro:
 
 
     st.error(
-        f"Erro ao carregar pedidos: {erro}"
+
+        f"Erro ao carregar dados financeiros: {erro}"
+
     )
+
 
     st.stop()
 
 
 
-if df.empty:
+
+
+if not pedidos:
 
 
     st.warning(
+
         "Nenhum pedido encontrado."
+
     )
 
+
     st.stop()
+
+
+
+
+
+df = pd.DataFrame(
+
+    pedidos
+
+)
+
+
+
+
+
+df_adicionais = pd.DataFrame(
+
+    adicionais
+
+)
+
+
 
 
 
@@ -122,39 +256,55 @@ if df.empty:
 # TRATAMENTO DOS DADOS
 # =====================================================
 
-df["created_at"] = pd.to_datetime(
-    df["created_at"]
-)
+
+if "created_at" in df.columns:
 
 
+    df["created_at"] = pd.to_datetime(
 
-df["ano"] = (
-    df["created_at"]
-    .dt.year
-)
+        df["created_at"],
+
+        errors="coerce"
+
+    )
 
 
+else:
 
-df["mes"] = (
-    df["created_at"]
-    .dt.month
-)
+
+    df["created_at"] = pd.Timestamp.now()
+
+
 
 
 
 df["valor_total"] = pd.to_numeric(
 
-    df["valor_total"],
+    df.get(
+
+        "valor_total",
+
+        0
+
+    ),
 
     errors="coerce"
 
 ).fillna(0)
+
+
 
 
 
 df["valor_frete"] = pd.to_numeric(
 
-    df["valor_frete"],
+    df.get(
+
+        "valor_frete",
+
+        0
+
+    ),
 
     errors="coerce"
 
@@ -163,7 +313,68 @@ df["valor_frete"] = pd.to_numeric(
 
 
 
+
+df["desconto"] = pd.to_numeric(
+
+    df.get(
+
+        "desconto",
+
+        0
+
+    ),
+
+    errors="coerce"
+
+).fillna(0)
+
+
+
+
+
+df["ano"] = (
+
+    df["created_at"]
+
+    .dt.year
+
+)
+
+
+
+
+
+df["mes"] = (
+
+    df["created_at"]
+
+    .dt.month
+
+)
+
+
+
+
+
 # =====================================================
+# FORMATAÇÃO
+# =====================================================
+
+def moeda(valor):
+
+
+    return (
+
+        f"R$ {valor:,.2f}"
+
+        .replace(",", "X")
+
+        .replace(".", ",")
+
+        .replace("X",".")
+
+    )
+    # =====================================================
 # FILTROS
 # =====================================================
 
@@ -173,7 +384,7 @@ st.subheader(
 
 
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 
 
@@ -183,6 +394,8 @@ with col1:
     anos = sorted(
 
         df["ano"]
+
+        .dropna()
 
         .unique(),
 
@@ -198,6 +411,8 @@ with col1:
         ["Todos"] + list(anos)
 
     )
+
+
 
 
 
@@ -244,7 +459,43 @@ with col2:
 
 
 
+
+
+with col3:
+
+
+    status_lista = sorted(
+
+        df["status"]
+
+        .dropna()
+
+        .unique()
+
+        .tolist()
+
+    )
+
+
+    status_selecionado = st.selectbox(
+
+        "Status",
+
+        ["Todos"] + status_lista
+
+    )
+
+
+
+
+
+# =====================================================
+# APLICA FILTROS
+# =====================================================
+
 df_filtrado = df.copy()
+
+
 
 
 
@@ -260,6 +511,8 @@ if ano_selecionado != "Todos":
         ano_selecionado
 
     ]
+
+
 
 
 
@@ -290,12 +543,31 @@ if mes_selecionado != "Todos":
 
 
 
+
+
+if status_selecionado != "Todos":
+
+
+    df_filtrado = df_filtrado[
+
+        df_filtrado["status"]
+
+        ==
+
+        status_selecionado
+
+    ]
+
+
+
+
+
 st.divider()
 
 
 
 # =====================================================
-# RESUMO
+# RESUMO FINANCEIRO
 # =====================================================
 
 st.subheader(
@@ -304,7 +576,11 @@ st.subheader(
 
 
 
+
+
 col1, col2, col3, col4 = st.columns(4)
+
+
 
 
 
@@ -322,18 +598,20 @@ with col1:
 
     st.metric(
 
-        "Faturamento",
+        "💰 Faturamento",
 
-        f"R$ {faturamento:,.2f}"
+        moeda(faturamento)
 
     )
+
+
 
 
 
 with col2:
 
 
-    fretes = (
+    total_fretes = (
 
         df_filtrado["valor_frete"]
 
@@ -344,40 +622,46 @@ with col2:
 
     st.metric(
 
-        "Fretes",
+        "🚚 Fretes",
 
-        f"R$ {fretes:,.2f}"
+        moeda(total_fretes)
 
     )
+
+
 
 
 
 with col3:
 
 
-    pedidos = len(
+    quantidade_pedidos = len(
+
         df_filtrado
+
     )
 
 
     st.metric(
 
-        "Pedidos",
+        "📋 Pedidos",
 
-        pedidos
+        quantidade_pedidos
 
     )
+
+
 
 
 
 with col4:
 
 
-    ticket = (
+    ticket_medio = (
 
-        faturamento / pedidos
+        faturamento / quantidade_pedidos
 
-        if pedidos > 0
+        if quantidade_pedidos > 0
 
         else 0
 
@@ -386,11 +670,13 @@ with col4:
 
     st.metric(
 
-        "Ticket médio",
+        "🎯 Ticket médio",
 
-        f"R$ {ticket:,.2f}"
+        moeda(ticket_medio)
 
     )
+
+
 
 
 
@@ -403,63 +689,95 @@ st.divider()
 # =====================================================
 
 st.subheader(
+
     "📅 Faturamento mensal"
+
 )
 
 
 
-faturamento_mes = (
 
-    df_filtrado
 
-    .groupby(
+if not df_filtrado.empty:
 
-        df_filtrado["created_at"]
 
-        .dt.strftime("%m/%Y")
+
+    faturamento_mes = (
+
+        df_filtrado
+
+        .groupby(
+
+            df_filtrado["created_at"]
+
+            .dt.strftime("%m/%Y")
+
+        )
+
+        ["valor_total"]
+
+        .sum()
+
+        .reset_index()
 
     )
 
-    ["valor_total"]
-
-    .sum()
-
-    .reset_index()
-
-)
 
 
+    faturamento_mes.columns = [
 
-faturamento_mes.columns = [
+        "Mês",
 
-    "Mês",
+        "Faturamento"
 
-    "Faturamento"
-
-]
+    ]
 
 
 
-st.dataframe(
+    faturamento_mes["Faturamento"] = (
 
-    faturamento_mes,
+        faturamento_mes["Faturamento"]
 
-    use_container_width=True
+        .apply(moeda)
 
-)
+    )
+
+
+
+    st.dataframe(
+
+        faturamento_mes,
+
+        use_container_width=True,
+
+        hide_index=True
+
+    )
+
+
+else:
+
+
+    st.info(
+
+        "Nenhum dado para o período selecionado."
+
+    )
+
+
 
 
 
 st.divider()
-
-
 
 # =====================================================
 # CESTAS VENDIDAS
 # =====================================================
 
 st.subheader(
+
     "🧺 Cestas vendidas"
+
 )
 
 
@@ -472,7 +790,9 @@ if "cesta_nome" in df_filtrado.columns:
         df_filtrado
 
         .groupby(
+
             "cesta_nome"
+
         )
 
         .size()
@@ -494,6 +814,7 @@ if "cesta_nome" in df_filtrado.columns:
     )
 
 
+
     cestas.columns = [
 
         "Cesta",
@@ -503,11 +824,14 @@ if "cesta_nome" in df_filtrado.columns:
     ]
 
 
+
     st.dataframe(
 
         cestas,
 
-        use_container_width=True
+        use_container_width=True,
+
+        hide_index=True
 
     )
 
@@ -515,11 +839,13 @@ if "cesta_nome" in df_filtrado.columns:
 else:
 
 
-    st.warning(
+    st.info(
 
-        "Campo cesta_nome não encontrado."
+        "Nenhuma informação de cesta encontrada."
 
     )
+
+
 
 
 
@@ -528,91 +854,179 @@ st.divider()
 
 
 # =====================================================
-# ADICIONAIS
+# ADICIONAIS VENDIDOS
 # =====================================================
 
 st.subheader(
-    "🎁 Adicionais vendidos"
+
+    "🎀 Adicionais vendidos"
+
 )
 
 
 
-if "adicionais" in df_filtrado.columns:
 
 
-    lista_adicionais = []
-
-
-
-    for adicional in df_filtrado["adicionais"]:
-
-
-        if adicional:
-
-
-            texto = str(adicional)
-
-
-            itens = texto.split(",")
+if not df_adicionais.empty:
 
 
 
-            for item in itens:
+    # Filtra adicionais somente dos pedidos selecionados
+
+    pedidos_filtrados_ids = (
+
+        df_filtrado["id"]
+
+        .tolist()
+
+    )
 
 
-                lista_adicionais.append(
 
-                    item.strip()
+    adicionais_filtrados = (
 
-                )
+        df_adicionais[
 
+            df_adicionais["pedido_id"]
 
+            .isin(
 
-    if lista_adicionais:
-
-
-        tabela_adicionais = (
-
-            pd.DataFrame(
-
-                lista_adicionais,
-
-                columns=["Adicional"]
+                pedidos_filtrados_ids
 
             )
+
+        ]
+
+        .copy()
+
+    )
+
+
+
+    if not adicionais_filtrados.empty:
+
+
+
+        adicionais_filtrados["quantidade"] = pd.to_numeric(
+
+            adicionais_filtrados["quantidade"],
+
+            errors="coerce"
+
+        ).fillna(1)
+
+
+
+        adicionais_filtrados["valor_unitario"] = pd.to_numeric(
+
+            adicionais_filtrados["valor_unitario"],
+
+            errors="coerce"
+
+        ).fillna(0)
+
+
+
+        adicionais_filtrados["total"] = (
+
+            adicionais_filtrados["quantidade"]
+
+            *
+
+            adicionais_filtrados["valor_unitario"]
+
+        )
+
+
+
+
+
+        resumo_adicionais = (
+
+            adicionais_filtrados
 
             .groupby(
 
-                "Adicional"
+                "nome_produto"
 
             )
 
-            .size()
+            .agg(
 
-            .reset_index(
+                Quantidade=(
 
-                name="Quantidade vendida"
+                    "quantidade",
+
+                    "sum"
+
+                ),
+
+                Faturamento=(
+
+                    "total",
+
+                    "sum"
+
+                )
 
             )
 
-            .sort_values(
-
-                "Quantidade vendida",
-
-                ascending=False
-
-            )
+            .reset_index()
 
         )
+
+
+
+
+
+        resumo_adicionais.columns = [
+
+            "Adicional",
+
+            "Quantidade vendida",
+
+            "Faturamento"
+
+        ]
+
+
+
+
+
+        resumo_adicionais["Faturamento"] = (
+
+            resumo_adicionais["Faturamento"]
+
+            .apply(moeda)
+
+        )
+
+
+
+
+
+        resumo_adicionais = resumo_adicionais.sort_values(
+
+            "Quantidade vendida",
+
+            ascending=False
+
+        )
+
+
+
 
 
         st.dataframe(
 
-            tabela_adicionais,
+            resumo_adicionais,
 
-            use_container_width=True
+            use_container_width=True,
+
+            hide_index=True
 
         )
+
 
 
     else:
@@ -620,9 +1034,22 @@ if "adicionais" in df_filtrado.columns:
 
         st.info(
 
-            "Nenhum adicional vendido."
+            "Nenhum adicional encontrado para o período."
 
         )
+
+
+
+else:
+
+
+    st.info(
+
+        "Nenhum adicional vendido."
+
+    )
+
+
 
 
 
@@ -631,30 +1058,133 @@ st.divider()
 
 
 # =====================================================
-# DETALHAMENTO
+# VALORES POR STATUS
 # =====================================================
 
 st.subheader(
-    "📋 Detalhamento financeiro"
+
+    "📌 Resumo por status"
+
 )
 
 
 
-colunas = [
+if "status" in df_filtrado.columns:
+
+
+
+    resumo_status = (
+
+        df_filtrado
+
+        .groupby(
+
+            "status"
+
+        )
+
+        .agg(
+
+            Quantidade=(
+
+                "id",
+
+                "count"
+
+            ),
+
+            Valor=(
+
+                "valor_total",
+
+                "sum"
+
+            )
+
+        )
+
+        .reset_index()
+
+    )
+
+
+
+
+
+    resumo_status.columns = [
+
+        "Status",
+
+        "Quantidade",
+
+        "Valor"
+
+    ]
+
+
+
+
+
+    resumo_status["Valor"] = (
+
+        resumo_status["Valor"]
+
+        .apply(moeda)
+
+    )
+
+
+
+
+
+    st.dataframe(
+
+        resumo_status,
+
+        use_container_width=True,
+
+        hide_index=True
+
+    )
+
+# =====================================================
+# DETALHAMENTO FINANCEIRO
+# =====================================================
+
+st.divider()
+
+
+st.subheader(
+
+    "📋 Detalhamento financeiro dos pedidos"
+
+)
+
+
+
+
+
+colunas_detalhamento = [
 
     "created_at",
 
     "cliente_nome",
 
+    "cliente_telefone",
+
     "cesta_nome",
+
+    "status",
 
     "valor_frete",
 
-    "valor_total",
+    "desconto",
 
-    "status"
+    "valor_total"
 
 ]
+
+
 
 
 
@@ -662,7 +1192,7 @@ colunas_existentes = [
 
     coluna
 
-    for coluna in colunas
+    for coluna in colunas_detalhamento
 
     if coluna in df_filtrado.columns
 
@@ -670,7 +1200,9 @@ colunas_existentes = [
 
 
 
-st.dataframe(
+
+
+detalhamento = (
 
     df_filtrado[
 
@@ -684,8 +1216,250 @@ st.dataframe(
 
         ascending=False
 
-    ),
+    )
 
-    use_container_width=True
+    .copy()
 
 )
+
+
+
+
+
+if "created_at" in detalhamento.columns:
+
+
+    detalhamento["created_at"] = (
+
+        detalhamento["created_at"]
+
+        .dt.strftime(
+
+            "%d/%m/%Y %H:%M"
+
+        )
+
+    )
+
+
+
+
+
+for coluna in [
+
+    "valor_frete",
+
+    "desconto",
+
+    "valor_total"
+
+]:
+
+
+    if coluna in detalhamento.columns:
+
+
+        detalhamento[coluna] = (
+
+            detalhamento[coluna]
+
+            .apply(moeda)
+
+        )
+
+
+
+
+
+detalhamento = detalhamento.rename(
+
+    columns={
+
+        "created_at":
+
+            "Data",
+
+
+        "cliente_nome":
+
+            "Cliente",
+
+
+        "cliente_telefone":
+
+            "Telefone",
+
+
+        "cesta_nome":
+
+            "Cesta",
+
+
+        "status":
+
+            "Status",
+
+
+        "valor_frete":
+
+            "Frete",
+
+
+        "desconto":
+
+            "Desconto",
+
+
+        "valor_total":
+
+            "Valor Total"
+
+    }
+
+)
+
+
+
+
+
+st.dataframe(
+
+    detalhamento,
+
+    use_container_width=True,
+
+    hide_index=True
+
+)
+
+
+
+
+
+st.divider()
+
+
+
+# =====================================================
+# CONFERÊNCIA DE VALORES
+# =====================================================
+
+st.subheader(
+
+    "🔎 Conferência de valores"
+
+)
+
+
+
+
+
+st.caption(
+
+    """
+O valor apresentado abaixo utiliza o campo **valor_total**
+salvo no pedido.
+
+Esse valor é atualizado:
+
+✅ Inicialmente pelo formulário do cliente  
+✅ Depois pelo atendimento administrativo em Detalhes do Pedido  
+✅ Considerando frete, descontos e adicionais sob consulta
+"""
+
+)
+
+
+
+
+
+col1, col2, col3 = st.columns(3)
+
+
+
+
+
+with col1:
+
+
+    st.metric(
+
+        "Pedidos analisados",
+
+        len(df_filtrado)
+
+    )
+
+
+
+
+
+with col2:
+
+
+    st.metric(
+
+        "Total vendido",
+
+        moeda(
+
+            df_filtrado["valor_total"].sum()
+
+        )
+
+    )
+
+
+
+
+
+with col3:
+
+
+    st.metric(
+
+        "Média por pedido",
+
+        moeda(
+
+            df_filtrado["valor_total"].mean()
+
+            if len(df_filtrado) > 0
+
+            else 0
+
+        )
+
+    )
+
+
+
+
+
+# =====================================================
+# AVISO DE PEDIDOS SEM VALOR
+# =====================================================
+
+pedidos_sem_valor = df_filtrado[
+
+    df_filtrado["valor_total"]
+
+    <=
+
+    0
+
+]
+
+
+
+
+
+if not pedidos_sem_valor.empty:
+
+
+    st.warning(
+
+        f"⚠️ Existem {len(pedidos_sem_valor)} pedido(s) "
+        "sem valor total definido."
+
+    )
