@@ -365,176 +365,81 @@ else:
 
 
 
-
-
-# =====================================================
-# FUNÇÃO EXIBIR PRODUTO
-# =====================================================
-
-def exibir_produto(
-    produto,
-    categoria_nome
-):
-
-
+# ===================================================== 
+# FUNÇÃO EXIBIR PRODUTO 
+# ===================================================== 
+def exibir_produto(produto, categoria_nome):
     with st.container(border=True):
-
-
-        col1, col2, col3, col4 = st.columns(
-            [5, 2, 1.5, 2.5]
-        )
-
-
-
-        # =============================================
-        # NOME
-        # =============================================
-
+        col1, col2, col3, col4 = st.columns([5, 2, 1.5, 2.5])
+        
+        # ============================================= 
+        # NOME 
+        # ============================================= 
         with col1:
-
-
-            st.write(
-                f"**{produto.get('nome','-')}**"
-            )
-
-
+            st.write(f"**{produto.get('nome','-')}**")
             if produto.get("descricao"):
-
-
-                st.caption(
-                    produto["descricao"]
-                )
-
-
-
-    # =============================================
-    # PREÇO
-    # =============================================
+                st.caption(produto["descricao"])
+                
+        # ============================================= 
+        # PREÇO 
+        # ============================================= 
         with col2:
-            categoria_atual = (
-                categoria_nome
-                .strip() 
-                .lower()
-            )
+            categoria_atual = categoria_nome.strip().lower()
             if categoria_atual == "adicionais":
-                tipo = str(
-                    produto.get(
-                        "tipo_preco",
-                        "Preço definido" 
-                    )
-                ).strip()
+                tipo = str(produto.get("tipo_preco", "Preço definido")).strip()
                 if tipo.lower() == "preço sob consulta":
-                    st.info(
-                        "Sob consulta"
-                    ) 
+                    st.info("Sob consulta")
                 else:
-                    valor = produto.get(
-                        "preco"
-                    ) 
+                    valor = produto.get("preco")
                     if valor is not None:
-                        valor = float(valor)
                         valor_formatado = (
-                            f"R$ {valor:,.2f}"
+                            f"R$ {float(valor):,.2f}"
                             .replace(",", "X")
                             .replace(".", ",")
-                            .replace("X",".")
-                        ) st.write(
-                            valor_formatado
+                            .replace("X", ".")
                         )
+                        st.write(valor_formatado)
                     else:
-                        st.info(
-                            "Sob consulta"
-                        ) 
-                    else:
-                        st.info(
-                            "Incluso"
-                        )
-
-
-        # =============================================
-        # STATUS
-        # =============================================
-
-        with col3:
-
-
-            if produto.get(
-                "ativo",
-                True
-            ):
-
-
-                st.success(
-                    "🟢"
-                )
-
-
+                        st.info("Sob consulta")
             else:
-
-
-                st.error(
-                    "🔴"
-                )
-
-
-
-        # =============================================
-        # BOTÕES
-        # =============================================
-
+                st.info("Incluso")
+                
+        # ============================================= 
+        # STATUS 
+        # ============================================= 
+        with col3:
+            if produto.get("ativo", True):
+                st.success("🟢")
+            else:
+                st.error("🔴")
+                
+        # ============================================= 
+        # BOTÕES 
+        # ============================================= 
         with col4:
-
-
             b1, b2, b3 = st.columns(3)
-
-
-
             with b1:
-
-
                 editar = st.button(
-
-                    "✏️",
-
-                    key=f"editar_{produto['id']}",
-
+                    "✏️", 
+                    key=f"editar_{produto['id']}", 
                     help="Editar produto"
-
                 )
-
-
-
             with b2:
-
-
                 status = st.button(
-
-                    "🔴" if produto.get("ativo", True) else "🟢",
-
-                    key=f"status_{produto['id']}",
-
+                    "🔴" if produto.get("ativo", True) else "🟢", 
+                    key=f"status_{produto['id']}", 
                     help="Ativar/Desativar"
-
                 )
-
-
-
             with b3:
-
-
                 excluir = st.button(
-
-                    "🗑️",
-
-                    key=f"excluir_{produto['id']}",
-
+                    "🗑️", 
+                    key=f"excluir_{produto['id']}", 
                     help="Excluir produto"
-
                 )
+                
+    return editar, status, excluir
 
-
-        return editar, status, excluir
-        # =====================================================
+# =====================================================
 # LISTAGEM DOS PRODUTOS
 # =====================================================
 
