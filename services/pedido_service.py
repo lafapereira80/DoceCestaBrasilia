@@ -29,61 +29,72 @@ def salvar_pedido(dados):
 
 
 
+
+
 # =====================================================
 # LISTAR TODOS OS PEDIDOS
-# Usado para relatórios e consultas gerais
 # =====================================================
 
 def listar_pedidos():
 
     resposta = (
+
         supabase
+
         .table("pedidos")
+
         .select("*")
+
         .order(
             "created_at",
             desc=True
         )
+
         .execute()
+
     )
 
 
     return resposta.data or []
+
+
 
 
 
 # =====================================================
 # LISTAR PEDIDOS ATIVOS
 #
-# Não retorna pedidos Entregues
-#
-# Aparece na página 02_Pedidos.py
-#
-# Status:
-# Recebido
-# Pago
-# Desistência
+# Não retorna Entregues
 # =====================================================
 
 def listar_pedidos_ativos():
 
     resposta = (
+
         supabase
+
         .table("pedidos")
+
         .select("*")
+
         .neq(
             "status",
             "Entregue"
         )
+
         .order(
             "created_at",
             desc=True
         )
+
         .execute()
+
     )
 
 
     return resposta.data or []
+
+
 
 
 
@@ -94,19 +105,28 @@ def listar_pedidos_ativos():
 def buscar_pedido(pedido_id):
 
     resposta = (
+
         supabase
+
         .table("pedidos")
+
         .select("*")
+
         .eq(
             "id",
             pedido_id
         )
+
         .single()
+
         .execute()
+
     )
 
 
     return resposta.data
+
+
 
 
 
@@ -115,29 +135,52 @@ def buscar_pedido(pedido_id):
 # =====================================================
 
 def atualizar_pedido(
+
     pedido_id,
+
     status,
+
     valor_frete,
+
     valor_total
+
 ):
 
+
     resposta = (
+
         supabase
+
         .table("pedidos")
+
         .update({
 
-            "status": status,
+            "status":
 
-            "valor_frete": valor_frete,
+                status,
 
-            "valor_total": valor_total
+
+            "valor_frete":
+
+                valor_frete,
+
+
+            "valor_total":
+
+                valor_total
 
         })
+
         .eq(
+
             "id",
+
             pedido_id
+
         )
+
         .execute()
+
     )
 
 
@@ -145,11 +188,61 @@ def atualizar_pedido(
 
 
 
+
+
+# =====================================================
+# ATUALIZAR ANOTAÇÃO INTERNA
+#
+# Uso exclusivo administrativo
+# =====================================================
+
+def atualizar_anotacao_pedido(
+
+    pedido_id,
+
+    anotacao
+
+):
+
+
+    resposta = (
+
+        supabase
+
+        .table("pedidos")
+
+        .update({
+
+            "anotacoes_internas":
+
+                anotacao
+
+        })
+
+        .eq(
+
+            "id",
+
+            pedido_id
+
+        )
+
+        .execute()
+
+    )
+
+
+    return resposta.data
+
+
+
+
+
 # =====================================================
 # EXCLUIR PEDIDO COMPLETO
 #
 # Remove:
-# 1 - Fotos do Storage
+# 1 - Fotos Storage
 # 2 - Registros pedido_fotos
 # 3 - Pedido
 # =====================================================
@@ -159,19 +252,24 @@ def excluir_pedido_completo(pedido_id):
     try:
 
 
-        # =============================================
-        # Busca fotos vinculadas ao pedido
-        # =============================================
-
         fotos = (
+
             supabase
+
             .table("pedido_fotos")
+
             .select("arquivo")
+
             .eq(
+
                 "pedido_id",
+
                 pedido_id
+
             )
+
             .execute()
+
         )
 
 
@@ -199,53 +297,71 @@ def excluir_pedido_completo(pedido_id):
 
 
 
-        # =============================================
-        # Remove arquivos do Storage
-        # =============================================
+
 
         if arquivos:
 
 
             supabase.storage \
+
                 .from_(
+
                     "pedido_fotos"
+
                 ) \
+
                 .remove(
+
                     arquivos
+
                 )
 
 
 
-        # =============================================
-        # Remove registros de fotos
-        # =============================================
+
 
         (
+
             supabase
+
             .table("pedido_fotos")
+
             .delete()
+
             .eq(
+
                 "pedido_id",
+
                 pedido_id
+
             )
+
             .execute()
+
         )
 
 
 
-        # =============================================
-        # Remove pedido
-        # =============================================
+
 
         (
+
             supabase
+
             .table("pedidos")
+
             .delete()
+
             .eq(
+
                 "id",
+
                 pedido_id
+
             )
+
             .execute()
+
         )
 
 
