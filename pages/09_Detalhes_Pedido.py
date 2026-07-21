@@ -36,6 +36,8 @@ from utils.permissao import (
 
 
 
+
+
 # =====================================================
 # CONFIGURAÇÃO
 # =====================================================
@@ -224,38 +226,16 @@ except Exception as erro:
 # NORMALIZA ITENS SOB CONSULTA
 # =====================================================
 
-# =====================================================
-# ITENS CONSULTA SALVOS
-# =====================================================
 
 itens_consulta_salvos = pedido.get(
+
     "itens_consulta",
+
     {}
+
 )
 
 
-if not itens_consulta_salvos:
-
-    itens_consulta_salvos = {}
-
-
-elif isinstance(itens_consulta_salvos, str):
-
-    try:
-
-        itens_consulta_salvos = json.loads(
-            itens_consulta_salvos
-        )
-
-    except:
-
-        itens_consulta_salvos = {}
-
-
-
-if not isinstance(itens_consulta_salvos, dict):
-
-    itens_consulta_salvos = {}
 
 
 
@@ -287,6 +267,22 @@ if isinstance(
 
 
 
+if not isinstance(
+
+    itens_consulta_salvos,
+
+    dict
+
+):
+
+
+    itens_consulta_salvos = {}
+
+
+
+
+
+
 
 # =====================================================
 # TÍTULO
@@ -305,6 +301,11 @@ st.caption(
     f"Status atual: {pedido.get('status','-')}"
 
 )
+
+
+
+
+
 # =====================================================
 # CLIENTE
 # =====================================================
@@ -314,7 +315,12 @@ st.markdown(
 )
 
 
+
+
+
 col1, col2, col3 = st.columns(3)
+
+
 
 
 
@@ -339,6 +345,7 @@ with col1:
 
 
 
+
 with col2:
 
 
@@ -356,6 +363,7 @@ with col2:
         )
 
     )
+
 
 
 
@@ -382,8 +390,6 @@ with col3:
 
 
 
-
-
 # =====================================================
 # PEDIDO
 # =====================================================
@@ -394,7 +400,10 @@ st.markdown(
 
 
 
+
+
 col1, col2, col3, col4 = st.columns(4)
+
 
 
 
@@ -482,14 +491,7 @@ with col4:
         )
 
     )
-
-
-
-
-
-
-
-# =====================================================
+    # =====================================================
 # PRODUTOS E ADICIONAIS
 # =====================================================
 
@@ -553,8 +555,10 @@ with col1:
 
 
 
+
 # =====================================================
-# ADICIONAIS DA NOVA TABELA
+# ADICIONAIS DO PEDIDO
+# NOVA TABELA pedido_adicionais
 # =====================================================
 
 
@@ -569,153 +573,83 @@ with col2:
 
 
 
-   if adicionais_pedido:
-
-
-    for adicional in adicionais_pedido:
-
-
-        nome = adicional.get(
-
-            "nome_produto",
-
-            "-"
-
-        )
-
-
-        valor = adicional.get(
-
-            "valor_unitario"
-
-        )
+    if adicionais_pedido:
 
 
 
-        # ==========================================
-        # ADICIONAL COM PREÇO DEFINIDO
-        # ==========================================
-
-        if valor is not None:
+        for adicional in adicionais_pedido:
 
 
-            valor = float(valor)
 
+            nome = adicional.get(
 
-            valor_adicionais += valor
+                "nome_produto",
 
-
-            valor_formatado = (
-
-                f"R$ {valor:,.2f}"
-
-                .replace(",", "X")
-
-                .replace(".", ",")
-
-                .replace("X",".")
-
-            )
-
-
-            st.write(
-
-                f"• {nome} - {valor_formatado}"
+                "-"
 
             )
 
 
 
-        # ==========================================
-        # ADICIONAL SOB CONSULTA
-        # ==========================================
+            valor = adicional.get(
 
-        else:
+                "valor_unitario"
 
-
-            valor_anterior = 0.0
-
-
-
-            if isinstance(
-
-                itens_consulta_salvos,
-
-                dict
-
-            ):
-
-
-                valor_anterior = float(
-
-                    itens_consulta_salvos.get(
-
-                        nome,
-
-                        0
-
-                    )
-
-                    or 0
-
-                )
+            )
 
 
 
 
-            col_nome, col_valor = st.columns([2,1])
+            if valor is None:
 
-
-
-            with col_nome:
 
 
                 st.write(
 
-                    f"• {nome}"
+                    f"• {nome} "
+
+                    "(Preço sob consulta)"
 
                 )
 
 
 
-            with col_valor:
+            else:
 
 
-                valor = st.number_input(
 
-                    "Valor",
+                valor_formatado = (
 
-                    min_value=0.0,
+                    f"R$ {float(valor):,.2f}"
 
-                    value=valor_anterior,
+                    .replace(",", "X")
 
-                    step=1.0,
+                    .replace(".", ",")
 
-                    key=f"consulta_{nome}"
+                    .replace("X",".")
 
                 )
 
 
 
-            itens_consulta[nome] = valor
+                st.write(
+
+                    f"• {nome} - {valor_formatado}"
+
+                )
 
 
 
-            # CORREÇÃO:
-            # Agora entra no total de adicionais
-
-            valor_adicionais += valor
+    else:
 
 
+        st.info(
 
-else:
+            "Nenhum adicional."
+
+        )
 
 
-    st.info(
-
-        "Nenhum adicional."
-
-    )
 
 
 
@@ -728,6 +662,8 @@ else:
 
 
 col1, col2 = st.columns(2)
+
+
 
 
 
@@ -760,6 +696,8 @@ with col1:
         key="mensagem_view"
 
     )
+
+
 
 
 
@@ -801,6 +739,7 @@ with col2:
 
 
 
+
 # =====================================================
 # ENDEREÇO
 # =====================================================
@@ -833,6 +772,13 @@ st.text_area(
     key="endereco_view"
 
 )
+
+
+
+
+
+
+
 # =====================================================
 # FOTOS POLAROID
 # =====================================================
@@ -843,6 +789,8 @@ st.markdown(
     "### 📷 Fotos da Polaroid"
 
 )
+
+
 
 
 
@@ -858,6 +806,7 @@ try:
 
 
     if fotos:
+
 
 
         colunas = st.columns(4)
@@ -896,6 +845,8 @@ try:
             "Nenhuma foto cadastrada."
 
         )
+
+
 
 
 
@@ -939,6 +890,8 @@ st.caption(
 
 
 
+
+
 anotacao_atual = pedido.get(
 
     "anotacoes_internas",
@@ -961,6 +914,7 @@ anotacao = st.text_area(
 
     placeholder="""
 Exemplos:
+
 - Cliente confirmou entrega após 18h
 - Aguardar pagamento
 - Alteração solicitada pelo cliente
@@ -1016,14 +970,7 @@ if st.button(
             f"Erro ao salvar anotação: {erro}"
 
         )
-
-
-
-
-
-
-
-# =====================================================
+        # =====================================================
 # FECHAMENTO FINANCEIRO
 # =====================================================
 
@@ -1058,6 +1005,8 @@ st.caption(
 
 
 valor_cesta = 0.0
+
+
 
 
 
@@ -1102,6 +1051,7 @@ except Exception:
 
 
 
+
 st.markdown(
 
     "#### 🎁 Cesta"
@@ -1110,7 +1060,11 @@ st.markdown(
 
 
 
+
+
 col1, col2 = st.columns(2)
+
+
 
 
 
@@ -1131,6 +1085,8 @@ with col1:
 
 
 
+
+
 with col2:
 
 
@@ -1146,9 +1102,15 @@ with col2:
 
     )
 
+
+
+
+
+
+
+
 # =====================================================
 # ADICIONAIS FINANCEIRO
-# NOVA ESTRUTURA
 # =====================================================
 
 
@@ -1159,93 +1121,202 @@ st.markdown(
 )
 
 
+
+
+
 valor_adicionais = 0.0
 
-itens_consulta = {}
+
 
 valor_itens_consulta = 0.0
 
 
+
+itens_consulta = {}
+
+
+
+
+
 if adicionais_pedido:
+
+
 
     for adicional in adicionais_pedido:
 
+
+
         nome = adicional.get(
+
             "nome_produto",
+
             "-"
+
         )
 
+
+
         valor = adicional.get(
+
             "valor_unitario"
+
         )
+
+
+
+
+
+        # ---------------------------------------------
+        # ADICIONAL COM VALOR DEFINIDO
+        # ---------------------------------------------
 
 
         if valor is not None:
 
+
+
             valor = float(valor)
+
+
 
             valor_adicionais += valor
 
-            st.write(
-                f"• {nome} - R$ {valor:,.2f}"
+
+
+            valor_formatado = (
+
+                f"R$ {valor:,.2f}"
+
                 .replace(",", "X")
+
                 .replace(".", ",")
+
                 .replace("X",".")
+
             )
+
+
+
+            st.write(
+
+                f"• {nome} - {valor_formatado}"
+
+            )
+
+
+
+
+
+
+
+        # ---------------------------------------------
+        # ADICIONAL PREÇO SOB CONSULTA
+        # ---------------------------------------------
 
 
         else:
 
-            valor_anterior = 0.0
 
 
-            if isinstance(
-                itens_consulta_salvos,
-                dict
-            ):
+            valor_anterior = float(
 
-                valor_anterior = float(
-                    itens_consulta_salvos.get(
-                        nome,
-                        0
-                    )
-                    or 0
+                itens_consulta_salvos.get(
+
+                    nome,
+
+                    0
+
                 )
+
+                or 0
+
+            )
+
+
+
 
 
             col_nome, col_valor = st.columns(
+
                 [2,1]
+
             )
+
+
+
 
 
             with col_nome:
 
+
                 st.write(
+
                     f"• {nome}"
+
                 )
+
+
+
 
 
             with col_valor:
 
-                valor = st.number_input(
+
+                valor_digitado = st.number_input(
+
                     "Valor",
+
                     min_value=0.0,
+
                     value=valor_anterior,
+
                     step=1.0,
+
                     key=f"consulta_{nome}"
+
                 )
 
 
-            itens_consulta[nome] = valor
 
-            valor_adicionais += valor
+
+
+            itens_consulta[nome] = valor_digitado
+
+
+
+
+
+            # entra no resumo de adicionais
+
+            valor_adicionais += valor_digitado
+
+
+
+
+
+            # mantém separado também
+
+            valor_itens_consulta += valor_digitado
+
+
+
 
 
 else:
 
+
     st.info(
+
         "Nenhum adicional."
+
     )
+
+
+
+
+
+
+
 # =====================================================
 # FRETE / DESCONTO / STATUS
 # =====================================================
@@ -1266,6 +1337,8 @@ st.markdown(
 
 
 col1, col2, col3 = st.columns(3)
+
+
 
 
 
@@ -1358,6 +1431,8 @@ with col3:
 
 
 
+
+
     status_atual = pedido.get(
 
         "status",
@@ -1368,10 +1443,13 @@ with col3:
 
 
 
+
+
     if status_atual not in status_opcoes:
 
 
         status_atual = "Recebido"
+
 
 
 
@@ -1389,14 +1467,7 @@ with col3:
         )
 
     )
-
-
-
-
-
-
-
-# =====================================================
+    # =====================================================
 # CÁLCULO TOTAL
 # =====================================================
 
@@ -1420,10 +1491,13 @@ valor_total_calculado = (
 )
 
 
+
 if valor_total_calculado < 0:
 
 
     valor_total_calculado = 0
+
+
 
 
 
@@ -1474,6 +1548,8 @@ with col1:
 
 
 
+
+
     st.write(
 
         "🎀 Adicionais"
@@ -1492,6 +1568,7 @@ with col1:
         .replace("X",".")
 
     )
+
 
 
 
@@ -1522,6 +1599,8 @@ with col2:
 
 
 
+
+
     st.write(
 
         "🚚 Frete"
@@ -1547,7 +1626,6 @@ with col2:
 
 
 
-
 st.success(
 
     f"💰 Valor Total: R$ {valor_total_calculado:,.2f}"
@@ -1559,6 +1637,7 @@ st.success(
     .replace("X",".")
 
 )
+
 
 
 
@@ -1602,6 +1681,8 @@ if st.button(
 
 
 
+
+
         from config.supabase import supabase
 
 
@@ -1626,6 +1707,7 @@ if st.button(
 
 
 
+
         st.success(
 
             "✅ Pedido atualizado com sucesso!"
@@ -1639,7 +1721,9 @@ if st.button(
 
 
 
+
     except Exception as erro:
+
 
 
         st.error(
@@ -1647,6 +1731,7 @@ if st.button(
             f"Erro ao atualizar pedido: {erro}"
 
         )
+
 
 
 
