@@ -8,6 +8,7 @@ from config.supabase import supabase
 
 def listar_produtos():
 
+
     resposta = (
 
         supabase
@@ -43,6 +44,7 @@ def listar_produtos():
 
 def listar_categorias():
 
+
     resposta = (
 
         supabase
@@ -73,7 +75,7 @@ def listar_produtos_por_categoria(
 ):
 
 
-    categoria_resposta = (
+    categoria = (
 
         supabase
 
@@ -93,13 +95,9 @@ def listar_produtos_por_categoria(
     )
 
 
-    if not categoria_resposta.data:
+    if not categoria.data:
 
         return []
-
-
-    categoria_id = categoria_resposta.data["id"]
-
 
 
     resposta = (
@@ -120,7 +118,7 @@ def listar_produtos_por_categoria(
 
         .eq(
             "categoria_id",
-            categoria_id
+            categoria.data["id"]
         )
 
         .eq(
@@ -241,8 +239,6 @@ def cadastrar_produto(
 ):
 
 
-    # verifica categoria
-
     categoria = (
 
         supabase
@@ -263,6 +259,14 @@ def cadastrar_produto(
     )
 
 
+    if not categoria.data:
+
+        raise Exception(
+            "Categoria não encontrada."
+        )
+
+
+
     nome_categoria = (
 
         categoria.data["nome"]
@@ -275,9 +279,6 @@ def cadastrar_produto(
 
 
 
-    # Regra:
-    # somente adicionais possuem preço
-
     if nome_categoria != "adicionais":
 
         preco = None
@@ -288,35 +289,17 @@ def cadastrar_produto(
 
     dados = {
 
+        "categoria_id": categoria_id,
 
-        "categoria_id":
+        "nome": nome,
 
-            categoria_id,
+        "descricao": descricao,
 
+        "preco": preco,
 
-        "nome":
+        "ativo": ativo,
 
-            nome,
-
-
-        "descricao":
-
-            descricao,
-
-
-        "preco":
-
-            preco,
-
-
-        "ativo":
-
-            ativo,
-
-
-        "tipo_preco":
-
-            tipo_preco
+        "tipo_preco": tipo_preco
 
     }
 
@@ -415,6 +398,14 @@ def atualizar_produto(
     )
 
 
+    if not categoria.data:
+
+        raise Exception(
+            "Categoria não encontrada."
+        )
+
+
+
     nome_categoria = (
 
         categoria.data["nome"]
@@ -427,9 +418,6 @@ def atualizar_produto(
 
 
 
-    # Regra:
-    # somente adicionais possuem valor
-
     if nome_categoria != "adicionais":
 
         preco = None
@@ -441,34 +429,17 @@ def atualizar_produto(
     dados = {
 
 
-        "categoria_id":
+        "categoria_id": categoria_id,
 
-            categoria_id,
+        "nome": nome,
 
+        "descricao": descricao,
 
-        "nome":
+        "preco": preco,
 
-            nome,
+        "ativo": ativo,
 
-
-        "descricao":
-
-            descricao,
-
-
-        "preco":
-
-            preco,
-
-
-        "ativo":
-
-            ativo,
-
-
-        "tipo_preco":
-
-            tipo_preco
+        "tipo_preco": tipo_preco
 
     }
 
@@ -481,6 +452,47 @@ def atualizar_produto(
         .table("produtos")
 
         .update(dados)
+
+        .eq(
+            "id",
+            produto_id
+        )
+
+        .execute()
+
+    )
+
+
+    return resposta.data
+
+
+
+
+
+# =====================================================
+# ALTERAR STATUS DO PRODUTO
+# =====================================================
+
+def alterar_status_produto(
+
+    produto_id,
+
+    ativo
+
+):
+
+
+    resposta = (
+
+        supabase
+
+        .table("produtos")
+
+        .update(
+            {
+                "ativo": ativo
+            }
+        )
 
         .eq(
             "id",
