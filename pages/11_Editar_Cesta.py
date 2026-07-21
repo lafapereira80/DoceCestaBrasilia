@@ -93,17 +93,9 @@ h2{
 
 
 
-p, div, span{
+p, span, div{
 
     font-size:13px;
-
-}
-
-
-
-label{
-
-    font-size:13px !important;
 
 }
 
@@ -139,7 +131,7 @@ unsafe_allow_html=True
 
 
 # =====================================================
-# VERIFICA CESTA SELECIONADA
+# VERIFICA CESTA
 # =====================================================
 
 if "cesta_editar" not in st.session_state:
@@ -179,7 +171,7 @@ cesta_id = st.session_state["cesta_editar"]
 
 
 # =====================================================
-# CARREGA CESTA
+# CARREGA DADOS
 # =====================================================
 
 try:
@@ -219,16 +211,30 @@ st.title(
 )
 
 
-
 st.caption(
 
-    "Atualize os dados e a imagem da cesta."
+    "Atualize informações e imagem da cesta."
 
 )
 
 
-
 st.divider()
+
+
+
+
+
+# =====================================================
+# DADOS ATUAIS
+# =====================================================
+
+imagem_atual = cesta.get(
+
+    "imagem",
+
+    ""
+
+) or ""
 
 
 
@@ -245,7 +251,7 @@ with st.form(
 ):
 
 
-    col1,col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
 
 
@@ -295,8 +301,6 @@ with st.form(
 
 
 
-
-
     descricao = st.text_area(
 
         "Descrição",
@@ -315,32 +319,15 @@ with st.form(
 
 
 
-
-
     st.markdown(
 
-        "### 📷 Imagem da Cesta"
+        "### 📷 Foto da Cesta"
 
     )
-
-
-
-
-
-    imagem_atual = cesta.get(
-
-        "imagem",
-
-        ""
-
-    )
-
-
 
 
 
     if imagem_atual:
-
 
 
         st.image(
@@ -360,11 +347,9 @@ with st.form(
 
 
 
-
-
     foto = st.file_uploader(
 
-        "Enviar nova foto da cesta",
+        "Enviar nova foto",
 
         type=[
 
@@ -379,8 +364,7 @@ with st.form(
         ]
 
     )
-
-
+    
     ativa = st.checkbox(
 
         "Cesta ativa",
@@ -401,7 +385,7 @@ with st.form(
 
 
 
-    col1,col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
 
 
@@ -440,7 +424,6 @@ with st.form(
 if cancelar:
 
 
-
     st.session_state.pop(
 
         "cesta_editar",
@@ -448,7 +431,6 @@ if cancelar:
         None
 
     )
-
 
 
     st.switch_page(
@@ -462,14 +444,14 @@ if cancelar:
 
 
 # =====================================================
-# SALVAR
+# PROCESSAR SALVAMENTO
 # =====================================================
 
 if salvar:
 
 
 
-    if nome.strip() == "":
+    if not nome.strip():
 
 
         st.error(
@@ -478,14 +460,9 @@ if salvar:
 
         )
 
-
         st.stop()
 
 
-
-
-
-    # Mantém imagem atual
 
     imagem = imagem_atual
 
@@ -494,7 +471,7 @@ if salvar:
 
 
     # =================================================
-    # ENVIA NOVA IMAGEM
+    # UPLOAD NOVA FOTO
     # =================================================
 
 
@@ -510,7 +487,7 @@ if salvar:
 
                 foto.name
 
-            ).suffix
+            ).suffix.lower()
 
 
 
@@ -528,11 +505,9 @@ if salvar:
 
             caminho = (
 
-                f"cestas/{nome_arquivo}"
+                f"{nome_arquivo}"
 
             )
-
-
 
 
 
@@ -594,13 +569,8 @@ if salvar:
 
             )
 
-
-            st.stop()
-
-
-
     # =================================================
-    # ATUALIZA BANCO
+    # ATUALIZA CESTA NO BANCO
     # =================================================
 
 
@@ -683,7 +653,7 @@ if salvar:
 
 
 # =====================================================
-# FINAL DO MÓDULO
+# FINAL
 # =====================================================
 
 
@@ -695,5 +665,7 @@ st.caption(
 
     "🎁 Edição de cestas - Doce Cesta Brasília"
 
-)
+            )
 
+            st.stop()
+            
