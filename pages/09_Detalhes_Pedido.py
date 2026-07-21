@@ -1184,7 +1184,7 @@ if adicionais_pedido:
             )
 
 
-            col_nome, col_valor = st.columns([3, 1])
+            col_nome, col_valor = st.columns([3, 3])
 
 
             with col_nome:
