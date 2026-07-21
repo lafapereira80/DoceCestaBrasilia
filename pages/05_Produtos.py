@@ -709,18 +709,194 @@ else:
                         st.write(
 
                             valor_formatado
+# =====================================================
+# EXIBIÇÃO DOS PRODUTOS AGRUPADOS POR CATEGORIA
+# =====================================================
+
+
+if not produtos:
+
+
+    st.info(
+
+        "Nenhum produto cadastrado."
+
+    )
+
+
+else:
+
+
+    # =================================================
+    # AGRUPA PRODUTOS POR CATEGORIA
+    # =================================================
+
+    produtos_por_categoria = {}
+
+
+
+    for produto in produtos:
+
+
+        categoria = produto.get("categorias")
+
+
+        if categoria:
+
+
+            nome_categoria = categoria["nome"]
+
+
+        else:
+
+
+            nome_categoria = "Sem Categoria"
+
+
+
+        if nome_categoria not in produtos_por_categoria:
+
+
+            produtos_por_categoria[nome_categoria] = []
+
+
+
+        produtos_por_categoria[nome_categoria].append(produto)
+
+
+
+
+
+    # =================================================
+    # MOSTRA CADA CATEGORIA
+    # =================================================
+
+
+    for categoria_nome, lista_produtos in produtos_por_categoria.items():
+
+
+
+        st.markdown(
+
+            f"""
+            <div style="
+            background:#8B5A2B;
+            color:white;
+            padding:8px 12px;
+            border-radius:10px;
+            margin-top:15px;
+            margin-bottom:10px;
+            font-weight:bold;
+            ">
+            📂 {categoria_nome}
+            </div>
+            """,
+
+            unsafe_allow_html=True
+
+        )
+
+
+
+        for produto in lista_produtos:
+
+
+
+            with st.container(border=True):
+
+
+                col1,col2,col3,col4 = st.columns(
+
+                    [5,2,2,1]
+
+                )
+
+
+
+                # ==========================
+                # PRODUTO
+                # ==========================
+
+
+                with col1:
+
+
+
+                    st.write(
+
+                        f"**{produto['nome']}**"
+
+                    )
+
+
+
+                    if produto.get("descricao"):
+
+
+
+                        st.caption(
+
+                            produto["descricao"]
 
                         )
 
 
 
-                    except:
+
+
+                # ==========================
+                # PREÇO
+                # ==========================
+
+
+                with col2:
+
+
+
+                    preco = produto.get(
+
+                        "preco"
+
+                    )
+
+
+
+                    if preco is None:
+
+
+
+                        st.warning(
+
+                            "Sob consulta"
+
+                        )
+
+
+                    else:
+
+
+
+                        valor = float(preco)
+
+
+
+                        valor_formatado = (
+
+                            f"R$ {valor:,.2f}"
+
+                            .replace(",", "X")
+
+                            .replace(".", ",")
+
+                            .replace("X",".")
+
+                        )
 
 
 
                         st.write(
 
-                            "Preço sob consulta"
+                            valor_formatado
 
                         )
 
@@ -728,116 +904,99 @@ else:
 
 
 
-            # ==========================
-            # STATUS
-            # ==========================
+                # ==========================
+                # STATUS
+                # ==========================
 
 
-            with col3:
-
-
-
-                if produto.get(
-
-                    "ativo",
-
-                    True
-
-                ):
+                with col3:
 
 
 
-                    st.success(
+                    if produto.get(
 
-                        "✓ Ativo"
+                        "ativo",
 
-                    )
+                        True
 
-
-
-                else:
-
-
-
-                    st.error(
-
-                        "✕ Inativo"
-
-                    )
-
-
-
-
-
-            # ==========================
-            # EXCLUIR
-            # ==========================
-
-
-            with col4:
-
-
-
-                if st.button(
-
-                    "🗑️",
-
-                    key=f"excluir_produto_{produto['id']}"
-
-                ):
-
-
-
-                    try:
-
-
-
-                        excluir_produto(
-
-                            produto["id"]
-
-                        )
+                    ):
 
 
 
                         st.success(
 
-                            "Produto excluído."
+                            "✓ Ativo"
 
                         )
 
 
-
-                        st.rerun()
-
-
-
-                    except Exception as erro:
+                    else:
 
 
 
                         st.error(
 
-                            f"Erro ao excluir: {erro}"
+                            "✕ Inativo"
 
                         )
 
 
 
-        st.write("")
 
 
-# =====================================================
-# FIM DO MÓDULO
-# =====================================================
+                # ==========================
+                # EXCLUIR
+                # ==========================
 
 
-st.divider()
+                with col4:
 
 
 
-st.caption(
+                    if st.button(
 
-    "🛒 Cadastro de produtos - Doce Cesta Brasília"
+                        "🗑️",
 
-)
+                        key=f"excluir_produto_{produto['id']}"
+
+                    ):
+
+
+
+                        try:
+
+
+
+                            excluir_produto(
+
+                                produto["id"]
+
+                            )
+
+
+
+                            st.success(
+
+                                "Produto excluído."
+
+                            )
+
+
+
+                            st.rerun()
+
+
+
+                        except Exception as erro:
+
+
+
+                            st.error(
+
+                                f"Erro ao excluir: {erro}"
+
+                            )
+
+
+
+            st.write("")
