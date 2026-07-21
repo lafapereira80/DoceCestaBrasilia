@@ -8,7 +8,7 @@ from services.foto_service import salvar_fotos
 from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
 from services.produto_service import listar_produtos_por_categoria
-
+from services.pedido_adicional_service import salvar_adicionais_pedido
 
 
 # ==========================================================
@@ -868,30 +868,27 @@ with st.container(border=True):
                 if marcado:
 
 
+    adicionais_selecionados.append(
 
-                    adicionais_selecionados.append(
+        {
 
+            "produto_id":
 
-                        {
-
-
-                            "nome":
-
-                                adicional["nome"],
+                adicional["id"],
 
 
+            "nome":
 
-                            "preco":
-
-                                preco
-
+                adicional["nome"],
 
 
-                        }
+            "preco":
 
+                preco
 
-                    )
+        }
 
+    )
 
 
                     if adicional["nome"].lower().strip() == "polaroid":
@@ -1703,6 +1700,29 @@ if enviar:
 
     if sucesso:
 
+
+         # ==================================================
+    # SALVAR ADICIONAIS
+    # ==================================================
+
+    try:
+
+        salvar_adicionais_pedido(
+
+            pedido_id,
+
+            adicionais_selecionados
+
+        )
+
+
+    except Exception as erro:
+
+        st.warning(
+
+            f"Pedido salvo, mas erro nos adicionais: {erro}"
+
+        )
 
 
 
