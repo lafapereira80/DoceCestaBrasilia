@@ -75,6 +75,50 @@ def listar_produtos_por_categoria(
 ):
 
 
+    # ---------------------------------------------
+    # BUSCA ID DA CATEGORIA
+    # ---------------------------------------------
+
+    categoria_resposta = (
+
+        supabase
+
+        .table("categorias")
+
+        .select("id")
+
+        .eq(
+
+            "nome",
+
+            categoria_nome
+
+        )
+
+        .single()
+
+        .execute()
+
+    )
+
+
+    if not categoria_resposta.data:
+
+
+        return []
+
+
+
+    categoria_id = categoria_resposta.data["id"]
+
+
+
+
+
+    # ---------------------------------------------
+    # BUSCA PRODUTOS DA CATEGORIA
+    # ---------------------------------------------
+
     resposta = (
 
         supabase
@@ -93,9 +137,17 @@ def listar_produtos_por_categoria(
 
         .eq(
 
-            "categorias.nome",
+            "categoria_id",
 
-            categoria_nome
+            categoria_id
+
+        )
+
+        .eq(
+
+            "ativo",
+
+            True
 
         )
 
