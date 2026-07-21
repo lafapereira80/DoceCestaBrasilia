@@ -75,10 +75,6 @@ def listar_produtos_por_categoria(
 ):
 
 
-    # ---------------------------------------------
-    # BUSCA ID DA CATEGORIA
-    # ---------------------------------------------
-
     categoria_resposta = (
 
         supabase
@@ -88,11 +84,8 @@ def listar_produtos_por_categoria(
         .select("id")
 
         .eq(
-
             "nome",
-
             categoria_nome
-
         )
 
         .single()
@@ -104,7 +97,6 @@ def listar_produtos_por_categoria(
 
     if not categoria_resposta.data:
 
-
         return []
 
 
@@ -112,12 +104,6 @@ def listar_produtos_por_categoria(
     categoria_id = categoria_resposta.data["id"]
 
 
-
-
-
-    # ---------------------------------------------
-    # BUSCA PRODUTOS DA CATEGORIA
-    # ---------------------------------------------
 
     resposta = (
 
@@ -136,19 +122,84 @@ def listar_produtos_por_categoria(
         )
 
         .eq(
-
             "categoria_id",
-
             categoria_id
-
         )
 
         .eq(
-
             "ativo",
-
             True
+        )
 
+        .order("nome")
+
+        .execute()
+
+    )
+
+
+    return resposta.data or []
+
+
+
+
+
+# =====================================================
+# BUSCAR PRODUTO PELO ID
+# =====================================================
+
+def buscar_produto(produto_id):
+
+
+    resposta = (
+
+        supabase
+
+        .table("produtos")
+
+        .select("*")
+
+        .eq(
+            "id",
+            produto_id
+        )
+
+        .single()
+
+        .execute()
+
+    )
+
+
+    return resposta.data
+
+
+
+
+
+# =====================================================
+# LISTAR PRODUTOS COM PREÇO SOB CONSULTA
+# =====================================================
+
+def listar_produtos_sob_consulta():
+
+
+    resposta = (
+
+        supabase
+
+        .table("produtos")
+
+        .select("*")
+
+        .eq(
+            "tipo_preco",
+            "Preço sob consulta"
+        )
+
+        .eq(
+            "ativo",
+            True
         )
 
         .order("nome")
@@ -178,7 +229,9 @@ def cadastrar_produto(
 
     preco,
 
-    ativo=True
+    ativo=True,
+
+    tipo_preco="Preço definido"
 
 ):
 
@@ -208,8 +261,12 @@ def cadastrar_produto(
 
         "ativo":
 
-            ativo
+            ativo,
 
+
+        "tipo_preco":
+
+            tipo_preco
 
     }
 
@@ -288,7 +345,9 @@ def atualizar_produto(
 
     preco,
 
-    ativo
+    ativo,
+
+    tipo_preco="Preço definido"
 
 ):
 
@@ -318,8 +377,12 @@ def atualizar_produto(
 
         "ativo":
 
-            ativo
+            ativo,
 
+
+        "tipo_preco":
+
+            tipo_preco
 
     }
 
