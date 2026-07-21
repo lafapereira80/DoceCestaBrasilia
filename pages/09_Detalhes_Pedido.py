@@ -751,7 +751,95 @@ if not encontrou_consulta:
         "Nenhum item aguardando preço."
 
     )
+# =====================================================
+# CÁLCULO DOS VALORES BASE
+# =====================================================
 
+
+# -------------------------------
+# VALOR DA CESTA
+# -------------------------------
+
+valor_cesta = 0.0
+
+
+
+try:
+
+
+    if pedido.get("cesta_id"):
+
+
+        cesta = buscar_cesta(
+
+            pedido["cesta_id"]
+
+        )
+
+
+        if cesta:
+
+
+            valor_cesta = float(
+
+                cesta.get(
+
+                    "preco",
+
+                    0
+
+                )
+
+                or 0
+
+            )
+
+
+except:
+
+
+    valor_cesta = 0.0
+
+
+
+
+
+# -------------------------------
+# VALOR DOS ADICIONAIS
+# NOVA ESTRUTURA
+# -------------------------------
+
+valor_adicionais = 0.0
+
+
+
+for adicional in adicionais_pedido:
+
+
+    valor = adicional.get(
+
+        "valor_unitario"
+
+    )
+
+
+    if valor is not None:
+
+
+        try:
+
+
+            valor_adicionais += float(
+
+                valor
+
+            )
+
+
+        except:
+
+
+            pass
 # =====================================================
 # FRETE / DESCONTO / TOTAL
 # =====================================================
