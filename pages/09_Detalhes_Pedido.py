@@ -1204,18 +1204,12 @@ if adicionais_pedido:
             )
 
 
-
-
-
-
-
         # ---------------------------------------------
         # ADICIONAL PREÇO SOB CONSULTA
         # ---------------------------------------------
 
 
         else:
-
 
 
             valor_anterior = float(
@@ -1234,15 +1228,13 @@ if adicionais_pedido:
 
 
 
-
-
             col_nome, col_valor = st.columns(
 
-                [2,1]
+                [3,1],
+
+                gap="small"
 
             )
-
-
 
 
 
@@ -1254,8 +1246,6 @@ if adicionais_pedido:
                     f"• {nome}"
 
                 )
-
-
 
 
 
@@ -1272,17 +1262,15 @@ if adicionais_pedido:
 
                     step=1.0,
 
+                    label_visibility="collapsed",
+
                     key=f"consulta_{nome}"
 
                 )
 
 
 
-
-
             itens_consulta[nome] = valor_digitado
-
-
 
 
 
@@ -1292,31 +1280,9 @@ if adicionais_pedido:
 
 
 
-
-
             # mantém separado também
 
             valor_itens_consulta += valor_digitado
-
-
-
-
-
-else:
-
-
-    st.info(
-
-        "Nenhum adicional."
-
-    )
-
-
-
-
-
-
-
 # =====================================================
 # FRETE / DESCONTO / STATUS
 # =====================================================
