@@ -1458,10 +1458,6 @@ valor_total_calculado = (
 
     +
 
-    valor_itens_consulta
-
-    +
-
     valor_frete
 
     -
@@ -1469,7 +1465,6 @@ valor_total_calculado = (
     desconto
 
 )
-
 
 
 if valor_total_calculado < 0:
