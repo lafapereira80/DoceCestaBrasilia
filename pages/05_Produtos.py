@@ -689,11 +689,9 @@ else:
 
 
 
-                col1, col2, col3, col4 = st.columns(
-
-                    [5,2,2,2]
-
-                )
+         col1, col2, col3, col4 = st.columns(
+    [5,2,1.5,2.5]
+)
 
 
 
