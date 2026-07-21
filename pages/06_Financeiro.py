@@ -294,21 +294,60 @@ df["valor_total"] = pd.to_numeric(
 
 
 
+df["valor_total"] = pd.to_numeric(
 
-
-df["valor_frete"] = pd.to_numeric(
-
-    df.get(
-
-        "valor_frete",
-
-        0
-
-    ),
+    df["valor_total"],
 
     errors="coerce"
 
 ).fillna(0)
+
+
+
+df["valor_frete"] = pd.to_numeric(
+
+    df["valor_frete"],
+
+    errors="coerce"
+
+).fillna(0)
+
+
+
+
+
+# =====================================================
+# CONTROLE FINANCEIRO
+#
+# Somente pedidos:
+# Pago
+# Entregue
+#
+# Não entram:
+# Recebido
+# Desistência
+# =====================================================
+
+
+status_financeiro = [
+
+    "Pago",
+
+    "Entregue"
+
+]
+
+
+
+df = df[
+
+    df["status"]
+
+    .isin(status_financeiro)
+
+]
+
+
 
 
 
@@ -571,7 +610,7 @@ st.divider()
 # =====================================================
 
 st.subheader(
-    "📊 Resumo financeiro"
+    "📊 Resumo financeiro (Pedidos Pagos e Entregues)"
 )
 
 
