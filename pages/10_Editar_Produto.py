@@ -21,7 +21,7 @@ from utils.permissao import (
 
 
 # =====================================================
-# CONFIGURAÇÃO
+# CONFIGURAÇÃO DA PÁGINA
 # =====================================================
 
 st.set_page_config(
@@ -48,7 +48,6 @@ administrador_operador()
 
 
 
-
 # =====================================================
 # CSS
 # =====================================================
@@ -57,25 +56,34 @@ st.markdown(
 """
 <style>
 
-h1{
+.block-container{
 
-font-size:24px !important;
+    padding-top:1rem;
 
 }
 
 
-p,div,span,label{
+h1{
 
-font-size:13px;
+    font-size:24px !important;
+
+}
+
+
+p,span,div,label{
+
+    font-size:13px;
 
 }
 
 
 .stButton button{
 
-height:34px;
+    height:34px;
 
-font-size:13px;
+    border-radius:8px;
+
+    font-size:13px;
 
 }
 
@@ -84,7 +92,6 @@ font-size:13px;
 """,
 unsafe_allow_html=True
 )
-
 
 
 
@@ -100,7 +107,9 @@ if "produto_editar" not in st.session_state:
     )
 
 
-    if st.button("⬅ Voltar"):
+    if st.button(
+        "⬅ Voltar"
+    ):
 
 
         st.switch_page(
@@ -112,23 +121,19 @@ if "produto_editar" not in st.session_state:
 
 
 
-
 produto_id = st.session_state["produto_editar"]
 
 
 
-
 # =====================================================
-# BUSCA DADOS
+# BUSCAR DADOS
 # =====================================================
 
 try:
 
 
     produto = buscar_produto(
-
         produto_id
-
     )
 
 
@@ -140,9 +145,7 @@ except Exception as erro:
 
 
     st.error(
-
         f"Erro ao carregar produto: {erro}"
-
     )
 
 
@@ -150,6 +153,21 @@ except Exception as erro:
 
 
 
+if not produto:
+
+
+    st.error(
+        "Produto não encontrado."
+    )
+
+
+    st.stop()
+
+
+
+# =====================================================
+# TÍTULO
+# =====================================================
 
 st.title(
     "✏️ Editar Produto"
@@ -165,11 +183,14 @@ st.divider()
 
 
 
+# =====================================================
+# IDENTIFICA CATEGORIA ATUAL
+# =====================================================
 
 indice_categoria = 0
 
 
-for i,categoria in enumerate(categorias):
+for i, categoria in enumerate(categorias):
 
 
     if categoria["id"] == produto["categoria_id"]:
@@ -178,127 +199,124 @@ for i,categoria in enumerate(categorias):
         indice_categoria = i
 
         break
+        # =====================================================
+# FORMULÁRIO DE EDIÇÃO
+# =====================================================
+
+
+categoria = st.selectbox(
+
+    "Categoria",
+
+    categorias,
+
+    index=indice_categoria,
+
+    format_func=lambda c: c["nome"]
+
+)
+
+
+
+nome = st.text_input(
+
+    "Nome do Produto",
+
+    value=produto.get(
+
+        "nome",
+
+        ""
+
+    )
+
+)
+
+
+
+descricao = st.text_area(
+
+    "Descrição",
+
+    value=produto.get(
+
+        "descricao",
+
+        ""
+
+    ) or "",
+
+    height=80
+
+)
+
+
+
+st.divider()
+
+
 
 # =====================================================
-# FORMULÁRIO
+# REGRA DE PREÇO
+# SOMENTE ADICIONAIS POSSUEM VALOR
 # =====================================================
 
-with st.form(
-    "form_editar_produto"
-):
 
+categoria_nome = (
 
-    col1,col2 = st.columns(2)
+    categoria["nome"]
 
+    .strip()
 
+    .lower()
 
-    with col1:
-
-
-        categoria = st.selectbox(
-
-            "Categoria",
-
-            categorias,
-
-            index=indice_categoria,
-
-            format_func=lambda c:c["nome"]
-
-        )
+)
 
 
 
-    with col2:
-
-
-        nome = st.text_input(
-
-            "Nome do Produto",
-
-            value=produto.get(
-
-                "nome",
-
-                ""
-
-            )
-
-        )
+if categoria_nome == "adicionais":
 
 
 
-    descricao = st.text_area(
+    tipo_atual = produto.get(
 
-        "Descrição",
+        "tipo_preco",
 
-        value=produto.get(
-
-            "descricao",
-
-            ""
-
-        ) or "",
-
-        height=80
+        "Preço definido"
 
     )
 
 
 
-    st.divider()
+    tipo_preco = st.radio(
 
+        "Tipo de preço",
 
+        [
 
-    # =================================================
-    # PREÇO
-    # =================================================
+            "Preço definido",
 
+            "Preço sob consulta"
 
-    preco_atual = produto.get(
+        ],
 
-        "preco"
+        index=(
+
+            1
+
+            if tipo_atual == "Preço sob consulta"
+
+            else 0
+
+        ),
+
+        horizontal=True
 
     )
 
 
 
-    preco_consulta_atual = (
-
-        preco_atual is None
-
-    )
-
-
-
-    preco_consulta = False
-
-
-
-    if categoria["nome"].lower().strip() == "adicionais":
-
-
-        preco_consulta = st.checkbox(
-
-            "☐ Preço sob consulta",
-
-            value=preco_consulta_atual,
-
-            help="Produto sem valor definido. O preço será informado no pedido."
-
-        )
-
-
-    else:
-
-
-        preco_consulta = False
-
-
-
-
-
-    if preco_consulta:
+    if tipo_preco == "Preço sob consulta":
 
 
 
@@ -308,9 +326,10 @@ with st.form(
 
         st.info(
 
-            "Produto configurado como: Preço sob consulta."
+            "Produto sem valor definido. O preço será informado no pedido."
 
         )
+
 
 
     else:
@@ -325,7 +344,15 @@ with st.form(
 
             value=float(
 
-                preco_atual or 0
+                produto.get(
+
+                    "preco",
+
+                    0
+
+                )
+
+                or 0
 
             ),
 
@@ -337,61 +364,79 @@ with st.form(
 
 
 
+else:
 
 
-    ativo = st.checkbox(
 
-        "Produto ativo",
+    tipo_preco = "Incluso na cesta"
 
-        value=produto.get(
 
-            "ativo",
+    preco = None
 
-            True
 
-        )
+
+    st.info(
+
+        "Produto incluso na composição da cesta. Não possui preço individual."
 
     )
 
 
 
-    st.divider()
-
-
-
-    col1,col2 = st.columns(2)
-
-
-
-    with col1:
-
-
-        salvar = st.form_submit_button(
-
-            "💾 Salvar",
-
-            use_container_width=True
-
-        )
-
-
-
-    with col2:
-
-
-        cancelar = st.form_submit_button(
-
-            "❌ Cancelar",
-
-            use_container_width=True
-
-        )
-
-
-
-
 
 # =====================================================
+# STATUS
+# =====================================================
+
+
+ativo = st.checkbox(
+
+    "Produto ativo",
+
+    value=produto.get(
+
+        "ativo",
+
+        True
+
+    )
+
+)
+
+
+
+st.divider()
+
+
+
+col1, col2 = st.columns(2)
+
+
+
+with col1:
+
+
+    salvar = st.button(
+
+        "💾 Salvar alterações",
+
+        use_container_width=True
+
+    )
+
+
+
+with col2:
+
+
+    cancelar = st.button(
+
+        "❌ Cancelar",
+
+        use_container_width=True
+
+    )
+    # =====================================================
 # CANCELAR
 # =====================================================
 
@@ -418,7 +463,7 @@ if cancelar:
 
 
 # =====================================================
-# SALVAR
+# SALVAR ALTERAÇÕES
 # =====================================================
 
 if salvar:
@@ -431,6 +476,38 @@ if salvar:
         st.error(
 
             "Informe o nome do produto."
+
+        )
+
+        st.stop()
+
+
+
+
+
+    # =================================================
+    # VALIDAÇÃO DE PREÇO
+    # =================================================
+
+
+    if (
+
+        categoria_nome == "adicionais"
+
+        and
+
+        tipo_preco == "Preço definido"
+
+        and
+
+        preco <= 0
+
+    ):
+
+
+        st.error(
+
+            "Informe o valor do adicional."
 
         )
 
@@ -462,7 +539,10 @@ if salvar:
             preco,
 
 
-            ativo
+            ativo,
+
+
+            tipo_preco
 
 
         )
@@ -495,6 +575,8 @@ if salvar:
 
 
 
+
+
     except Exception as erro:
 
 
@@ -503,3 +585,15 @@ if salvar:
             f"Erro ao atualizar produto: {erro}"
 
         )
+        # =====================================================
+# RODAPÉ
+# =====================================================
+
+st.divider()
+
+
+st.caption(
+
+    "✏️ Edição de produtos - Doce Cesta Brasília"
+
+)
