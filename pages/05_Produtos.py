@@ -325,7 +325,6 @@ if usuario["perfil"] == "Administrador":
 
 
 
-
             if tipo_preco == "Preço sob consulta":
 
 
@@ -362,7 +361,6 @@ if usuario["perfil"] == "Administrador":
 
 
 
-
         else:
 
 
@@ -370,9 +368,7 @@ if usuario["perfil"] == "Administrador":
             tipo_preco = "Incluso na cesta"
 
 
-
             preco = None
-
 
 
             st.info(
@@ -380,12 +376,7 @@ if usuario["perfil"] == "Administrador":
                 "Produto incluso na composição da cesta."
 
             )
-
-
-
-
-
-        ativo = st.checkbox(
+                    ativo = st.checkbox(
 
             "Produto ativo",
 
@@ -460,6 +451,8 @@ if salvar:
 
 
 
+
+    # Somente adicionais precisam de preço
 
     if (
 
@@ -546,7 +539,12 @@ else:
         "Modo consulta. Apenas Administradores podem cadastrar produtos."
 
     )
-    # =====================================================
+
+
+
+
+
+# =====================================================
 # LISTAGEM DOS PRODUTOS
 # =====================================================
 
@@ -554,7 +552,9 @@ st.divider()
 
 
 st.subheader(
+
     "📋 Produtos Cadastrados"
+
 )
 
 
@@ -621,12 +621,10 @@ for produto in produtos:
 
 
 
-
     if nome_categoria not in produtos_agrupados:
 
 
         produtos_agrupados[nome_categoria] = []
-
 
 
 
@@ -656,13 +654,17 @@ if not produtos:
     )
 
 
+
 else:
+
 
 
     for categoria_nome, lista_produtos in produtos_agrupados.items():
 
 
+
         st.markdown(
+
             f"""
             <div style="
                 background-color:#8B5A2B;
@@ -677,27 +679,25 @@ else:
                 📂 {categoria_nome}
             </div>
             """,
+
             unsafe_allow_html=True
+
         )
+
 
 
         for produto in lista_produtos:
 
 
-
             with st.container(border=True):
 
 
+                col1, col2, col3, col4 = st.columns(
 
-         col1, col2, col3, col4 = st.columns(
-    [5,2,1.5,2.5]
-)
+                    [5,2,1.5,2.5]
 
-
-
-
-
-                # =====================================
+                )
+                                # =====================================
                 # NOME / DESCRIÇÃO
                 # =====================================
 
@@ -759,7 +759,7 @@ else:
 
 
 
-                    # Somente adicionais mostram preço
+                    # Apenas categoria Adicionais mostra preço
 
                     if categoria_atual == "adicionais":
 
@@ -885,21 +885,23 @@ else:
 
 
                 # =====================================
-                # BOTÕES
+                # BOTÕES DE AÇÃO
                 # =====================================
 
                 with col4:
 
 
-                    btn1, btn2, btn3 = st.columns(3)
+
+                    btn1, btn2, btn3 = st.columns(
+
+                        3
+
+                    )
 
 
-
-                    # -----------------------------
-                    # EDITAR
-                    # -----------------------------
 
                     with btn1:
+
 
                         editar = st.button(
 
@@ -913,29 +915,29 @@ else:
 
 
 
-                    # -----------------------------
-                    # STATUS
-                    # -----------------------------
-
                     with btn2:
+
 
                         status = st.button(
 
-                            "🔴" if produto.get("ativo", True) else "🟢",
+                            "🔴" if produto.get(
+
+                                "ativo",
+
+                                True
+
+                            ) else "🟢",
 
                             key=f"status_{produto['id']}",
 
-                            help="Alterar status"
+                            help="Ativar / Desativar produto"
 
                         )
 
 
 
-                    # -----------------------------
-                    # EXCLUIR
-                    # -----------------------------
-
                     with btn3:
+
 
                         excluir = st.button(
 
@@ -949,8 +951,10 @@ else:
 
 
 
+
+
                 # =====================================
-                # AÇÕES DOS BOTÕES
+                # AÇÕES
                 # =====================================
 
 
@@ -960,11 +964,13 @@ else:
                     st.session_state["produto_editar"] = produto["id"]
 
 
+
                     st.switch_page(
 
                         "pages/10_Editar_Produto.py"
 
                     )
+
 
 
 
@@ -1025,11 +1031,7 @@ else:
                             f"Erro ao alterar status: {erro}"
 
                         )
-
-
-
-
-                if excluir:
+                                     if excluir:
 
 
                     try:
@@ -1064,9 +1066,13 @@ else:
 
 
 
-
             st.write("")
-            # =====================================================
+
+
+
+
+
+# =====================================================
 # RODAPÉ
 # =====================================================
 
@@ -1078,4 +1084,4 @@ st.caption(
 
     "🛒 Cadastro de produtos - Doce Cesta Brasília"
 
-)
+)   
