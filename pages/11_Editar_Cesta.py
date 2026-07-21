@@ -85,15 +85,7 @@ h1{
 
 
 
-h2{
-
-    font-size:18px !important;
-
-}
-
-
-
-p, span, div{
+p, div, span{
 
     font-size:13px;
 
@@ -120,7 +112,6 @@ input, textarea{
 }
 
 
-
 </style>
 """,
 unsafe_allow_html=True
@@ -131,7 +122,7 @@ unsafe_allow_html=True
 
 
 # =====================================================
-# VERIFICA CESTA
+# VALIDA CESTA
 # =====================================================
 
 if "cesta_editar" not in st.session_state:
@@ -171,7 +162,7 @@ cesta_id = st.session_state["cesta_editar"]
 
 
 # =====================================================
-# CARREGA DADOS
+# BUSCA DADOS
 # =====================================================
 
 try:
@@ -200,34 +191,6 @@ except Exception as erro:
 
 
 
-# =====================================================
-# TÍTULO
-# =====================================================
-
-st.title(
-
-    "✏️ Editar Cesta"
-
-)
-
-
-st.caption(
-
-    "Atualize informações e imagem da cesta."
-
-)
-
-
-st.divider()
-
-
-
-
-
-# =====================================================
-# DADOS ATUAIS
-# =====================================================
-
 imagem_atual = cesta.get(
 
     "imagem",
@@ -241,177 +204,239 @@ imagem_atual = cesta.get(
 
 
 # =====================================================
-# FORMULÁRIO
+# TÍTULO
 # =====================================================
 
-with st.form(
+st.title(
 
-    "editar_cesta"
+    "✏️ Editar Cesta"
 
-):
-
-
-    col1, col2 = st.columns(2)
+)
 
 
+st.caption(
 
-    with col1:
+    "Atualize os dados da cesta e substitua a imagem quando necessário."
+
+)
 
 
-        nome = st.text_input(
-
-            "Nome da Cesta",
-
-            value=cesta.get(
-
-                "nome",
-
-                ""
-
-            )
-
-        )
+st.divider()
 
 
 
-    with col2:
 
 
-        preco = st.number_input(
+# =====================================================
+# CAMPOS DA CESTA
+# =====================================================
 
-            "Preço (R$)",
-
-            min_value=0.0,
-
-            value=float(
-
-                cesta.get(
-
-                    "preco",
-
-                    0
-
-                )
-
-            ),
-
-            step=1.0
-
-        )
+col1, col2 = st.columns(2)
 
 
 
-    descricao = st.text_area(
+with col1:
 
-        "Descrição",
+
+    nome = st.text_input(
+
+        "Nome da Cesta",
 
         value=cesta.get(
 
-            "descricao",
+            "nome",
 
             ""
 
-        ) or "",
-
-        height=90
-
-    )
-
-
-
-    st.markdown(
-
-        "### 📷 Foto da Cesta"
-
-    )
-
-
-
-    if imagem_atual:
-
-
-        st.image(
-
-            imagem_atual,
-
-            width=220
-
-        )
-
-
-        st.caption(
-
-            "Imagem atual"
-
-        )
-
-
-
-    foto = st.file_uploader(
-
-        "Enviar nova foto",
-
-        type=[
-
-            "jpg",
-
-            "jpeg",
-
-            "png",
-
-            "webp"
-
-        ]
-
-    )
-    
-    ativa = st.checkbox(
-
-        "Cesta ativa",
-
-        value=cesta.get(
-
-            "ativa",
-
-            True
-
         )
 
     )
 
 
 
-    st.divider()
+with col2:
+
+
+    preco = st.number_input(
+
+        "Preço (R$)",
+
+        min_value=0.0,
+
+        value=float(
+
+            cesta.get(
+
+                "preco",
+
+                0
+
+            )
+
+        ),
+
+        step=1.0
+
+    )
 
 
 
-    col1, col2 = st.columns(2)
+
+
+descricao = st.text_area(
+
+    "Descrição",
+
+    value=cesta.get(
+
+        "descricao",
+
+        ""
+
+    ) or "",
+
+    height=90
+
+)
 
 
 
-    with col1:
 
 
-        salvar = st.form_submit_button(
+ativa = st.checkbox(
 
-            "💾 Salvar Alterações",
+    "Cesta ativa",
 
-            use_container_width=True
+    value=cesta.get(
 
-        )
+        "ativa",
+
+        True
+
+    )
+
+)
+
+# =====================================================
+# IMAGEM DA CESTA
+# =====================================================
+
+st.divider()
+
+st.subheader(
+    "📷 Imagem da Cesta"
+)
 
 
 
-    with col2:
+if imagem_atual:
 
 
-        cancelar = st.form_submit_button(
+    st.image(
 
-            "❌ Cancelar",
+        imagem_atual,
 
-            use_container_width=True
+        width=220
 
-        )
+    )
+
+
+    st.caption(
+
+        "Imagem atual"
+
+    )
+
+
+else:
+
+
+    st.info(
+
+        "Esta cesta ainda não possui imagem cadastrada."
+
+    )
+
+
+
+
+
+nova_foto = st.file_uploader(
+
+    "Enviar nova foto da cesta",
+
+    type=[
+
+        "jpg",
+
+        "jpeg",
+
+        "png",
+
+        "webp"
+
+    ]
+
+)
+
+
+
+
+
+if nova_foto:
+
+
+    st.image(
+
+        nova_foto,
+
+        width=220,
+
+        caption="Nova imagem"
+
+    )
+
+
+
+
+
+st.divider()
+
+
+
+
+
+# =====================================================
+# BOTÕES
+# =====================================================
+
+col1, col2 = st.columns(2)
+
+
+
+with col1:
+
+
+    salvar = st.button(
+
+        "💾 Salvar Alterações",
+
+        use_container_width=True
+
+    )
+
+
+
+with col2:
+
+
+    cancelar = st.button(
+
+        "❌ Cancelar",
+
+        use_container_width=True
+
+    )
 
 
 
@@ -439,12 +464,8 @@ if cancelar:
 
     )
 
-
-
-
-
 # =====================================================
-# PROCESSAR SALVAMENTO
+# SALVAR ALTERAÇÕES
 # =====================================================
 
 if salvar:
@@ -460,7 +481,10 @@ if salvar:
 
         )
 
+
         st.stop()
+
+
 
 
 
@@ -471,11 +495,10 @@ if salvar:
 
 
     # =================================================
-    # UPLOAD NOVA FOTO
+    # ENVIA NOVA IMAGEM PARA O STORAGE
     # =================================================
 
-
-    if foto:
+    if nova_foto:
 
 
 
@@ -485,7 +508,7 @@ if salvar:
 
             extensao = Path(
 
-                foto.name
+                nova_foto.name
 
             ).suffix.lower()
 
@@ -503,11 +526,9 @@ if salvar:
 
 
 
-            caminho = (
+            caminho = nome_arquivo
 
-                f"{nome_arquivo}"
 
-            )
 
 
 
@@ -523,13 +544,13 @@ if salvar:
 
                     caminho,
 
-                    foto.getvalue(),
+                    nova_foto.getvalue(),
 
                     {
 
                         "content-type":
 
-                        foto.type
+                        nova_foto.type
 
                     }
 
@@ -569,10 +590,16 @@ if salvar:
 
             )
 
-    # =================================================
-    # ATUALIZA CESTA NO BANCO
-    # =================================================
 
+            st.stop()
+
+
+
+
+
+    # =================================================
+    # ATUALIZA BANCO
+    # =================================================
 
     try:
 
@@ -653,9 +680,8 @@ if salvar:
 
 
 # =====================================================
-# FINAL
+# RODAPÉ
 # =====================================================
-
 
 st.divider()
 
@@ -663,9 +689,6 @@ st.divider()
 
 st.caption(
 
-    "🎁 Edição de cestas - Doce Cesta Brasília"
+    "🎁 Edição de Cestas - Doce Cesta Brasília"
 
             )
-
-            st.stop()
-            
