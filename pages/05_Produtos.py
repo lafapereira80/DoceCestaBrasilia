@@ -2,11 +2,10 @@ import streamlit as st
 
 
 from services.produto_service import (
-    listar_categorias,
     listar_produtos,
     cadastrar_produto,
     excluir_produto,
-    alterar_status
+    listar_categorias
 )
 
 
@@ -23,7 +22,7 @@ from utils.permissao import (
 
 
 # =====================================================
-# CONFIGURAÇÃO
+# CONFIGURAÇÃO DA PÁGINA
 # =====================================================
 
 st.set_page_config(
@@ -55,7 +54,7 @@ usuario = st.session_state.usuario
 
 
 # =====================================================
-# CSS COMPACTO
+# CSS
 # =====================================================
 
 st.markdown(
@@ -63,74 +62,71 @@ st.markdown(
 <style>
 
 
-h1 {
+.block-container{
 
-font-size:24px !important;
+    padding-top:1rem;
 
-margin-bottom:5px;
-
-}
-
-
-h2 {
-
-font-size:18px !important;
-
-margin-top:8px;
-
-margin-bottom:8px;
+    padding-bottom:1rem;
 
 }
 
 
-p, div, span {
 
-font-size:13px;
+h1{
 
-}
-
-
-.stCaption {
-
-font-size:11px !important;
+    font-size:24px !important;
 
 }
 
 
-.stButton button {
 
-height:32px;
+h2{
 
-padding:2px 8px;
-
-font-size:12px;
+    font-size:18px !important;
 
 }
 
 
-[data-testid="stVerticalBlockBorderWrapper"] {
 
-padding-top:8px;
+h3{
 
-padding-bottom:8px;
-
-}
-
-
-.block-container {
-
-padding-top:1rem;
-
-padding-bottom:1rem;
+    font-size:15px !important;
 
 }
 
 
-hr {
 
-margin-top:8px;
+p, div, span{
 
-margin-bottom:8px;
+    font-size:13px;
+
+}
+
+
+
+.stButton button{
+
+    height:34px;
+
+    font-size:13px;
+
+}
+
+
+
+input, textarea{
+
+    font-size:13px !important;
+
+}
+
+
+
+[data-testid="stVerticalBlockBorderWrapper"]{
+
+    padding-top:10px;
+
+    padding-bottom:10px;
 
 }
 
@@ -175,22 +171,8 @@ except Exception as erro:
 
     )
 
+    categorias = []
 
-    st.stop()
-
-
-
-if not categorias:
-
-
-    st.warning(
-
-        "Nenhuma categoria cadastrada."
-
-    )
-
-
-    st.stop()
 
 
 
@@ -202,21 +184,29 @@ if usuario["perfil"] == "Administrador":
 
 
     st.subheader(
+
         "➕ Novo Produto"
+
     )
 
 
 
     with st.form(
+
         "novo_produto"
+
     ):
 
 
-        col1,col2 = st.columns(2)
+        nome = st.text_input(
+
+            "Nome do Produto"
+
+        )
 
 
 
-        with col1:
+        if categorias:
 
 
             categoria = st.selectbox(
@@ -225,40 +215,115 @@ if usuario["perfil"] == "Administrador":
 
                 categorias,
 
-                format_func=lambda c:c["nome"]
+                format_func=lambda c:
+
+                    c["nome"]
+
+            )
+
+
+        else:
+
+
+            categoria = None
+
+
+            st.warning(
+
+                "Nenhuma categoria cadastrada."
 
             )
 
 
 
-        with col2:
+        descricao = st.text_area(
 
+            "Descrição",
 
-            nome = st.text_input(
-
-                "Nome do Produto"
-
-            )
-
-
-
-        preco = st.number_input(
-
-            "Preço (R$)",
-
-            min_value=0.0,
-
-            value=0.0,
-
-            step=1.0
+            height=70
 
         )
 
 
 
+        # CONTINUA NA PARTE 2
+
+        # =====================================================
+        # PREÇO
+        # =====================================================
+
+
+        preco_consulta = False
+
+
+
+        if categoria and categoria["nome"].lower().strip() == "adicionais":
+
+
+
+            preco_consulta = st.checkbox(
+
+                "☐ Preço sob consulta",
+
+                help="Use quando o valor será informado posteriormente."
+
+            )
+
+
+
+        if preco_consulta:
+
+
+
+            preco = None
+
+
+
+            st.info(
+
+                "Este produto será cadastrado como: Preço sob consulta."
+
+            )
+
+
+
+        else:
+
+
+
+            preco = st.number_input(
+
+                "Preço (R$)",
+
+                min_value=0.0,
+
+                value=0.0,
+
+                step=0.50,
+
+                format="%.2f"
+
+            )
+
+
+
+
+
+        ativo = st.checkbox(
+
+            "Produto ativo",
+
+            value=True
+
+        )
+
+
+
+
+
         salvar = st.form_submit_button(
 
-            "💾 Cadastrar",
+            "💾 Cadastrar Produto",
 
             use_container_width=True
 
@@ -266,10 +331,19 @@ if usuario["perfil"] == "Administrador":
 
 
 
+
+
+    # =====================================================
+    # SALVAR PRODUTO
+    # =====================================================
+
+
     if salvar:
 
 
-        if nome.strip() == "":
+
+        if not nome.strip():
+
 
 
             st.error(
@@ -279,45 +353,75 @@ if usuario["perfil"] == "Administrador":
             )
 
 
-        else:
 
-
-            try:
-
-
-                cadastrar_produto(
-
-                    categoria["id"],
-
-                    nome.strip(),
-
-                    preco
-
-                )
-
-
-                st.success(
-
-                    "Produto cadastrado!"
-
-                )
-
-
-                st.rerun()
+            st.stop()
 
 
 
-            except Exception as erro:
+        if not categoria:
 
 
-                st.error(
 
-                    f"Erro ao cadastrar produto: {erro}"
+            st.error(
 
-                )
+                "Selecione uma categoria."
+
+            )
+
+
+
+            st.stop()
+
+
+
+
+
+        try:
+
+
+
+            cadastrar_produto(
+
+                categoria_id=categoria["id"],
+
+                nome=nome.strip(),
+
+                preco=preco,
+
+                ativo=ativo
+
+            )
+
+
+
+            st.success(
+
+                "Produto cadastrado com sucesso!"
+
+            )
+
+
+
+            st.rerun()
+
+
+
+
+
+        except Exception as erro:
+
+
+
+            st.error(
+
+                f"Erro ao cadastrar produto: {erro}"
+
+            )
+
 
 
 else:
+
 
 
     st.info(
@@ -333,8 +437,17 @@ st.divider()
 
 
 # =====================================================
-# CARREGA PRODUTOS
+# LISTAGEM DOS PRODUTOS
 # =====================================================
+
+
+st.subheader(
+
+    "📋 Produtos Cadastrados"
+
+)
+
+
 
 try:
 
@@ -352,152 +465,54 @@ except Exception as erro:
 
     )
 
+    produtos = []
 
-    st.stop()
 
 
+# CONTINUA NA PARTE 3
 
 # =====================================================
-# ORGANIZA CATEGORIAS
+# EXIBIÇÃO DOS PRODUTOS
 # =====================================================
 
-categorias_dict = {
+
+if not produtos:
 
 
-    categoria["id"]:categoria["nome"]
+    st.info(
 
-
-    for categoria in categorias
-
-}
-
-
-
-produtos_por_categoria = {}
-
-
-
-for categoria in categorias:
-
-
-    produtos_por_categoria[
-
-        categoria["nome"]
-
-    ] = []
-
-
-
-for produto in produtos:
-
-
-    nome_categoria = categorias_dict.get(
-
-        produto["categoria_id"],
-
-        "Sem Categoria"
+        "Nenhum produto cadastrado."
 
     )
 
 
-    produtos_por_categoria.setdefault(
-
-        nome_categoria,
-
-        []
-
-    ).append(produto)
+else:
 
 
 
-ordem_categorias = [
-
-    "Pães",
-
-    "Bebidas",
-
-    "Espalháveis",
-
-    "Adicionais"
-
-]
-
-
-
-st.subheader(
-    "📋 Produtos Cadastrados"
-)
-
-
-
-# =====================================================
-# LISTAGEM
-# =====================================================
-
-for nome_categoria in ordem_categorias:
-
-
-    lista = produtos_por_categoria.get(
-
-        nome_categoria,
-
-        []
-
-    )
-
-
-
-    if not lista:
-
-        continue
-
-
-
-    st.subheader(
-
-        f"📦 {nome_categoria}"
-
-    )
-
-
-
-    for produto in lista:
-
-
-        ativo = produto.get(
-
-            "ativo",
-
-            True
-
-        )
+    for produto in produtos:
 
 
 
         with st.container(
+
             border=True
+
         ):
 
 
-            if usuario["perfil"] == "Administrador":
+
+            col1, col2, col3, col4 = st.columns(
+
+                [5,2,2,1]
+
+            )
 
 
-                col1,col2,col3,col4,col5,col6 = st.columns(
 
-                    [5,2,1.5,0.6,0.6,0.6]
-
-                )
-
-
-            else:
-
-
-                col1,col2,col3 = st.columns(
-
-                    [5,2,1]
-
-                )
-
+            # ==========================
+            # NOME
+            # ==========================
 
 
             with col1:
@@ -511,21 +526,134 @@ for nome_categoria in ordem_categorias:
 
 
 
-            with col2:
+                categoria = produto.get(
 
-
-                st.write(
-
-                    f"R$ {float(produto['preco']):.2f}"
+                    "categorias"
 
                 )
 
 
 
+                if categoria:
+
+
+
+                    st.caption(
+
+                        f"Categoria: {categoria['nome']}"
+
+                    )
+
+
+
+                else:
+
+
+
+                    st.caption(
+
+                        "Categoria não definida."
+
+                    )
+
+
+
+
+
+            # ==========================
+            # PREÇO
+            # ==========================
+
+
+            with col2:
+
+
+
+                preco = produto.get(
+
+                    "preco"
+
+                )
+
+
+
+                if preco is None:
+
+
+
+                    st.warning(
+
+                        "Preço sob consulta"
+
+                    )
+
+
+
+                else:
+
+
+
+                    try:
+
+
+
+                        valor = float(preco)
+
+
+
+                        valor_formatado = (
+
+                            f"R$ {valor:,.2f}"
+
+                            .replace(",", "X")
+
+                            .replace(".", ",")
+
+                            .replace("X",".")
+
+                        )
+
+
+
+                        st.write(
+
+                            valor_formatado
+
+                        )
+
+
+
+                    except:
+
+
+
+                        st.write(
+
+                            "Preço sob consulta"
+
+                        )
+
+
+
+
+
+            # ==========================
+            # STATUS
+            # ==========================
+
+
             with col3:
 
 
-                if ativo:
+
+                if produto.get(
+
+                    "ativo",
+
+                    True
+
+                ):
+
 
 
                     st.success(
@@ -535,7 +663,9 @@ for nome_categoria in ordem_categorias:
                     )
 
 
+
                 else:
+
 
 
                     st.error(
@@ -546,73 +676,29 @@ for nome_categoria in ordem_categorias:
 
 
 
-            if usuario["perfil"] == "Administrador":
+
+
+            # ==========================
+            # EXCLUIR
+            # ==========================
+
+
+            with col4:
 
 
 
-                with col4:
+                if st.button(
 
+                    "🗑️",
 
-                    if st.button(
+                    key=f"excluir_produto_{produto['id']}"
 
-                        "✏️",
-
-                        key=f"editar_{produto['id']}"
-
-                    ):
-
-
-                        st.session_state[
-
-                            "produto_editar"
-
-                        ] = produto["id"]
+                ):
 
 
 
-                        st.switch_page(
+                    try:
 
-                            "pages/10_Editar_Produto.py"
-
-                        )
-
-
-
-                with col5:
-
-
-                    if st.button(
-
-                        "🔄",
-
-                        key=f"status_{produto['id']}"
-
-                    ):
-
-
-                        alterar_status(
-
-                            produto["id"],
-
-                            not ativo
-
-                        )
-
-
-                        st.rerun()
-
-
-
-                with col6:
-
-
-                    if st.button(
-
-                        "🗑️",
-
-                        key=f"excluir_{produto['id']}"
-
-                    ):
 
 
                         excluir_produto(
@@ -622,15 +708,29 @@ for nome_categoria in ordem_categorias:
                         )
 
 
+
                         st.success(
 
-                            "Produto excluído!"
+                            "Produto excluído."
 
                         )
+
 
 
                         st.rerun()
 
 
 
-    st.write("")
+                    except Exception as erro:
+
+
+
+                        st.error(
+
+                            f"Erro ao excluir: {erro}"
+
+                        )
+
+
+
+        st.write("")
