@@ -1,10 +1,15 @@
 import streamlit as st
+from pathlib import Path
+from datetime import datetime
 
 
 from services.cesta_service import (
     buscar_cesta,
     atualizar_cesta
 )
+
+
+from config.supabase import supabase
 
 
 from utils.menu import (
@@ -16,6 +21,8 @@ from utils.menu import (
 from utils.permissao import (
     administrador_operador
 )
+
+
 
 
 
@@ -35,6 +42,8 @@ st.set_page_config(
 
 
 
+
+
 # =====================================================
 # CONTROLE DE ACESSO
 # =====================================================
@@ -47,8 +56,10 @@ administrador_operador()
 
 
 
+
+
 # =====================================================
-# CSS COMPACTO
+# CSS
 # =====================================================
 
 st.markdown(
@@ -56,75 +67,63 @@ st.markdown(
 <style>
 
 
-h1 {
+.block-container{
 
-font-size:24px !important;
+    padding-top:1rem;
 
-margin-bottom:5px;
-
-}
-
-
-h2 {
-
-font-size:18px !important;
-
-margin-top:8px;
-
-margin-bottom:8px;
-
-}
-
-
-p, div, span {
-
-font-size:13px;
+    padding-bottom:1rem;
 
 }
 
 
 
-label {
+h1{
 
-font-size:13px !important;
-
-}
-
-
-
-.stButton button {
-
-height:34px;
-
-font-size:13px;
-
-padding:4px 10px;
+    font-size:24px !important;
 
 }
 
 
 
-input, textarea {
+h2{
 
-font-size:13px !important;
-
-}
-
-
-
-.block-container {
-
-padding-top:1rem;
-
-padding-bottom:1rem;
+    font-size:18px !important;
 
 }
 
 
 
-textarea {
+p, div, span{
 
-min-height:70px !important;
+    font-size:13px;
+
+}
+
+
+
+label{
+
+    font-size:13px !important;
+
+}
+
+
+
+.stButton button{
+
+    height:36px;
+
+    font-size:13px;
+
+    border-radius:8px;
+
+}
+
+
+
+input, textarea{
+
+    font-size:13px !important;
 
 }
 
@@ -137,6 +136,8 @@ unsafe_allow_html=True
 
 
 
+
+
 # =====================================================
 # VERIFICA CESTA SELECIONADA
 # =====================================================
@@ -145,17 +146,23 @@ if "cesta_editar" not in st.session_state:
 
 
     st.error(
+
         "Nenhuma cesta selecionada."
+
     )
 
 
     if st.button(
+
         "⬅ Voltar"
+
     ):
 
 
         st.switch_page(
+
             "pages/04_Cestas.py"
+
         )
 
 
@@ -163,19 +170,25 @@ if "cesta_editar" not in st.session_state:
 
 
 
+
+
 cesta_id = st.session_state["cesta_editar"]
 
 
 
+
+
 # =====================================================
-# CARREGA DADOS
+# CARREGA CESTA
 # =====================================================
 
 try:
 
 
     cesta = buscar_cesta(
+
         cesta_id
+
     )
 
 
@@ -193,21 +206,31 @@ except Exception as erro:
 
 
 
+
+
 # =====================================================
 # TÍTULO
 # =====================================================
 
 st.title(
+
     "✏️ Editar Cesta"
+
 )
+
 
 
 st.caption(
-    "Atualize as informações da cesta cadastrada."
+
+    "Atualize os dados e a imagem da cesta."
+
 )
 
 
+
 st.divider()
+
+
 
 
 
@@ -216,7 +239,9 @@ st.divider()
 # =====================================================
 
 with st.form(
-    "form_editar_cesta"
+
+    "editar_cesta"
+
 ):
 
 
@@ -231,7 +256,13 @@ with st.form(
 
             "Nome da Cesta",
 
-            value=cesta["nome"]
+            value=cesta.get(
+
+                "nome",
+
+                ""
+
+            )
 
         )
 
@@ -247,7 +278,15 @@ with st.form(
             min_value=0.0,
 
             value=float(
-                cesta["preco"]
+
+                cesta.get(
+
+                    "preco",
+
+                    0
+
+                )
+
             ),
 
             step=1.0
@@ -256,34 +295,90 @@ with st.form(
 
 
 
+
+
     descricao = st.text_area(
 
         "Descrição",
 
         value=cesta.get(
+
             "descricao",
-            ""
-        )
-        or "",
 
-        height=80
+            ""
+
+        ) or "",
+
+        height=90
 
     )
 
 
 
-    imagem = st.text_input(
 
-        "Imagem (URL)",
 
-        value=cesta.get(
-            "imagem",
-            ""
-        )
-        or ""
+    st.markdown(
+
+        "### 📷 Imagem da Cesta"
 
     )
 
+
+
+
+
+    imagem_atual = cesta.get(
+
+        "imagem",
+
+        ""
+
+    )
+
+
+
+
+
+    if imagem_atual:
+
+
+
+        st.image(
+
+            imagem_atual,
+
+            width=220
+
+        )
+
+
+        st.caption(
+
+            "Imagem atual"
+
+        )
+
+
+
+
+
+    foto = st.file_uploader(
+
+        "Enviar nova foto da cesta",
+
+        type=[
+
+            "jpg",
+
+            "jpeg",
+
+            "png",
+
+            "webp"
+
+        ]
+
+    )
 
 
     ativa = st.checkbox(
@@ -291,8 +386,11 @@ with st.form(
         "Cesta ativa",
 
         value=cesta.get(
+
             "ativa",
+
             True
+
         )
 
     )
@@ -312,7 +410,7 @@ with st.form(
 
         salvar = st.form_submit_button(
 
-            "💾 Salvar",
+            "💾 Salvar Alterações",
 
             use_container_width=True
 
@@ -342,6 +440,7 @@ with st.form(
 if cancelar:
 
 
+
     st.session_state.pop(
 
         "cesta_editar",
@@ -351,11 +450,14 @@ if cancelar:
     )
 
 
+
     st.switch_page(
 
         "pages/04_Cestas.py"
 
     )
+
+
 
 
 
@@ -377,52 +479,106 @@ if salvar:
         )
 
 
-    else:
+        st.stop()
+
+
+
+
+
+    # Mantém imagem atual
+
+    imagem = imagem_atual
+
+
+
+
+
+    # =================================================
+    # ENVIA NOVA IMAGEM
+    # =================================================
+
+
+    if foto:
+
 
 
         try:
 
 
 
-            atualizar_cesta(
+            extensao = Path(
 
-                cesta_id,
+                foto.name
 
-                nome.strip(),
-
-                descricao.strip(),
-
-                preco,
-
-                imagem.strip(),
-
-                ativa
-
-            )
+            ).suffix
 
 
 
-            st.success(
+            nome_arquivo = (
 
-                "Cesta atualizada com sucesso!"
+                f"{cesta_id}_"
+
+                f"{datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+                f"{extensao}"
 
             )
 
 
 
-            st.session_state.pop(
+            caminho = (
 
-                "cesta_editar",
-
-                None
+                f"cestas/{nome_arquivo}"
 
             )
 
 
 
-            st.switch_page(
 
-                "pages/04_Cestas.py"
+
+            supabase.storage \
+
+                .from_(
+
+                    "cestas"
+
+                ) \
+
+                .upload(
+
+                    caminho,
+
+                    foto.getvalue(),
+
+                    {
+
+                        "content-type":
+
+                        foto.type
+
+                    }
+
+                )
+
+
+
+
+
+            imagem = (
+
+                supabase.storage
+
+                .from_(
+
+                    "cestas"
+
+                )
+
+                .get_public_url(
+
+                    caminho
+
+                )
 
             )
 
@@ -431,8 +587,113 @@ if salvar:
         except Exception as erro:
 
 
+
             st.error(
 
-                f"Erro ao atualizar cesta: {erro}"
+                f"Erro ao enviar imagem: {erro}"
 
             )
+
+
+            st.stop()
+
+
+
+    # =================================================
+    # ATUALIZA BANCO
+    # =================================================
+
+
+    try:
+
+
+
+        atualizar_cesta(
+
+
+
+            cesta_id,
+
+
+
+            nome.strip(),
+
+
+
+            descricao.strip(),
+
+
+
+            preco,
+
+
+
+            imagem,
+
+
+
+            ativa
+
+
+
+        )
+
+
+
+        st.success(
+
+            "Cesta atualizada com sucesso!"
+
+        )
+
+
+
+        st.session_state.pop(
+
+            "cesta_editar",
+
+            None
+
+        )
+
+
+
+        st.switch_page(
+
+            "pages/04_Cestas.py"
+
+        )
+
+
+
+
+
+    except Exception as erro:
+
+
+
+        st.error(
+
+            f"Erro ao atualizar cesta: {erro}"
+
+        )
+
+
+
+
+
+# =====================================================
+# FINAL DO MÓDULO
+# =====================================================
+
+
+st.divider()
+
+
+
+st.caption(
+
+    "🎁 Edição de cestas - Doce Cesta Brasília"
+
+)
+
