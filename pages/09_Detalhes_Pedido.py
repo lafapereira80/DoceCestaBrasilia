@@ -1,4 +1,5 @@
 import streamlit as st
+import json
 
 
 from services.pedido_service import (
@@ -10,6 +11,16 @@ from services.pedido_service import (
 
 from services.foto_service import (
     listar_fotos
+)
+
+
+from services.cesta_service import (
+    buscar_cesta
+)
+
+
+from services.produto_service import (
+    listar_produtos
 )
 
 
@@ -43,7 +54,7 @@ usuario = st.session_state.usuario
 
 
 # =====================================================
-# AJUSTE VISUAL
+# CSS
 # =====================================================
 
 st.markdown(
@@ -52,57 +63,42 @@ st.markdown(
 
 
 h1 {
-
-font-size:26px !important;
-
-margin-bottom:10px;
-
+    font-size:26px !important;
 }
 
 
 h2 {
-
-font-size:18px !important;
-
-margin-top:10px;
-
+    font-size:18px !important;
 }
 
 
 h3 {
-
-font-size:15px !important;
-
+    font-size:15px !important;
 }
 
 
 p, div, span {
 
-font-size:13px;
-
-}
-
-
-textarea {
-
-font-size:13px !important;
+    font-size:13px;
 
 }
 
 
 .stButton button {
 
-font-size:13px;
+    font-size:13px;
 
-padding:5px 10px;
+    padding:5px 10px;
 
 }
+
 
 
 </style>
 """,
 unsafe_allow_html=True
 )
+
 
 
 
@@ -132,7 +128,9 @@ if "pedido_aberto" not in st.session_state:
 
 
 
+
 pedido_id = st.session_state["pedido_aberto"]
+
 
 
 
@@ -160,6 +158,7 @@ except Exception as erro:
 
 
 
+
 if not pedido:
 
 
@@ -167,19 +166,40 @@ if not pedido:
         "Pedido não encontrado."
     )
 
+
     st.stop()
 
 
 
 
+
 # =====================================================
-# CABEÇALHO
+# CARREGA PRODUTOS
+# =====================================================
+
+try:
+
+
+    produtos_cadastrados = listar_produtos()
+
+
+except:
+
+
+    produtos_cadastrados = []
+
+
+
+
+
+
+# =====================================================
+# TÍTULO
 # =====================================================
 
 st.title(
     "📋 Detalhes do Pedido"
 )
-
 
 
 st.caption(
@@ -195,7 +215,7 @@ st.caption(
 # =====================================================
 
 st.markdown(
-    "### 👤 Cliente"
+"### 👤 Cliente"
 )
 
 
@@ -250,12 +270,15 @@ with col3:
 
 
 
+
+
+
 # =====================================================
 # PEDIDO
 # =====================================================
 
 st.markdown(
-    "### 🎁 Pedido"
+"### 🎁 Pedido"
 )
 
 
@@ -321,10 +344,11 @@ with col4:
             "-"
         )
     )
-
+    
 # =====================================================
 # PRODUTOS E ADICIONAIS
 # =====================================================
+
 
 col1, col2 = st.columns(2)
 
@@ -342,6 +366,7 @@ with col1:
         "produtos",
         ""
     )
+
 
 
     if produtos:
@@ -365,6 +390,8 @@ with col1:
 
 
 
+
+
 with col2:
 
 
@@ -377,6 +404,7 @@ with col2:
         "adicionais",
         ""
     )
+
 
 
     if adicionais:
@@ -398,9 +426,11 @@ with col2:
 
 
 
+
 # =====================================================
 # TEXTOS DO CLIENTE
 # =====================================================
+
 
 col1, col2 = st.columns(2)
 
@@ -425,11 +455,13 @@ with col1:
 
         disabled=True,
 
-        height=70,
+        height=80,
 
         key="mensagem_view"
 
     )
+
+
 
 
 
@@ -453,7 +485,7 @@ with col2:
 
         disabled=True,
 
-        height=70,
+        height=80,
 
         key="especial_view"
 
@@ -463,12 +495,14 @@ with col2:
 
 
 
+
 # =====================================================
 # ENDEREÇO
 # =====================================================
 
+
 st.markdown(
-    "### 📍 Endereço"
+"### 📍 Endereço"
 )
 
 
@@ -484,7 +518,7 @@ st.text_area(
 
     disabled=True,
 
-    height=70,
+    height=80,
 
     key="endereco_view"
 
@@ -494,12 +528,14 @@ st.text_area(
 
 
 
+
 # =====================================================
 # FOTOS
 # =====================================================
 
+
 st.markdown(
-    "### 📷 Fotos da Polaroid"
+"### 📷 Fotos da Polaroid"
 )
 
 
@@ -566,20 +602,24 @@ except Exception as erro:
 
 
 
+
 # =====================================================
 # ANOTAÇÕES INTERNAS
 # =====================================================
 
+
 st.divider()
 
 
+
 st.markdown(
-    "### 📝 Anotações Internas"
+"### 📝 Anotações Internas"
 )
 
 
+
 st.caption(
-    "Campo exclusivo para controle administrativo."
+"Campo exclusivo para controle administrativo."
 )
 
 
@@ -594,6 +634,7 @@ anotacao_atual = pedido.get(
 
 
 
+
 anotacao = st.text_area(
 
     "Observações do administrador",
@@ -603,17 +644,20 @@ anotacao = st.text_area(
     height=120,
 
     placeholder="""
+
 Exemplos:
 
 - Cliente confirmou entrega após 18h
 - Aguardar pagamento
 - Alteração solicitada pelo cliente
 - Observação da montagem da cesta
+
 """,
 
     key="anotacao_interna"
 
 )
+
 
 
 
@@ -658,10 +702,398 @@ if st.button(
             f"Erro ao salvar anotação: {erro}"
 
         )
+        
+# =====================================================
+# FECHAMENTO FINANCEIRO
+# =====================================================
+
+st.divider()
+
+
+st.markdown(
+    "### 💰 Fechamento Financeiro"
+)
+
+
+st.caption(
+    "Valores calculados automaticamente conforme cadastro dos produtos."
+)
+
+
+
+
 
 # =====================================================
-# ATENDIMENTO
+# VALOR DA CESTA
 # =====================================================
+
+
+valor_cesta = 0.0
+
+
+
+try:
+
+
+    if pedido.get("cesta_id"):
+
+
+        cesta = buscar_cesta(
+
+            pedido["cesta_id"]
+
+        )
+
+
+        if cesta:
+
+
+            valor_cesta = float(
+
+                cesta.get(
+
+                    "preco",
+
+                    0
+
+                )
+
+                or 0
+
+            )
+
+
+except:
+
+
+    valor_cesta = 0.0
+
+
+
+
+
+
+st.markdown(
+"#### 🎁 Cesta"
+)
+
+
+
+col1, col2 = st.columns(2)
+
+
+
+with col1:
+
+
+    st.write(
+
+        pedido.get(
+
+            "cesta_nome",
+
+            "-"
+
+        )
+
+    )
+
+
+
+with col2:
+
+
+    st.write(
+
+        f"R$ {valor_cesta:,.2f}"
+
+        .replace(",", "X")
+
+        .replace(".", ",")
+
+        .replace("X",".")
+
+    )
+
+
+
+
+
+
+# =====================================================
+# ADICIONAIS COM PREÇO DEFINIDO
+# =====================================================
+
+
+valor_adicionais = 0.0
+
+
+
+st.markdown(
+"#### 🎀 Adicionais"
+)
+
+
+
+adicionais_texto = pedido.get(
+
+    "adicionais",
+
+    ""
+
+) or ""
+
+
+
+if adicionais_texto:
+
+
+    adicionais_lista = adicionais_texto.split(",")
+
+
+
+    for adicional in adicionais_lista:
+
+
+        adicional_nome = adicional.strip()
+
+
+
+        encontrado = False
+
+
+
+        for produto in produtos_cadastrados:
+
+
+            if produto.get(
+
+                "nome"
+
+            ) == adicional_nome:
+
+
+
+                tipo = produto.get(
+
+                    "tipo_preco",
+
+                    "Preço definido"
+
+                )
+
+
+
+                if tipo == "Preço definido":
+
+
+                    valor = float(
+
+                        produto.get(
+
+                            "preco",
+
+                            0
+
+                        )
+
+                        or 0
+
+                    )
+
+
+                    valor_adicionais += valor
+
+
+
+                    st.write(
+
+                        f"• {adicional_nome} - R$ {valor:,.2f}"
+
+                        .replace(",", "X")
+
+                        .replace(".", ",")
+
+                        .replace("X",".")
+
+                    )
+
+
+
+                encontrado = True
+
+
+
+                break
+
+
+
+        if not encontrado:
+
+
+            st.write(
+
+                f"• {adicional_nome}"
+
+            )
+
+
+else:
+
+
+    st.info(
+
+        "Nenhum adicional."
+
+    )
+
+
+
+
+
+
+
+
+# =====================================================
+# ITENS PREÇO SOB CONSULTA
+# =====================================================
+
+
+st.markdown(
+"#### ⚠️ Itens com preço sob consulta"
+)
+
+
+
+itens_consulta = {}
+
+
+
+valor_itens_consulta = 0.0
+
+
+
+for produto in produtos_cadastrados:
+
+
+
+    if produto.get(
+
+        "tipo_preco"
+
+    ) == "Preço sob consulta":
+
+
+
+        nome = produto.get(
+
+            "nome"
+
+        )
+
+
+
+        if nome and nome in adicionais_texto:
+
+
+
+            valor_anterior = 0.0
+
+
+
+            dados_salvos = pedido.get(
+
+                "itens_consulta",
+
+                {}
+
+            )
+
+
+
+            if dados_salvos:
+
+
+                try:
+
+
+                    if isinstance(
+
+                        dados_salvos,
+
+                        str
+
+                    ):
+
+
+                        dados_salvos = json.loads(
+
+                            dados_salvos
+
+                        )
+
+
+
+                    valor_anterior = float(
+
+                        dados_salvos.get(
+
+                            nome,
+
+                            0
+
+                        )
+
+                    )
+
+
+                except:
+
+
+                    valor_anterior = 0.0
+
+
+
+
+            valor = st.number_input(
+
+                nome,
+
+                min_value=0.0,
+
+                value=valor_anterior,
+
+                step=1.0,
+
+                key=f"consulta_{nome}"
+
+            )
+
+
+
+            itens_consulta[nome] = valor
+
+
+
+            valor_itens_consulta += valor
+
+
+
+
+
+if not itens_consulta:
+
+
+    st.info(
+
+        "Nenhum item aguardando preço."
+
+    )
+
+# =====================================================
+# FRETE / DESCONTO / TOTAL
+# =====================================================
+
 
 st.divider()
 
@@ -672,7 +1104,10 @@ st.markdown(
 
 
 
+
+
 col1, col2, col3 = st.columns(3)
+
 
 
 
@@ -699,9 +1134,13 @@ with col1:
 
         ),
 
-        step=1.0
+        step=1.0,
+
+        key="valor_frete"
 
     )
+
+
 
 
 
@@ -709,9 +1148,9 @@ with col1:
 with col2:
 
 
-    valor_total = st.number_input(
+    desconto = st.number_input(
 
-        "Valor Final (R$)",
+        "Desconto (R$)",
 
         min_value=0.0,
 
@@ -719,7 +1158,7 @@ with col2:
 
             pedido.get(
 
-                "valor_total",
+                "desconto",
 
                 0
 
@@ -729,9 +1168,13 @@ with col2:
 
         ),
 
-        step=1.0
+        step=1.0,
+
+        key="desconto"
 
     )
+
+
 
 
 
@@ -788,6 +1231,174 @@ with col3:
 
 
 
+
+# =====================================================
+# CÁLCULO DO TOTAL
+# =====================================================
+
+
+valor_total_calculado = (
+
+    valor_cesta
+
+    +
+
+    valor_adicionais
+
+    +
+
+    valor_itens_consulta
+
+    +
+
+    valor_frete
+
+    -
+
+    desconto
+
+)
+
+
+
+
+if valor_total_calculado < 0:
+
+
+    valor_total_calculado = 0
+
+
+
+
+
+st.markdown(
+"### 🧮 Resumo"
+)
+
+
+
+
+col1, col2 = st.columns(2)
+
+
+
+with col1:
+
+
+    st.write(
+
+        "Valor da cesta"
+
+    )
+
+
+    st.write(
+
+        f"R$ {valor_cesta:,.2f}"
+
+        .replace(",", "X")
+
+        .replace(".", ",")
+
+        .replace("X",".")
+
+    )
+
+
+
+    st.write(
+
+        "Adicionais"
+
+    )
+
+
+    st.write(
+
+        f"R$ {valor_adicionais:,.2f}"
+
+        .replace(",", "X")
+
+        .replace(".", ",")
+
+        .replace("X",".")
+
+    )
+
+
+
+
+with col2:
+
+
+    st.write(
+
+        "Itens sob consulta"
+
+    )
+
+
+    st.write(
+
+        f"R$ {valor_itens_consulta:,.2f}"
+
+        .replace(",", "X")
+
+        .replace(".", ",")
+
+        .replace("X",".")
+
+    )
+
+
+    st.write(
+
+        "Frete"
+
+    )
+
+
+    st.write(
+
+        f"R$ {valor_frete:,.2f}"
+
+        .replace(",", "X")
+
+        .replace(".", ",")
+
+        .replace("X",".")
+
+    )
+
+
+
+
+
+
+
+st.success(
+
+    f"💰 Valor Total: R$ {valor_total_calculado:,.2f}"
+
+    .replace(",", "X")
+
+    .replace(".", ",")
+
+    .replace("X",".")
+
+)
+
+
+
+
+
+
+
+# =====================================================
+# SALVAR ATENDIMENTO
+# =====================================================
+
+
 if st.button(
 
     "💾 Salvar Atendimento",
@@ -800,6 +1411,7 @@ if st.button(
     try:
 
 
+
         atualizar_pedido(
 
             pedido["id"],
@@ -808,16 +1420,40 @@ if st.button(
 
             valor_frete,
 
-            valor_total
+            valor_total_calculado
 
         )
+
+
+
+        # Atualiza desconto e itens consulta
+
+        from config.supabase import supabase
+
+
+
+        supabase.table("pedidos").update({
+
+            "desconto": desconto,
+
+            "itens_consulta": itens_consulta
+
+        }).eq(
+
+            "id",
+
+            pedido["id"]
+
+        ).execute()
+
 
 
         st.success(
 
-            "✅ Pedido atualizado!"
+            "✅ Pedido atualizado com sucesso!"
 
         )
+
 
 
         st.rerun()
@@ -837,9 +1473,11 @@ if st.button(
 
 
 
+
 # =====================================================
 # VOLTAR
 # =====================================================
+
 
 st.divider()
 
