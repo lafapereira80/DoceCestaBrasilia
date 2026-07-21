@@ -1,23 +1,38 @@
 import streamlit as st
 
 
+
 from services.produto_service import (
+
     listar_produtos,
+
     cadastrar_produto,
+
     excluir_produto,
+
     listar_categorias
+
 )
+
 
 
 from utils.menu import (
+
     configurar_pagina,
+
     menu_lateral
+
 )
+
 
 
 from utils.permissao import (
+
     administrador_operador
+
 )
+
+
 
 
 
@@ -37,6 +52,8 @@ st.set_page_config(
 
 
 
+
+
 # =====================================================
 # CONTROLE DE ACESSO
 # =====================================================
@@ -50,6 +67,8 @@ administrador_operador()
 
 
 usuario = st.session_state.usuario
+
+
 
 
 
@@ -138,16 +157,23 @@ unsafe_allow_html=True
 
 
 
+
+
 # =====================================================
 # TÍTULO
 # =====================================================
 
 st.title(
+
     "🛒 Produtos"
+
 )
 
 
+
 st.divider()
+
+
 
 
 
@@ -171,7 +197,9 @@ except Exception as erro:
 
     )
 
+
     categorias = []
+
 
 
 
@@ -181,6 +209,7 @@ except Exception as erro:
 # =====================================================
 
 if usuario["perfil"] == "Administrador":
+
 
 
     st.subheader(
@@ -198,6 +227,7 @@ if usuario["perfil"] == "Administrador":
     ):
 
 
+
         nome = st.text_input(
 
             "Nome do Produto"
@@ -206,7 +236,20 @@ if usuario["perfil"] == "Administrador":
 
 
 
+        descricao = st.text_area(
+
+            "Descrição",
+
+            height=70,
+
+            placeholder="Descrição do produto..."
+
+        )
+
+
+
         if categorias:
+
 
 
             categoria = st.selectbox(
@@ -222,10 +265,13 @@ if usuario["perfil"] == "Administrador":
             )
 
 
+
         else:
 
 
+
             categoria = None
+
 
 
             st.warning(
@@ -236,22 +282,11 @@ if usuario["perfil"] == "Administrador":
 
 
 
-        descricao = st.text_area(
 
-            "Descrição",
-
-            height=70
-
-        )
-
-
-
-        # CONTINUA NA PARTE 2
 
         # =====================================================
         # PREÇO
         # =====================================================
-
 
         preco_consulta = False
 
@@ -281,7 +316,7 @@ if usuario["perfil"] == "Administrador":
 
             st.info(
 
-                "Este produto será cadastrado como: Preço sob consulta."
+                "Este produto será cadastrado como Preço sob consulta."
 
             )
 
@@ -307,8 +342,6 @@ if usuario["perfil"] == "Administrador":
 
 
 
-
-
         ativo = st.checkbox(
 
             "Produto ativo",
@@ -316,8 +349,6 @@ if usuario["perfil"] == "Administrador":
             value=True
 
         )
-
-
 
 
 
@@ -333,22 +364,68 @@ if usuario["perfil"] == "Administrador":
 
 
 
-    # =====================================================
-    # SALVAR PRODUTO
-    # =====================================================
+# =====================================================
+# CONTINUA NA PARTE 2
+# ====================================================
+        
+# =====================================================
+# SALVAR PRODUTO
+# =====================================================
 
 
-    if salvar:
+if salvar:
 
 
 
-        if not nome.strip():
+    if not nome.strip():
 
 
 
-            st.error(
+        st.error(
 
-                "Informe o nome do produto."
+            "Informe o nome do produto."
+
+        )
+
+        st.stop()
+
+
+
+
+
+    if not categoria:
+
+
+
+        st.error(
+
+            "Selecione uma categoria."
+
+        )
+
+        st.stop()
+
+
+
+
+
+    # =================================================
+    # VALIDAÇÃO PREÇO ADICIONAIS
+    # =================================================
+
+
+    if categoria["nome"].lower().strip() == "adicionais":
+
+
+
+        if preco is not None and preco == 0:
+
+
+
+            st.warning(
+
+                "Para adicionais informe um valor "
+                "ou marque 'Preço sob consulta'."
 
             )
 
@@ -358,65 +435,63 @@ if usuario["perfil"] == "Administrador":
 
 
 
-        if not categoria:
+
+
+    try:
 
 
 
-            st.error(
-
-                "Selecione uma categoria."
-
-            )
+        cadastrar_produto(
 
 
 
-            st.stop()
+            categoria_id=categoria["id"],
 
 
 
-
-
-        try:
-
-
-
-            cadastrar_produto(
-
-                categoria_id=categoria["id"],
-
-                nome=nome.strip(),
-
-                preco=preco,
-
-                ativo=ativo
-
-            )
+            nome=nome.strip(),
 
 
 
-            st.success(
-
-                "Produto cadastrado com sucesso!"
-
-            )
+            descricao=descricao.strip(),
 
 
 
-            st.rerun()
+            preco=preco,
 
+
+
+            ativo=ativo
+
+
+
+        )
+
+
+
+        st.success(
+
+            "Produto cadastrado com sucesso!"
+
+        )
+
+
+
+        st.rerun()
 
 
 
 
-        except Exception as erro:
+
+    except Exception as erro:
 
 
 
-            st.error(
+        st.error(
 
-                f"Erro ao cadastrar produto: {erro}"
+            f"Erro ao cadastrar produto: {erro}"
 
-            )
+        )
 
 
 
@@ -432,7 +507,11 @@ else:
 
 
 
+
+
 st.divider()
+
+
 
 
 
@@ -465,11 +544,12 @@ except Exception as erro:
 
     )
 
+
     produtos = []
 
 
 
-# CONTINUA NA PARTE 3
+
 
 # =====================================================
 # EXIBIÇÃO DOS PRODUTOS
@@ -479,11 +559,13 @@ except Exception as erro:
 if not produtos:
 
 
+
     st.info(
 
         "Nenhum produto cadastrado."
 
     )
+
 
 
 else:
@@ -494,15 +576,11 @@ else:
 
 
 
-        with st.container(
-
-            border=True
-
-        ):
+        with st.container(border=True):
 
 
 
-            col1, col2, col3, col4 = st.columns(
+            col1,col2,col3,col4 = st.columns(
 
                 [5,2,2,1]
 
@@ -511,11 +589,12 @@ else:
 
 
             # ==========================
-            # NOME
+            # DADOS
             # ==========================
 
 
             with col1:
+
 
 
                 st.write(
@@ -546,13 +625,21 @@ else:
 
 
 
-                else:
+                descricao_produto = produto.get(
+
+                    "descricao"
+
+                )
+
+
+
+                if descricao_produto:
 
 
 
                     st.caption(
 
-                        "Categoria não definida."
+                        descricao_produto
 
                     )
 
@@ -569,7 +656,7 @@ else:
 
 
 
-                preco = produto.get(
+                preco_produto = produto.get(
 
                     "preco"
 
@@ -577,7 +664,7 @@ else:
 
 
 
-                if preco is None:
+                if preco_produto is None:
 
 
 
@@ -597,7 +684,11 @@ else:
 
 
 
-                        valor = float(preco)
+                        valor = float(
+
+                            preco_produto
+
+                        )
 
 
 
@@ -734,3 +825,19 @@ else:
 
 
         st.write("")
+
+
+# =====================================================
+# FIM DO MÓDULO
+# =====================================================
+
+
+st.divider()
+
+
+
+st.caption(
+
+    "🛒 Cadastro de produtos - Doce Cesta Brasília"
+
+)
