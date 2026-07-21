@@ -245,41 +245,79 @@ if usuario["perfil"] == "Administrador":
 
             )
 
+
+
         # =================================================
         # TIPO DE PREÇO
         #
-        # Somente categoria Adicionais possui preço
-        # Outros produtos fazem parte da cesta
+        # Apenas Adicionais possuem valor próprio
+        # Outros produtos pertencem à composição da cesta
         # =================================================
 
 
-        categoria_nome = categoria["nome"]
+        if categoria:
+
+
+            categoria_nome = categoria["nome"].lower().strip()
 
 
 
-        if categoria_nome.lower().strip() == "adicionais":
+            if categoria_nome == "adicionais":
+
+
+                tipo_preco = st.radio(
+
+                    "Tipo de preço",
+
+                    [
+
+                        "Preço definido",
+
+                        "Preço sob consulta"
+
+                    ],
+
+                    horizontal=True
+
+                )
+
+
+                if tipo_preco == "Preço sob consulta":
+
+
+                    preco = None
+
+
+                    st.info(
+
+                        "O valor será informado posteriormente no pedido."
+
+                    )
+
+
+                else:
+
+
+                    preco = st.number_input(
+
+                        "Preço (R$)",
+
+                        min_value=0.0,
+
+                        value=0.0,
+
+                        step=0.50,
+
+                        format="%.2f"
+
+                    )
 
 
 
-            tipo_preco = st.radio(
-
-                "Tipo de preço",
-
-                [
-
-                    "Preço definido",
-
-                    "Preço sob consulta"
-
-                ],
-
-                horizontal=True
-
-            )
+            else:
 
 
-
-            if tipo_preco == "Preço sob consulta":
+                tipo_preco = "Incluso na cesta"
 
 
                 preco = None
@@ -287,48 +325,18 @@ if usuario["perfil"] == "Administrador":
 
                 st.info(
 
-                    "O valor será informado posteriormente no pedido."
+                    "Produto incluso na composição da cesta. Valor definido pela cesta."
 
                 )
-
-
-
-            else:
-
-
-
-                preco = st.number_input(
-
-                    "Preço (R$)",
-
-                    min_value=0.0,
-
-                    value=0.0,
-
-                    step=0.50,
-
-                    format="%.2f"
-
-                )
-
 
 
         else:
-
 
 
             tipo_preco = "Incluso na cesta"
 
 
             preco = None
-
-
-
-            st.info(
-
-                "Produto incluso na composição da cesta. Valor definido pela cesta."
-
-            )
 
         ativo = st.checkbox(
 
@@ -384,7 +392,11 @@ if salvar:
 
 
 
-     if (
+    # =================================================
+    # VALIDA SOMENTE ADICIONAIS COM PREÇO DEFINIDO
+    # =================================================
+
+    if (
 
         categoria["nome"].lower().strip() == "adicionais"
 
@@ -406,6 +418,7 @@ if salvar:
         )
 
         st.stop()
+
 
 
     try:
@@ -458,6 +471,9 @@ else:
         "Modo consulta. Apenas Administradores podem cadastrar produtos."
 
     )
+
+
+
 # =====================================================
 # LISTAGEM DOS PRODUTOS
 # =====================================================
@@ -565,9 +581,7 @@ if not produtos:
 else:
 
 
-
     for categoria_nome, lista_produtos in produtos_agrupados.items():
-
 
 
         st.markdown(
@@ -590,8 +604,6 @@ else:
             unsafe_allow_html=True
 
         )
-
-
 
         for produto in lista_produtos:
 
@@ -645,30 +657,33 @@ else:
 
                         "tipo_preco",
 
-                        "Preço definido"
+                        "Incluso na cesta"
 
                     )
 
 
 
-              if tipo_preco == "Preço sob consulta":
+                    if tipo_preco == "Preço sob consulta":
 
 
-    st.warning(
+                        st.warning(
 
-        "⚠️ Sob consulta"
+                            "⚠️ Sob consulta"
 
-    )
-
-
-elif tipo_preco == "Incluso na cesta":
+                        )
 
 
-    st.info(
 
-        "Incluso na cesta"
+                    elif tipo_preco == "Incluso na cesta":
 
-    )
+
+                        st.info(
+
+                            "Incluso na cesta"
+
+                        )
+
+
 
                     else:
 
@@ -754,7 +769,6 @@ elif tipo_preco == "Incluso na cesta":
 
 
 
-
                 # =====================================
                 # EXCLUIR
                 # =====================================
@@ -805,10 +819,6 @@ elif tipo_preco == "Incluso na cesta":
 
 
             st.write("")
-
-
-
-
 
 # =====================================================
 # RODAPÉ
