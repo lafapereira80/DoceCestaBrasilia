@@ -440,8 +440,7 @@ def exibir_produto(
                 if tipo == "Preço sob consulta":
 
 
-                    st.warning(
-                        "⚠️ Sob consulta"
+                   st.info( "Sob consulta"
                     )
 
 
