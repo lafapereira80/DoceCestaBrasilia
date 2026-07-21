@@ -1229,45 +1229,32 @@ if adicionais_pedido:
 
 
             col_nome, col_valor = st.columns(
-
-                [3,1],
-
-                gap="small"
-
-            )
+    [1.5, 0.8]
+)
 
 
+with col_nome:
 
-            with col_nome:
-
-
-                st.write(
-
-                    f"• {nome}"
-
-                )
+    st.write(
+        f"• {nome}"
+    )
 
 
+with col_valor:
 
-            with col_valor:
+    valor_digitado = st.number_input(
 
+        "",
 
-                valor_digitado = st.number_input(
+        min_value=0.0,
 
-                    "Valor",
+        value=valor_anterior,
 
-                    min_value=0.0,
+        step=1.0,
 
-                    value=valor_anterior,
+        key=f"consulta_{nome}"
 
-                    step=1.0,
-
-                    label_visibility="collapsed",
-
-                    key=f"consulta_{nome}"
-
-                )
-
+    )
 
 
             itens_consulta[nome] = valor_digitado
