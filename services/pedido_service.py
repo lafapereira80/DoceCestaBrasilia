@@ -1,5 +1,5 @@
 from config.supabase import supabase
-
+from services.pedido_adicional_service import salvar_adicionais_pedido
 
 
 # =====================================================
@@ -10,27 +10,51 @@ def salvar_pedido(dados):
 
     try:
 
+
+        adicionais = dados.pop(
+            "adicionais_detalhados",
+            []
+        )
+
+
         resposta = (
+
             supabase
+
             .table("pedidos")
+
             .insert(dados)
+
             .execute()
+
         )
 
 
         pedido_id = resposta.data[0]["id"]
 
 
+
+        if adicionais:
+
+
+            salvar_adicionais_pedido(
+
+                pedido_id,
+
+                adicionais
+
+            )
+
+
+
         return True, pedido_id
+
 
 
     except Exception as erro:
 
 
         return False, str(erro)
-
-
-
 
 
 # =====================================================
