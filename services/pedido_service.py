@@ -20,6 +20,7 @@ def salvar_pedido(dados):
 
         pedido_id = resposta.data[0]["id"]
 
+
         return True, pedido_id
 
 
@@ -38,20 +39,14 @@ def salvar_pedido(dados):
 def listar_pedidos():
 
     resposta = (
-
         supabase
-
         .table("pedidos")
-
         .select("*")
-
         .order(
             "created_at",
             desc=True
         )
-
         .execute()
-
     )
 
 
@@ -64,31 +59,24 @@ def listar_pedidos():
 # =====================================================
 # LISTAR PEDIDOS ATIVOS
 #
-# Não retorna Entregues
+# Não retorna pedidos Entregues
 # =====================================================
 
 def listar_pedidos_ativos():
 
     resposta = (
-
         supabase
-
         .table("pedidos")
-
         .select("*")
-
         .neq(
             "status",
             "Entregue"
         )
-
         .order(
             "created_at",
             desc=True
         )
-
         .execute()
-
     )
 
 
@@ -105,22 +93,15 @@ def listar_pedidos_ativos():
 def buscar_pedido(pedido_id):
 
     resposta = (
-
         supabase
-
         .table("pedidos")
-
         .select("*")
-
         .eq(
             "id",
             pedido_id
         )
-
         .single()
-
         .execute()
-
     )
 
 
@@ -135,52 +116,33 @@ def buscar_pedido(pedido_id):
 # =====================================================
 
 def atualizar_pedido(
-
     pedido_id,
-
     status,
-
     valor_frete,
-
     valor_total
-
 ):
 
 
     resposta = (
-
         supabase
-
         .table("pedidos")
-
         .update({
 
             "status":
-
                 status,
 
-
             "valor_frete":
-
                 valor_frete,
 
-
             "valor_total":
-
                 valor_total
 
         })
-
         .eq(
-
             "id",
-
             pedido_id
-
         )
-
         .execute()
-
     )
 
 
@@ -197,38 +159,25 @@ def atualizar_pedido(
 # =====================================================
 
 def atualizar_anotacao_pedido(
-
     pedido_id,
-
     anotacao
-
 ):
 
 
     resposta = (
-
         supabase
-
         .table("pedidos")
-
         .update({
 
             "anotacoes_internas":
-
                 anotacao
 
         })
-
         .eq(
-
             "id",
-
             pedido_id
-
         )
-
         .execute()
-
     )
 
 
@@ -242,7 +191,7 @@ def atualizar_anotacao_pedido(
 # EXCLUIR PEDIDO COMPLETO
 #
 # Remove:
-# 1 - Fotos Storage
+# 1 - Fotos do Storage
 # 2 - Registros pedido_fotos
 # 3 - Pedido
 # =====================================================
@@ -253,33 +202,21 @@ def excluir_pedido_completo(pedido_id):
 
 
         fotos = (
-
             supabase
-
             .table("pedido_fotos")
-
             .select("arquivo")
-
             .eq(
-
                 "pedido_id",
-
                 pedido_id
-
             )
-
             .execute()
-
         )
-
 
 
         arquivos = []
 
 
-
         if fotos.data:
-
 
             for foto in fotos.data:
 
@@ -297,71 +234,40 @@ def excluir_pedido_completo(pedido_id):
 
 
 
-
-
         if arquivos:
 
 
-            supabase.storage \
-
-                .from_(
-
-                    "pedido_fotos"
-
-                ) \
-
-                .remove(
-
-                    arquivos
-
-                )
-
-
+            (
+                supabase
+                .storage
+                .from_("pedido_fotos")
+                .remove(arquivos)
+            )
 
 
 
         (
-
             supabase
-
             .table("pedido_fotos")
-
             .delete()
-
             .eq(
-
                 "pedido_id",
-
                 pedido_id
-
             )
-
             .execute()
-
         )
 
 
 
-
-
         (
-
             supabase
-
             .table("pedidos")
-
             .delete()
-
             .eq(
-
                 "id",
-
                 pedido_id
-
             )
-
             .execute()
-
         )
 
 
