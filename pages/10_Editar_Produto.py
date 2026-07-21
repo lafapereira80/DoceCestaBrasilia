@@ -21,7 +21,7 @@ from utils.permissao import (
 
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA
+# CONFIGURAÇÃO
 # =====================================================
 
 st.set_page_config(
@@ -48,73 +48,34 @@ administrador_operador()
 
 
 
+
 # =====================================================
-# CSS COMPACTO
+# CSS
 # =====================================================
 
 st.markdown(
 """
 <style>
 
-
-h1 {
+h1{
 
 font-size:24px !important;
 
-margin-bottom:5px;
-
 }
 
 
-h2 {
-
-font-size:18px !important;
-
-}
-
-
-
-p, div, span {
+p,div,span,label{
 
 font-size:13px;
 
 }
 
 
-
-label {
-
-font-size:13px !important;
-
-}
-
-
-
-.stButton button {
+.stButton button{
 
 height:34px;
 
 font-size:13px;
-
-padding:4px 10px;
-
-}
-
-
-
-input {
-
-font-size:13px !important;
-
-}
-
-
-
-.block-container {
-
-padding-top:1rem;
-
-padding-bottom:1rem;
 
 }
 
@@ -126,8 +87,9 @@ unsafe_allow_html=True
 
 
 
+
 # =====================================================
-# VERIFICA PRODUTO SELECIONADO
+# VALIDA PRODUTO
 # =====================================================
 
 if "produto_editar" not in st.session_state:
@@ -138,9 +100,7 @@ if "produto_editar" not in st.session_state:
     )
 
 
-    if st.button(
-        "⬅ Voltar"
-    ):
+    if st.button("⬅ Voltar"):
 
 
         st.switch_page(
@@ -152,19 +112,23 @@ if "produto_editar" not in st.session_state:
 
 
 
+
 produto_id = st.session_state["produto_editar"]
 
 
 
+
 # =====================================================
-# CARREGA DADOS
+# BUSCA DADOS
 # =====================================================
 
 try:
 
 
     produto = buscar_produto(
+
         produto_id
+
     )
 
 
@@ -186,9 +150,6 @@ except Exception as erro:
 
 
 
-# =====================================================
-# TÍTULO
-# =====================================================
 
 st.title(
     "✏️ Editar Produto"
@@ -204,12 +165,8 @@ st.divider()
 
 
 
-# =====================================================
-# IDENTIFICA CATEGORIA
-# =====================================================
 
 indice_categoria = 0
-
 
 
 for i,categoria in enumerate(categorias):
@@ -221,8 +178,6 @@ for i,categoria in enumerate(categorias):
         indice_categoria = i
 
         break
-
-
 
 # =====================================================
 # FORMULÁRIO
@@ -261,17 +216,105 @@ with st.form(
 
             "Nome do Produto",
 
-            value=produto["nome"]
+            value=produto.get(
+
+                "nome",
+
+                ""
+
+            )
 
         )
 
 
 
-    col1,col2 = st.columns(2)
+    descricao = st.text_area(
+
+        "Descrição",
+
+        value=produto.get(
+
+            "descricao",
+
+            ""
+
+        ) or "",
+
+        height=80
+
+    )
 
 
 
-    with col1:
+    st.divider()
+
+
+
+    # =================================================
+    # PREÇO
+    # =================================================
+
+
+    preco_atual = produto.get(
+
+        "preco"
+
+    )
+
+
+
+    preco_consulta_atual = (
+
+        preco_atual is None
+
+    )
+
+
+
+    preco_consulta = False
+
+
+
+    if categoria["nome"].lower().strip() == "adicionais":
+
+
+        preco_consulta = st.checkbox(
+
+            "☐ Preço sob consulta",
+
+            value=preco_consulta_atual,
+
+            help="Produto sem valor definido. O preço será informado no pedido."
+
+        )
+
+
+    else:
+
+
+        preco_consulta = False
+
+
+
+
+
+    if preco_consulta:
+
+
+
+        preco = None
+
+
+
+        st.info(
+
+            "Produto configurado como: Preço sob consulta."
+
+        )
+
+
+    else:
+
 
 
         preco = st.number_input(
@@ -281,28 +324,34 @@ with st.form(
             min_value=0.0,
 
             value=float(
-                produto["preco"]
+
+                preco_atual or 0
+
             ),
 
-            step=1.0
+            step=0.50,
+
+            format="%.2f"
 
         )
 
 
 
-    with col2:
 
 
-        ativo = st.checkbox(
+    ativo = st.checkbox(
 
-            "Produto ativo",
+        "Produto ativo",
 
-            value=produto.get(
-                "ativo",
-                True
-            )
+        value=produto.get(
+
+            "ativo",
+
+            True
 
         )
+
+    )
 
 
 
@@ -340,6 +389,8 @@ with st.form(
 
 
 
+
+
 # =====================================================
 # CANCELAR
 # =====================================================
@@ -364,6 +415,8 @@ if cancelar:
 
 
 
+
+
 # =====================================================
 # SALVAR
 # =====================================================
@@ -371,7 +424,8 @@ if cancelar:
 if salvar:
 
 
-    if nome.strip() == "":
+
+    if not nome.strip():
 
 
         st.error(
@@ -380,61 +434,72 @@ if salvar:
 
         )
 
-
-    else:
-
-
-        try:
+        st.stop()
 
 
 
-            atualizar_produto(
 
-                produto_id,
 
-                categoria["id"],
-
-                nome.strip(),
-
-                preco,
-
-                ativo
-
-            )
+    try:
 
 
 
-            st.success(
-
-                "Produto atualizado com sucesso!"
-
-            )
+        atualizar_produto(
 
 
-
-            st.session_state.pop(
-
-                "produto_editar",
-
-                None
-
-            )
+            produto_id,
 
 
-
-            st.switch_page(
-
-                "pages/05_Produtos.py"
-
-            )
+            categoria["id"],
 
 
+            nome.strip(),
 
-        except Exception as erro:
+
+            descricao.strip(),
 
 
-            st.error(
+            preco,
 
-                f"Erro ao atualizar produto: {erro}"
 
-            )
+            ativo
+
+
+        )
+
+
+
+        st.success(
+
+            "Produto atualizado com sucesso!"
+
+        )
+
+
+
+        st.session_state.pop(
+
+            "produto_editar",
+
+            None
+
+        )
+
+
+
+        st.switch_page(
+
+            "pages/05_Produtos.py"
+
+        )
+
+
+
+    except Exception as erro:
+
+
+        st.error(
+
+            f"Erro ao atualizar produto: {erro}"
+
+        )
