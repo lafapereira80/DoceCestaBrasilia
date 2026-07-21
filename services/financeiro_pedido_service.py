@@ -43,43 +43,39 @@ def buscar_valor_cesta(cesta_id):
 
 
 
-    if resposta.data:
+    if not resposta.data:
 
 
-        return float(
+        return 0
 
-            resposta.data.get(
 
-                "preco",
 
-                0
+    return float(
 
-            )
+        resposta.data.get(
 
-            or 0
+            "preco",
+
+            0
 
         )
 
+        or 0
 
-
-    return 0
+    )
 
 
 
 
 
 # =====================================================
-# BUSCAR PRODUTOS POR NOME
+# BUSCAR PRODUTOS ADICIONAIS
+#
+# Retorna adicionais cadastrados
+# com preço definido
 # =====================================================
 
-def buscar_produtos_por_nome(lista_nomes):
-
-
-    if not lista_nomes:
-
-
-        return []
-
+def buscar_adicionais_com_preco():
 
 
     resposta = (
@@ -92,21 +88,23 @@ def buscar_produtos_por_nome(lista_nomes):
 
             """
 
-            id,
+            *,
 
-            nome,
+            categorias(
 
-            preco
+                nome
+
+            )
 
             """
 
         )
 
-        .in_(
+        .eq(
 
-            "nome",
+            "ativo",
 
-            lista_nomes
+            True
 
         )
 
@@ -115,33 +113,101 @@ def buscar_produtos_por_nome(lista_nomes):
     )
 
 
-    return resposta.data or []
+
+    produtos = []
+
+
+
+    for produto in resposta.data or []:
+
+
+
+        categoria = produto.get(
+
+            "categorias"
+
+        )
+
+
+
+        if categoria:
+
+
+
+            nome_categoria = categoria.get(
+
+                "nome",
+
+                ""
+
+            ).lower().strip()
+
+
+
+            if nome_categoria == "adicionais":
+
+
+
+                if produto.get(
+
+                    "preco"
+
+                ) is not None:
+
+
+
+                    produtos.append({
+
+                        "nome":
+
+                            produto["nome"],
+
+
+                        "preco":
+
+                            float(
+
+                                produto["preco"]
+
+                            )
+
+                    })
+
+
+
+    return produtos
 
 
 
 
 
 # =====================================================
-# ANALISAR ADICIONAIS DO PEDIDO
-#
-# Retorna:
-#
-# - valor dos adicionais
-# - itens sem preço
-#
+# CALCULA VALOR DOS ADICIONAIS DO PEDIDO
 # =====================================================
 
-def calcular_adicionais(adicionais_texto):
+def calcular_adicionais_pedido(
+
+    adicionais_texto
+
+):
 
 
     if not adicionais_texto:
 
 
-        return 0, []
+        return 0
 
 
 
-    nomes = [
+    adicionais_cadastrados = buscar_adicionais_com_preco()
+
+
+
+    total = 0
+
+
+
+    nomes_pedido = [
 
 
         item.strip()
@@ -150,119 +216,153 @@ def calcular_adicionais(adicionais_texto):
         for item in adicionais_texto.split(",")
 
 
-        if item.strip()
-
     ]
 
 
 
-    produtos = buscar_produtos_por_nome(
+    for item in nomes_pedido:
 
-        nomes
 
-    )
 
+        for adicional in adicionais_cadastrados:
+
+
+
+            if item.lower() == adicional["nome"].lower():
+
+
+
+                total += adicional["preco"]
+
+
+
+    return total
+
+
+
+
+
+# =====================================================
+# IDENTIFICA ITENS SOB CONSULTA
+# =====================================================
+
+def listar_itens_consulta(
+
+    itens
+
+):
+
+
+    if not itens:
+
+
+        return []
+
+
+
+    resultado = []
+
+
+
+    for item in itens:
+
+
+        resultado.append({
+
+            "nome":
+
+                item.get(
+
+                    "nome",
+
+                    ""
+
+                ),
+
+
+            "valor":
+
+                float(
+
+                    item.get(
+
+                        "valor",
+
+                        0
+
+                    )
+
+                    or 0
+
+                )
+
+        })
+
+
+
+    return resultado
+
+
+
+
+
+# =====================================================
+# SOMA ITENS SOB CONSULTA
+# =====================================================
+
+def calcular_itens_consulta(
+
+    itens
+
+):
 
 
     total = 0
 
 
-    consulta = []
+
+    for item in itens or []:
 
 
+        total += float(
 
-    for produto in produtos:
+            item.get(
 
+                "valor",
 
+                0
 
-        preco = produto.get(
+            )
 
-            "preco"
+            or 0
 
         )
 
 
 
-        if preco is None:
-
-
-
-            consulta.append({
-
-                "produto":
-
-                    produto["nome"],
-
-
-                "valor":
-
-                    0
-
-            })
-
-
-
-        else:
-
-
-
-            total += float(
-
-                preco
-
-            )
-
-
-
-    return total, consulta
+    return total
 
 
 
 
 
 # =====================================================
-# CALCULAR VALOR FINAL
+# CALCULO FINAL DO PEDIDO
 # =====================================================
 
-def calcular_valor_total(
+def calcular_total_pedido(
 
     valor_cesta,
 
     valor_adicionais,
 
-    itens_consulta,
+    valor_consulta,
 
     frete,
 
     desconto
 
 ):
-
-
-    valor_consulta = 0
-
-
-
-    if itens_consulta:
-
-
-        for item in itens_consulta:
-
-
-            valor_consulta += float(
-
-                item.get(
-
-                    "valor",
-
-                    0
-
-                )
-
-                or 0
-
-            )
-
 
 
     total = (
@@ -296,103 +396,10 @@ def calcular_valor_total(
 
 
 
-    return total
+    return round(
 
+        total,
 
-
-
-
-# =====================================================
-# GERAR RESUMO FINANCEIRO
-# =====================================================
-
-def resumo_financeiro(
-
-    valor_cesta,
-
-    valor_adicionais,
-
-    itens_consulta,
-
-    frete,
-
-    desconto
-
-):
-
-
-    valor_consulta = 0
-
-
-
-    if itens_consulta:
-
-
-        for item in itens_consulta:
-
-
-            valor_consulta += float(
-
-                item.get(
-
-                    "valor",
-
-                    0
-
-                )
-
-                or 0
-
-            )
-
-
-
-    total = calcular_valor_total(
-
-        valor_cesta,
-
-        valor_adicionais,
-
-        itens_consulta,
-
-        frete,
-
-        desconto
+        2
 
     )
-
-
-
-    return {
-
-
-        "valor_cesta":
-
-            valor_cesta,
-
-
-        "valor_adicionais":
-
-            valor_adicionais,
-
-
-        "valor_consulta":
-
-            valor_consulta,
-
-
-        "frete":
-
-            frete,
-
-
-        "desconto":
-
-            desconto,
-
-
-        "total":
-
-            total
-
-    }
