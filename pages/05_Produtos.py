@@ -407,7 +407,48 @@ def exibir_produto(
 
 
 
-     # ============================================= # PREÇO # ============================================= with col2: categoria_atual = ( categoria_nome .strip() .lower() ) if categoria_atual == "adicionais": tipo = str( produto.get( "tipo_preco", "Preço definido" ) ).strip() if tipo.lower() == "preço sob consulta": st.info( "Sob consulta" ) else: valor = produto.get( "preco" ) if valor is not None: valor = float(valor) valor_formatado = ( f"R$ {valor:,.2f}" .replace(",", "X") .replace(".", ",") .replace("X",".") ) st.write( valor_formatado ) else: st.info( "Sob consulta" ) else: st.info( "Incluso" )
+    # =============================================
+    # PREÇO
+    # =============================================
+        with col2:
+            categoria_atual = (
+                categoria_nome
+                .strip() 
+                .lower()
+            )
+            if categoria_atual == "adicionais":
+                tipo = str(
+                    produto.get(
+                        "tipo_preco",
+                        "Preço definido" 
+                    )
+                ).strip()
+                if tipo.lower() == "preço sob consulta":
+                    st.info(
+                        "Sob consulta"
+                    ) 
+                else:
+                    valor = produto.get(
+                        "preco"
+                    ) 
+                    if valor is not None:
+                        valor = float(valor)
+                        valor_formatado = (
+                            f"R$ {valor:,.2f}"
+                            .replace(",", "X")
+                            .replace(".", ",")
+                            .replace("X",".")
+                        ) st.write(
+                            valor_formatado
+                        )
+                    else:
+                        st.info(
+                            "Sob consulta"
+                        ) 
+                    else:
+                        st.info(
+                            "Incluso"
+                        )
 
 
         # =============================================
