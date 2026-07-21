@@ -49,7 +49,6 @@ menu_lateral()
 administrador_operador()
 
 
-
 usuario = st.session_state.usuario
 
 
@@ -64,34 +63,21 @@ st.markdown(
 """
 <style>
 
-
 h1 {
-
     font-size:26px !important;
-
 }
-
 
 h2 {
-
     font-size:18px !important;
-
 }
-
 
 h3 {
-
     font-size:15px !important;
-
 }
-
 
 p, div, span {
-
     font-size:13px;
-
 }
-
 
 
 .stButton button {
@@ -101,8 +87,6 @@ p, div, span {
     padding:5px 10px;
 
 }
-
-
 
 </style>
 """,
@@ -127,7 +111,6 @@ if "pedido_aberto" not in st.session_state:
 
     if st.button("⬅ Voltar"):
 
-
         st.switch_page(
             "pages/02_Pedidos.py"
         )
@@ -151,11 +134,8 @@ pedido_id = st.session_state["pedido_aberto"]
 
 try:
 
-
     pedido = buscar_pedido(
-
         pedido_id
-
     )
 
 
@@ -163,9 +143,7 @@ except Exception as erro:
 
 
     st.error(
-
         f"Erro ao buscar pedido: {erro}"
-
     )
 
 
@@ -179,9 +157,7 @@ if not pedido:
 
 
     st.error(
-
         "Pedido não encontrado."
-
     )
 
 
@@ -193,7 +169,6 @@ if not pedido:
 
 # =====================================================
 # BUSCA ADICIONAIS DO PEDIDO
-# NOVA ESTRUTURA
 # =====================================================
 
 try:
@@ -226,7 +201,6 @@ except Exception as erro:
 # NORMALIZA ITENS SOB CONSULTA
 # =====================================================
 
-
 itens_consulta_salvos = pedido.get(
 
     "itens_consulta",
@@ -246,7 +220,6 @@ if isinstance(
     str
 
 ):
-
 
     try:
 
@@ -289,11 +262,8 @@ if not isinstance(
 # =====================================================
 
 st.title(
-
     "📋 Detalhes do Pedido"
-
 )
-
 
 
 st.caption(
@@ -385,6 +355,8 @@ with col3:
         )
 
     )
+
+
 
 
 
@@ -491,7 +463,14 @@ with col4:
         )
 
     )
-    # =====================================================
+
+
+
+
+
+
+
+# =====================================================
 # PRODUTOS E ADICIONAIS
 # =====================================================
 
@@ -511,9 +490,7 @@ with col1:
 
 
     st.markdown(
-
         "### 🛒 Produtos"
-
     )
 
 
@@ -555,10 +532,8 @@ with col1:
 
 
 
-
 # =====================================================
 # ADICIONAIS DO PEDIDO
-# NOVA TABELA pedido_adicionais
 # =====================================================
 
 
@@ -572,13 +547,10 @@ with col2:
     )
 
 
-
     if adicionais_pedido:
 
 
-
         for adicional in adicionais_pedido:
-
 
 
             nome = adicional.get(
@@ -590,7 +562,6 @@ with col2:
             )
 
 
-
             valor = adicional.get(
 
                 "valor_unitario"
@@ -599,23 +570,17 @@ with col2:
 
 
 
-
             if valor is None:
-
 
 
                 st.write(
 
-                    f"• {nome} "
-
-                    "(Preço sob consulta)"
+                    f"• {nome} (Preço sob consulta)"
 
                 )
 
 
-
             else:
-
 
 
                 valor_formatado = (
@@ -631,13 +596,11 @@ with col2:
                 )
 
 
-
                 st.write(
 
                     f"• {nome} - {valor_formatado}"
 
                 )
-
 
 
     else:
@@ -648,15 +611,7 @@ with col2:
             "Nenhum adicional."
 
         )
-
-
-
-
-
-
-
-
-# =====================================================
+        # =====================================================
 # TEXTOS DO CLIENTE
 # =====================================================
 
@@ -806,7 +761,6 @@ try:
 
 
     if fotos:
-
 
 
         colunas = st.columns(4)
@@ -970,7 +924,14 @@ if st.button(
             f"Erro ao salvar anotação: {erro}"
 
         )
-        # =====================================================
+
+
+
+
+
+
+
+# =====================================================
 # FECHAMENTO FINANCEIRO
 # =====================================================
 
@@ -1108,9 +1069,8 @@ with col2:
 
 
 
-
 # =====================================================
-# ADICIONAIS FINANCEIRO
+# ADICIONAIS FINANCEIRO - CORRIGIDO
 # =====================================================
 
 
@@ -1127,9 +1087,7 @@ st.markdown(
 valor_adicionais = 0.0
 
 
-
 valor_itens_consulta = 0.0
-
 
 
 itens_consulta = {}
@@ -1203,56 +1161,91 @@ if adicionais_pedido:
 
             )
 
-# ---------------------------------------------
-# ADICIONAL PREÇO SOB CONSULTA
-# ---------------------------------------------
+
+
+
+
+        # ---------------------------------------------
+        # ADICIONAL PREÇO SOB CONSULTA
+        # ---------------------------------------------
+
+
+        else:
+
+
+
+            valor_anterior = float(
+
+                itens_consulta_salvos.get(
+
+                    nome,
+
+                    0
+
+                )
+
+                or 0
+
+            )
+
+
+
+            col_nome, col_valor = st.columns([3,1])
+
+
+
+            with col_nome:
+
+
+                st.write(
+
+                    f"• {nome} (Preço sob consulta)"
+
+                )
+
+
+
+            with col_valor:
+
+
+                valor_digitado = st.number_input(
+
+                    "",
+
+                    min_value=0.0,
+
+                    value=valor_anterior,
+
+                    step=1.0,
+
+                    key=f"consulta_{nome}"
+
+                )
+
+
+
+            itens_consulta[nome] = valor_digitado
+
+
+
+            valor_itens_consulta += valor_digitado
+
+
+            valor_adicionais += valor_digitado
+
+
+
+
 
 else:
 
 
-    valor_anterior = float(
+    st.info(
 
-        itens_consulta_salvos.get(
-
-            nome,
-
-            0
-
-        )
-
-        or 0
+        "Nenhum adicional."
 
     )
-
-
-    valor_digitado = st.number_input(
-
-        f"• {nome}",
-
-        min_value=0.0,
-
-        value=valor_anterior,
-
-        step=1.0,
-
-        key=f"consulta_{nome}"
-
-    )
-
-
-    itens_consulta[nome] = valor_digitado
-
-
-    # soma no total dos adicionais
-
-    valor_adicionais += valor_digitado
-
-
-    # mantém separado para controle
-
-    valor_itens_consulta += valor_digitado
-
-# =====================================================
+    # =====================================================
 # FRETE / DESCONTO / STATUS
 # =====================================================
 
@@ -1402,7 +1395,14 @@ with col3:
         )
 
     )
-    # =====================================================
+
+
+
+
+
+
+
+# =====================================================
 # CÁLCULO TOTAL
 # =====================================================
 
