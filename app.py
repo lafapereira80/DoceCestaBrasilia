@@ -867,36 +867,17 @@ with st.container(border=True):
 
                 if marcado:
 
-
-    adicionais_selecionados.append(
-
-        {
-
-            "produto_id":
-
-                adicional["id"],
-
-
-            "nome":
-
-                adicional["nome"],
-
-
-            "preco":
-
-                preco
-
-        }
-
-    )
-
+                    adicionais_selecionados.append(
+                        {
+                            "produto_id": adicional["id"],
+                            "nome": adicional["nome"],
+                            "preco": preco
+                        }
+                    )
 
                     if adicional["nome"].lower().strip() == "polaroid":
 
-
-
                         polaroid = True
-
 
 
 
