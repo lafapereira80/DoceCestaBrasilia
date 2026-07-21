@@ -1,7 +1,6 @@
 from config.supabase import supabase
 
 
-
 # ==========================================================
 # SALVAR ADICIONAIS DO PEDIDO
 # ==========================================================
@@ -11,74 +10,37 @@ def salvar_adicionais_pedido(
     adicionais
 ):
 
-    """
-    Salva os adicionais escolhidos
-    vinculados ao pedido.
-
-    pedido_id:
-        UUID do pedido criado
-
-    adicionais:
-        lista contendo:
-
-        [
-            {
-                "produto_id": UUID,
-                "nome": nome produto,
-                "preco": valor
-            }
-        ]
-
-    """
-
-
-
     if not adicionais:
-
         return True
-
 
 
     registros = []
 
 
-
     for item in adicionais:
-
-
 
         registros.append(
 
             {
 
                 "pedido_id":
-
                     pedido_id,
 
-
                 "produto_id":
-
                     item["produto_id"],
 
-
                 "nome_produto":
-
                     item["nome"],
 
-
                 "quantidade":
-
                     1,
 
-
                 "valor_unitario":
-
                     item["preco"]
 
             }
 
         )
-
 
 
     resposta = (
@@ -94,10 +56,7 @@ def salvar_adicionais_pedido(
     )
 
 
-
     return resposta.data
-
-
 
 
 
@@ -109,7 +68,6 @@ def listar_adicionais_pedido(
     pedido_id
 ):
 
-
     resposta = (
 
         supabase
@@ -119,11 +77,8 @@ def listar_adicionais_pedido(
         .select("*")
 
         .eq(
-
             "pedido_id",
-
             pedido_id
-
         )
 
         .execute()
@@ -143,37 +98,25 @@ def calcular_total_adicionais(
     pedido_id
 ):
 
-
     adicionais = listar_adicionais_pedido(
-
         pedido_id
-
     )
-
 
 
     total = 0
 
 
-
     for item in adicionais:
 
-
-
         valor = item.get(
-
             "valor_unitario",
-
             0
-
         )
-
 
 
         if valor:
 
             total += float(valor)
-
 
 
     return total
