@@ -1523,11 +1523,11 @@ if enviar:
 
         "data_entrega":
 
-            data_entrega.strftime(
+    data_entrega.strftime(
 
-                "%d/%m/%Y"
+        "%Y-%m-%d"
 
-            ),
+    ),
 
 
 
