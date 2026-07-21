@@ -147,12 +147,16 @@ unsafe_allow_html=True
 # =====================================================
 
 st.title(
+
     "🛒 Produtos"
+
 )
 
 
 st.caption(
+
     "Gerenciamento de produtos por categoria"
+
 )
 
 
@@ -167,14 +171,20 @@ st.divider()
 
 try:
 
+
     categorias = listar_categorias()
+
 
 
 except Exception as erro:
 
+
     st.error(
+
         f"Erro ao carregar categorias: {erro}"
+
     )
+
 
     categorias = []
 
@@ -189,18 +199,27 @@ except Exception as erro:
 if usuario["perfil"] == "Administrador":
 
 
+
     st.subheader(
+
         "➕ Novo Produto"
+
     )
 
 
+
     with st.form(
+
         "novo_produto"
+
     ):
 
 
+
         nome = st.text_input(
+
             "Nome do Produto"
+
         )
 
 
@@ -220,6 +239,7 @@ if usuario["perfil"] == "Administrador":
         if categorias:
 
 
+
             categoria = st.selectbox(
 
                 "Categoria",
@@ -233,7 +253,9 @@ if usuario["perfil"] == "Administrador":
             )
 
 
+
         else:
+
 
 
             categoria = None
@@ -250,74 +272,50 @@ if usuario["perfil"] == "Administrador":
         # =================================================
         # TIPO DE PREÇO
         #
-        # Apenas Adicionais possuem valor próprio
-        # Outros produtos pertencem à composição da cesta
+        # SOMENTE ADICIONAIS POSSUEM VALOR
+        # DEMAIS PRODUTOS FAZEM PARTE DA CESTA
         # =================================================
 
 
-        if categoria:
+        categoria_nome = (
 
+            categoria.get("nome", "")
 
-            categoria_nome = categoria["nome"].lower().strip()
+            .strip()
 
+            .lower()
 
+            if categoria
 
-            if categoria_nome == "adicionais":
+            else ""
 
-
-                tipo_preco = st.radio(
-
-                    "Tipo de preço",
-
-                    [
-
-                        "Preço definido",
-
-                        "Preço sob consulta"
-
-                    ],
-
-                    horizontal=True
-
-                )
-
-
-                if tipo_preco == "Preço sob consulta":
-
-
-                    preco = None
-
-
-                    st.info(
-
-                        "O valor será informado posteriormente no pedido."
-
-                    )
-
-
-                else:
-
-
-                    preco = st.number_input(
-
-                        "Preço (R$)",
-
-                        min_value=0.0,
-
-                        value=0.0,
-
-                        step=0.50,
-
-                        format="%.2f"
-
-                    )
+        )
 
 
 
-            else:
+        if categoria_nome == "adicionais":
 
 
-                tipo_preco = "Incluso na cesta"
+
+            tipo_preco = st.radio(
+
+                "Tipo de preço",
+
+                [
+
+                    "Preço definido",
+
+                    "Preço sob consulta"
+
+                ],
+
+                horizontal=True
+
+            )
+
+
+
+            if tipo_preco == "Preço sob consulta":
 
 
                 preco = None
@@ -325,12 +323,33 @@ if usuario["perfil"] == "Administrador":
 
                 st.info(
 
-                    "Produto incluso na composição da cesta. Valor definido pela cesta."
+                    "O valor será informado posteriormente no pedido."
 
                 )
 
 
+
+            else:
+
+
+                preco = st.number_input(
+
+                    "Preço (R$)",
+
+                    min_value=0.0,
+
+                    value=0.0,
+
+                    step=0.50,
+
+                    format="%.2f"
+
+                )
+
+
+
         else:
+
 
 
             tipo_preco = "Incluso na cesta"
@@ -338,7 +357,13 @@ if usuario["perfil"] == "Administrador":
 
             preco = None
 
-        ativo = st.checkbox(
+
+            st.info(
+
+                "Produto incluso na composição da cesta. Valor definido pela cesta."
+
+            )
+                    ativo = st.checkbox(
 
             "Produto ativo",
 
@@ -366,7 +391,9 @@ if usuario["perfil"] == "Administrador":
 if salvar:
 
 
+
     if not nome.strip():
+
 
 
         st.error(
@@ -379,7 +406,10 @@ if salvar:
 
 
 
+
+
     if not categoria:
+
 
 
         st.error(
@@ -392,13 +422,30 @@ if salvar:
 
 
 
+
+
+    categoria_nome = (
+
+        categoria.get("nome", "")
+
+        .strip()
+
+        .lower()
+
+    )
+
+
+
+
+
     # =================================================
-    # VALIDA SOMENTE ADICIONAIS COM PREÇO DEFINIDO
+    # VALIDA SOMENTE ADICIONAIS
     # =================================================
+
 
     if (
 
-        categoria["nome"].lower().strip() == "adicionais"
+        categoria_nome == "adicionais"
 
         and
 
@@ -406,9 +453,10 @@ if salvar:
 
         and
 
-        preco == 0
+        preco <= 0
 
     ):
+
 
 
         st.error(
@@ -421,24 +469,42 @@ if salvar:
 
 
 
+
+
     try:
+
 
 
         cadastrar_produto(
 
+
+
             categoria_id=categoria["id"],
+
+
 
             nome=nome.strip(),
 
+
+
             descricao=descricao.strip(),
+
+
 
             preco=preco,
 
+
+
             ativo=ativo,
+
+
 
             tipo_preco=tipo_preco
 
+
+
         )
+
 
 
         st.success(
@@ -448,11 +514,15 @@ if salvar:
         )
 
 
+
         st.rerun()
 
 
 
+
+
     except Exception as erro:
+
 
 
         st.error(
@@ -463,7 +533,10 @@ if salvar:
 
 
 
+
+
 else:
+
 
 
     st.info(
@@ -474,6 +547,10 @@ else:
 
 
 
+
+
+
+
 # =====================================================
 # LISTAGEM DOS PRODUTOS
 # =====================================================
@@ -481,20 +558,29 @@ else:
 st.divider()
 
 
+
 st.subheader(
+
     "📋 Produtos Cadastrados"
+
 )
+
+
 
 
 
 try:
 
 
+
     produtos = listar_produtos()
 
 
 
+
+
 except Exception as erro:
+
 
 
     st.error(
@@ -504,7 +590,10 @@ except Exception as erro:
     )
 
 
+
     produtos = []
+
+
 
 
 
@@ -518,7 +607,10 @@ produtos_agrupados = {}
 
 
 
+
+
 for produto in produtos:
+
 
 
     categoria_produto = produto.get(
@@ -528,7 +620,9 @@ for produto in produtos:
     )
 
 
+
     if categoria_produto:
+
 
 
         nome_categoria = categoria_produto.get(
@@ -540,17 +634,24 @@ for produto in produtos:
         )
 
 
+
     else:
+
 
 
         nome_categoria = "Sem Categoria"
 
 
 
+
+
     if nome_categoria not in produtos_agrupados:
 
 
+
         produtos_agrupados[nome_categoria] = []
+
+
 
 
 
@@ -559,12 +660,7 @@ for produto in produtos:
         produto
 
     )
-
-
-
-
-
-# =====================================================
+    # =====================================================
 # EXIBIÇÃO DOS PRODUTOS
 # =====================================================
 
@@ -581,7 +677,9 @@ if not produtos:
 else:
 
 
+
     for categoria_nome, lista_produtos in produtos_agrupados.items():
+
 
 
         st.markdown(
@@ -605,11 +703,15 @@ else:
 
         )
 
+
+
+
         for produto in lista_produtos:
 
 
 
             with st.container(border=True):
+
 
 
                 col1, col2, col3, col4 = st.columns(
@@ -627,6 +729,7 @@ else:
                 with col1:
 
 
+
                     st.write(
 
                         f"**{produto['nome']}**"
@@ -634,7 +737,9 @@ else:
                     )
 
 
+
                     if produto.get("descricao"):
+
 
 
                         st.caption(
@@ -646,11 +751,14 @@ else:
 
 
 
+
+
                 # =====================================
                 # PREÇO
                 # =====================================
 
                 with col2:
+
 
 
                     tipo_preco = produto.get(
@@ -666,6 +774,7 @@ else:
                     if tipo_preco == "Preço sob consulta":
 
 
+
                         st.warning(
 
                             "⚠️ Sob consulta"
@@ -675,6 +784,7 @@ else:
 
 
                     elif tipo_preco == "Incluso na cesta":
+
 
 
                         st.info(
@@ -688,6 +798,7 @@ else:
                     else:
 
 
+
                         preco = produto.get(
 
                             "preco"
@@ -695,7 +806,9 @@ else:
                         )
 
 
+
                         if preco is not None:
+
 
 
                             valor = float(preco)
@@ -704,7 +817,11 @@ else:
 
                             valor_formatado = (
 
+
+
                                 f"R$ {valor:,.2f}"
+
+
 
                                 .replace(",", "X")
 
@@ -712,7 +829,10 @@ else:
 
                                 .replace("X",".")
 
+
+
                             )
+
 
 
                             st.write(
@@ -722,7 +842,9 @@ else:
                             )
 
 
+
                         else:
+
 
 
                             st.warning(
@@ -734,11 +856,14 @@ else:
 
 
 
+
+
                 # =====================================
                 # STATUS
                 # =====================================
 
                 with col3:
+
 
 
                     if produto.get(
@@ -750,6 +875,7 @@ else:
                     ):
 
 
+
                         st.success(
 
                             "✓ Ativo"
@@ -757,7 +883,9 @@ else:
                         )
 
 
+
                     else:
+
 
 
                         st.error(
@@ -769,6 +897,8 @@ else:
 
 
 
+
+
                 # =====================================
                 # EXCLUIR
                 # =====================================
@@ -776,17 +906,25 @@ else:
                 with col4:
 
 
+
                     if st.button(
+
+
 
                         "🗑️",
 
+
+
                         key=f"excluir_produto_{produto['id']}"
+
+
 
                     ):
 
 
 
                         try:
+
 
 
                             excluir_produto(
@@ -796,6 +934,7 @@ else:
                             )
 
 
+
                             st.success(
 
                                 "Produto excluído."
@@ -803,11 +942,15 @@ else:
                             )
 
 
+
                             st.rerun()
 
 
 
+
+
                         except Exception as erro:
+
 
 
                             st.error(
@@ -819,8 +962,7 @@ else:
 
 
             st.write("")
-
-# =====================================================
+            # =====================================================
 # RODAPÉ
 # =====================================================
 
