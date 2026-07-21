@@ -1146,12 +1146,6 @@ with col2:
 
     )
 
-
-
-
-
-
-
 # =====================================================
 # ADICIONAIS FINANCEIRO
 # NOVA ESTRUTURA
@@ -1169,9 +1163,7 @@ st.markdown(
 valor_adicionais = 0.0
 
 
-
 itens_consulta = {}
-
 
 
 valor_itens_consulta = 0.0
@@ -1206,6 +1198,13 @@ if adicionais_pedido:
 
 
 
+
+
+        # =============================================
+        # PREÇO DEFINIDO
+        # =============================================
+
+
         if valor is not None:
 
 
@@ -1218,9 +1217,9 @@ if adicionais_pedido:
 
 
 
-            st.write(
+            valor_formatado = (
 
-                f"• {nome} - R$ {valor:,.2f}"
+                f"R$ {valor:,.2f}"
 
                 .replace(",", "X")
 
@@ -1232,6 +1231,21 @@ if adicionais_pedido:
 
 
 
+            st.write(
+
+                f"• {nome} - {valor_formatado}"
+
+            )
+
+
+
+
+
+        # =============================================
+        # PREÇO SOB CONSULTA
+        # =============================================
+
+
         else:
 
 
@@ -1240,7 +1254,14 @@ if adicionais_pedido:
 
 
 
-            if nome in itens_consulta_salvos:
+            if isinstance(
+
+                itens_consulta_salvos,
+
+                dict
+
+            ):
+
 
 
                 valor_anterior = float(
@@ -1253,25 +1274,55 @@ if adicionais_pedido:
 
                     )
 
+                    or 0
+
                 )
 
 
 
 
 
-            valor = st.number_input(
+            col_nome, col_valor = st.columns(
 
-                nome,
-
-                min_value=0.0,
-
-                value=valor_anterior,
-
-                step=1.0,
-
-                key=f"consulta_{nome}"
+                [2,1]
 
             )
+
+
+
+
+
+            with col_nome:
+
+
+                st.write(
+
+                    f"• {nome}"
+
+                )
+
+
+
+
+
+            with col_valor:
+
+
+                valor = st.number_input(
+
+                    "Valor",
+
+                    min_value=0.0,
+
+                    value=valor_anterior,
+
+                    step=1.0,
+
+                    key=f"consulta_{nome}"
+
+                )
+
+
 
 
 
@@ -1279,7 +1330,9 @@ if adicionais_pedido:
 
 
 
-            valor_itens_consulta += valor
+            # Agora entra no total dos adicionais
+
+            valor_adicionais += valor
 
 
 
@@ -1288,12 +1341,14 @@ if adicionais_pedido:
 else:
 
 
+
     st.info(
 
         "Nenhum adicional."
 
     )
-    # =====================================================
+
+# =====================================================
 # FRETE / DESCONTO / STATUS
 # =====================================================
 
