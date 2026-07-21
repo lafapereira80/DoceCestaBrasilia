@@ -31,8 +31,6 @@ from utils.permissao import (
 
 
 
-
-
 # =====================================================
 # CONFIGURAÇÃO DA PÁGINA
 # =====================================================
@@ -49,8 +47,6 @@ st.set_page_config(
 
 
 
-
-
 # =====================================================
 # CONTROLE DE ACESSO
 # =====================================================
@@ -64,7 +60,6 @@ administrador_operador()
 
 
 usuario = st.session_state.usuario
-
 
 
 
@@ -87,13 +82,11 @@ st.markdown(
 }
 
 
-
 h1{
 
     font-size:26px !important;
 
 }
-
 
 
 h2{
@@ -103,7 +96,6 @@ h2{
 }
 
 
-
 h3{
 
     font-size:16px !important;
@@ -111,13 +103,11 @@ h3{
 }
 
 
-
 p, span, div, label{
 
     font-size:13px;
 
 }
-
 
 
 .stButton button{
@@ -131,7 +121,6 @@ p, span, div, label{
 }
 
 
-
 input, textarea{
 
     font-size:13px !important;
@@ -139,20 +128,9 @@ input, textarea{
 }
 
 
-
 [data-testid="stVerticalBlockBorderWrapper"]{
 
     padding:12px;
-
-}
-
-
-
-hr{
-
-    margin-top:8px;
-
-    margin-bottom:8px;
 
 }
 
@@ -164,28 +142,21 @@ unsafe_allow_html=True
 
 
 
-
-
 # =====================================================
 # TÍTULO
 # =====================================================
 
 st.title(
-
     "🛒 Produtos"
-
 )
 
 
 st.caption(
-
     "Gerenciamento de produtos por categoria"
-
 )
 
 
 st.divider()
-
 
 
 
@@ -196,20 +167,14 @@ st.divider()
 
 try:
 
-
     categorias = listar_categorias()
-
 
 
 except Exception as erro:
 
-
     st.error(
-
         f"Erro ao carregar categorias: {erro}"
-
     )
-
 
     categorias = []
 
@@ -224,27 +189,18 @@ except Exception as erro:
 if usuario["perfil"] == "Administrador":
 
 
-
     st.subheader(
-
         "➕ Novo Produto"
-
     )
 
 
-
     with st.form(
-
         "novo_produto"
-
     ):
 
 
-
         nome = st.text_input(
-
             "Nome do Produto"
-
         )
 
 
@@ -262,7 +218,6 @@ if usuario["perfil"] == "Administrador":
 
 
         if categorias:
-
 
 
             categoria = st.selectbox(
@@ -292,51 +247,45 @@ if usuario["perfil"] == "Administrador":
 
 
 
+
         # =================================================
-        # PREÇO
+        # TIPO DE PREÇO
         # =================================================
 
 
-        preco_consulta = False
+        tipo_preco = st.radio(
+
+            "Tipo de preço",
+
+            [
+
+                "Preço definido",
+
+                "Preço sob consulta"
+
+            ],
+
+            horizontal=True
+
+        )
 
 
 
-        if categoria:
 
-
-
-            if categoria["nome"].lower().strip() == "adicionais":
-
-
-
-                preco_consulta = st.checkbox(
-
-                    "☐ Preço sob consulta",
-
-                    help="Somente para adicionais sem valor definido."
-
-                )
-
-
-
-        if preco_consulta:
-
+        if tipo_preco == "Preço sob consulta":
 
 
             preco = None
 
 
-
             st.info(
 
-                "Produto será salvo como: Preço sob consulta."
+                "O valor será informado posteriormente no pedido."
 
             )
 
 
-
         else:
-
 
 
             preco = st.number_input(
@@ -352,6 +301,7 @@ if usuario["perfil"] == "Administrador":
                 format="%.2f"
 
             )
+
 
 
 
@@ -373,13 +323,14 @@ if usuario["perfil"] == "Administrador":
 
         )
 
+
+
+
 # =====================================================
 # SALVAR PRODUTO
 # =====================================================
 
-
 if salvar:
-
 
 
     if not nome.strip():
@@ -392,8 +343,6 @@ if salvar:
         )
 
         st.stop()
-
-
 
 
 
@@ -410,63 +359,37 @@ if salvar:
 
 
 
+    if tipo_preco == "Preço definido" and preco == 0:
 
 
-    # =================================================
-    # VALIDAÇÃO PREÇO SOB CONSULTA
-    # =================================================
+        st.error(
 
+            "Informe o valor do produto."
 
-    if categoria["nome"].lower().strip() == "adicionais":
+        )
 
-
-
-        if preco == 0:
-
-
-
-            st.warning(
-
-                "Informe um valor ou marque 'Preço sob consulta'."
-
-            )
-
-            st.stop()
-
-
+        st.stop()
 
 
 
     try:
 
 
-
         cadastrar_produto(
-
-
 
             categoria_id=categoria["id"],
 
-
-
             nome=nome.strip(),
-
-
 
             descricao=descricao.strip(),
 
-
-
             preco=preco,
 
+            ativo=ativo,
 
-
-            ativo=ativo
-
-
+            tipo_preco=tipo_preco
 
         )
-
 
 
         st.success(
@@ -476,15 +399,11 @@ if salvar:
         )
 
 
-
         st.rerun()
 
 
 
-
-
     except Exception as erro:
-
 
 
         st.error(
@@ -498,32 +417,20 @@ if salvar:
 else:
 
 
-
     st.info(
 
         "Modo consulta. Apenas Administradores podem cadastrar produtos."
 
     )
-
-
-
-
-
-st.divider()
-
-
-
-
-
 # =====================================================
 # LISTAGEM DOS PRODUTOS
 # =====================================================
 
+st.divider()
+
 
 st.subheader(
-
     "📋 Produtos Cadastrados"
-
 )
 
 
@@ -555,13 +462,11 @@ except Exception as erro:
 # AGRUPA PRODUTOS POR CATEGORIA
 # =====================================================
 
-
 produtos_agrupados = {}
 
 
 
 for produto in produtos:
-
 
 
     categoria_produto = produto.get(
@@ -571,9 +476,7 @@ for produto in produtos:
     )
 
 
-
     if categoria_produto:
-
 
 
         nome_categoria = categoria_produto.get(
@@ -585,18 +488,14 @@ for produto in produtos:
         )
 
 
-
     else:
-
 
 
         nome_categoria = "Sem Categoria"
 
 
 
-
     if nome_categoria not in produtos_agrupados:
-
 
 
         produtos_agrupados[nome_categoria] = []
@@ -614,12 +513,10 @@ for produto in produtos:
 
 
 # =====================================================
-# EXIBIÇÃO AGRUPADA
+# EXIBIÇÃO DOS PRODUTOS
 # =====================================================
 
-
 if not produtos:
-
 
 
     st.info(
@@ -628,17 +525,13 @@ if not produtos:
 
     )
 
+
 else:
 
 
 
     for categoria_nome, lista_produtos in produtos_agrupados.items():
 
-
-
-        # =================================================
-        # CABEÇALHO DA CATEGORIA
-        # =================================================
 
 
         st.markdown(
@@ -668,12 +561,7 @@ else:
 
 
 
-            with st.container(
-
-                border=True
-
-            ):
-
+            with st.container(border=True):
 
 
                 col1, col2, col3, col4 = st.columns(
@@ -684,13 +572,11 @@ else:
 
 
 
-                # =========================================
-                # NOME / DESCRIÇÃO
-                # =========================================
-
+                # =====================================
+                # NOME
+                # =====================================
 
                 with col1:
-
 
 
                     st.write(
@@ -700,71 +586,59 @@ else:
                     )
 
 
-
-                    descricao = produto.get(
-
-                        "descricao"
-
-                    )
-
-
-
-                    if descricao:
-
+                    if produto.get("descricao"):
 
 
                         st.caption(
 
-                            descricao
+                            produto["descricao"]
 
                         )
 
 
 
 
-
-                # =========================================
+                # =====================================
                 # PREÇO
-                # =========================================
-
+                # =====================================
 
                 with col2:
 
 
+                    tipo_preco = produto.get(
 
-                    preco = produto.get(
+                        "tipo_preco",
 
-                        "preco"
+                        "Preço definido"
 
                     )
 
 
 
-                    if preco is None:
-
+                    if tipo_preco == "Preço sob consulta":
 
 
                         st.warning(
 
-                            "Sob consulta"
+                            "⚠️ Sob consulta"
 
                         )
-
 
 
                     else:
 
 
+                        preco = produto.get(
 
-                        try:
+                            "preco"
+
+                        )
 
 
+                        if preco is not None:
 
-                            valor = float(
 
-                                preco
-
-                            )
+                            valor = float(preco)
 
 
 
@@ -781,7 +655,6 @@ else:
                             )
 
 
-
                             st.write(
 
                                 valor_formatado
@@ -789,28 +662,23 @@ else:
                             )
 
 
-
-                        except:
-
+                        else:
 
 
                             st.warning(
 
-                                "Sob consulta"
+                                "Sem valor"
 
                             )
 
 
 
 
-
-                # =========================================
+                # =====================================
                 # STATUS
-                # =========================================
-
+                # =====================================
 
                 with col3:
-
 
 
                     if produto.get(
@@ -822,7 +690,6 @@ else:
                     ):
 
 
-
                         st.success(
 
                             "✓ Ativo"
@@ -830,9 +697,7 @@ else:
                         )
 
 
-
                     else:
-
 
 
                         st.error(
@@ -845,13 +710,11 @@ else:
 
 
 
-                # =========================================
+                # =====================================
                 # EXCLUIR
-                # =========================================
-
+                # =====================================
 
                 with col4:
-
 
 
                     if st.button(
@@ -867,13 +730,11 @@ else:
                         try:
 
 
-
                             excluir_produto(
 
                                 produto["id"]
 
                             )
-
 
 
                             st.success(
@@ -883,13 +744,11 @@ else:
                             )
 
 
-
                             st.rerun()
 
 
 
                         except Exception as erro:
-
 
 
                             st.error(
@@ -902,10 +761,13 @@ else:
 
             st.write("")
 
-# =====================================================
-# RODAPÉ DO MÓDULO
-# =====================================================
 
+
+
+
+# =====================================================
+# RODAPÉ
+# =====================================================
 
 st.divider()
 
