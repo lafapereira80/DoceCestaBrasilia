@@ -7,7 +7,7 @@ from services.foto_service import salvar_fotos
 from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
 from services.produto_service import listar_produtos_por_categoria
-
+from services.pedido_adicional_service import salvar_adicionais_pedido
 
 
 # ==========================================================
