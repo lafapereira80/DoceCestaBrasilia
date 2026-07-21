@@ -1159,195 +1159,93 @@ st.markdown(
 )
 
 
-
 valor_adicionais = 0.0
 
-
 itens_consulta = {}
-
 
 valor_itens_consulta = 0.0
 
 
-
-
-
 if adicionais_pedido:
-
-
 
     for adicional in adicionais_pedido:
 
-
-
         nome = adicional.get(
-
             "nome_produto",
-
             "-"
-
         )
-
-
 
         valor = adicional.get(
-
             "valor_unitario"
-
         )
-
-
-
-
-
-        # =============================================
-        # PREÇO DEFINIDO
-        # =============================================
 
 
         if valor is not None:
 
-
-
             valor = float(valor)
-
-
 
             valor_adicionais += valor
 
-
-
-            valor_formatado = (
-
-                f"R$ {valor:,.2f}"
-
-                .replace(",", "X")
-
-                .replace(".", ",")
-
-                .replace("X",".")
-
-            )
-
-
-
             st.write(
-
-                f"• {nome} - {valor_formatado}"
-
+                f"• {nome} - R$ {valor:,.2f}"
+                .replace(",", "X")
+                .replace(".", ",")
+                .replace("X",".")
             )
-
-
-
-
-
-        # =============================================
-        # PREÇO SOB CONSULTA
-        # =============================================
 
 
         else:
 
-
-
             valor_anterior = 0.0
 
 
-
             if isinstance(
-
                 itens_consulta_salvos,
-
                 dict
-
             ):
 
-
-
                 valor_anterior = float(
-
                     itens_consulta_salvos.get(
-
                         nome,
-
                         0
-
                     )
-
                     or 0
-
                 )
 
 
-
-
-
             col_nome, col_valor = st.columns(
-
                 [2,1]
-
             )
-
-
-
 
 
             with col_nome:
 
-
                 st.write(
-
                     f"• {nome}"
-
                 )
-
-
-
 
 
             with col_valor:
 
-
                 valor = st.number_input(
-
                     "Valor",
-
                     min_value=0.0,
-
                     value=valor_anterior,
-
                     step=1.0,
-
                     key=f"consulta_{nome}"
-
                 )
-
-
-
 
 
             itens_consulta[nome] = valor
 
-
-
-            # Agora entra no total dos adicionais
-
             valor_adicionais += valor
-
-
-
 
 
 else:
 
-
-
     st.info(
-
         "Nenhum adicional."
-
     )
-
 # =====================================================
 # FRETE / DESCONTO / STATUS
 # =====================================================
