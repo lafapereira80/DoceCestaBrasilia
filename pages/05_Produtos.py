@@ -2,29 +2,22 @@ import streamlit as st
 
 
 from services.produto_service import (
-
     listar_produtos,
     cadastrar_produto,
-    excluir_pro duto,
+    excluir_produto,
     listar_categorias
-
 )
 
 
 from utils.menu import (
-
     configurar_pagina,
     menu_lateral
-
 )
 
 
 from utils.permissao import (
-
     administrador_operador
-
 )
-
 
 
 # =====================================================
