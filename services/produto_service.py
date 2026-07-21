@@ -8,7 +8,6 @@ from config.supabase import supabase
 
 def listar_produtos():
 
-
     resposta = (
 
         supabase
@@ -43,7 +42,6 @@ def listar_produtos():
 # =====================================================
 
 def listar_categorias():
-
 
     resposta = (
 
@@ -100,7 +98,6 @@ def listar_produtos_por_categoria(
         return []
 
 
-
     categoria_id = categoria_resposta.data["id"]
 
 
@@ -145,7 +142,7 @@ def listar_produtos_por_categoria(
 
 
 # =====================================================
-# BUSCAR PRODUTO PELO ID
+# BUSCAR PRODUTO
 # =====================================================
 
 def buscar_produto(produto_id):
@@ -157,7 +154,15 @@ def buscar_produto(produto_id):
 
         .table("produtos")
 
-        .select("*")
+        .select(
+            """
+            *,
+            categorias(
+                id,
+                nome
+            )
+            """
+        )
 
         .eq(
             "id",
@@ -178,7 +183,7 @@ def buscar_produto(produto_id):
 
 
 # =====================================================
-# LISTAR PRODUTOS COM PREÇO SOB CONSULTA
+# PRODUTOS SOB CONSULTA
 # =====================================================
 
 def listar_produtos_sob_consulta():
@@ -231,9 +236,54 @@ def cadastrar_produto(
 
     ativo=True,
 
-    tipo_preco="Preço definido"
+    tipo_preco="Incluso na cesta"
 
 ):
+
+
+    # verifica categoria
+
+    categoria = (
+
+        supabase
+
+        .table("categorias")
+
+        .select("nome")
+
+        .eq(
+            "id",
+            categoria_id
+        )
+
+        .single()
+
+        .execute()
+
+    )
+
+
+    nome_categoria = (
+
+        categoria.data["nome"]
+
+        .strip()
+
+        .lower()
+
+    )
+
+
+
+    # Regra:
+    # somente adicionais possuem preço
+
+    if nome_categoria != "adicionais":
+
+        preco = None
+
+        tipo_preco = "Incluso na cesta"
+
 
 
     dados = {
@@ -295,11 +345,7 @@ def cadastrar_produto(
 # EXCLUIR PRODUTO
 # =====================================================
 
-def excluir_produto(
-
-    produto_id
-
-):
+def excluir_produto(produto_id):
 
 
     resposta = (
@@ -311,11 +357,8 @@ def excluir_produto(
         .delete()
 
         .eq(
-
             "id",
-
             produto_id
-
         )
 
         .execute()
@@ -347,9 +390,52 @@ def atualizar_produto(
 
     ativo,
 
-    tipo_preco="Preço definido"
+    tipo_preco="Incluso na cesta"
 
 ):
+
+
+    categoria = (
+
+        supabase
+
+        .table("categorias")
+
+        .select("nome")
+
+        .eq(
+            "id",
+            categoria_id
+        )
+
+        .single()
+
+        .execute()
+
+    )
+
+
+    nome_categoria = (
+
+        categoria.data["nome"]
+
+        .strip()
+
+        .lower()
+
+    )
+
+
+
+    # Regra:
+    # somente adicionais possuem valor
+
+    if nome_categoria != "adicionais":
+
+        preco = None
+
+        tipo_preco = "Incluso na cesta"
+
 
 
     dados = {
@@ -397,11 +483,8 @@ def atualizar_produto(
         .update(dados)
 
         .eq(
-
             "id",
-
             produto_id
-
         )
 
         .execute()
