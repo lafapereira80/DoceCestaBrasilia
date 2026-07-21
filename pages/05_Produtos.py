@@ -245,65 +245,90 @@ if usuario["perfil"] == "Administrador":
 
             )
 
-
-
-
         # =================================================
         # TIPO DE PREÇO
+        #
+        # Somente categoria Adicionais possui preço
+        # Outros produtos fazem parte da cesta
         # =================================================
 
 
-        tipo_preco = st.radio(
-
-            "Tipo de preço",
-
-            [
-
-                "Preço definido",
-
-                "Preço sob consulta"
-
-            ],
-
-            horizontal=True
-
-        )
+        categoria_nome = categoria["nome"]
 
 
 
-
-        if tipo_preco == "Preço sob consulta":
-
-
-            preco = None
+        if categoria_nome.lower().strip() == "adicionais":
 
 
-            st.info(
 
-                "O valor será informado posteriormente no pedido."
+            tipo_preco = st.radio(
+
+                "Tipo de preço",
+
+                [
+
+                    "Preço definido",
+
+                    "Preço sob consulta"
+
+                ],
+
+                horizontal=True
 
             )
+
+
+
+            if tipo_preco == "Preço sob consulta":
+
+
+                preco = None
+
+
+                st.info(
+
+                    "O valor será informado posteriormente no pedido."
+
+                )
+
+
+
+            else:
+
+
+
+                preco = st.number_input(
+
+                    "Preço (R$)",
+
+                    min_value=0.0,
+
+                    value=0.0,
+
+                    step=0.50,
+
+                    format="%.2f"
+
+                )
+
 
 
         else:
 
 
-            preco = st.number_input(
 
-                "Preço (R$)",
+            tipo_preco = "Incluso na cesta"
 
-                min_value=0.0,
 
-                value=0.0,
+            preco = None
 
-                step=0.50,
 
-                format="%.2f"
+
+            st.info(
+
+                "Produto incluso na composição da cesta. Valor definido pela cesta."
 
             )
-
-
-
 
         ativo = st.checkbox(
 
@@ -359,17 +384,28 @@ if salvar:
 
 
 
-    if tipo_preco == "Preço definido" and preco == 0:
+     if (
+
+        categoria["nome"].lower().strip() == "adicionais"
+
+        and
+
+        tipo_preco == "Preço definido"
+
+        and
+
+        preco == 0
+
+    ):
 
 
         st.error(
 
-            "Informe o valor do produto."
+            "Informe o valor do adicional."
 
         )
 
         st.stop()
-
 
 
     try:
@@ -615,15 +651,24 @@ else:
 
 
 
-                    if tipo_preco == "Preço sob consulta":
+              if tipo_preco == "Preço sob consulta":
 
 
-                        st.warning(
+    st.warning(
 
-                            "⚠️ Sob consulta"
+        "⚠️ Sob consulta"
 
-                        )
+    )
 
+
+elif tipo_preco == "Incluso na cesta":
+
+
+    st.info(
+
+        "Incluso na cesta"
+
+    )
 
                     else:
 
