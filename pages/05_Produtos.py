@@ -893,180 +893,176 @@ else:
                 with col4:
 
 
-
-                    st.write("")
-
-
-
-                    editar = st.button(
-
-                        "✏️",
-
-                        key=f"editar_{produto['id']}",
-
-                        help="Editar produto"
-
-                    )
+                    btn1, btn2, btn3 = st.columns(3)
 
 
 
-                    status = st.button(
+                    # -----------------------------
+                    # EDITAR
+                    # -----------------------------
 
-                        "🔴" if produto.get("ativo", True) else "🟢",
+                    with btn1:
 
-                        key=f"status_{produto['id']}",
+                        editar = st.button(
 
-                        help="Alterar status"
+                            "✏️",
 
-                    )
+                            key=f"editar_{produto['id']}",
 
-
-
-                    excluir = st.button(
-
-                        "🗑️",
-
-                        key=f"excluir_{produto['id']}",
-
-                        help="Excluir produto"
-
-                    )
-                                        # =====================================
-                    # AÇÕES DOS BOTÕES
-                    # =====================================
-
-
-                    if editar:
-
-
-                        st.session_state[
-
-                            "produto_editar"
-
-                        ] = produto["id"]
-
-
-
-                        st.switch_page(
-
-                            "pages/10_Editar_Produto.py"
+                            help="Editar produto"
 
                         )
 
 
 
+                    # -----------------------------
+                    # STATUS
+                    # -----------------------------
 
+                    with btn2:
 
-                    if status:
+                        status = st.button(
 
+                            "🔴" if produto.get("ativo", True) else "🟢",
 
-                        novo_status = not produto.get(
+                            key=f"status_{produto['id']}",
 
-                            "ativo",
-
-                            True
+                            help="Alterar status"
 
                         )
 
 
 
-                        try:
+                    # -----------------------------
+                    # EXCLUIR
+                    # -----------------------------
+
+                    with btn3:
+
+                        excluir = st.button(
+
+                            "🗑️",
+
+                            key=f"excluir_{produto['id']}",
+
+                            help="Excluir produto"
+
+                        )
 
 
 
-                            alterar_status_produto(
-
-                                produto["id"],
-
-                                novo_status
-
-                            )
+                # =====================================
+                # AÇÕES DOS BOTÕES
+                # =====================================
 
 
-
-                            if novo_status:
-
+                if editar:
 
 
-                                st.success(
-
-                                    "Produto ativado."
-
-                                )
+                    st.session_state["produto_editar"] = produto["id"]
 
 
+                    st.switch_page(
 
-                            else:
+                        "pages/10_Editar_Produto.py"
 
-
-
-                                st.warning(
-
-                                    "Produto desativado."
-
-                                )
-
-
-
-                            st.rerun()
+                    )
 
 
 
 
-                        except Exception as erro:
+                if status:
 
 
+                    novo_status = not produto.get(
 
-                            st.error(
+                        "ativo",
 
-                                f"Erro ao alterar status: {erro}"
+                        True
 
-                            )
-
-
-
+                    )
 
 
-
-                    if excluir:
-
+                    try:
 
 
-                        try:
+                        alterar_status_produto(
+
+                            produto["id"],
+
+                            novo_status
+
+                        )
 
 
-
-                            excluir_produto(
-
-                                produto["id"]
-
-                            )
-
+                        if novo_status:
 
 
                             st.success(
 
-                                "Produto excluído com sucesso."
+                                "Produto ativado."
 
                             )
 
 
-
-                            st.rerun()
-
+                        else:
 
 
+                            st.warning(
 
-                        except Exception as erro:
-
-
-
-                            st.error(
-
-                                f"Erro ao excluir produto: {erro}"
+                                "Produto desativado."
 
                             )
 
+
+                        st.rerun()
+
+
+
+                    except Exception as erro:
+
+
+                        st.error(
+
+                            f"Erro ao alterar status: {erro}"
+
+                        )
+
+
+
+
+                if excluir:
+
+
+                    try:
+
+
+                        excluir_produto(
+
+                            produto["id"]
+
+                        )
+
+
+                        st.success(
+
+                            "Produto excluído com sucesso."
+
+                        )
+
+
+                        st.rerun()
+
+
+
+                    except Exception as erro:
+
+
+                        st.error(
+
+                            f"Erro ao excluir produto: {erro}"
+
+                        )
 
 
 
