@@ -1184,35 +1184,28 @@ if adicionais_pedido:
             )
 
 
-            col_nome, col_valor = st.columns([3, 1])
+            st.write(
+
+                f"• {nome} (Preço sob consulta)"
+
+            )
 
 
-            with col_nome:
+            valor_digitado = st.number_input(
 
-                st.write(
+                "Valor",
 
-                    f"• {nome} (Preço sob consulta) -"
+                min_value=0.0,
 
-                )
+                value=valor_anterior,
 
+                step=1.0,
 
-            with col_valor:
+                key=f"consulta_{nome}",
 
-                valor_digitado = st.number_input(
+                label_visibility="collapsed"
 
-                    "Valor",
-
-                    min_value=0.0,
-
-                    value=valor_anterior,
-
-                    step=1.0,
-
-                    key=f"consulta_{nome}",
-
-                    label_visibility="collapsed"
-
-                )
+            )
 
 
             itens_consulta[nome] = valor_digitado
@@ -1235,6 +1228,7 @@ else:
         "Nenhum adicional."
 
     )
+        
 # =====================================================
 # FRETE / DESCONTO / STATUS
 # =====================================================
