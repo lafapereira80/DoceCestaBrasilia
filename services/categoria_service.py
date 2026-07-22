@@ -67,7 +67,7 @@ def listar_categorias_ativas():
 
 # =====================================================
 # LISTAR CATEGORIAS PARA O PEDIDO
-# USADO NO app.py
+# USADO NO APP.PY
 # =====================================================
 
 def listar_categorias_pedido():
@@ -162,13 +162,13 @@ def cadastrar_categoria(
         "nome": nome,
 
 
-        "possui_preco": possui_preco,
+        "possui_preco": bool(possui_preco),
 
 
-        "exibir_no_pedido": exibir_no_pedido,
+        "exibir_no_pedido": bool(exibir_no_pedido),
 
 
-        "ativo": ativo,
+        "ativo": bool(ativo),
 
 
         "ordem": ordem
@@ -224,13 +224,13 @@ def atualizar_categoria(
         "nome": nome,
 
 
-        "possui_preco": possui_preco,
+        "possui_preco": bool(possui_preco),
 
 
-        "exibir_no_pedido": exibir_no_pedido,
+        "exibir_no_pedido": bool(exibir_no_pedido),
 
 
-        "ativo": ativo,
+        "ativo": bool(ativo),
 
 
         "ordem": ordem
@@ -268,7 +268,8 @@ def atualizar_categoria(
 
 
 # =====================================================
-# ALTERAR STATUS
+# ALTERAR STATUS DA CATEGORIA
+# ATIVO / INATIVO
 # =====================================================
 
 def alterar_status_categoria(
@@ -280,21 +281,22 @@ def alterar_status_categoria(
 ):
 
 
+    dados = {
+
+
+        "ativo": bool(ativo)
+
+    }
+
+
+
     resposta = (
 
         supabase
 
         .table("categorias")
 
-        .update(
-
-            {
-
-                "ativo": ativo
-
-            }
-
-        )
+        .update(dados)
 
         .eq(
 
@@ -307,6 +309,18 @@ def alterar_status_categoria(
         .execute()
 
     )
+
+
+
+    if not resposta.data:
+
+
+        raise Exception(
+
+            "Nenhuma categoria foi atualizada. Verifique o ID da categoria."
+
+        )
+
 
 
     return resposta.data
