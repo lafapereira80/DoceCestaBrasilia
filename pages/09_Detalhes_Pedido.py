@@ -21,7 +21,8 @@ from services.foto_service import (
 
 
 from services.cesta_service import (
-    buscar_cesta
+    buscar_cesta,
+    listar_cestas
 )
 
 
@@ -34,8 +35,6 @@ from utils.menu import (
 from utils.permissao import (
     administrador_operador
 )
-
-
 
 
 
@@ -68,10 +67,9 @@ st.markdown(
 
     padding-top:1rem;
 
-    max-width:900px;
+    max-width:950px;
 
 }
-
 
 
 h1{
@@ -81,7 +79,6 @@ h1{
 }
 
 
-
 h2{
 
     font-size:19px !important;
@@ -89,13 +86,11 @@ h2{
 }
 
 
-
 h3{
 
     font-size:16px !important;
 
 }
-
 
 
 p, div, span{
@@ -118,19 +113,11 @@ p, div, span{
 
 
 
-div[data-testid="stNumberInput"]{
-
-    margin-top:-8px;
-
-}
-
-
-
 .resumo-card{
 
     background:#fff8f2;
 
-    padding:15px;
+    padding:18px;
 
     border-radius:15px;
 
@@ -140,22 +127,17 @@ div[data-testid="stNumberInput"]{
 
 
 
-.whatsapp{
+.edit-card{
 
-    background:#25D366;
+    background:#f7f7f7;
 
-    color:white;
+    padding:15px;
 
-    padding:12px;
+    border-radius:15px;
 
-    border-radius:12px;
-
-    text-align:center;
-
-    font-weight:bold;
+    border:1px solid #ddd;
 
 }
-
 
 
 </style>
@@ -170,6 +152,7 @@ unsafe_allow_html=True
 # =====================================================
 # VALIDA PEDIDO ABERTO
 # =====================================================
+
 
 if "pedido_aberto" not in st.session_state:
 
@@ -200,8 +183,9 @@ pedido_id = st.session_state["pedido_aberto"]
 
 
 # =====================================================
-# BUSCAR PEDIDO
+# BUSCA PEDIDO
 # =====================================================
+
 
 try:
 
@@ -246,8 +230,9 @@ if not pedido:
 
 
 # =====================================================
-# BUSCAR ADICIONAIS
+# BUSCA ADICIONAIS
 # =====================================================
+
 
 try:
 
@@ -259,25 +244,33 @@ try:
     )
 
 
-except Exception as erro:
+except Exception:
 
 
     adicionais_pedido = []
 
 
-    st.warning(
 
-        f"Erro ao carregar adicionais: {erro}"
 
-    )
+
+# =====================================================
+# CONTROLE DE EDIÇÃO
+# =====================================================
+
+
+if "editar_pedido" not in st.session_state:
+
+
+    st.session_state.editar_pedido = False
 
 
 
 
 
 # =====================================================
-# RECUPERA VALORES SOB CONSULTA
+# CONTROLE VALORES SOB CONSULTA
 # =====================================================
+
 
 itens_consulta_salvos = pedido.get(
 
@@ -335,21 +328,15 @@ if not isinstance(
 
 
 # =====================================================
-# CONTROLE DE EDIÇÃO
-# =====================================================
-
-if "editar_pedido" not in st.session_state:
-
-
-    st.session_state.editar_pedido = False
-    # =====================================================
 # FUNÇÕES AUXILIARES
 # =====================================================
 
 
 def formatar_valor(valor):
 
+
     try:
+
 
         return (
 
@@ -363,7 +350,9 @@ def formatar_valor(valor):
 
         )
 
+
     except:
+
 
         return "R$ 0,00"
 
@@ -371,79 +360,12 @@ def formatar_valor(valor):
 
 
 
-def gerar_whatsapp(pedido):
+def limpar_telefone(numero):
 
 
-    texto = f"""
-🎁 *Doce Cesta Brasília*
+    return (
 
-👤 *Cliente*
-
-Nome:
-{pedido.get('cliente_nome','-')}
-
-Telefone:
-{pedido.get('cliente_telefone','-')}
-
-
-🎀 *Pedido*
-
-Cesta:
-{pedido.get('cesta_nome','-')}
-
-
-Produtos:
-{pedido.get('produtos','-')}
-
-
-Adicionais:
-{pedido.get('adicionais','-')}
-
-
-📍 Entrega:
-
-Data:
-{pedido.get('data_entrega','-')}
-
-Período:
-{pedido.get('periodo_entrega','-')}
-
-
-💳 Pagamento:
-{pedido.get('pagamento','-')}
-
-
-💰 Valor final:
-{formatar_valor(
-    pedido.get(
-        'valor_total',
-        0
-    )
-)}
-
-"""
-
-
-    mensagem = urllib.parse.quote(
-
-        texto
-
-    )
-
-
-    telefone = (
-
-        str(
-
-            pedido.get(
-
-                "cliente_telefone",
-
-                ""
-
-            )
-
-        )
+        str(numero)
 
         .replace(
 
@@ -480,18 +402,143 @@ Período:
     )
 
 
+
+
+
+def gerar_whatsapp(
+
+    pedido,
+
+    adicionais,
+
+    valor_final
+
+):
+
+
+    lista_adicionais = ""
+
+
+
+    if adicionais:
+
+
+        for item in adicionais:
+
+
+            nome = item.get(
+
+                "nome_produto",
+
+                "-"
+
+            )
+
+
+            valor = item.get(
+
+                "valor_unitario"
+
+            )
+
+
+            if valor:
+
+
+                lista_adicionais += (
+
+                    f"• {nome} - "
+
+                    f"{formatar_valor(valor)}\n"
+
+                )
+
+
+            else:
+
+
+                lista_adicionais += (
+
+                    f"• {nome}\n"
+
+                )
+
+
+    else:
+
+
+        lista_adicionais = "Nenhum adicional\n"
+
+
+
+
+
+    texto = f"""
+🎁 *Doce Cesta Brasília*
+
+Olá {pedido.get('cliente_nome','')}!
+
+Segue resumo do seu pedido:
+
+🎀 *Cesta*
+{pedido.get('cesta_nome','-')}
+
+
+🛒 *Produtos*
+{pedido.get('produtos','-')}
+
+
+🎀 *Adicionais*
+{lista_adicionais}
+
+
+📍 *Entrega*
+
+Data:
+{pedido.get('data_entrega','-')}
+
+Período:
+{pedido.get('periodo_entrega','-')}
+
+
+💳 Pagamento:
+{pedido.get('pagamento','-')}
+
+
+💰 *Valor final*
+{formatar_valor(valor_final)}
+
+
+Aguardamos sua confirmação.
+"""
+
+
+    mensagem = urllib.parse.quote(
+
+        texto
+
+    )
+
+
+    telefone = limpar_telefone(
+
+        pedido.get(
+
+            "cliente_telefone",
+
+            ""
+
+        )
+
+    )
+
+
     return (
 
         f"https://wa.me/55{telefone}?text={mensagem}"
 
     )
-
-
-
-
-
-
-# =====================================================
+    # =====================================================
 # CABEÇALHO
 # =====================================================
 
@@ -512,6 +559,11 @@ st.caption(
 
 
 
+
+
+# =====================================================
+# BOTÕES PRINCIPAIS
+# =====================================================
 
 
 col1, col2 = st.columns(2)
@@ -545,39 +597,410 @@ with col1:
 with col2:
 
 
-    link_whatsapp = gerar_whatsapp(
+    # será atualizado após o cálculo final
 
-        pedido
+    st.info(
+
+        "📲 WhatsApp será liberado após salvar o valor final."
 
     )
 
 
+
+
+
+
+
+# =====================================================
+# MODO EDIÇÃO
+# =====================================================
+
+
+if st.session_state.editar_pedido:
+
+
+
     st.markdown(
 
-        f"""
-<a href="{link_whatsapp}" target="_blank">
+        "### ✏️ Editando Pedido"
 
-<button style="
-width:100%;
-height:40px;
-background:#25D366;
-color:white;
-border:none;
-border-radius:10px;
-font-weight:bold;
-">
+    )
 
-📲 Enviar WhatsApp
 
-</button>
 
-</a>
-""",
+    st.markdown(
+
+        '<div class="edit-card">',
 
         unsafe_allow_html=True
 
     )
 
+
+
+
+
+    novo_nome = st.text_input(
+
+        "👤 Nome",
+
+        value=pedido.get(
+
+            "cliente_nome",
+
+            ""
+
+        )
+
+    )
+
+
+
+
+
+    novo_telefone = st.text_input(
+
+        "📱 Telefone",
+
+        value=pedido.get(
+
+            "cliente_telefone",
+
+            ""
+
+        )
+
+    )
+
+
+
+
+
+    # -----------------------------------------
+    # CESTAS
+    # -----------------------------------------
+
+
+    try:
+
+
+        cestas = listar_cestas()
+
+
+        nomes_cestas = [
+
+
+            c.get(
+
+                "nome",
+
+                ""
+
+            )
+
+            for c in cestas
+
+
+        ]
+
+
+    except:
+
+
+        cestas = []
+
+        nomes_cestas = []
+
+
+
+
+
+    cesta_atual = pedido.get(
+
+        "cesta_nome",
+
+        ""
+
+    )
+
+
+
+
+
+    if nomes_cestas:
+
+
+
+        if cesta_atual in nomes_cestas:
+
+
+            indice_cesta = nomes_cestas.index(
+
+                cesta_atual
+
+            )
+
+
+        else:
+
+
+            indice_cesta = 0
+
+
+
+
+
+        nova_cesta = st.selectbox(
+
+            "🎁 Cesta",
+
+            nomes_cestas,
+
+            index=indice_cesta
+
+        )
+
+
+
+    else:
+
+
+        nova_cesta = cesta_atual
+
+
+        st.warning(
+
+            "Não foi possível carregar as cestas."
+
+        )
+
+
+
+
+
+
+
+    nova_mensagem = st.text_area(
+
+        "💌 Mensagem",
+
+        value=pedido.get(
+
+            "mensagem",
+
+            ""
+
+        ),
+
+        height=80
+
+    )
+
+
+
+
+
+
+
+    novo_especial = st.text_area(
+
+        "✨ Pedido Especial",
+
+        value=pedido.get(
+
+            "pedido_especial",
+
+            ""
+
+        ),
+
+        height=80
+
+    )
+
+
+
+
+
+
+
+    novo_endereco = st.text_area(
+
+        "📍 Endereço",
+
+        value=pedido.get(
+
+            "endereco",
+
+            ""
+
+        ),
+
+        height=100
+
+    )
+
+
+
+
+
+
+
+    col_salvar, col_cancelar = st.columns(2)
+
+
+
+
+
+
+
+    with col_salvar:
+
+
+        if st.button(
+
+            "💾 Salvar Alterações",
+
+            use_container_width=True,
+
+            type="primary"
+
+        ):
+
+
+
+            try:
+
+
+
+                from config.supabase import supabase
+
+
+
+
+
+
+                dados = {
+
+
+                    "cliente_nome":
+
+                        novo_nome,
+
+
+                    "cliente_telefone":
+
+                        novo_telefone,
+
+
+                    "cesta_nome":
+
+                        nova_cesta,
+
+
+                    "mensagem":
+
+                        nova_mensagem,
+
+
+                    "pedido_especial":
+
+                        novo_especial,
+
+
+                    "endereco":
+
+                        novo_endereco
+
+
+                }
+
+
+
+
+
+
+                supabase.table("pedidos").update(
+
+                    dados
+
+                ).eq(
+
+                    "id",
+
+                    pedido["id"]
+
+                ).execute()
+
+
+
+
+
+
+
+                st.success(
+
+                    "✅ Pedido alterado com sucesso!"
+
+                )
+
+
+
+                st.session_state.editar_pedido = False
+
+
+
+                st.rerun()
+
+
+
+
+
+            except Exception as erro:
+
+
+
+                st.error(
+
+                    f"Erro ao alterar pedido: {erro}"
+
+                )
+
+
+
+
+
+
+
+
+    with col_cancelar:
+
+
+        if st.button(
+
+            "❌ Cancelar",
+
+            use_container_width=True
+
+        ):
+
+
+            st.session_state.editar_pedido = False
+
+
+            st.rerun()
+
+
+
+
+
+    st.markdown(
+
+        "</div>",
+
+        unsafe_allow_html=True
+
+    )
 
 
 
@@ -805,7 +1228,7 @@ with col4:
         )
 
     )
-    # =====================================================
+# =====================================================
 # PRODUTOS E ADICIONAIS
 # =====================================================
 
@@ -842,6 +1265,8 @@ with col1:
 
 
 
+
+
     if produtos:
 
 
@@ -873,11 +1298,12 @@ with col1:
 
 
 # =====================================================
-# ADICIONAIS
+# ADICIONAIS DO PEDIDO
 # =====================================================
 
 
 with col2:
+
 
 
     st.markdown(
@@ -885,6 +1311,8 @@ with col2:
         "### 🎀 Adicionais"
 
     )
+
+
 
 
 
@@ -900,11 +1328,15 @@ with col2:
 
 
 
+
+
     if adicionais_pedido:
 
 
 
         for adicional in adicionais_pedido:
+
+
 
 
 
@@ -918,6 +1350,8 @@ with col2:
 
 
 
+
+
             valor = adicional.get(
 
                 "valor_unitario"
@@ -928,12 +1362,15 @@ with col2:
 
 
 
-            # -----------------------------------------
-            # PRODUTO COM VALOR CADASTRADO
-            # -----------------------------------------
+
+            # =========================================
+            # ADICIONAL COM VALOR FIXO
+            # =========================================
 
 
             if valor is not None:
+
+
 
 
 
@@ -941,13 +1378,17 @@ with col2:
 
 
 
+
+
                 valor_adicionais += valor
+
+
 
 
 
                 st.success(
 
-                    f"✅ {nome}  {formatar_valor(valor)}"
+                    f"✅ {nome} - {formatar_valor(valor)}"
 
                 )
 
@@ -955,12 +1396,16 @@ with col2:
 
 
 
-            # -----------------------------------------
-            # PRODUTO SOB CONSULTA
-            # -----------------------------------------
+
+
+            # =========================================
+            # SOB CONSULTA
+            # =========================================
 
 
             else:
+
+
 
 
 
@@ -972,9 +1417,11 @@ with col2:
 
 
 
+
+
                 st.caption(
 
-                    "Aguardando definição de valor."
+                    "Aguardando definição do valor pelo operador/admin."
 
                 )
 
@@ -982,7 +1429,10 @@ with col2:
 
 
 
+
+
                 valor_salvo = float(
+
 
                     itens_consulta_salvos.get(
 
@@ -1000,11 +1450,17 @@ with col2:
 
 
 
+
+
                 valor_digitado = st.number_input(
 
 
 
-                    f"Definir valor - {nome}",
+
+
+                    f"Definir valor {nome}",
+
+
 
 
 
@@ -1012,7 +1468,11 @@ with col2:
 
 
 
+
+
                     value=valor_salvo,
+
+
 
 
 
@@ -1020,7 +1480,11 @@ with col2:
 
 
 
+
+
                     format="%.2f",
+
+
 
 
 
@@ -1034,13 +1498,18 @@ with col2:
 
 
 
+
+
                 itens_consulta[nome] = valor_digitado
 
 
 
 
 
+
+
                 if valor_digitado > 0:
+
 
 
 
@@ -1072,7 +1541,6 @@ with col2:
 
 
 
-
 # =====================================================
 # RESUMO DOS ADICIONAIS
 # =====================================================
@@ -1082,7 +1550,11 @@ st.divider()
 
 
 
+
+
 col1, col2 = st.columns(2)
+
+
 
 
 
@@ -1091,11 +1563,13 @@ col1, col2 = st.columns(2)
 with col1:
 
 
+
     st.write(
 
-        "🎀 Total adicionais"
+        "🎀 Total Adicionais"
 
     )
+
 
 
     st.success(
@@ -1112,14 +1586,19 @@ with col1:
 
 
 
+
+
+
 with col2:
+
 
 
     st.write(
 
-        "⚠️ Valores definidos"
+        "⚠️ Valores Sob Consulta"
 
     )
+
 
 
     st.info(
@@ -1131,7 +1610,7 @@ with col2:
         )
 
     )
-    # =====================================================
+# =====================================================
 # MENSAGEM E PEDIDO ESPECIAL
 # =====================================================
 
@@ -1169,9 +1648,10 @@ with col1:
 
         height=90,
 
-        key="mensagem_cliente_view"
+        key="mensagem_cliente"
 
     )
+
 
 
 
@@ -1204,7 +1684,7 @@ with col2:
 
         height=90,
 
-        key="pedido_especial_view"
+        key="pedido_especial"
 
     )
 
@@ -1227,6 +1707,8 @@ st.markdown(
 
 
 
+
+
 st.text_area(
 
     "",
@@ -1243,7 +1725,7 @@ st.text_area(
 
     height=90,
 
-    key="endereco_view"
+    key="endereco"
 
 )
 
@@ -1266,7 +1748,10 @@ st.markdown(
 
 
 
+
+
 try:
+
 
 
     fotos = listar_fotos(
@@ -1274,6 +1759,8 @@ try:
         pedido["id"]
 
     )
+
+
 
 
 
@@ -1285,7 +1772,10 @@ try:
 
 
 
+
+
         for i, foto in enumerate(fotos):
+
 
 
             with colunas[i % 4]:
@@ -1320,6 +1810,8 @@ try:
 
 
 
+
+
 except Exception as erro:
 
 
@@ -1328,6 +1820,7 @@ except Exception as erro:
         f"Erro ao carregar fotos: {erro}"
 
     )
+
 
 
 
@@ -1344,11 +1837,15 @@ st.divider()
 
 
 
+
+
 st.markdown(
 
     "### 📝 Anotações Internas"
 
 )
+
+
 
 
 
@@ -1401,6 +1898,8 @@ Exemplos:
 
 
 
+
+
 if st.button(
 
     "💾 Salvar Anotação",
@@ -1410,7 +1909,9 @@ if st.button(
 ):
 
 
+
     try:
+
 
 
         atualizar_anotacao_pedido(
@@ -1422,18 +1923,23 @@ if st.button(
         )
 
 
+
         st.success(
 
-            "Anotação salva!"
+            "✅ Anotação salva!"
 
         )
+
 
 
         st.rerun()
 
 
 
+
+
     except Exception as erro:
+
 
 
         st.error(
@@ -1441,12 +1947,23 @@ if st.button(
             f"Erro ao salvar anotação: {erro}"
 
         )
-    # =====================================================
+
+
+
+
+
+
+
+
+
+# =====================================================
 # FECHAMENTO FINANCEIRO
 # =====================================================
 
 
 st.divider()
+
+
 
 
 
@@ -1458,11 +1975,15 @@ st.markdown(
 
 
 
+
+
 st.caption(
 
-    "Itens sob consulta entram no total somente após definição do valor."
+    "Valores sob consulta entram no total somente após definição."
 
 )
+
+
 
 
 
@@ -1482,6 +2003,7 @@ valor_cesta = 0.0
 try:
 
 
+
     if pedido.get("cesta_id"):
 
 
@@ -1495,6 +2017,7 @@ try:
 
 
         if cesta:
+
 
 
             valor_cesta = float(
@@ -1513,7 +2036,8 @@ try:
 
 
 
-except Exception:
+except:
+
 
 
     valor_cesta = 0.0
@@ -1525,11 +2049,12 @@ except Exception:
 
 
 # =====================================================
-# FRETE / DESCONTO / STATUS
+# FRETE DESCONTO STATUS
 # =====================================================
 
 
 col1, col2, col3 = st.columns(3)
+
 
 
 
@@ -1560,9 +2085,11 @@ with col1:
 
         step=1.0,
 
-        key="frete_atendimento"
+        key="frete"
 
     )
+
+
 
 
 
@@ -1593,7 +2120,7 @@ with col2:
 
         step=1.0,
 
-        key="desconto_atendimento"
+        key="desconto"
 
     )
 
@@ -1601,7 +2128,10 @@ with col2:
 
 
 
+
+
 with col3:
+
 
 
     status_opcoes = [
@@ -1618,6 +2148,8 @@ with col3:
 
 
 
+
+
     status_atual = pedido.get(
 
         "status",
@@ -1628,10 +2160,14 @@ with col3:
 
 
 
+
+
     if status_atual not in status_opcoes:
 
 
         status_atual = "Recebido"
+
+
 
 
 
@@ -1650,6 +2186,7 @@ with col3:
         )
 
     )
+
 
 
 
@@ -1688,15 +2225,8 @@ if valor_total_calculado < 0:
 
 
     valor_total_calculado = 0
-
-
-
-
-
-
-
-# =====================================================
-# RESUMO VISUAL
+    # =====================================================
+# RESUMO FINAL
 # =====================================================
 
 
@@ -1708,6 +2238,8 @@ st.markdown(
 
 
 
+
+
 st.markdown(
 
 f"""
@@ -1716,28 +2248,60 @@ f"""
 
 
 🎁 Cesta:
-<b>{formatar_valor(valor_cesta)}</b>
+
+<b>
+
+{formatar_valor(valor_cesta)}
+
+</b>
 
 
-<br>
+<br><br>
 
 
 🎀 Adicionais:
-<b>{formatar_valor(valor_adicionais)}</b>
+
+<b>
+
+{formatar_valor(valor_adicionais)}
+
+</b>
 
 
-<br>
+<br><br>
+
+
+⚠️ Sob consulta:
+
+<b>
+
+{formatar_valor(valor_consulta)}
+
+</b>
+
+
+<br><br>
 
 
 🚚 Frete:
-<b>{formatar_valor(valor_frete)}</b>
+
+<b>
+
+{formatar_valor(valor_frete)}
+
+</b>
 
 
-<br>
+<br><br>
 
 
 🏷️ Desconto:
-<b>{formatar_valor(desconto)}</b>
+
+<b>
+
+{formatar_valor(desconto)}
+
+</b>
 
 
 <hr>
@@ -1745,11 +2309,13 @@ f"""
 
 💰 TOTAL FINAL:
 
+
 <h2>
 
 {formatar_valor(valor_total_calculado)}
 
 </h2>
+
 
 
 </div>
@@ -1759,12 +2325,105 @@ f"""
 unsafe_allow_html=True
 
 )
- # =====================================================
+
+
+
+
+
+
+
+# =====================================================
+# WHATSAPP
+# =====================================================
+
+
+st.divider()
+
+
+
+
+
+st.markdown(
+
+    "### 📲 Atendimento WhatsApp"
+
+)
+
+
+
+
+
+link_whatsapp = gerar_whatsapp(
+
+    pedido,
+
+    adicionais_pedido,
+
+    valor_total_calculado
+
+)
+
+
+
+
+
+st.markdown(
+
+f"""
+
+<a href="{link_whatsapp}" target="_blank">
+
+
+<button style="
+
+width:100%;
+
+height:45px;
+
+background:#25D366;
+
+color:white;
+
+border:none;
+
+border-radius:12px;
+
+font-weight:bold;
+
+font-size:15px;
+
+">
+
+
+📲 Enviar resumo pelo WhatsApp
+
+
+</button>
+
+
+</a>
+
+""",
+
+unsafe_allow_html=True
+
+)
+
+
+
+
+
+
+
+
+# =====================================================
 # SALVAR ATENDIMENTO
 # =====================================================
 
 
 st.divider()
+
+
 
 
 
@@ -1780,6 +2439,7 @@ if st.button(
 
 
     try:
+
 
 
         atualizar_pedido(
@@ -1800,9 +2460,6 @@ if st.button(
 
 
 
-        # ---------------------------------------------
-        # SALVA VALORES DOS ITENS SOB CONSULTA
-        # ---------------------------------------------
 
 
         from config.supabase import supabase
@@ -1813,15 +2470,18 @@ if st.button(
 
         supabase.table("pedidos").update({
 
-            "itens_consulta":
 
-                itens_consulta
+            "itens_consulta": itens_consulta
+
 
         }).eq(
 
+
             "id",
 
+
             pedido["id"]
+
 
         ).execute()
 
@@ -1829,9 +2489,12 @@ if st.button(
 
 
 
+
+
+
         st.success(
 
-            "✅ Atendimento atualizado com sucesso!"
+            "✅ Atendimento salvo com sucesso!"
 
         )
 
@@ -1858,12 +2521,15 @@ if st.button(
 
 
 
+
 # =====================================================
 # VOLTAR
 # =====================================================
 
 
 st.divider()
+
+
 
 
 
@@ -1880,4 +2546,4 @@ if st.button(
 
         "pages/02_Pedidos.py"
 
-    )   
+    )
