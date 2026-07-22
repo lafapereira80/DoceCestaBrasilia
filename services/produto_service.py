@@ -20,7 +20,8 @@ def listar_produtos():
             *,
             categorias(
                 id,
-                nome
+                nome,
+                possui_preco
             )
             """
         )
@@ -67,7 +68,79 @@ def listar_categorias():
 
 
 # =====================================================
-# LISTAR PRODUTOS POR CATEGORIA
+# LISTAR CATEGORIAS ATIVAS
+# =====================================================
+
+def listar_categorias_ativas():
+
+
+    resposta = (
+
+        supabase
+
+        .table("categorias")
+
+        .select("*")
+
+        .eq(
+            "ativo",
+            True
+        )
+
+        .order("ordem")
+
+        .execute()
+
+    )
+
+
+    return resposta.data or []
+
+
+
+
+
+# =====================================================
+# LISTAR CATEGORIAS EXIBIDAS NO PEDIDO
+# =====================================================
+
+def listar_categorias_pedido():
+
+
+    resposta = (
+
+        supabase
+
+        .table("categorias")
+
+        .select("*")
+
+        .eq(
+            "ativo",
+            True
+        )
+
+        .eq(
+            "exibir_no_pedido",
+            True
+        )
+
+        .order("ordem")
+
+        .execute()
+
+    )
+
+
+    return resposta.data or []
+
+
+
+
+
+# =====================================================
+# LISTAR PRODUTOS POR NOME DA CATEGORIA
+# (mantido para compatibilidade)
 # =====================================================
 
 def listar_produtos_por_categoria(
@@ -81,7 +154,11 @@ def listar_produtos_por_categoria(
 
         .table("categorias")
 
-        .select("id")
+        .select(
+            """
+            id
+            """
+        )
 
         .eq(
             "nome",
@@ -100,6 +177,26 @@ def listar_produtos_por_categoria(
         return []
 
 
+
+    return listar_produtos_por_categoria_id(
+
+        categoria.data["id"]
+
+    )
+
+
+
+
+
+# =====================================================
+# LISTAR PRODUTOS POR ID DA CATEGORIA
+# =====================================================
+
+def listar_produtos_por_categoria_id(
+    categoria_id
+):
+
+
     resposta = (
 
         supabase
@@ -111,14 +208,15 @@ def listar_produtos_por_categoria(
             *,
             categorias(
                 id,
-                nome
+                nome,
+                possui_preco
             )
             """
         )
 
         .eq(
             "categoria_id",
-            categoria.data["id"]
+            categoria_id
         )
 
         .eq(
@@ -134,12 +232,7 @@ def listar_produtos_por_categoria(
 
 
     return resposta.data or []
-
-
-
-
-
-# =====================================================
+    # =====================================================
 # BUSCAR PRODUTO
 # =====================================================
 
@@ -157,7 +250,8 @@ def buscar_produto(produto_id):
             *,
             categorias(
                 id,
-                nome
+                nome,
+                possui_preco
             )
             """
         )
@@ -193,7 +287,16 @@ def listar_produtos_sob_consulta():
 
         .table("produtos")
 
-        .select("*")
+        .select(
+            """
+            *,
+            categorias(
+                id,
+                nome,
+                possui_preco
+            )
+            """
+        )
 
         .eq(
             "tipo_preco",
@@ -213,6 +316,47 @@ def listar_produtos_sob_consulta():
 
 
     return resposta.data or []
+
+
+
+
+
+# =====================================================
+# BUSCAR CATEGORIA DO PRODUTO
+# =====================================================
+
+def buscar_categoria_produto(
+    categoria_id
+):
+
+
+    resposta = (
+
+        supabase
+
+        .table("categorias")
+
+        .select(
+            """
+            id,
+            nome,
+            possui_preco
+            """
+        )
+
+        .eq(
+            "id",
+            categoria_id
+        )
+
+        .single()
+
+        .execute()
+
+    )
+
+
+    return resposta.data
 
 
 
@@ -239,69 +383,73 @@ def cadastrar_produto(
 ):
 
 
-    categoria = (
+    categoria = buscar_categoria_produto(
 
-        supabase
-
-        .table("categorias")
-
-        .select("nome")
-
-        .eq(
-            "id",
-            categoria_id
-        )
-
-        .single()
-
-        .execute()
+        categoria_id
 
     )
 
 
-    if not categoria.data:
+
+    if not categoria:
+
 
         raise Exception(
+
             "Categoria não encontrada."
+
         )
 
 
 
-    nome_categoria = (
-
-        categoria.data["nome"]
-
-        .strip()
-
-        .lower()
-
-    )
 
 
+    # =================================================
+    # REGRA DE PREÇO BASEADA NA CATEGORIA
+    # =================================================
 
-    if nome_categoria != "adicionais":
+    if not categoria.get(
+
+        "possui_preco",
+
+        False
+
+    ):
+
 
         preco = None
+
 
         tipo_preco = "Incluso na cesta"
 
 
 
+
+
     dados = {
+
 
         "categoria_id": categoria_id,
 
+
         "nome": nome,
+
 
         "descricao": descricao,
 
+
         "preco": preco,
+
 
         "ativo": ativo,
 
+
         "tipo_preco": tipo_preco
 
+
     }
+
+
 
 
 
@@ -318,44 +466,9 @@ def cadastrar_produto(
     )
 
 
-    return resposta.data
-
-
-
-
-
-# =====================================================
-# EXCLUIR PRODUTO
-# =====================================================
-
-def excluir_produto(produto_id):
-
-
-    resposta = (
-
-        supabase
-
-        .table("produtos")
-
-        .delete()
-
-        .eq(
-            "id",
-            produto_id
-        )
-
-        .execute()
-
-    )
-
 
     return resposta.data
-
-
-
-
-
-# =====================================================
+    # =====================================================
 # ATUALIZAR PRODUTO
 # =====================================================
 
@@ -378,51 +491,46 @@ def atualizar_produto(
 ):
 
 
-    categoria = (
+    categoria = buscar_categoria_produto(
 
-        supabase
-
-        .table("categorias")
-
-        .select("nome")
-
-        .eq(
-            "id",
-            categoria_id
-        )
-
-        .single()
-
-        .execute()
+        categoria_id
 
     )
 
 
-    if not categoria.data:
+
+    if not categoria:
+
 
         raise Exception(
+
             "Categoria não encontrada."
+
         )
 
 
 
-    nome_categoria = (
-
-        categoria.data["nome"]
-
-        .strip()
-
-        .lower()
-
-    )
 
 
+    # =================================================
+    # REGRA DE PREÇO BASEADA NA CATEGORIA
+    # =================================================
 
-    if nome_categoria != "adicionais":
+    if not categoria.get(
+
+        "possui_preco",
+
+        False
+
+    ):
+
 
         preco = None
 
+
         tipo_preco = "Incluso na cesta"
+
+
 
 
 
@@ -431,17 +539,25 @@ def atualizar_produto(
 
         "categoria_id": categoria_id,
 
+
         "nome": nome,
+
 
         "descricao": descricao,
 
+
         "preco": preco,
+
 
         "ativo": ativo,
 
+
         "tipo_preco": tipo_preco
 
+
     }
+
+
 
 
 
@@ -454,13 +570,17 @@ def atualizar_produto(
         .update(dados)
 
         .eq(
+
             "id",
+
             produto_id
+
         )
 
         .execute()
 
     )
+
 
 
     return resposta.data
@@ -489,14 +609,60 @@ def alterar_status_produto(
         .table("produtos")
 
         .update(
+
             {
+
                 "ativo": ativo
+
             }
+
         )
 
         .eq(
+
             "id",
+
             produto_id
+
+        )
+
+        .execute()
+
+    )
+
+
+
+    return resposta.data
+
+
+
+
+
+# =====================================================
+# EXCLUIR PRODUTO
+# =====================================================
+
+def excluir_produto(
+
+    produto_id
+
+):
+
+
+    resposta = (
+
+        supabase
+
+        .table("produtos")
+
+        .delete()
+
+        .eq(
+
+            "id",
+
+            produto_id
+
         )
 
         .execute()
@@ -505,3 +671,129 @@ def alterar_status_produto(
 
 
     return resposta.data
+    # =====================================================
+# VALIDAR SE CATEGORIA POSSUI PREÇO
+# =====================================================
+
+def categoria_possui_preco(
+
+    categoria_id
+
+):
+
+
+    categoria = buscar_categoria_produto(
+
+        categoria_id
+
+    )
+
+
+    if not categoria:
+
+
+        return False
+
+
+
+    return categoria.get(
+
+        "possui_preco",
+
+        False
+
+    )
+
+
+
+
+
+# =====================================================
+# LISTAR PRODUTOS ATIVOS
+# =====================================================
+
+def listar_produtos_ativos():
+
+
+    resposta = (
+
+        supabase
+
+        .table("produtos")
+
+        .select(
+            """
+            *,
+            categorias(
+                id,
+                nome,
+                possui_preco
+            )
+            """
+        )
+
+        .eq(
+
+            "ativo",
+
+            True
+
+        )
+
+        .order("nome")
+
+        .execute()
+
+    )
+
+
+    return resposta.data or []
+
+
+
+
+
+# =====================================================
+# LISTAR PRODUTOS POR CATEGORIA PARA ADMIN
+# =====================================================
+
+def listar_produtos_categoria_admin(
+
+    categoria_id
+
+):
+
+
+    resposta = (
+
+        supabase
+
+        .table("produtos")
+
+        .select(
+            """
+            *,
+            categorias(
+                id,
+                nome,
+                possui_preco
+            )
+            """
+        )
+
+        .eq(
+
+            "categoria_id",
+
+            categoria_id
+
+        )
+
+        .order("nome")
+
+        .execute()
+
+    )
+
+
+    return resposta.data or []
