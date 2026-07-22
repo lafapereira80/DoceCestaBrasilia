@@ -38,24 +38,39 @@ st.markdown(
 """
 <style>
 
+
 section[data-testid="stSidebar"]{
+
     display:none;
+
 }
+
 
 [data-testid="collapsedControl"]{
+
     display:none;
+
 }
+
 
 header{
+
     visibility:hidden;
+
 }
+
 
 footer{
+
     visibility:hidden;
+
 }
 
+
 #MainMenu{
+
     visibility:hidden;
+
 }
 
 
@@ -96,6 +111,17 @@ h3{
 p, label, div{
 
     font-size:14px;
+
+}
+
+
+div[data-baseweb="input"]{
+
+    background:white;
+
+    border-radius:10px;
+
+    border:1px solid #c9b8a8;
 
 }
 
@@ -173,7 +199,6 @@ unsafe_allow_html=True
 
 
 
-
 # ==========================================================
 # LOGO
 # ==========================================================
@@ -236,7 +261,6 @@ unsafe_allow_html=True
 
 
 
-
 # ==========================================================
 # FORMULÁRIO
 # ==========================================================
@@ -245,10 +269,6 @@ unsafe_allow_html=True
 st.markdown(
 "### 📝 Faça seu pedido"
 )
-
-
-
-
 # ==========================================================
 # CLIENTE
 # ==========================================================
@@ -299,6 +319,7 @@ cpf = st.text_input(
 
 
 
+
 # ==========================================================
 # CESTAS
 # ==========================================================
@@ -317,13 +338,13 @@ try:
 
 except Exception as erro:
 
-    cestas = []
-
     st.error(
 
         f"Erro ao carregar cestas: {erro}"
 
     )
+
+    cestas = []
 
 
 
@@ -340,9 +361,9 @@ if cestas:
 
         {
 
-            "id":None,
+            "id": None,
 
-            "nome":"Selecione..."
+            "nome": "Selecione..."
 
         }
 
@@ -360,13 +381,13 @@ if cestas:
 
             c["nome"],
 
-        key="selecao_cesta"
+        index=0
 
     )
 
 
 
-    if cesta_selecionada.get("id"):
+    if cesta_selecionada["id"]:
 
 
         cesta = cesta_selecionada
@@ -385,8 +406,9 @@ else:
 
 
 
+
 # ==========================================================
-# DETALHES DA CESTA
+# INFORMAÇÕES VISUAIS DA CESTA
 # ==========================================================
 
 
@@ -398,6 +420,7 @@ if cesta:
         [1,2]
 
     )
+
 
 
     with col1:
@@ -433,7 +456,6 @@ if cesta:
             )
 
 
-
         else:
 
 
@@ -442,6 +464,8 @@ if cesta:
                 "Imagem da cesta não cadastrada."
 
             )
+
+
 
 
 
@@ -462,46 +486,55 @@ if cesta:
         if cesta.get("preco") is not None:
 
 
-            valor = float(
 
-                cesta["preco"]
+            try:
 
-            )
+                valor = float(
 
+                    cesta["preco"]
 
-            valor_formatado = (
-
-                f"R$ {valor:,.2f}"
-
-                .replace(",", "X")
-
-                .replace(".", ",")
-
-                .replace("X",".")
-
-            )
+                )
 
 
-            st.markdown(
+                valor_formatado = (
 
-                f"""
+                    f"R$ {valor:,.2f}"
+
+                    .replace(",", "X")
+
+                    .replace(".", ",")
+
+                    .replace("X",".")
+
+                )
+
+
+                st.markdown(
+
+                    f"""
 
 ### 🎁 Valor da cesta
 
 **{valor_formatado}**
 
-""",
+                    """,
 
-                unsafe_allow_html=True
+                    unsafe_allow_html=True
+
+                )
+
+
+            except:
+
+
+                pass
                 # ==========================================================
 # PERSONALIZAÇÃO DA CESTA
 # ==========================================================
 
 
 st.markdown(
-
     "### 🍓 Personalize sua cesta"
-
 )
 
 
@@ -510,49 +543,19 @@ selecoes_cliente = {}
 
 
 
-
 # ==========================================================
-# PRODUTOS DA CESTA ESCOLHIDA
-#
-# REGRA:
-#
-# Sem cesta:
-#   não mostra produtos configurados
-#
-# Com cesta:
-#   mostra somente produtos vinculados
-#   àquela cesta
-#
+# SOMENTE MOSTRA PRODUTOS SE EXISTIR CESTA
 # ==========================================================
 
 
 if cesta:
 
 
+    configuracao = carregar_configuracao_cesta(
 
-    try:
+        cesta["id"]
 
-
-        configuracao = carregar_configuracao_cesta(
-
-            cesta["id"]
-
-        )
-
-
-    except Exception as erro:
-
-
-        configuracao = []
-
-
-        st.error(
-
-            f"Erro ao carregar produtos da cesta: {erro}"
-
-        )
-
-
+    )
 
 
 
@@ -606,7 +609,7 @@ if cesta:
 
 
 
-            # ignora grupo sem produtos
+            # Ignora grupo sem produtos
 
             if not produtos:
 
@@ -630,26 +633,26 @@ if cesta:
 
 
 
+                # ==========================================
+                # APENAS 1 ESCOLHA
+                # ==========================================
+
+
                 if maximo == 1:
 
 
 
                     escolhido = st.radio(
 
-
                         "Escolha uma opção",
 
-
                         produtos,
-
 
                         format_func=lambda p:
 
                             p["nome"],
 
-
                         key=f"radio_{cesta['id']}_{categoria}"
-
 
                     )
 
@@ -658,17 +661,19 @@ if cesta:
                     if escolhido:
 
 
-
                         selecoes_cliente[categoria] = [
 
-
                             escolhido
-
 
                         ]
 
 
 
+
+
+                # ==========================================
+                # MULTIPLAS ESCOLHAS
+                # ==========================================
 
 
                 else:
@@ -677,23 +682,17 @@ if cesta:
 
                     escolhidos = st.multiselect(
 
-
                         f"Escolha entre {minimo} e {maximo} opções",
 
-
                         produtos,
-
 
                         format_func=lambda p:
 
                             p["nome"],
 
-
                         max_selections=maximo,
 
-
                         key=f"multi_{cesta['id']}_{categoria}"
-
 
                     )
 
@@ -706,7 +705,6 @@ if cesta:
 
 
     else:
-
 
 
         st.info(
@@ -722,22 +720,19 @@ if cesta:
 else:
 
 
-
     st.info(
 
-        "Escolha uma cesta acima para visualizar os produtos disponíveis."
+        "Escolha uma cesta para visualizar os produtos disponíveis."
 
     )
-
     # ==========================================================
-# COMPLEMENTOS DO PEDIDO
+# COMPLEMENTOS
 #
-# REGRAS:
+# Regras:
 #
-# 1 - Adicionais aparecem sempre
-#
-# 2 - Outras categorias aparecem somente
-#     se estiverem configuradas na cesta
+# 1 - Adicionais sempre aparece
+# 2 - Outras categorias somente aparecem
+#     quando configuradas na cesta
 #
 # ==========================================================
 
@@ -751,7 +746,7 @@ st.markdown(
 
 st.caption(
 
-    "Escolha itens adicionais para complementar sua cesta."
+    "Escolha os itens adicionais que deseja:"
 
 )
 
@@ -800,102 +795,52 @@ categorias_exibir = []
 
 
 
-# ----------------------------------------------------------
-# SEM CESTA
-# somente Adicionais
-# ----------------------------------------------------------
+# ==========================================================
+# ADICIONAIS SEMPRE DISPONÍVEL
+# ==========================================================
 
 
-if not cesta:
-
-
-
-    for categoria in categorias_pedido:
+for categoria in categorias_pedido:
 
 
 
-        nome_categoria = categoria.get(
+    nome_categoria = categoria.get(
 
-            "nome",
+        "nome",
 
-            ""
+        ""
 
-        ).strip().lower()
-
-
-
-        if nome_categoria == "adicionais":
-
-
-            categorias_exibir.append(
-
-                categoria
-
-            )
+    ).strip()
 
 
 
+    if nome_categoria.lower() == "adicionais":
 
 
-# ----------------------------------------------------------
-# COM CESTA
-# Adicionais + categorias da cesta
-# ----------------------------------------------------------
+        categorias_exibir.append(
 
-
-else:
-
-
-
-    # Adicionais sempre entram
-
-
-    for categoria in categorias_pedido:
-
-
-
-        nome_categoria = categoria.get(
-
-            "nome",
-
-            ""
-
-        ).strip()
-
-
-
-        if nome_categoria.lower() == "adicionais":
-
-
-            categorias_exibir.append(
-
-                categoria
-
-            )
-
-
-
-
-
-    # Buscar categorias configuradas
-
-
-    try:
-
-
-        configuracao = carregar_configuracao_cesta(
-
-            cesta["id"]
+            categoria
 
         )
 
 
-    except:
 
 
-        configuracao = []
+
+# ==========================================================
+# CATEGORIAS DA CESTA
+# ==========================================================
 
 
+if cesta:
+
+
+
+    configuracao = carregar_configuracao_cesta(
+
+        cesta["id"]
+
+    )
 
 
 
@@ -907,28 +852,18 @@ else:
 
 
 
-        nome = grupo.get(
+        categorias_cesta.append(
 
-            "categoria"
+            grupo.get(
+
+                "categoria"
+
+            )
 
         )
 
 
 
-        if nome:
-
-
-            categorias_cesta.append(
-
-                nome.strip()
-
-            )
-
-
-
-
-
-    # adiciona categorias da cesta
 
 
     for categoria in categorias_pedido:
@@ -963,7 +898,7 @@ else:
 
 
 # ==========================================================
-# EXIBIR PRODUTOS DOS COMPLEMENTOS
+# MOSTRAR PRODUTOS
 # ==========================================================
 
 
@@ -1026,7 +961,7 @@ for categoria in categorias_exibir:
 
                 mostrar_valor = (
 
-                    nome_categoria.strip().lower()
+                    nome_categoria.lower()
 
                     ==
 
@@ -1088,7 +1023,6 @@ for categoria in categorias_exibir:
                 else:
 
 
-
                     label_produto = produto["nome"]
 
 
@@ -1097,12 +1031,9 @@ for categoria in categorias_exibir:
 
                 marcado = st.checkbox(
 
-
                     label_produto,
 
-
-                    key=f"produto_extra_{produto['id']}"
-
+                    key=f"complemento_{produto['id']}"
 
                 )
 
@@ -1161,7 +1092,12 @@ for categoria in categorias_exibir:
 
 
                         polaroid = True
-                        # ==========================================================
+
+
+
+
+
+# ==========================================================
 # FOTOS POLAROID
 # ==========================================================
 
@@ -1201,18 +1137,14 @@ if polaroid:
 
         key="upload_polaroid"
 
-
     )
+
 
 
 else:
 
 
     fotos = []
-
-
-
-
 
 # ==========================================================
 # PAGAMENTO
@@ -1232,9 +1164,7 @@ with st.container(border=True):
 
     pagamento = st.radio(
 
-
         "Forma de pagamento",
-
 
         [
 
@@ -1244,12 +1174,9 @@ with st.container(border=True):
 
         ],
 
-
         horizontal=True,
 
-
         key="forma_pagamento"
-
 
     )
 
@@ -1272,18 +1199,13 @@ st.markdown(
 
 mensagem = st.text_area(
 
-
     "Mensagem que acompanhará a cesta",
-
 
     height=100,
 
-
     placeholder="Digite uma mensagem especial...",
 
-
     key="mensagem_cliente"
-
 
 )
 
@@ -1306,18 +1228,13 @@ st.markdown(
 
 pedido_especial = st.text_area(
 
-
     "Alguma solicitação especial?",
-
 
     height=100,
 
-
     placeholder="Exemplo: entregar pela manhã...",
 
-
     key="pedido_especial"
-
 
 )
 
@@ -1340,21 +1257,15 @@ st.markdown(
 
 endereco = st.text_area(
 
-
     "Endereço de entrega",
-
 
     height=100,
 
-
     placeholder="Informe o endereço completo...",
-
 
     key="endereco"
 
-
 )
-
 
 
 
@@ -1367,12 +1278,9 @@ with col1:
 
     data_entrega = st.date_input(
 
-
         "📅 Data de entrega",
 
-
         format="DD/MM/YYYY"
-
 
     )
 
@@ -1383,9 +1291,7 @@ with col2:
 
     periodo_entrega = st.selectbox(
 
-
         "🕘 Período",
-
 
         [
 
@@ -1397,10 +1303,13 @@ with col2:
 
         ]
 
-
     )
 
-    # ==========================================================
+
+
+
+
+# ==========================================================
 # CÁLCULO DOS VALORES
 # ==========================================================
 
@@ -1421,7 +1330,6 @@ if cesta:
 
 
     try:
-
 
         valor_cesta = float(
 
@@ -1446,7 +1354,6 @@ if cesta:
 
 
 for item in adicionais_selecionados:
-
 
 
     if item["preco"] is None:
@@ -1538,8 +1445,6 @@ if cesta:
 
 
 
-
-
     with col2:
 
 
@@ -1580,15 +1485,12 @@ if cesta:
 
 
 
-
-
     if tem_adicional_consulta:
 
 
         st.warning(
 
-            "⚠️ Existem itens com valor sob consulta. "
-            "Nossa equipe informará o valor final."
+            "⚠️ Existem itens com valor sob consulta. Nossa equipe confirmará o valor final."
 
         )
 
@@ -1607,18 +1509,13 @@ st.divider()
 
 enviar = st.button(
 
-
     "🎁 ENVIAR PEDIDO",
-
 
     use_container_width=True,
 
-
     type="primary",
 
-
     key="enviar_pedido"
-
 
 )
 
@@ -1627,12 +1524,11 @@ enviar = st.button(
 
 
 # ==========================================================
-# PROCESSAMENTO DO PEDIDO
+# PROCESSAMENTO
 # ==========================================================
 
 
 if enviar:
-
 
 
     if not nome.strip():
@@ -1645,8 +1541,6 @@ if enviar:
         )
 
         st.stop()
-
-
 
 
 
@@ -1663,8 +1557,6 @@ if enviar:
 
 
 
-
-
     if not telefone.strip():
 
 
@@ -1675,8 +1567,6 @@ if enviar:
         )
 
         st.stop()
-
-
 
 
 
@@ -1693,11 +1583,6 @@ if enviar:
 
 
 
-
-
-    # ======================================================
-    # PRODUTOS ESCOLHIDOS
-    # ======================================================
 
 
     produtos_escolhidos = []
@@ -1720,17 +1605,11 @@ if enviar:
 
 
 
-    # ======================================================
-    # COMPLEMENTOS
-    # ======================================================
-
-
     complementos_texto = []
 
 
 
     for item in adicionais_selecionados:
-
 
 
         if item["preco"] is None:
@@ -1756,11 +1635,6 @@ if enviar:
 
 
 
-    # ======================================================
-    # DADOS DO PEDIDO
-    # ======================================================
-
-
     dados = {
 
 
@@ -1769,11 +1643,9 @@ if enviar:
             nome,
 
 
-
         "cliente_cpf":
 
             cpf,
-
 
 
         "cliente_telefone":
@@ -1781,11 +1653,9 @@ if enviar:
             telefone,
 
 
-
         "cesta_id":
 
             cesta["id"],
-
 
 
         "cesta_nome":
@@ -1793,25 +1663,14 @@ if enviar:
             cesta["nome"],
 
 
-
         "produtos":
 
-            "\n".join(
-
-                produtos_escolhidos
-
-            ),
-
+            "\n".join(produtos_escolhidos),
 
 
         "adicionais":
 
-            ", ".join(
-
-                complementos_texto
-
-            ),
-
+            ", ".join(complementos_texto),
 
 
         "pagamento":
@@ -1819,11 +1678,9 @@ if enviar:
             pagamento,
 
 
-
         "mensagem":
 
             mensagem,
-
 
 
         "pedido_especial":
@@ -1831,21 +1688,14 @@ if enviar:
             pedido_especial,
 
 
-
         "endereco":
 
             endereco,
 
 
-
         "data_entrega":
 
-            data_entrega.strftime(
-
-                "%Y-%m-%d"
-
-            ),
-
+            data_entrega.strftime("%Y-%m-%d"),
 
 
         "periodo_entrega":
@@ -1853,11 +1703,9 @@ if enviar:
             periodo_entrega,
 
 
-
         "status":
 
             "Recebido",
-
 
 
         "valor_frete":
@@ -1865,11 +1713,9 @@ if enviar:
             0,
 
 
-
         "valor_total":
 
             valor_estimado
-
 
     }
 
@@ -1885,7 +1731,6 @@ if enviar:
             dados
 
         )
-
 
 
     except Exception as erro:
@@ -1906,68 +1751,29 @@ if enviar:
     if sucesso:
 
 
-
-        # salvar adicionais
-
-
         if adicionais_selecionados:
 
 
+            salvar_adicionais_pedido(
 
-            try:
+                pedido_id,
 
+                adicionais_selecionados
 
-                salvar_adicionais_pedido(
+            )
 
-                    pedido_id,
-
-                    adicionais_selecionados
-
-                )
-
-
-            except Exception as erro:
-
-
-                st.warning(
-
-                    f"Pedido salvo, mas erro nos adicionais: {erro}"
-
-                )
-
-
-
-
-
-        # salvar fotos
 
 
         if polaroid and fotos:
 
 
+            salvar_fotos(
 
-            try:
+                pedido_id,
 
+                fotos
 
-                salvar_fotos(
-
-                    pedido_id,
-
-                    fotos
-
-                )
-
-
-            except Exception as erro:
-
-
-                st.warning(
-
-                    f"Pedido salvo, mas erro nas fotos: {erro}"
-
-                )
-
-
+            )
 
 
 
@@ -1993,9 +1799,6 @@ Nossa equipe entrará em contato para confirmar:
 ✅ Detalhes da entrega
 """
         )
-
-
-
 
 
     else:
@@ -2048,5 +1851,3 @@ st.page_link(
     icon="🔒"
 
 )
-
-            )
