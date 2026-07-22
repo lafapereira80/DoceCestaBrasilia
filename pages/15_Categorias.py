@@ -235,10 +235,7 @@ for categoria in categorias:
             f"""
 ### {nome}
 
-{status} |  
-Preço: {"Sim" if possui_preco else "Não"} |  
-Pedido: {"Sim" if exibir_pedido else "Não"} |
-Ordem: {ordem_atual}
+{status} |  Preço: {"Sim" if possui_preco else "Não"} |  Pedido: {"Sim" if exibir_pedido else "Não"} | Ordem: {ordem_atual}
 """
         )
   
