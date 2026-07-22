@@ -6,6 +6,7 @@ from services.pedido_service import salvar_pedido
 from services.foto_service import salvar_fotos
 from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
+
 from services.categoria_service import (
     listar_categorias_pedido
 )
@@ -13,7 +14,10 @@ from services.categoria_service import (
 from services.produto_service import (
     listar_produtos_por_categoria_id
 )
-from services.pedido_adicional_service import salvar_adicionais_pedido
+
+from services.pedido_adicional_service import (
+    salvar_adicionais_pedido
+)
 
 
 
@@ -217,7 +221,7 @@ logo = Path(
 if logo.exists():
 
 
-    col1,col2,col3 = st.columns(
+    col1, col2, col3 = st.columns(
         [1,1,1]
     )
 
@@ -295,7 +299,7 @@ st.markdown(
 
 
 
-col1,col2 = st.columns(2)
+col1, col2 = st.columns(2)
 
 
 
@@ -383,9 +387,9 @@ if cestas:
 
         {
 
-            "id":None,
+            "id": None,
 
-            "nome":"Selecione..."
+            "nome": "Selecione..."
 
         }
 
@@ -442,7 +446,7 @@ else:
 if cesta:
 
 
-    col1,col2 = st.columns(
+    col1, col2 = st.columns(
 
         [1,2]
 
@@ -735,16 +739,16 @@ else:
 
 
 # ==========================================================
-# CATEGORIAS EXTRAS DO PEDIDO
+# COMPLEMENTOS / ADICIONAIS DINÂMICOS
 #
-# Agora é totalmente dinâmico:
+# Busca todas as categorias configuradas para aparecer
+# no pedido.
 #
-# Categorias cadastradas em:
-# 15_Categorias.py
-#
-# respeitando:
-# ativo = True
-# exibir_no_pedido = True
+# Exemplo:
+# Adicionais
+# Flores
+# Chocolates
+# Outros
 #
 # ==========================================================
 
@@ -764,7 +768,6 @@ polaroid = False
 
 
 
-
 try:
 
 
@@ -780,14 +783,11 @@ except Exception as erro:
 
     st.error(
 
-        f"Erro ao carregar categorias: {erro}"
+        f"Erro ao carregar complementos: {erro}"
 
     )
 
 
-
-
-categorias_extras = []
 
 
 
@@ -795,36 +795,13 @@ for categoria in categorias_pedido:
 
 
 
-    nome_categoria = categoria.get(
+    categoria_nome = categoria.get(
 
         "nome",
 
         ""
 
     )
-
-
-
-    # evita repetir categorias usadas na configuração da cesta
-
-    if nome_categoria in selecoes_cliente:
-
-
-        continue
-
-
-
-    categorias_extras.append(
-
-        categoria
-
-    )
-
-
-
-
-
-for categoria in categorias_extras:
 
 
 
@@ -846,10 +823,9 @@ for categoria in categorias_extras:
     with st.container(border=True):
 
 
-
         st.markdown(
 
-            f"**{categoria['nome']}**"
+            f"**{categoria_nome}**"
 
         )
 
@@ -859,7 +835,7 @@ for categoria in categorias_extras:
 
 
 
-            "Selecione as opções desejadas",
+            "Selecione os itens desejados",
 
 
 
@@ -885,7 +861,7 @@ for categoria in categorias_extras:
 
 
 
-            key=f"categoria_extra_{categoria['id']}"
+            key=f"complemento_categoria_{categoria['id']}"
 
         )
 
@@ -897,14 +873,11 @@ for categoria in categorias_extras:
 
             adicionais_selecionados.append(
 
-
                 {
-
 
                     "produto_id":
 
                         produto["id"],
-
 
 
                     "nome":
@@ -912,15 +885,11 @@ for categoria in categorias_extras:
                         produto["nome"],
 
 
-
                     "preco":
 
                         produto.get("preco")
 
-
-
                 }
-
 
             )
 
@@ -938,7 +907,6 @@ for categoria in categorias_extras:
 if polaroid:
 
 
-
     st.markdown(
 
         "### 📷 Fotos da Polaroid"
@@ -950,9 +918,7 @@ if polaroid:
     fotos = st.file_uploader(
 
 
-
         "Selecione as imagens",
-
 
 
         type=[
@@ -968,9 +934,7 @@ if polaroid:
         ],
 
 
-
         accept_multiple_files=True,
-
 
 
         key="upload_polaroid"
@@ -981,7 +945,6 @@ if polaroid:
 
 
 else:
-
 
 
     fotos = []
@@ -1135,12 +1098,11 @@ endereco = st.text_area(
 
 
 
-col1,col2 = st.columns(2)
+col1, col2 = st.columns(2)
 
 
 
 with col1:
-
 
 
     data_entrega = st.date_input(
@@ -1157,7 +1119,6 @@ with col1:
 
 
 with col2:
-
 
 
     periodo_entrega = st.selectbox(
@@ -1208,7 +1169,6 @@ if cesta:
 
         valor_cesta = float(
 
-
             cesta.get(
 
                 "preco",
@@ -1233,8 +1193,15 @@ for item in adicionais_selecionados:
 
 
 
-    if item["preco"] is None:
+    preco = item.get(
 
+        "preco"
+
+    )
+
+
+
+    if preco is None:
 
 
         tem_adicional_consulta = True
@@ -1249,18 +1216,14 @@ for item in adicionais_selecionados:
     try:
 
 
-
         valor_adicionais += float(
 
-
-            item["preco"]
+            preco
 
         )
 
 
-
     except:
-
 
 
         pass
@@ -1271,7 +1234,9 @@ for item in adicionais_selecionados:
 
 valor_estimado = (
 
-    valor_cesta +
+    valor_cesta
+
+    +
 
     valor_adicionais
 
@@ -1289,7 +1254,6 @@ valor_estimado = (
 if cesta:
 
 
-
     st.divider()
 
 
@@ -1302,12 +1266,11 @@ if cesta:
 
 
 
-    col1,col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
 
 
     with col1:
-
 
 
         st.write(
@@ -1317,12 +1280,9 @@ if cesta:
         )
 
 
-
         st.write(
 
-
             f"R$ {valor_cesta:,.2f}"
-
 
             .replace(",", "X")
 
@@ -1330,15 +1290,11 @@ if cesta:
 
             .replace("X",".")
 
-
         )
 
 
 
-
-
     with col2:
-
 
 
         st.write(
@@ -1348,12 +1304,9 @@ if cesta:
         )
 
 
-
         st.write(
 
-
             f"R$ {valor_adicionais:,.2f}"
-
 
             .replace(",", "X")
 
@@ -1361,10 +1314,7 @@ if cesta:
 
             .replace("X",".")
 
-
         )
-
-
 
 
 
@@ -1373,17 +1323,13 @@ if cesta:
     st.success(
 
 
-
         f"💝 Valor estimado: R$ {valor_estimado:,.2f}"
-
-
 
         .replace(",", "X")
 
         .replace(".", ",")
 
         .replace("X",".")
-
 
 
     )
@@ -1395,12 +1341,10 @@ if cesta:
     if tem_adicional_consulta:
 
 
-
         st.warning(
 
-
             "⚠️ Existem itens com preço sob consulta. "
-            "Nossa equipe confirmará o valor final."
+            "O valor final será confirmado pela nossa equipe."
 
         )
         # ==========================================================
@@ -1508,7 +1452,7 @@ if enviar:
 
 
     # ======================================================
-    # PRODUTOS ESCOLHIDOS
+    # PRODUTOS DA CESTA
     # ======================================================
 
 
@@ -1519,9 +1463,7 @@ if enviar:
     for categoria, itens in selecoes_cliente.items():
 
 
-
         for item in itens:
-
 
 
             produtos_escolhidos.append(
@@ -1537,7 +1479,7 @@ if enviar:
 
 
     # ======================================================
-    # TEXTO DOS COMPLEMENTOS
+    # TEXTO DOS ADICIONAIS
     # ======================================================
 
 
@@ -1549,15 +1491,12 @@ if enviar:
 
 
 
-        if item["preco"] is None:
-
+        if item.get("preco") is None:
 
 
             complementos_texto.append(
 
-
                 f"{item['nome']} (Preço sob consulta)"
-
 
             )
 
@@ -1566,12 +1505,9 @@ if enviar:
         else:
 
 
-
             complementos_texto.append(
 
-
                 item["nome"]
-
 
             )
 
@@ -1694,7 +1630,6 @@ if enviar:
 
             valor_estimado
 
-
     }
 
 
@@ -1709,7 +1644,6 @@ if enviar:
     try:
 
 
-
         sucesso, pedido_id = salvar_pedido(
 
             dados
@@ -1717,9 +1651,7 @@ if enviar:
         )
 
 
-
     except Exception as erro:
-
 
 
         st.error(
@@ -1746,9 +1678,7 @@ if enviar:
         if adicionais_selecionados:
 
 
-
             try:
-
 
 
                 salvar_adicionais_pedido(
@@ -1763,15 +1693,12 @@ if enviar:
                 )
 
 
-
             except Exception as erro:
-
 
 
                 st.warning(
 
-
-                    f"Pedido salvo, mas erro ao salvar complementos: {erro}"
+                    f"Pedido salvo, mas erro nos adicionais: {erro}"
 
                 )
 
@@ -1787,9 +1714,7 @@ if enviar:
         if polaroid and fotos:
 
 
-
             try:
-
 
 
                 salvar_fotos(
@@ -1804,15 +1729,12 @@ if enviar:
                 )
 
 
-
             except Exception as erro:
-
 
 
                 st.warning(
 
-
-                    f"Pedido salvo, mas erro ao salvar fotos: {erro}"
+                    f"Pedido salvo, mas erro nas fotos: {erro}"
 
                 )
 
@@ -1838,7 +1760,7 @@ Recebemos seu pedido.
 
 Nossa equipe entrará em contato para confirmar:
 
-✅ Valor dos itens sob consulta  
+✅ Valores dos itens sob consulta  
 ✅ Valor do frete  
 ✅ Valor final do pedido  
 ✅ Detalhes da entrega
@@ -1850,7 +1772,6 @@ Nossa equipe entrará em contato para confirmar:
 
 
     else:
-
 
 
         st.error(
