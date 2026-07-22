@@ -670,15 +670,16 @@ else:
         "Escolha uma cesta para personalizar."
 
     )
-    # ==========================================================
+
+# ==========================================================
 # CATEGORIAS EXTRAS DO PEDIDO
 #
 # Itens adicionais dinâmicos
-# vindos da página 15_Categorias.py
 #
 # Regras:
-# ativo = True
-# exibir_no_pedido = True
+# - Categoria ativa
+# - Exibir no pedido
+# - Somente "Adicionais" mostra preço
 #
 # ==========================================================
 
@@ -726,13 +727,10 @@ except Exception as erro:
 
 
 
-# evita repetir categorias que já fazem parte da cesta
-
-categorias_extras = []
-
 
 
 for categoria in categorias_pedido:
+
 
 
     nome_categoria = categoria.get(
@@ -742,24 +740,6 @@ for categoria in categorias_pedido:
         ""
 
     )
-
-
-    if nome_categoria in selecoes_cliente:
-
-
-        continue
-
-
-
-    categorias_extras.append(
-
-        categoria
-
-    )
-
-
-
-for categoria in categorias_extras:
 
 
 
@@ -783,15 +763,10 @@ for categoria in categorias_extras:
 
         st.markdown(
 
-            f"**{categoria['nome']}**"
+            f"**{nome_categoria}**"
 
         )
 
-
-
-        # ==================================================
-        # DUAS COLUNAS DE ADICIONAIS
-        # ==================================================
 
 
         colunas = st.columns(2)
@@ -804,47 +779,91 @@ for categoria in categorias_extras:
             coluna = colunas[indice % 2]
 
 
+
             with coluna:
 
 
-                preco = produto.get(
 
-                    "preco"
+                # ==================================================
+                # REGRA DE PREÇO
+                #
+                # Somente categoria Adicionais
+                # mostra valor ou consulta
+                # ==================================================
+
+
+                mostrar_valor = (
+
+                    nome_categoria.strip().lower()
+
+                    ==
+
+                    "adicionais"
 
                 )
 
 
 
-                if preco is None:
+                if mostrar_valor:
 
 
-                    texto_valor = "Consultar valor"
+
+                    preco = produto.get(
+
+                        "preco"
+
+                    )
+
+
+
+                    if preco is None:
+
+
+                        texto_valor = "Consultar valor"
+
+
+
+                    else:
+
+
+                        valor = float(preco)
+
+
+                        texto_valor = (
+
+                            f"R$ {valor:,.2f}"
+
+                            .replace(",", "X")
+
+                            .replace(".", ",")
+
+                            .replace("X",".")
+
+                        )
+
+
+
+                    label_produto = (
+
+                        f"{produto['nome']}  |  {texto_valor}"
+
+                    )
+
 
 
                 else:
 
 
-                    valor = float(preco)
+                    label_produto = produto["nome"]
 
 
-                    texto_valor = (
-
-                        f"R$ {valor:,.2f}"
-
-                        .replace(",", "X")
-
-                        .replace(".", ",")
-
-                        .replace("X",".")
-
-                    )
 
 
 
                 marcado = st.checkbox(
 
 
-                    f"{produto['nome']}  |  {texto_valor}",
+                    label_produto,
 
 
                     key=f"adicional_{produto['id']}"
@@ -855,6 +874,7 @@ for categoria in categorias_extras:
 
 
                 if marcado:
+
 
 
                     adicionais_selecionados.append(
@@ -879,6 +899,16 @@ for categoria in categorias_extras:
 
                                 produto.get("preco")
 
+                                if mostrar_valor
+
+                                else None,
+
+
+
+                            "categoria":
+
+                                nome_categoria
+
 
 
                         }
@@ -892,7 +922,8 @@ for categoria in categorias_extras:
 
 
                         polaroid = True
-                      # ==========================================================
+            
+# ==========================================================
 # FOTOS POLAROID
 # ==========================================================
 
