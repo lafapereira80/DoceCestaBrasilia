@@ -74,7 +74,7 @@ def menu_lateral():
 
 
         st.title(
-            "🍓 Doce Cesta Brasília"
+            "Doce Cesta Brasília"
         )
 
 
