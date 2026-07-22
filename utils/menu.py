@@ -92,6 +92,10 @@ def menu_lateral():
 
 
 
+        # =====================================================
+        # ADMINISTRAÇÃO
+        # =====================================================
+
         st.page_link(
 
             "pages/99_Admin.py",
@@ -101,6 +105,10 @@ def menu_lateral():
         )
 
 
+
+        # =====================================================
+        # OPERACIONAL
+        # =====================================================
 
         if perfil in [
 
@@ -147,7 +155,14 @@ def menu_lateral():
 
 
 
+        # =====================================================
+        # ADMINISTRADOR
+        # =====================================================
+
         if perfil == "Administrador":
+
+
+            st.divider()
 
 
             st.page_link(
@@ -164,6 +179,15 @@ def menu_lateral():
                 "pages/07_Usuarios.py",
 
                 label="👤 Usuários"
+
+            )
+
+
+            st.page_link(
+
+                "pages/15_Categorias.py",
+
+                label="📂 Categorias"
 
             )
 
