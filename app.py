@@ -6,18 +6,9 @@ from services.pedido_service import salvar_pedido
 from services.foto_service import salvar_fotos
 from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
-
-from services.categoria_service import (
-    listar_categorias_pedido
-)
-
-from services.produto_service import (
-    listar_produtos_por_categoria_id
-)
-
-from services.pedido_adicional_service import (
-    salvar_adicionais_pedido
-)
+from services.categoria_service import listar_categorias_pedido
+from services.produto_service import listar_produtos_por_categoria_id
+from services.pedido_adicional_service import salvar_adicionais_pedido
 
 
 
@@ -220,14 +211,12 @@ logo = Path(
 
 if logo.exists():
 
-
-    col1, col2, col3 = st.columns(
+    col1,col2,col3 = st.columns(
         [1,1,1]
     )
 
 
     with col2:
-
 
         st.image(
 
@@ -236,7 +225,6 @@ if logo.exists():
             width=130
 
         )
-
 
 
 
@@ -279,9 +267,7 @@ unsafe_allow_html=True
 
 
 st.markdown(
-
 "### 📝 Faça seu pedido"
-
 )
 
 
@@ -292,19 +278,16 @@ st.markdown(
 
 
 st.markdown(
-
 "### 👤 Seus dados"
-
 )
 
 
 
-col1, col2 = st.columns(2)
+col1,col2 = st.columns(2)
 
 
 
 with col1:
-
 
     nome = st.text_input(
 
@@ -318,7 +301,6 @@ with col1:
 
 with col2:
 
-
     telefone = st.text_input(
 
         "Telefone *",
@@ -326,7 +308,6 @@ with col2:
         placeholder="(61) 99999-9999"
 
     )
-
 
 
 
@@ -347,13 +328,10 @@ cpf = st.text_input(
 
 try:
 
-
     cestas = listar_cestas()
 
 
-
 except Exception as erro:
-
 
     st.error(
 
@@ -361,17 +339,12 @@ except Exception as erro:
 
     )
 
-
     cestas = []
 
 
 
-
-
 st.markdown(
-
 "### 🎁 Escolha sua cesta"
-
 )
 
 
@@ -387,9 +360,9 @@ if cestas:
 
         {
 
-            "id": None,
+            "id":None,
 
-            "nome": "Selecione..."
+            "nome":"Selecione..."
 
         }
 
@@ -397,20 +370,15 @@ if cestas:
 
 
 
-
     cesta_selecionada = st.selectbox(
-
 
         "Selecione a cesta",
 
-
         opcoes_cestas,
-
 
         format_func=lambda c:
 
             c["nome"],
-
 
         index=0
 
@@ -418,17 +386,13 @@ if cestas:
 
 
 
-
     if cesta_selecionada["id"]:
-
 
         cesta = cesta_selecionada
 
 
 
-
 else:
-
 
     st.warning(
 
@@ -446,7 +410,7 @@ else:
 if cesta:
 
 
-    col1, col2 = st.columns(
+    col1,col2 = st.columns(
 
         [1,2]
 
@@ -502,7 +466,6 @@ if cesta:
 
         if cesta.get("descricao"):
 
-
             st.info(
 
                 cesta["descricao"]
@@ -520,24 +483,36 @@ if cesta:
             )
 
 
+            valor_formatado = (
+
+                f"R$ {valor:,.2f}"
+
+                .replace(",", "X")
+
+                .replace(".", ",")
+
+                .replace("X",".")
+
+            )
+
+
             st.markdown(
 
                 f"""
 
 ### 🎁 Valor da cesta
 
-**R$ {valor:,.2f}**
+**{valor_formatado}**
 
-                """
-
-                .replace(",", "X")
-                .replace(".", ",")
-                .replace("X","."),
+                """,
 
                 unsafe_allow_html=True
 
             )
-            # ==========================================================
+
+
+
+# ==========================================================
 # PERSONALIZAÇÃO DA CESTA
 # ==========================================================
 
@@ -564,13 +539,10 @@ if cesta:
     )
 
 
-
     if configuracao:
 
 
-
         for grupo in configuracao:
-
 
 
             categoria = grupo.get(
@@ -582,7 +554,6 @@ if cesta:
             )
 
 
-
             produtos = grupo.get(
 
                 "produtos",
@@ -590,7 +561,6 @@ if cesta:
                 []
 
             )
-
 
 
             minimo = grupo.get(
@@ -602,7 +572,6 @@ if cesta:
             )
 
 
-
             maximo = grupo.get(
 
                 "max_escolhas",
@@ -610,7 +579,6 @@ if cesta:
                 1
 
             )
-
 
 
             with st.container(border=True):
@@ -623,33 +591,25 @@ if cesta:
                 )
 
 
-
                 if produtos:
-
 
 
                     if maximo == 1:
 
 
-
                         escolhido = st.radio(
-
 
                             "Escolha uma opção",
 
-
                             produtos,
-
 
                             format_func=lambda p:
 
                                 p["nome"],
 
-
                             key=f"radio_{cesta['id']}_{categoria}"
 
                         )
-
 
 
                         selecoes_cliente[categoria] = [
@@ -659,48 +619,27 @@ if cesta:
                         ]
 
 
-
                     else:
-
 
 
                         escolhidos = st.multiselect(
 
-
                             f"Escolha entre {minimo} e {maximo} opções",
 
-
                             produtos,
-
 
                             format_func=lambda p:
 
                                 p["nome"],
 
-
                             max_selections=maximo,
-
 
                             key=f"multi_{cesta['id']}_{categoria}"
 
                         )
 
 
-
-                        if len(escolhidos) < minimo:
-
-
-
-                            st.warning(
-
-                                f"Escolha pelo menos {minimo} opção(ões)."
-
-                            )
-
-
-
                         selecoes_cliente[categoria] = escolhidos
-
 
 
                 else:
@@ -713,7 +652,6 @@ if cesta:
                     )
 
 
-
     else:
 
 
@@ -724,7 +662,6 @@ if cesta:
         )
 
 
-
 else:
 
 
@@ -733,22 +670,15 @@ else:
         "Escolha uma cesta para personalizar."
 
     )
-
-
-
-
-
-# ==========================================================
-# COMPLEMENTOS / ADICIONAIS DINÂMICOS
+    # ==========================================================
+# CATEGORIAS EXTRAS DO PEDIDO
 #
-# Busca todas as categorias configuradas para aparecer
-# no pedido.
+# Itens adicionais dinâmicos
+# vindos da página 15_Categorias.py
 #
-# Exemplo:
-# Adicionais
-# Flores
-# Chocolates
-# Outros
+# Regras:
+# ativo = True
+# exibir_no_pedido = True
 #
 # ==========================================================
 
@@ -756,6 +686,13 @@ else:
 st.markdown(
 
     "### 🎀 Complementos"
+
+)
+
+
+st.caption(
+
+    "Escolha os itens adicionais que deseja:"
 
 )
 
@@ -789,19 +726,40 @@ except Exception as erro:
 
 
 
+# evita repetir categorias que já fazem parte da cesta
+
+categorias_extras = []
+
 
 
 for categoria in categorias_pedido:
 
 
-
-    categoria_nome = categoria.get(
+    nome_categoria = categoria.get(
 
         "nome",
 
         ""
 
     )
+
+
+    if nome_categoria in selecoes_cliente:
+
+
+        continue
+
+
+
+    categorias_extras.append(
+
+        categoria
+
+    )
+
+
+
+for categoria in categorias_extras:
 
 
 
@@ -825,81 +783,116 @@ for categoria in categorias_pedido:
 
         st.markdown(
 
-            f"**{categoria_nome}**"
+            f"**{categoria['nome']}**"
 
         )
 
 
 
-        selecionados = st.multiselect(
+        # ==================================================
+        # DUAS COLUNAS DE ADICIONAIS
+        # ==================================================
+
+
+        colunas = st.columns(2)
 
 
 
-            "Selecione os itens desejados",
+        for indice, produto in enumerate(produtos_categoria):
+
+
+            coluna = colunas[indice % 2]
+
+
+            with coluna:
+
+
+                preco = produto.get(
+
+                    "preco"
+
+                )
 
 
 
-            produtos_categoria,
+                if preco is None:
 
 
+                    texto_valor = "Consultar valor"
 
-            format_func=lambda p:
 
-                (
-                    f"{p['nome']} - "
-                    +
-                    (
-                        "Preço sob consulta"
-                        if p.get("preco") is None
-                        else
-                        f"R$ {float(p['preco']):,.2f}"
+                else:
+
+
+                    valor = float(preco)
+
+
+                    texto_valor = (
+
+                        f"R$ {valor:,.2f}"
+
                         .replace(",", "X")
+
                         .replace(".", ",")
+
                         .replace("X",".")
+
                     )
-                ),
 
 
 
-            key=f"complemento_categoria_{categoria['id']}"
-
-        )
+                marcado = st.checkbox(
 
 
-
-        for produto in selecionados:
-
+                    f"{produto['nome']}  |  {texto_valor}",
 
 
-            adicionais_selecionados.append(
-
-                {
-
-                    "produto_id":
-
-                        produto["id"],
+                    key=f"adicional_{produto['id']}"
 
 
-                    "nome":
-
-                        produto["nome"],
-
-
-                    "preco":
-
-                        produto.get("preco")
-
-                }
-
-            )
+                )
 
 
 
-            if produto["nome"].lower().strip() == "polaroid":
+                if marcado:
 
 
-                polaroid = True
-                # ==========================================================
+                    adicionais_selecionados.append(
+
+
+                        {
+
+
+                            "produto_id":
+
+                                produto["id"],
+
+
+
+                            "nome":
+
+                                produto["nome"],
+
+
+
+                            "preco":
+
+                                produto.get("preco")
+
+
+
+                        }
+
+
+                    )
+
+
+
+                    if produto["nome"].lower().strip() == "polaroid":
+
+
+                        polaroid = True
+                      # ==========================================================
 # FOTOS POLAROID
 # ==========================================================
 
@@ -941,7 +934,6 @@ if polaroid:
 
 
     )
-
 
 
 else:
@@ -1098,7 +1090,7 @@ endereco = st.text_area(
 
 
 
-col1, col2 = st.columns(2)
+col1,col2 = st.columns(2)
 
 
 
@@ -1193,15 +1185,9 @@ for item in adicionais_selecionados:
 
 
 
-    preco = item.get(
+    # ITEM SEM VALOR DEFINIDO
 
-        "preco"
-
-    )
-
-
-
-    if preco is None:
+    if item["preco"] is None:
 
 
         tem_adicional_consulta = True
@@ -1211,14 +1197,12 @@ for item in adicionais_selecionados:
 
 
 
-
-
     try:
 
 
         valor_adicionais += float(
 
-            preco
+            item["preco"]
 
         )
 
@@ -1234,9 +1218,7 @@ for item in adicionais_selecionados:
 
 valor_estimado = (
 
-    valor_cesta
-
-    +
+    valor_cesta +
 
     valor_adicionais
 
@@ -1266,7 +1248,7 @@ if cesta:
 
 
 
-    col1, col2 = st.columns(2)
+    col1,col2 = st.columns(2)
 
 
 
@@ -1280,7 +1262,7 @@ if cesta:
         )
 
 
-        st.write(
+        valor_formatado = (
 
             f"R$ {valor_cesta:,.2f}"
 
@@ -1291,6 +1273,14 @@ if cesta:
             .replace("X",".")
 
         )
+
+
+        st.write(
+
+            valor_formatado
+
+        )
+
 
 
 
@@ -1304,7 +1294,7 @@ if cesta:
         )
 
 
-        st.write(
+        valor_formatado = (
 
             f"R$ {valor_adicionais:,.2f}"
 
@@ -1317,13 +1307,19 @@ if cesta:
         )
 
 
+        st.write(
+
+            valor_formatado
+
+        )
 
 
 
-    st.success(
 
 
-        f"💝 Valor estimado: R$ {valor_estimado:,.2f}"
+    valor_total_formatado = (
+
+        f"R$ {valor_estimado:,.2f}"
 
         .replace(",", "X")
 
@@ -1331,6 +1327,13 @@ if cesta:
 
         .replace("X",".")
 
+    )
+
+
+
+    st.success(
+
+        f"💝 Valor estimado: {valor_total_formatado}"
 
     )
 
@@ -1343,11 +1346,11 @@ if cesta:
 
         st.warning(
 
-            "⚠️ Existem itens com preço sob consulta. "
-            "O valor final será confirmado pela nossa equipe."
+            "⚠️ Existem itens com valor a confirmar. "
+            "Nossa equipe informará o valor final."
 
         )
-        # ==========================================================
+# ==========================================================
 # BOTÃO ENVIO
 # ==========================================================
 
@@ -1378,7 +1381,7 @@ enviar = st.button(
 
 
 # ==========================================================
-# PROCESSAMENTO
+# PROCESSAMENTO DO PEDIDO
 # ==========================================================
 
 
@@ -1452,7 +1455,7 @@ if enviar:
 
 
     # ======================================================
-    # PRODUTOS DA CESTA
+    # PRODUTOS ESCOLHIDOS
     # ======================================================
 
 
@@ -1468,9 +1471,7 @@ if enviar:
 
             produtos_escolhidos.append(
 
-
                 f"{categoria}: {item['nome']}"
-
 
             )
 
@@ -1479,7 +1480,7 @@ if enviar:
 
 
     # ======================================================
-    # TEXTO DOS ADICIONAIS
+    # COMPLEMENTOS
     # ======================================================
 
 
@@ -1491,7 +1492,7 @@ if enviar:
 
 
 
-        if item.get("preco") is None:
+        if item["preco"] is None:
 
 
             complementos_texto.append(
@@ -1499,7 +1500,6 @@ if enviar:
                 f"{item['nome']} (Preço sob consulta)"
 
             )
-
 
 
         else:
@@ -1630,6 +1630,7 @@ if enviar:
 
             valor_estimado
 
+
     }
 
 
@@ -1637,7 +1638,7 @@ if enviar:
 
 
     # ======================================================
-    # SALVAR PEDIDO PRINCIPAL
+    # SALVAR PEDIDO
     # ======================================================
 
 
@@ -1678,17 +1679,15 @@ if enviar:
         if adicionais_selecionados:
 
 
+
             try:
 
 
                 salvar_adicionais_pedido(
 
-
                     pedido_id,
 
-
                     adicionais_selecionados
-
 
                 )
 
@@ -1698,7 +1697,7 @@ if enviar:
 
                 st.warning(
 
-                    f"Pedido salvo, mas erro nos adicionais: {erro}"
+                    f"Pedido salvo, porém houve erro nos adicionais: {erro}"
 
                 )
 
@@ -1714,17 +1713,15 @@ if enviar:
         if polaroid and fotos:
 
 
+
             try:
 
 
                 salvar_fotos(
 
-
                     pedido_id,
 
-
                     fotos
-
 
                 )
 
@@ -1734,7 +1731,7 @@ if enviar:
 
                 st.warning(
 
-                    f"Pedido salvo, mas erro nas fotos: {erro}"
+                    f"Pedido salvo, porém houve erro nas fotos: {erro}"
 
                 )
 
