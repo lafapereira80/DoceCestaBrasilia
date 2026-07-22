@@ -4,6 +4,7 @@ from config.supabase import supabase
 
 # =====================================================
 # LISTAR TODAS AS CATEGORIAS
+# USO ADMINISTRATIVO
 # =====================================================
 
 def listar_categorias():
@@ -32,6 +33,7 @@ def listar_categorias():
 
 # =====================================================
 # LISTAR CATEGORIAS ATIVAS
+# USO GERAL
 # =====================================================
 
 def listar_categorias_ativas():
@@ -47,6 +49,45 @@ def listar_categorias_ativas():
 
         .eq(
             "ativo",
+            True
+        )
+
+        .order("ordem")
+
+        .execute()
+
+    )
+
+
+    return resposta.data or []
+
+
+
+
+
+# =====================================================
+# LISTAR CATEGORIAS PARA O PEDIDO
+# USADO NO app.py
+# =====================================================
+
+def listar_categorias_pedido():
+
+
+    resposta = (
+
+        supabase
+
+        .table("categorias")
+
+        .select("*")
+
+        .eq(
+            "ativo",
+            True
+        )
+
+        .eq(
+            "exibir_no_pedido",
             True
         )
 
