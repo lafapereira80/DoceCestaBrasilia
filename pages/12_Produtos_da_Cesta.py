@@ -71,7 +71,6 @@ margin-bottom:5px;
 }
 
 
-
 h2 {
 
 font-size:17px !important;
@@ -83,13 +82,11 @@ margin-bottom:5px;
 }
 
 
-
 p, div, span {
 
 font-size:13px;
 
 }
-
 
 
 label {
@@ -99,13 +96,11 @@ font-size:13px !important;
 }
 
 
-
 .stCheckbox {
 
 margin-bottom:-8px;
 
 }
-
 
 
 .stButton button {
@@ -119,7 +114,6 @@ padding:4px 10px;
 }
 
 
-
 .block-container {
 
 padding-top:1rem;
@@ -127,7 +121,6 @@ padding-top:1rem;
 padding-bottom:1rem;
 
 }
-
 
 
 hr {
@@ -229,7 +222,7 @@ except Exception as erro:
 
 
 # =====================================================
-# ORGANIZA PRODUTOS
+# ORGANIZA CATEGORIAS DINAMICAMENTE
 # =====================================================
 
 categorias_dict = {
@@ -262,13 +255,30 @@ for categoria in categorias:
 for produto in produtos:
 
 
+    # ---------------------------------------------
+    # Ignora produtos inativos
+    # ---------------------------------------------
+
+    if (
+
+        "ativo" in produto
+
+        and not produto["ativo"]
+
+    ):
+
+        continue
+
+
+
     nome_categoria = categorias_dict.get(
 
-        produto["categoria_id"],
+        produto.get("categoria_id"),
 
         "Sem Categoria"
 
     )
+
 
 
     produtos_por_categoria.setdefault(
@@ -277,12 +287,46 @@ for produto in produtos:
 
         []
 
-    ).append(produto)
+    ).append(
+
+        produto
+
+    )
 
 
 
 # =====================================================
-# PRODUTOS VINCULADOS
+# REMOVE CATEGORIAS SEM PRODUTOS
+# =====================================================
+
+produtos_por_categoria = {
+
+
+    categoria: lista
+
+
+    for categoria, lista in produtos_por_categoria.items()
+
+
+    if lista
+
+}
+
+
+
+# =====================================================
+# ORDENAÇÃO DINÂMICA
+# =====================================================
+
+categorias_ordenadas = sorted(
+
+    produtos_por_categoria.keys(),
+
+    key=lambda x: x.lower()
+
+)
+# =====================================================
+# PRODUTOS VINCULADOS À CESTA
 # =====================================================
 
 produtos_marcados = [
@@ -298,34 +342,14 @@ produtos_marcados = [
 
 
 # =====================================================
-# SELEÇÃO
+# SELEÇÃO DINÂMICA DOS PRODUTOS
 # =====================================================
 
 selecionados = []
 
 
 
-ordem = [
-
-    "Pães",
-
-    "Bebidas",
-
-    "Espalháveis",
-
-    "Adicionais"
-
-]
-
-
-
-for categoria in ordem:
-
-
-
-    if categoria not in produtos_por_categoria:
-
-        continue
+for categoria in categorias_ordenadas:
 
 
 
@@ -337,11 +361,15 @@ for categoria in ordem:
 
 
 
-    produtos_lista = produtos_por_categoria[categoria]
+    produtos_lista = produtos_por_categoria[
+
+        categoria
+
+    ]
 
 
 
-    col1,col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
 
 
@@ -353,6 +381,7 @@ for categoria in ordem:
 
 
         with col1 if index % 2 == 0 else col2:
+
 
 
             escolhido = st.checkbox(
@@ -382,6 +411,8 @@ for categoria in ordem:
 
 
 
+
+
 # =====================================================
 # BOTÕES
 # =====================================================
@@ -390,11 +421,12 @@ st.divider()
 
 
 
-col1,col2 = st.columns(2)
+col1, col2 = st.columns(2)
 
 
 
 with col1:
+
 
 
     if st.button(
@@ -407,6 +439,7 @@ with col1:
 
 
         try:
+
 
 
             salvar_produtos_da_cesta(
@@ -426,11 +459,13 @@ with col1:
             )
 
 
+
             st.rerun()
 
 
 
         except Exception as erro:
+
 
 
             st.error(
@@ -441,7 +476,10 @@ with col1:
 
 
 
+
+
 with col2:
+
 
 
     if st.button(
@@ -461,6 +499,7 @@ with col2:
             None
 
         )
+
 
 
         st.switch_page(
