@@ -797,3 +797,150 @@ def listar_produtos_categoria_admin(
 
 
     return resposta.data or []
+
+# =====================================================
+# VERIFICAR SE PRODUTO ESTÁ SENDO USADO EM CESTAS
+# =====================================================
+
+def verificar_uso_produto(
+    produto_id
+):
+
+
+    resposta = (
+
+        supabase
+
+        .table("cesta_produtos")
+
+        .select(
+
+            "id"
+
+        )
+
+        .eq(
+
+            "produto_id",
+
+            produto_id
+
+        )
+
+        .limit(1)
+
+        .execute()
+
+    )
+
+
+    return bool(
+
+        resposta.data
+
+    )
+
+
+
+
+
+# =====================================================
+# DESATIVAR PRODUTO
+# =====================================================
+
+def desativar_produto(
+
+    produto_id
+
+):
+
+
+    resposta = (
+
+        supabase
+
+        .table("produtos")
+
+        .update(
+
+            {
+
+                "ativo": False
+
+            }
+
+        )
+
+        .eq(
+
+            "id",
+
+            produto_id
+
+        )
+
+        .execute()
+
+    )
+
+
+    return resposta.data
+
+
+
+
+
+# =====================================================
+# EXCLUIR PRODUTO COM SEGURANÇA
+# =====================================================
+
+def excluir_produto(
+
+    produto_id
+
+):
+
+
+    usado = verificar_uso_produto(
+
+        produto_id
+
+    )
+
+
+    if usado:
+
+
+        raise Exception(
+
+            "Este produto está vinculado a uma ou mais cestas. "
+
+            "Utilize a opção de desativar o produto."
+
+        )
+
+
+
+
+    resposta = (
+
+        supabase
+
+        .table("produtos")
+
+        .delete()
+
+        .eq(
+
+            "id",
+
+            produto_id
+
+        )
+
+        .execute()
+
+    )
+
+
+    return resposta.data
