@@ -48,8 +48,6 @@ st.markdown(
 <style>
 
 
-/* REMOVE SIDEBAR */
-
 section[data-testid="stSidebar"]{
 
     display:none !important;
@@ -57,18 +55,12 @@ section[data-testid="stSidebar"]{
 }
 
 
-
-/* REMOVE BOTÃO SHOW/HIDE */
-
 [data-testid="collapsedControl"]{
 
     display:none !important;
 
 }
 
-
-
-/* REMOVE MENU SUPERIOR */
 
 #MainMenu{
 
@@ -92,8 +84,6 @@ footer{
 
 
 
-/* CONTAINER */
-
 .block-container{
 
     max-width:700px;
@@ -105,8 +95,6 @@ footer{
 }
 
 
-
-/* TITULOS */
 
 .titulo{
 
@@ -138,8 +126,6 @@ footer{
 
 
 
-/* LOGIN SEM CAIXA */
-
 .login-area{
 
     background:transparent;
@@ -151,8 +137,6 @@ footer{
 }
 
 
-
-/* INPUTS */
 
 div[data-baseweb="input"]{
 
@@ -169,8 +153,6 @@ input{
 }
 
 
-
-/* BOTÕES */
 
 .stButton button{
 
@@ -199,8 +181,6 @@ input{
 }
 
 
-
-/* LINKS DOS MÓDULOS */
 
 div[data-testid="stPageLink"] button{
 
@@ -283,8 +263,10 @@ if "usuario" not in st.session_state:
 
     st.session_state.usuario = None
 
+
+
 # =====================================================
-# TELA DE LOGIN
+# LOGIN
 # =====================================================
 
 
@@ -292,13 +274,18 @@ if st.session_state.usuario is None:
 
 
     st.markdown(
+
         "<div class='login-area'>",
+
         unsafe_allow_html=True
+
     )
 
 
     st.subheader(
+
         "🔐 Acesso Administrativo"
+
     )
 
 
@@ -389,11 +376,6 @@ usuario = st.session_state.usuario
 
 
 
-# =====================================================
-# CABEÇALHO USUÁRIO
-# =====================================================
-
-
 st.divider()
 
 
@@ -429,7 +411,6 @@ with col2:
     )
 
 
-
     if sair:
 
 
@@ -453,7 +434,6 @@ st.subheader(
     "📂 Módulos do Sistema"
 
 )
-
 
 
 st.caption(
@@ -545,14 +525,20 @@ with col1:
 with col2:
 
 
-    if usuario["perfil"] == "Administrador":
+    if usuario["perfil"] in [
+
+        "Administrador",
+
+        "Operador"
+
+    ]:
 
 
         st.page_link(
 
-            "pages/06_Financeiro.py",
+            "pages/15_Categorias.py",
 
-            label="💰 Financeiro",
+            label="📂 Categorias",
 
             use_container_width=True
 
@@ -578,6 +564,43 @@ with col3:
 
         st.page_link(
 
+            "pages/06_Financeiro.py",
+
+            label="💰 Financeiro",
+
+            use_container_width=True
+
+        )
+
+
+    else:
+
+
+        st.info(
+
+            "Sem acesso"
+
+        )
+
+
+
+# =====================================================
+# LINHA 3
+# =====================================================
+
+
+col1,col2,col3 = st.columns(3)
+
+
+
+with col1:
+
+
+    if usuario["perfil"] == "Administrador":
+
+
+        st.page_link(
+
             "pages/07_Usuarios.py",
 
             label="👤 Usuários",
@@ -595,7 +618,10 @@ with col3:
             "Sem acesso"
 
         )
-        # =====================================================
+
+
+
+# =====================================================
 # AVISO DE PERFIL
 # =====================================================
 
