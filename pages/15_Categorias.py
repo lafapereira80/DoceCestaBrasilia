@@ -23,7 +23,23 @@ from utils.permissao import (
 
 
 # =====================================================
-# CONFIGURAÇÃO
+# CONFIGURAÇÃO DA PÁGINA
+# =====================================================
+
+st.set_page_config(
+
+    page_title="Categorias",
+
+    page_icon="📂",
+
+    layout="wide"
+
+)
+
+
+
+# =====================================================
+# CONTROLE DE ACESSO
 # =====================================================
 
 configurar_pagina()
@@ -35,14 +51,83 @@ administrador_operador()
 
 
 # =====================================================
+# CSS
+# =====================================================
+
+st.markdown(
+"""
+<style>
+
+
+h1 {
+
+font-size:26px !important;
+
+margin-bottom:5px;
+
+}
+
+
+h2 {
+
+font-size:18px !important;
+
+}
+
+
+h3 {
+
+font-size:15px !important;
+
+}
+
+
+p, div, span {
+
+font-size:13px;
+
+}
+
+
+.stButton button {
+
+font-size:12px;
+
+padding:4px 10px;
+
+}
+
+
+[data-testid="stVerticalBlockBorderWrapper"] {
+
+padding:10px;
+
+}
+
+
+</style>
+""",
+unsafe_allow_html=True
+)
+
+
+
+# =====================================================
 # TÍTULO
 # =====================================================
 
-st.title("📂 Categorias")
+st.title(
+    "📂 Categorias"
+)
+
 
 st.caption(
     "Gerencie as categorias de produtos da Doce Cesta Brasília"
 )
+
+
+
+st.divider()
 
 
 
@@ -57,67 +142,106 @@ with st.expander(
 
 
     nome_categoria = st.text_input(
+
         "Nome da categoria",
+
         key="nova_categoria_nome"
+
     )
+
 
 
     col1, col2, col3 = st.columns(3)
 
 
+
     with col1:
 
+
         possui_preco = st.checkbox(
+
             "Possui preço",
+
             value=False,
+
             key="nova_categoria_preco"
+
         )
+
 
 
     with col2:
 
+
         exibir_no_pedido = st.checkbox(
+
             "Exibir no pedido",
+
             value=False,
+
             key="nova_categoria_pedido"
+
         )
+
 
 
     with col3:
 
+
         ativo = st.checkbox(
+
             "Ativa",
+
             value=True,
+
             key="nova_categoria_ativa"
+
         )
 
 
+
     ordem = st.number_input(
+
         "Ordem de exibição",
+
         min_value=0,
+
         value=0,
+
+        step=1,
+
         key="nova_categoria_ordem"
+
     )
 
 
 
     if st.button(
+
         "💾 Salvar categoria",
+
         key="salvar_nova_categoria",
+
         use_container_width=True
+
     ):
 
 
         if not nome_categoria.strip():
 
+
             st.error(
+
                 "Informe o nome da categoria."
+
             )
 
 
         else:
 
+
             try:
+
 
                 cadastrar_categoria(
 
@@ -135,7 +259,9 @@ with st.expander(
 
 
                 st.success(
+
                     "Categoria cadastrada com sucesso!"
+
                 )
 
 
@@ -147,13 +273,15 @@ with st.expander(
 
 
                 st.error(
+
                     f"Erro ao cadastrar: {erro}"
+
                 )
 
 
 
 # =====================================================
-# LISTAGEM
+# CARREGAR CATEGORIAS
 # =====================================================
 
 st.divider()
@@ -164,22 +292,41 @@ st.subheader(
 )
 
 
-categorias = listar_categorias()
+
+try:
+
+
+    categorias = listar_categorias()
 
 
 
-if not categorias:
+except Exception as erro:
 
-    st.info(
-        "Nenhuma categoria cadastrada."
+
+    st.error(
+
+        f"Erro ao carregar categorias: {erro}"
+
     )
+
 
     st.stop()
 
 
 
-# =====================================================
-# EXIBIÇÃO DAS CATEGORIAS
+if not categorias:
+
+
+    st.info(
+
+        "Nenhuma categoria cadastrada."
+
+    )
+
+
+    st.stop()
+    # =====================================================
+# LISTAGEM DAS CATEGORIAS
 # =====================================================
 
 
@@ -190,32 +337,47 @@ for categoria in categorias:
 
 
     nome = categoria.get(
+
         "nome",
+
         ""
+
     )
 
 
     ativo = categoria.get(
+
         "ativo",
+
         False
+
     )
 
 
     possui_preco = categoria.get(
+
         "possui_preco",
+
         False
+
     )
 
 
     exibir_pedido = categoria.get(
+
         "exibir_no_pedido",
+
         False
+
     )
 
 
     ordem_atual = categoria.get(
+
         "ordem",
+
         0
+
     )
 
 
@@ -224,51 +386,69 @@ for categoria in categorias:
 
 
         status = (
+
             "🟢 Ativa"
+
             if ativo
+
             else
+
             "🔴 Inativa"
+
         )
+
 
 
         st.markdown(
+
             f"""
+
 ### {nome}
 
-{status} |  Preço: {"Sim" if possui_preco else "Não"} |  Pedido: {"Sim" if exibir_pedido else "Não"} | Ordem: {ordem_atual}
+
+{status} | Preço: {"Sim" if possui_preco else "Não"} | Pedido: {"Sim" if exibir_pedido else "Não"} | Ordem: {ordem_atual}
+
 """
+
         )
-  
-        # =====================================================
-        # BOTÕES DE AÇÃO
-        # =====================================================
+
 
 
         col_status, col_editar, col_excluir = st.columns(
-            [1, 1, 1]
+
+            [1,1,1]
+
         )
 
 
-        # =====================================================
+
+        # =================================================
         # ALTERAR STATUS
-        # =====================================================
+        # =================================================
+
 
         with col_status:
 
 
             texto_status = (
+
                 "🔴 Desativar"
+
                 if ativo
+
                 else
+
                 "🟢 Ativar"
+
             )
+
 
 
             if st.button(
 
                 texto_status,
 
-                key=f"categoria_status_{categoria_id}",
+                key=f"status_{categoria_id}",
 
                 use_container_width=True
 
@@ -288,7 +468,9 @@ for categoria in categorias:
 
 
                     st.success(
-                        "Status alterado com sucesso!"
+
+                        "Status alterado!"
+
                     )
 
 
@@ -300,14 +482,17 @@ for categoria in categorias:
 
 
                     st.error(
+
                         f"Erro ao alterar status: {erro}"
+
                     )
 
 
 
-        # =====================================================
+        # =================================================
         # EDITAR
-        # =====================================================
+        # =================================================
+
 
         with col_editar:
 
@@ -316,7 +501,7 @@ for categoria in categorias:
 
                 "✏️ Editar",
 
-                key=f"categoria_editar_{categoria_id}",
+                key=f"editar_{categoria_id}",
 
                 use_container_width=True
 
@@ -324,9 +509,10 @@ for categoria in categorias:
 
 
 
-        # =====================================================
+        # =================================================
         # EXCLUIR
-        # =====================================================
+        # =================================================
+
 
         with col_excluir:
 
@@ -335,7 +521,7 @@ for categoria in categorias:
 
                 "🗑️ Excluir",
 
-                key=f"categoria_excluir_{categoria_id}",
+                key=f"excluir_{categoria_id}",
 
                 use_container_width=True
 
@@ -343,16 +529,39 @@ for categoria in categorias:
 
 
 
-        # =====================================================
+        # =================================================
         # FORMULÁRIO DE EDIÇÃO
-        # =====================================================
+        # =================================================
+
 
         if editar:
 
 
+            # ---------------------------------------------
+            # LIMPA VALORES ANTIGOS DO STREAMLIT
+            # ---------------------------------------------
+
+            st.session_state.pop(
+
+                f"categoria_ordem_{categoria_id}",
+
+                None
+
+            )
+
+
+            st.session_state.pop(
+
+                f"categoria_nome_{categoria_id}",
+
+                None
+
+            )
+
+
             with st.form(
 
-                key=f"form_categoria_{categoria_id}"
+                key=f"form_edicao_{categoria_id}"
 
             ):
 
@@ -403,17 +612,41 @@ for categoria in categorias:
 
 
 
-                nova_ordem = st.number_input(
+                col3, col4 = st.columns(2)
 
-                    "Ordem de exibição",
 
-                    min_value=0,
 
-                    value=ordem_atual,
+                with col3:
 
-                    key=f"categoria_ordem_{categoria_id}"
 
-                )
+                    novo_ativo = st.checkbox(
+
+                        "Categoria ativa",
+
+                        value=ativo,
+
+                        key=f"categoria_ativa_{categoria_id}"
+
+                    )
+
+
+
+                with col4:
+
+
+                    nova_ordem = st.number_input(
+
+                        "Ordem de exibição",
+
+                        min_value=0,
+
+                        step=1,
+
+                        value=int(ordem_atual),
+
+                        key=f"categoria_ordem_{categoria_id}"
+
+                    )
 
 
 
@@ -432,8 +665,11 @@ for categoria in categorias:
 
                     if not novo_nome.strip():
 
+
                         st.error(
+
                             "Informe o nome da categoria."
+
                         )
 
 
@@ -453,7 +689,7 @@ for categoria in categorias:
 
                                 novo_exibir,
 
-                                ativo,
+                                novo_ativo,
 
                                 nova_ordem
 
@@ -462,7 +698,7 @@ for categoria in categorias:
 
                             st.success(
 
-                                "Categoria atualizada com sucesso!"
+                                f"Categoria atualizada! Nova ordem: {nova_ordem}"
 
                             )
 
@@ -480,18 +716,20 @@ for categoria in categorias:
 
                             )
 
-
-
-        # =====================================================
+        # =================================================
         # CONFIRMAÇÃO DE EXCLUSÃO
-        # =====================================================
+        # =================================================
+
 
         if excluir:
 
 
-            confirmar = st.warning(
+            st.warning(
+
                 f"Deseja realmente excluir a categoria **{nome}**?"
+
             )
+
 
 
             col_confirmar, col_cancelar = st.columns(2)
@@ -505,7 +743,7 @@ for categoria in categorias:
 
                     "✅ Confirmar exclusão",
 
-                    key=f"confirmar_exclusao_{categoria_id}",
+                    key=f"confirmar_{categoria_id}",
 
                     use_container_width=True
 
@@ -522,6 +760,7 @@ for categoria in categorias:
                         )
 
 
+
                         if resultado is False:
 
 
@@ -530,6 +769,7 @@ for categoria in categorias:
                                 "Não foi possível excluir a categoria."
 
                             )
+
 
 
                         else:
@@ -564,7 +804,7 @@ for categoria in categorias:
 
                     "❌ Cancelar",
 
-                    key=f"cancelar_exclusao_{categoria_id}",
+                    key=f"cancelar_{categoria_id}",
 
                     use_container_width=True
 
@@ -572,6 +812,9 @@ for categoria in categorias:
 
 
                     st.rerun()
+
+
+
 # =====================================================
 # RODAPÉ
 # =====================================================
@@ -579,7 +822,9 @@ for categoria in categorias:
 st.divider()
 
 
+
 st.markdown(
+
     """
     <div style="
         text-align:center;
@@ -591,5 +836,7 @@ st.markdown(
 
     </div>
     """,
+
     unsafe_allow_html=True
+
 )
