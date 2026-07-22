@@ -108,6 +108,7 @@ def menu_lateral():
 
         # =====================================================
         # OPERACIONAL
+        # ADMINISTRADOR + OPERADOR
         # =====================================================
 
         if perfil in [
@@ -154,9 +155,18 @@ def menu_lateral():
             )
 
 
+            st.page_link(
+
+                "pages/15_Categorias.py",
+
+                label="📂 Categorias"
+
+            )
+
+
 
         # =====================================================
-        # ADMINISTRADOR
+        # SOMENTE ADMINISTRADOR
         # =====================================================
 
         if perfil == "Administrador":
@@ -183,19 +193,14 @@ def menu_lateral():
             )
 
 
-            st.page_link(
-
-                "pages/15_Categorias.py",
-
-                label="📂 Categorias"
-
-            )
-
-
 
         st.divider()
 
 
+
+        # =====================================================
+        # SAIR
+        # =====================================================
 
         if st.button(
 
