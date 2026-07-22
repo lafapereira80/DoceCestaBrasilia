@@ -175,7 +175,8 @@ if not categorias:
 
 
     st.stop()
-    # =====================================================
+
+# =====================================================
 # EXIBIÇÃO DAS CATEGORIAS
 # =====================================================
 
@@ -213,45 +214,50 @@ for categoria in categorias:
     with st.container(border=True):
 
 
-        col1, col2 = st.columns(
-            [3,1]
+        # ==============================
+        # INFORMAÇÕES
+        # ==============================
+
+
+        status = (
+            "🟢 Ativa"
+            if ativo
+            else
+            "🔴 Inativa"
         )
 
 
-        with col1:
-
-
-            status = (
-                "🟢 Ativa"
-                if ativo
-                else
-                "🔴 Inativa"
-            )
-
-
-            st.markdown(
-                f"""
+        st.markdown(
+            f"""
 **{nome}**
 
 {status} | 
 Preço: {"Sim" if possui_preco else "Não"} | 
 Pedido: {"Sim" if exibir_pedido else "Não"}
 """
-            )
+        )
 
 
 
-        with col2:
+        # ==============================
+        # BOTÕES LADO A LADO
+        # ==============================
+
+
+        botao1, botao2, botao3 = st.columns(
+            [1,1,1]
+        )
+
+
+
+        with botao1:
 
 
             if ativo:
 
-
                 texto_status = "🔴 Desativar"
 
-
             else:
-
 
                 texto_status = "🟢 Ativar"
 
@@ -261,7 +267,9 @@ Pedido: {"Sim" if exibir_pedido else "Não"}
 
                 texto_status,
 
-                key=f"status_{categoria_id}"
+                key=f"status_{categoria_id}",
+
+                use_container_width=True
 
             ):
 
@@ -269,7 +277,7 @@ Pedido: {"Sim" if exibir_pedido else "Não"}
                 try:
 
 
-                    alterar_status_categoria(
+                    retorno = alterar_status_categoria(
 
                         categoria_id,
 
@@ -278,25 +286,245 @@ Pedido: {"Sim" if exibir_pedido else "Não"}
                     )
 
 
-                    st.success(
-                        "Status alterado!"
-                    )
+                    if retorno:
 
 
-                    st.rerun()
+                        st.success(
+                            "Status alterado!"
+                        )
 
+
+                        st.rerun()
+
+
+                    else:
+
+
+                        st.error(
+                            "Nenhuma categoria foi atualizada."
+                        )
 
 
                 except Exception as erro:
 
 
                     st.error(
-
                         f"Erro ao alterar status: {erro}"
+                    )
+
+
+
+        with botao2:
+
+
+            editar = st.button(
+
+                "✏️ Editar",
+
+                key=f"editar_{categoria_id}",
+
+                use_container_width=True
+
+            )
+
+
+
+        with botao3:
+
+
+            excluir = st.button(
+
+                "🗑️ Excluir",
+
+                key=f"excluir_{categoria_id}",
+
+                use_container_width=True
+
+            )
+
+
+
+        # ==============================
+        # EDITAR
+        # ==============================
+
+
+        if editar:
+
+
+            with st.form(
+
+                key=f"form_edit_{categoria_id}"
+
+            ):
+
+
+                novo_nome = st.text_input(
+
+                    "Nome",
+
+                    value=nome
+
+                )
+
+
+
+                col1,col2 = st.columns(2)
+
+
+
+                with col1:
+
+
+                    novo_preco = st.checkbox(
+
+                        "Possui preço",
+
+                        value=possui_preco,
+
+                        key=f"preco_{categoria_id}"
 
                     )
 
 
+
+                with col2:
+
+
+                    novo_exibir = st.checkbox(
+
+                        "Exibir no pedido",
+
+                        value=exibir_pedido,
+
+                        key=f"pedido_{categoria_id}"
+
+                    )
+
+
+
+                nova_ordem = st.number_input(
+
+                    "Ordem",
+
+                    min_value=0,
+
+                    value=categoria.get(
+                        "ordem",
+                        0
+                    ),
+
+                    key=f"ordem_{categoria_id}"
+
+                )
+
+
+
+                salvar = st.form_submit_button(
+
+                    "💾 Salvar alterações",
+
+                    use_container_width=True
+
+                )
+
+
+
+                if salvar:
+
+
+                    try:
+
+
+                        atualizar_categoria(
+
+                            categoria_id,
+
+                            novo_nome,
+
+                            novo_preco,
+
+                            novo_exibir,
+
+                            ativo,
+
+                            nova_ordem
+
+                        )
+
+
+                        st.success(
+
+                            "Categoria atualizada!"
+
+                        )
+
+
+                        st.rerun()
+
+
+
+                    except Exception as erro:
+
+
+                        st.error(
+
+                            f"Erro ao atualizar: {erro}"
+
+                        )
+
+
+
+        # ==============================
+        # EXCLUIR
+        # ==============================
+
+
+        if excluir:
+
+
+            try:
+
+
+                resultado = excluir_categoria(
+
+                    categoria_id
+
+                )
+
+
+                if resultado:
+
+
+                    st.success(
+
+                        "Categoria excluída!"
+
+                    )
+
+
+                    st.rerun()
+
+
+                else:
+
+
+                    st.error(
+
+                        "Não foi possível excluir."
+
+                    )
+
+
+
+            except Exception as erro:
+
+
+                st.error(
+
+                    f"Erro ao excluir: {erro}"
+
+                )
 
         # =================================================
         # BOTÕES DE AÇÃO
