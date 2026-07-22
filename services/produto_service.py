@@ -140,7 +140,6 @@ def listar_categorias_pedido():
 
 # =====================================================
 # LISTAR PRODUTOS POR NOME DA CATEGORIA
-# (mantido para compatibilidade)
 # =====================================================
 
 def listar_produtos_por_categoria(
@@ -155,9 +154,7 @@ def listar_produtos_por_categoria(
         .table("categorias")
 
         .select(
-            """
-            id
-            """
+            "id"
         )
 
         .eq(
@@ -232,11 +229,14 @@ def listar_produtos_por_categoria_id(
 
 
     return resposta.data or []
-    # =====================================================
+
+# =====================================================
 # BUSCAR PRODUTO
 # =====================================================
 
-def buscar_produto(produto_id):
+def buscar_produto(
+    produto_id
+):
 
 
     resposta = (
@@ -390,7 +390,6 @@ def cadastrar_produto(
     )
 
 
-
     if not categoria:
 
 
@@ -403,10 +402,6 @@ def cadastrar_produto(
 
 
 
-
-    # =================================================
-    # REGRA DE PREÇO BASEADA NA CATEGORIA
-    # =================================================
 
     if not categoria.get(
 
@@ -468,7 +463,12 @@ def cadastrar_produto(
 
 
     return resposta.data
-    # =====================================================
+
+
+
+
+
+# =====================================================
 # ATUALIZAR PRODUTO
 # =====================================================
 
@@ -498,7 +498,6 @@ def atualizar_produto(
     )
 
 
-
     if not categoria:
 
 
@@ -511,10 +510,6 @@ def atualizar_produto(
 
 
 
-
-    # =================================================
-    # REGRA DE PREÇO BASEADA NA CATEGORIA
-    # =================================================
 
     if not categoria.get(
 
@@ -582,7 +577,6 @@ def atualizar_produto(
     )
 
 
-
     return resposta.data
 
 
@@ -631,7 +625,6 @@ def alterar_status_produto(
     )
 
 
-
     return resposta.data
 
 
@@ -639,39 +632,25 @@ def alterar_status_produto(
 
 
 # =====================================================
-# EXCLUIR PRODUTO
+# DESATIVAR PRODUTO
 # =====================================================
 
-def excluir_produto(
+def desativar_produto(
 
     produto_id
 
 ):
 
 
-    resposta = (
+    return alterar_status_produto(
 
-        supabase
+        produto_id,
 
-        .table("produtos")
-
-        .delete()
-
-        .eq(
-
-            "id",
-
-            produto_id
-
-        )
-
-        .execute()
+        False
 
     )
 
-
-    return resposta.data
-    # =====================================================
+# =====================================================
 # VALIDAR SE CATEGORIA POSSUI PREÇO
 # =====================================================
 
@@ -798,12 +777,18 @@ def listar_produtos_categoria_admin(
 
     return resposta.data or []
 
+
+
+
+
 # =====================================================
-# VERIFICAR SE PRODUTO ESTÁ SENDO USADO EM CESTAS
+# VERIFICAR USO DO PRODUTO EM CESTAS
 # =====================================================
 
 def verificar_uso_produto(
+
     produto_id
+
 ):
 
 
@@ -845,52 +830,6 @@ def verificar_uso_produto(
 
 
 # =====================================================
-# DESATIVAR PRODUTO
-# =====================================================
-
-def desativar_produto(
-
-    produto_id
-
-):
-
-
-    resposta = (
-
-        supabase
-
-        .table("produtos")
-
-        .update(
-
-            {
-
-                "ativo": False
-
-            }
-
-        )
-
-        .eq(
-
-            "id",
-
-            produto_id
-
-        )
-
-        .execute()
-
-    )
-
-
-    return resposta.data
-
-
-
-
-
-# =====================================================
 # EXCLUIR PRODUTO COM SEGURANÇA
 # =====================================================
 
@@ -901,46 +840,63 @@ def excluir_produto(
 ):
 
 
-    usado = verificar_uso_produto(
-
-        produto_id
-
-    )
+    try:
 
 
-    if usado:
+        # =========================================
+        # REMOVE RELACIONAMENTOS DAS CESTAS
+        # =========================================
+
+        supabase.table(
+
+            "cesta_produtos"
+
+        ).delete().eq(
+
+            "produto_id",
+
+            produto_id
+
+        ).execute()
+
+
+
+
+
+        # =========================================
+        # REMOVE PRODUTO
+        # =========================================
+
+        resposta = (
+
+            supabase
+
+            .table("produtos")
+
+            .delete()
+
+            .eq(
+
+                "id",
+
+                produto_id
+
+            )
+
+            .execute()
+
+        )
+
+
+        return resposta.data
+
+
+
+    except Exception as erro:
 
 
         raise Exception(
 
-            "Este produto está vinculado a uma ou mais cestas. "
-
-            "Utilize a opção de desativar o produto."
+            f"Não foi possível excluir o produto: {erro}"
 
         )
-
-
-
-
-    resposta = (
-
-        supabase
-
-        .table("produtos")
-
-        .delete()
-
-        .eq(
-
-            "id",
-
-            produto_id
-
-        )
-
-        .execute()
-
-    )
-
-
-    return resposta.data
