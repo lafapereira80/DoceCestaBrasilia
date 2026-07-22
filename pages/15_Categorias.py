@@ -17,7 +17,7 @@ from utils.menu import (
 
 
 from utils.permissao import (
-    administrador
+    administrador_operador
 )
 
 
@@ -26,14 +26,13 @@ from utils.permissao import (
 # CONFIGURAÇÃO
 # =====================================================
 
-configurar_pagina(
-    "Categorias"
-)
+configurar_pagina()
+
 
 menu_lateral()
 
 
-administrador()
+administrador_operador()
 
 
 
@@ -41,69 +40,33 @@ administrador()
 # TÍTULO
 # =====================================================
 
-st.markdown(
-"""
-<h2 style="
-color:#8B5A2B;
-">
-📂 Categorias de Produtos
-</h2>
-""",
-unsafe_allow_html=True
-)
-
-
+st.title("📂 Categorias")
 
 st.caption(
-    "Cadastre e organize as categorias utilizadas nas cestas e pedidos."
+    "Gerencie as categorias de produtos da Doce Cesta Brasília"
 )
 
 
 
 # =====================================================
-# CARREGAR CATEGORIAS
-# =====================================================
-
-try:
-
-    categorias = listar_categorias()
-
-
-except Exception as erro:
-
-    st.error(
-        f"Erro ao carregar categorias: {erro}"
-    )
-
-    categorias = []
-
-
-
-
-
-# =====================================================
-# NOVA CATEGORIA
+# CADASTRAR NOVA CATEGORIA
 # =====================================================
 
 with st.expander(
-    "➕ Nova categoria",
+    "➕ Nova Categoria",
     expanded=False
 ):
 
 
-    col1,col2,col3 = st.columns(
-        [2,1,1]
+    nome = st.text_input(
+        "Nome da categoria"
     )
 
 
+    col1, col2, col3 = st.columns(3)
+
+
     with col1:
-
-        nome = st.text_input(
-            "Nome da categoria"
-        )
-
-
-    with col2:
 
         possui_preco = st.checkbox(
             "Possui preço",
@@ -111,26 +74,35 @@ with st.expander(
         )
 
 
-    with col3:
+    with col2:
 
-        ordem = st.number_input(
-            "Ordem",
-            min_value=0,
-            value=0
+        exibir_no_pedido = st.checkbox(
+            "Exibir no pedido",
+            value=False
         )
 
 
+    with col3:
 
-    exibir_no_pedido = st.checkbox(
-        "Exibir no pedido do cliente",
-        value=True
+        ativo = st.checkbox(
+            "Ativa",
+            value=True
+        )
+
+
+    ordem = st.number_input(
+
+        "Ordem de exibição",
+
+        min_value=0,
+
+        value=0
+
     )
 
 
-
     if st.button(
-        "💾 Salvar categoria",
-        use_container_width=True
+        "💾 Salvar categoria"
     ):
 
 
@@ -143,8 +115,8 @@ with st.expander(
 
         else:
 
-            try:
 
+            try:
 
                 cadastrar_categoria(
 
@@ -154,7 +126,7 @@ with st.expander(
 
                     exibir_no_pedido,
 
-                    True,
+                    ativo,
 
                     ordem
 
@@ -162,12 +134,11 @@ with st.expander(
 
 
                 st.success(
-                    "Categoria cadastrada!"
+                    "Categoria cadastrada com sucesso!"
                 )
 
 
                 st.rerun()
-
 
 
             except Exception as erro:
@@ -186,12 +157,13 @@ with st.expander(
 st.divider()
 
 
-st.markdown(
-"### 📋 Categorias cadastradas"
+st.subheader(
+    "Categorias cadastradas"
 )
-# =====================================================
-# EXIBIÇÃO DAS CATEGORIAS
-# =====================================================
+
+
+categorias = listar_categorias()
+
 
 
 if not categorias:
@@ -202,340 +174,254 @@ if not categorias:
     )
 
 
-else:
+    st.stop()
+    # =====================================================
+# EXIBIÇÃO DAS CATEGORIAS
+# =====================================================
 
 
-    for categoria in categorias:
+for categoria in categorias:
 
 
-        with st.container(border=True):
+    categoria_id = categoria["id"]
 
 
-            col1,col2,col3,col4 = st.columns(
-                [3,1,1,1]
+    nome = categoria.get(
+        "nome",
+        ""
+    )
+
+
+    ativo = categoria.get(
+        "ativo",
+        False
+    )
+
+
+    possui_preco = categoria.get(
+        "possui_preco",
+        False
+    )
+
+
+    exibir_pedido = categoria.get(
+        "exibir_no_pedido",
+        False
+    )
+
+
+    with st.container(border=True):
+
+
+        col1, col2 = st.columns(
+            [3,1]
+        )
+
+
+        with col1:
+
+
+            status = (
+                "🟢 Ativa"
+                if ativo
+                else
+                "🔴 Inativa"
             )
 
 
-            # -----------------------------------------
-            # NOME
-            # -----------------------------------------
+            st.markdown(
+                f"""
+**{nome}**
 
-            with col1:
-
-
-                st.markdown(
-                    f"""
-**{categoria['nome']}**
-
+{status} | 
+Preço: {"Sim" if possui_preco else "Não"} | 
+Pedido: {"Sim" if exibir_pedido else "Não"}
 """
-                )
+            )
 
 
-                detalhes = []
 
+        with col2:
 
-                if categoria.get(
-                    "possui_preco"
-                ):
 
-                    detalhes.append(
-                        "💰 Possui preço"
-                    )
+            if ativo:
 
-                else:
 
-                    detalhes.append(
-                        "🎁 Incluso na cesta"
-                    )
+                texto_status = "🔴 Desativar"
 
 
+            else:
 
-                if categoria.get(
-                    "exibir_no_pedido"
-                ):
 
-                    detalhes.append(
-                        "👁️ Aparece no pedido"
-                    )
+                texto_status = "🟢 Ativar"
 
-                else:
 
-                    detalhes.append(
-                        "🚫 Oculta do pedido"
-                    )
 
+            if st.button(
 
+                texto_status,
 
-                st.caption(
+                key=f"status_{categoria_id}"
 
-                    " | ".join(detalhes)
-
-                )
-
-
-
-            # -----------------------------------------
-            # STATUS
-            # -----------------------------------------
-
-            with col2:
-
-
-                ativo = categoria.get(
-                    "ativo",
-                    False
-                )
-
-
-                if ativo:
-
-
-                    st.success(
-                        "🟢 Ativa"
-                    )
-
-
-                else:
-
-
-                    st.error(
-                        "🔴 Inativa"
-                    )
-
-
-
-
-            # -----------------------------------------
-            # ALTERAR STATUS
-            # -----------------------------------------
-
-            with col3:
-
-
-                texto_status = (
-
-                    "Desativar"
-                    if ativo
-                    else
-                    "Ativar"
-
-                )
-
-
-                if st.button(
-
-                    f"🔄 {texto_status}",
-
-                    key=f"status_{categoria['id']}",
-
-                    use_container_width=True
-
-                ):
-
-
-                    try:
-
-
-                        alterar_status_categoria(
-
-                            categoria["id"],
-
-                            not ativo
-
-                        )
-
-
-                        st.success(
-
-                            "Status alterado!"
-
-                        )
-
-
-                        st.rerun()
-
-
-
-                    except Exception as erro:
-
-
-                        st.error(
-
-                            f"Erro ao alterar status: {erro}"
-
-                        )
-
-
-
-
-
-            # -----------------------------------------
-            # EXCLUIR
-            # -----------------------------------------
-
-            with col4:
-
-
-                if st.button(
-
-                    "🗑️",
-
-                    key=f"excluir_{categoria['id']}",
-
-                    use_container_width=True
-
-                ):
-
-
-                    try:
-
-
-                        excluir_categoria(
-
-                            categoria["id"]
-
-                        )
-
-
-                        st.success(
-
-                            "Categoria excluída!"
-
-                        )
-
-
-                        st.rerun()
-
-
-
-                    except Exception as erro:
-
-
-                        st.error(
-
-                            f"Erro ao excluir: {erro}"
-
-                        )
-
-
-
-            # -----------------------------------------
-            # ÁREA DE EDIÇÃO
-            # -----------------------------------------
-
-            with st.expander(
-                "✏️ Editar categoria"
             ):
 
 
-                col1,col2,col3 = st.columns(
-                    [2,1,1]
+                try:
+
+
+                    alterar_status_categoria(
+
+                        categoria_id,
+
+                        not ativo
+
+                    )
+
+
+                    st.success(
+                        "Status alterado!"
+                    )
+
+
+                    st.rerun()
+
+
+
+                except Exception as erro:
+
+
+                    st.error(
+
+                        f"Erro ao alterar status: {erro}"
+
+                    )
+
+
+
+        # =================================================
+        # BOTÕES DE AÇÃO
+        # =================================================
+
+
+        col1, col2, col3 = st.columns(3)
+
+
+
+        with col1:
+
+
+            editar = st.button(
+
+                "✏️ Editar",
+
+                key=f"editar_{categoria_id}"
+
+            )
+
+
+
+        with col2:
+
+
+            excluir = st.button(
+
+                "🗑️ Excluir",
+
+                key=f"excluir_{categoria_id}"
+
+            )
+
+
+
+        with col3:
+
+
+            st.write("")
+
+
+
+        # =================================================
+        # EDITAR
+        # =================================================
+
+
+        if editar:
+
+
+            with st.form(
+
+                key=f"form_edit_{categoria_id}"
+
+            ):
+
+
+                novo_nome = st.text_input(
+
+                    "Nome",
+
+                    value=nome
+
                 )
 
 
+                col1, col2 = st.columns(2)
+
+
                 with col1:
-
-
-                    novo_nome = st.text_input(
-
-                        "Nome",
-
-                        value=categoria["nome"],
-
-                        key=f"nome_{categoria['id']}"
-
-                    )
-
-
-
-                with col2:
-
-
-                    nova_ordem = st.number_input(
-
-                        "Ordem",
-
-                        min_value=0,
-
-                        value=categoria.get(
-                            "ordem",
-                            0
-                        ),
-
-                        key=f"ordem_{categoria['id']}"
-
-                    )
-
-
-
-                with col3:
-
-
-                    novo_ativo = st.checkbox(
-
-                        "Ativo",
-
-                        value=categoria.get(
-                            "ativo",
-                            False
-                        ),
-
-                        key=f"ativo_{categoria['id']}"
-
-                    )
-
-
-
-                col4,col5 = st.columns(2)
-
-
-
-                with col4:
 
 
                     novo_preco = st.checkbox(
 
                         "Possui preço",
 
-                        value=categoria.get(
-                            "possui_preco",
-                            False
-                        ),
+                        value=possui_preco,
 
-                        key=f"preco_{categoria['id']}"
+                        key=f"preco_{categoria_id}"
 
                     )
 
 
-
-                with col5:
+                with col2:
 
 
                     novo_exibir = st.checkbox(
 
                         "Exibir no pedido",
 
-                        value=categoria.get(
-                            "exibir_no_pedido",
-                            True
-                        ),
+                        value=exibir_pedido,
 
-                        key=f"pedido_{categoria['id']}"
+                        key=f"pedido_{categoria_id}"
 
                     )
 
 
 
+                nova_ordem = st.number_input(
 
-                if st.button(
+                    "Ordem",
 
-                    "💾 Salvar alterações",
+                    min_value=0,
 
-                    key=f"salvar_{categoria['id']}",
+                    value=categoria.get(
+                        "ordem",
+                        0
+                    ),
 
-                    use_container_width=True
+                    key=f"ordem_{categoria_id}"
 
-                ):
+                )
+
+
+
+                salvar = st.form_submit_button(
+
+                    "💾 Salvar alterações"
+
+                )
+
+
+
+                if salvar:
 
 
                     try:
@@ -543,7 +429,7 @@ else:
 
                         atualizar_categoria(
 
-                            categoria["id"],
+                            categoria_id,
 
                             novo_nome,
 
@@ -551,7 +437,7 @@ else:
 
                             novo_exibir,
 
-                            novo_ativo,
+                            ativo,
 
                             nova_ordem
 
@@ -577,13 +463,52 @@ else:
                             f"Erro ao atualizar: {erro}"
 
                         )
-                        # =====================================================
-# AJUSTES FINAIS
+
+
+
+        # =================================================
+        # EXCLUIR
+        # =================================================
+
+
+        if excluir:
+
+
+            try:
+
+
+                excluir_categoria(
+
+                    categoria_id
+
+                )
+
+
+                st.success(
+
+                    "Categoria excluída!"
+
+                )
+
+
+                st.rerun()
+
+
+
+            except Exception as erro:
+
+
+                st.error(
+
+                    f"Erro ao excluir: {erro}"
+
+                )
+          # =====================================================
+# RODAPÉ
 # =====================================================
 
 
 st.divider()
-
 
 
 st.markdown(
@@ -591,13 +516,14 @@ st.markdown(
 <div style="
 text-align:center;
 font-size:12px;
-color:#777;
 padding:15px;
 ">
 
-Doce Cesta Brasília - Administração
+© 2026 Doce Cesta Brasília
 
 </div>
 """,
+
 unsafe_allow_html=True
-)
+
+)      
