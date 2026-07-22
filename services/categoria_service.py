@@ -8,6 +8,7 @@ from config.supabase import supabase
 
 def listar_categorias():
 
+
     resposta = (
 
         supabase
@@ -30,7 +31,7 @@ def listar_categorias():
 
 
 # =====================================================
-# LISTAR SOMENTE CATEGORIAS ATIVAS
+# LISTAR CATEGORIAS ATIVAS
 # =====================================================
 
 def listar_categorias_ativas():
@@ -63,7 +64,7 @@ def listar_categorias_ativas():
 
 
 # =====================================================
-# BUSCAR CATEGORIA POR ID
+# BUSCAR CATEGORIA
 # =====================================================
 
 def buscar_categoria(categoria_id):
@@ -103,15 +104,13 @@ def cadastrar_categoria(
 
     nome,
 
-    descricao,
-
-    icone,
-
     possui_preco,
 
-    exibir_pedido,
+    exibir_no_pedido,
 
-    ativo=True
+    ativo=True,
+
+    ordem=0
 
 ):
 
@@ -122,19 +121,16 @@ def cadastrar_categoria(
         "nome": nome,
 
 
-        "descricao": descricao,
-
-
-        "icone": icone,
-
-
         "possui_preco": possui_preco,
 
 
-        "exibir_pedido": exibir_pedido,
+        "exibir_no_pedido": exibir_no_pedido,
 
 
-        "ativo": ativo
+        "ativo": ativo,
+
+
+        "ordem": ordem
 
 
     }
@@ -170,15 +166,13 @@ def atualizar_categoria(
 
     nome,
 
-    descricao,
-
-    icone,
-
     possui_preco,
 
-    exibir_pedido,
+    exibir_no_pedido,
 
-    ativo
+    ativo,
+
+    ordem
 
 ):
 
@@ -189,19 +183,16 @@ def atualizar_categoria(
         "nome": nome,
 
 
-        "descricao": descricao,
-
-
-        "icone": icone,
-
-
         "possui_preco": possui_preco,
 
 
-        "exibir_pedido": exibir_pedido,
+        "exibir_no_pedido": exibir_no_pedido,
 
 
-        "ativo": ativo
+        "ativo": ativo,
+
+
+        "ordem": ordem
 
 
     }
