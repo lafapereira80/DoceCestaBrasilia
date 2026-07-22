@@ -248,7 +248,7 @@ Ordem: {ordem_atual}
 
 
         col_status, col_editar, col_excluir = st.columns(
-            [1, 1, 1]
+            [1, 2, 3]
         )
 
 
