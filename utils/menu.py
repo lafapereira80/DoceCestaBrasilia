@@ -10,21 +10,25 @@ def configurar_pagina():
         """
         <style>
         /* =========================================
-           REMOÇÃO LIMPA DE ELEMENTOS PADRÃO
+           REMOÇÃO LIMPA DE ELEMENTOS PADRÃO (EXCETO SIDEBAR CONTROL)
         ========================================== */
         #MainMenu { display: none !important; }
         header { display: none !important; }
         footer { display: none !important; }
         [data-testid="stSidebarNav"] { display: none !important; }
 
-        /* Remove o botão de recolher sem vazar o texto dos ícones */
+        /* Mantém o botão de abrir/fechar sidebar visível e estilizado */
         [data-testid="collapsedControl"],
-        [data-testid="stSidebarCollapseButton"],
-        button[data-testid="stSidebarCollapseButton"] {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
+        [data-testid="stSidebarCollapseButton"] {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            color: #5a3b28 !important;
+        }
+
+        /* Corrije a fonte de ícones para não vazar texto puro no Streamlit Cloud */
+        [data-testid="stSidebarCollapseButton"] * {
+            font-family: 'Source Sans Pro', sans-serif, "Material Symbols Outlined" !important;
         }
 
         /* =========================================
