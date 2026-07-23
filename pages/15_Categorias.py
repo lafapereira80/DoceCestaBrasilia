@@ -102,7 +102,10 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
 .categoria-nome {
     font-weight: 700;
     color: #333;
-    font-size: 15px !important;
+    font-size: 14px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Badges e Tags */
@@ -228,18 +231,22 @@ for categoria in categorias:
     ordem_atual = categoria.get("ordem", 0)
 
     with st.container(border=True):
-        col1, col2, col3 = st.columns([4, 3, 2])
+        # Separação clara de colunas: Nome | Status | Tags | Ações
+        col_nome, col_status_badge, col_tags, col_acoes = st.columns([2.5, 1.2, 3.5, 1.8])
 
-        # Coluna 1: Nome e Status
-        with col1:
-            st.markdown(f'<div class="categoria-nome">{nome}</div>', unsafe_allow_html=True)
+        # Coluna 1: Nome
+        with col_nome:
+            st.markdown(f'<div class="categoria-nome">📂 {nome}</div>', unsafe_allow_html=True)
+
+        # Coluna 2: Badge Status
+        with col_status_badge:
             if ativo:
                 st.markdown('<span class="badge-ativa">🟢 Ativa</span>', unsafe_allow_html=True)
             else:
                 st.markdown('<span class="badge-inativa">🔴 Inativa</span>', unsafe_allow_html=True)
 
-        # Coluna 2: Detalhes em Badges
-        with col2:
+        # Coluna 3: Detalhes em Badges
+        with col_tags:
             st.markdown(
                 f"""
                 <span class="badge-info">🏷️ Preço: {'Sim' if possui_preco else 'Não'}</span>
@@ -249,8 +256,8 @@ for categoria in categorias:
                 unsafe_allow_html=True
             )
 
-        # Coluna 3: Botões de Ação
-        with col3:
+        # Coluna 4: Botões de Ação
+        with col_acoes:
             col_b1, col_b2, col_b3 = st.columns(3)
 
             with col_b1:
