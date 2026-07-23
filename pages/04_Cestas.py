@@ -80,12 +80,10 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     padding: 8px 12px !important;
     margin-bottom: 8px !important;
     box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-    transition: all 0.2s ease;
 }
 
 div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     border-color: #dfcdbb !important;
-    box-shadow: 0 2px 6px rgba(90, 59, 40, 0.08);
 }
 
 /* =========================================
@@ -164,7 +162,9 @@ st.divider()
 # =====================================================
 
 if usuario.get("perfil") == "Administrador":
-    with st.expander("Cadastrar Nova Cesta", expanded=False):
+    st.subheader("➕ Cadastrar Nova Cesta")
+    
+    with st.container(border=True):
         with st.form("nova_cesta_form"):
             col_f1, col_f2 = st.columns([2, 1])
 
@@ -177,7 +177,7 @@ if usuario.get("perfil") == "Administrador":
                 imagem_arquivo = st.file_uploader("📷 Foto da Cesta", type=["jpg", "jpeg", "png", "webp"])
 
                 if imagem_arquivo:
-                    st.image(imagem_arquivo, width=120)
+                    st.image(imagem_arquivo, width=100)
 
             salvar = st.form_submit_button("💾 Cadastrar Cesta", use_container_width=True, type="primary")
 
@@ -196,6 +196,8 @@ if usuario.get("perfil") == "Administrador":
 
                 except Exception as erro:
                     st.error(f"Erro ao cadastrar cesta: {erro}")
+                    
+    st.divider()
 else:
     st.info("Modo consulta. Apenas Administradores podem cadastrar novas cestas.")
 
