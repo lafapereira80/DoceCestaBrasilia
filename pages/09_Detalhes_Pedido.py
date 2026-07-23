@@ -2189,102 +2189,54 @@ st.markdown(
     "### 🧮 Resumo do Pedido"
 
 )
-
-
-
-
-
 st.markdown(
-
 f"""
-
 <div class="resumo-card">
 
+<table style="width:100%; border-collapse:collapse;">
 
-🎁 Cesta:
+<tr>
+    <td>🎁 Cesta</td>
+    <td style="text-align:right;"><b>{formatar_valor(valor_cesta)}</b></td>
+</tr>
 
-<b>
+<tr>
+    <td>🎀 Adicionais</td>
+    <td style="text-align:right;"><b>{formatar_valor(valor_adicionais)}</b></td>
+</tr>
 
-{formatar_valor(valor_cesta)}
+<tr>
+    <td>⚠️ Sob consulta</td>
+    <td style="text-align:right;"><b>{formatar_valor(valor_consulta)}</b></td>
+</tr>
 
-</b>
+<tr>
+    <td>🚚 Frete</td>
+    <td style="text-align:right;"><b>{formatar_valor(valor_frete)}</b></td>
+</tr>
 
+<tr>
+    <td>🏷️ Desconto</td>
+    <td style="text-align:right;"><b>{formatar_valor(desconto)}</b></td>
+</tr>
 
-<br><br>
+<tr>
+    <td colspan="2"><hr style="margin:6px 0;"></td>
+</tr>
 
+<tr>
+    <td style="font-size:17px;"><b>💰 TOTAL</b></td>
+    <td style="text-align:right;font-size:22px;color:#2E7D32;">
+        <b>{formatar_valor(valor_total_calculado)}</b>
+    </td>
+</tr>
 
-🎀 Adicionais:
-
-<b>
-
-{formatar_valor(valor_adicionais)}
-
-</b>
-
-
-<br><br>
-
-
-⚠️ Sob consulta:
-
-<b>
-
-{formatar_valor(valor_consulta)}
-
-</b>
-
-
-<br><br>
-
-
-🚚 Frete:
-
-<b>
-
-{formatar_valor(valor_frete)}
-
-</b>
-
-
-<br><br>
-
-
-🏷️ Desconto:
-
-<b>
-
-{formatar_valor(desconto)}
-
-</b>
-
-
-<hr>
-
-
-💰 TOTAL FINAL:
-
-
-<h2>
-
-{formatar_valor(valor_total_calculado)}
-
-</h2>
-
-
+</table>
 
 </div>
-
 """,
-
 unsafe_allow_html=True
-
 )
-
-
-
-
-
-
 
 # =====================================================
 # WHATSAPP
