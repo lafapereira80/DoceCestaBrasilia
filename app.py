@@ -76,13 +76,13 @@ div[data-testid="stVerticalBlock"] {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 14px;
     margin-bottom: 12px;
     width: 100%;
 }
 
 .header-logo {
-    width: 48px;
+    width: 65px;
     height: auto;
     object-fit: contain;
     flex-shrink: 0;
@@ -205,7 +205,7 @@ div[data-testid="stFileUploader"] section button::after {
 }
 
 /* =========================================
-   AJUSTES RESPONSIVOS (MOBILE EXCLUSIVO)
+   AJUSTES RESPONSIVOS (MOBILE TRIPLO)
 ========================================== */
 @media (max-width: 640px) {
     .block-container {
@@ -213,11 +213,12 @@ div[data-testid="stFileUploader"] section button::after {
     }
     
     .header-banner {
-        gap: 8px;
+        gap: 12px;
     }
 
+    /* Logo triplicada no celular para 96px */
     .header-logo {
-        width: 32px !important;
+        width: 96px !important;
     }
 
     .header-title {
