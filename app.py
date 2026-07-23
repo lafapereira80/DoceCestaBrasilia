@@ -1,4 +1,5 @@
 import streamlit as st
+import base64
 from pathlib import Path
 
 from services.pedido_service import salvar_pedido
@@ -69,20 +70,22 @@ div[data-testid="stVerticalBlock"] {
 }
 
 /* =========================================
-   ESTILIZAÇÃO E CONTROLE DA LOGO (REDUZIDA PELA METADE)
+   CABEÇALHO UNIFICADO (LOGO + TITULOS)
 ========================================== */
-.logo-container {
+.header-banner {
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 12px;
     width: 100%;
 }
 
-/* Limita o tamanho máximo da logo no Desktop (Reduzido para ~48px) */
-.logo-container div[data-testid="stImage"] img {
-    max-width: 48px !important;
-    height: auto !important;
+.header-logo {
+    width: 48px;
+    height: auto;
     object-fit: contain;
+    flex-shrink: 0;
 }
 
 .header-text {
@@ -209,9 +212,12 @@ div[data-testid="stFileUploader"] section button::after {
         padding-top: 0.5rem !important;
     }
     
-    /* Logo bem pequena e delicada no celular (~35px) */
-    .logo-container div[data-testid="stImage"] img {
-        max-width: 35px !important;
+    .header-banner {
+        gap: 8px;
+    }
+
+    .header-logo {
+        width: 32px !important;
     }
 
     .header-title {
@@ -233,30 +239,29 @@ unsafe_allow_html=True
 
 
 # ==========================================================
-# LOGO E CABEÇALHO LADO A LADO CENTRALIZADOS
+# LOGO E CABEÇALHO UNIFICADO (100% RESPONSIVO)
 # ==========================================================
 
-logo = Path("assets/logo.webp")
+logo_path = Path("assets/logo.webp")
+logo_html = ""
 
-# Proporção ajustada para caber a logo compacta perfeitamente ao lado
-col_logo, col_titulo = st.columns([0.4, 3.6], vertical_alignment="center")
+if logo_path.exists():
+    with open(logo_path, "rb") as img_file:
+        encoded_logo = base64.b64encode(img_file.read()).decode()
+    logo_html = f'<img src="data:image/webp;base64,{encoded_logo}" class="header-logo" alt="Logo">'
 
-with col_logo:
-    if logo.exists():
-        st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-        st.image(str(logo), use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-with col_titulo:
-    st.markdown(
-        """
+st.markdown(
+    f"""
+    <div class="header-banner">
+        {logo_html}
         <div class="header-text">
             <h1 class="header-title">Doce Cesta Brasília</h1>
             <p class="header-subtitle">Cestas personalizadas para momentos especiais 💝</p>
         </div>
-        """,
-        unsafe_allow_html=True
-    )
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 st.write("")
 
