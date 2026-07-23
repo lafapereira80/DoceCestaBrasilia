@@ -10,23 +10,34 @@ def configurar_pagina():
         """
         <style>
         /* =========================================
-           REMOÇÃO LIMPA DE ELEMENTOS PADRÃO
+           REMOÇÃO DE ELEMENTOS PADRÃO (MENU E FOOTER)
         ========================================== */
         #MainMenu { display: none !important; }
         footer { display: none !important; }
         [data-testid="stSidebarNav"] { display: none !important; }
 
-        /* Ajusta o header para ser transparente sem sumir com o botão de abrir sidebar */
+        /* Torna o header transparente sem esconder os botões de controle */
         header[data-testid="stHeader"] {
-            background-color: transparent !important;
-            z-index: 9999 !important;
+            background: transparent !important;
         }
 
-        /* Garante que o botão de abrir/fechar sidebar fique visível, limpo e funcional */
+        /* =========================================
+           CORREÇÃO DEFINITIVA DOS ÍCONES DA SIDEBAR
+        ========================================== */
+        /* Força a fonte correta de ícones do Streamlit para evitar vazamento de texto */
+        [data-testid="stSidebarCollapseButton"] i,
+        [data-testid="collapsedControl"] i,
+        [data-testid="stSidebarCollapseButton"] span,
+        [data-testid="collapsedControl"] span {
+            font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        }
+
+        /* Garante que os botões de abrir/fechar fiquem visíveis e bem posicionados */
         [data-testid="stSidebarCollapseButton"],
         [data-testid="collapsedControl"] {
             display: flex !important;
             visibility: visible !important;
+            opacity: 1 !important;
             color: #5a3b28 !important;
         }
 
