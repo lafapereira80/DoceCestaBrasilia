@@ -1,16 +1,13 @@
 import streamlit as st
 from pathlib import Path
 
-
 from services.usuario_service import (
     autenticar_usuario
 )
 
-
 from utils.menu import (
     configurar_pagina
 )
-
 
 
 # =====================================================
@@ -18,645 +15,314 @@ from utils.menu import (
 # =====================================================
 
 st.set_page_config(
-
     page_title="Área Administrativa",
-
     page_icon="🔒",
-
     layout="centered",
-
     initial_sidebar_state="collapsed"
-
 )
-
-
-
-# =====================================================
-# CONFIGURAÇÃO GERAL
-# =====================================================
 
 configurar_pagina()
 
 
-
 # =====================================================
-# CSS
+# CSS ULTRA COMPACTO E ISOLADO
 # =====================================================
 
 st.markdown(
 """
 <style>
-
-
-section[data-testid="stSidebar"]{
-
-    display:none !important;
-
+/* =========================================
+   REMOÇÃO DE ELEMENTOS PADRÃO (TELA LOGIN)
+========================================== */
+section[data-testid="stSidebar"] {
+    display: none !important;
 }
 
-
-[data-testid="collapsedControl"]{
-
-    display:none !important;
-
+[data-testid="collapsedControl"] {
+    display: none !important;
 }
 
-
-#MainMenu{
-
-    display:none !important;
-
+#MainMenu {
+    display: none !important;
 }
 
-
-header{
-
-    display:none !important;
-
+header {
+    display: none !important;
 }
 
-
-footer{
-
-    display:none !important;
-
+footer {
+    display: none !important;
 }
 
-
-
-.block-container{
-
-    max-width:700px;
-
-    padding-top:20px;
-
-    padding-bottom:40px;
-
+/* =========================================
+   CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
+========================================== */
+.block-container {
+    max-width: 650px !important;
+    padding-top: 1.5rem !important;
+    padding-bottom: 2rem !important;
 }
 
-
-
-.titulo{
-
-    text-align:center;
-
-    font-size:28px;
-
-    font-weight:bold;
-
-    color:#8B5A2B;
-
-    margin-top:15px;
-
+div[data-testid="stVerticalBlock"] {
+    gap: 0.4rem !important;
 }
 
-
-
-.subtitulo{
-
-    text-align:center;
-
-    font-size:16px;
-
-    color:#777;
-
-    margin-bottom:30px;
-
+.titulo {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: #5a3b28;
+    margin-top: 8px;
 }
 
-
-
-.login-area{
-
-    background:transparent;
-
-    border:none;
-
-    padding:0;
-
+.subtitulo {
+    text-align: center;
+    font-size: 14px;
+    color: #775a46;
+    margin-bottom: 16px;
 }
 
-
-
-div[data-baseweb="input"]{
-
-    border-radius:10px;
-
+/* =========================================
+   CONTAINERS E CARDS COMPACTOS
+========================================== */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #ffffff;
+    border: 1px solid #e8ddd3 !important;
+    border-radius: 12px !important;
+    padding: 16px 20px !important;
+    margin-bottom: 8px !important;
+    box-shadow: 0 2px 6px rgba(90, 59, 40, 0.04);
 }
 
-
-
-input{
-
-    font-size:15px !important;
-
+.card-title {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #5a3b28 !important;
+    margin-bottom: 10px !important;
+    text-align: center;
 }
 
-
-
-.stButton button{
-
-    background:#8B5A2B;
-
-    color:white;
-
-    border-radius:10px;
-
-    height:45px;
-
-    font-size:16px;
-
-    font-weight:bold;
-
-    width:100%;
-
+/* Customização dos Inputs */
+div[data-baseweb="input"] {
+    border-radius: 8px !important;
 }
 
-
-
-.stButton button:hover{
-
-    background:#6f451f;
-
+input {
+    font-size: 13px !important;
 }
 
-
-
-div[data-testid="stPageLink"] button{
-
-    border-radius:12px;
-
+/* Botões do Sistema */
+.stButton button {
+    background: #5a3b28 !important;
+    color: white !important;
+    border-radius: 8px !important;
+    height: 38px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    border: none !important;
+    transition: all 0.2s ease !important;
 }
 
+.stButton button:hover {
+    background: #42291d !important;
+    color: white !important;
+}
 
+/* Links dos Módulos */
+div[data-testid="stPageLink"] a {
+    border-radius: 10px !important;
+    background-color: #faf7f3 !important;
+    border: 1px solid #dfcdbb !important;
+    color: #5a3b28 !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    padding: 10px !important;
+    text-align: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease !important;
+}
 
+div[data-testid="stPageLink"] a:hover {
+    background-color: #f3ece6 !important;
+    border-color: #5a3b28 !important;
+}
+
+.rodape {
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+    margin-top: 15px;
+}
 </style>
 """,
 unsafe_allow_html=True
 )
 
 
-
 # =====================================================
-# LOGO
+# LOGO E CABEÇALHO
 # =====================================================
 
-
-logo = Path(
-
-    "assets/logo.webp"
-
-)
-
-
+logo = Path("assets/logo.webp")
 
 if logo.exists():
-
-
-    col1,col2,col3 = st.columns(
-
-        [1,1,1]
-
-    )
-
-
+    col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
+        st.image(str(logo), width=120)
 
-
-        st.image(
-
-            str(logo),
-
-            width=140
-
-        )
-
-
-
-st.markdown(
-
-"<div class='titulo'>Painel Administrativo</div>",
-
-unsafe_allow_html=True
-
-)
-
-
-
-st.markdown(
-
-"<div class='subtitulo'>Doce Cesta Brasília</div>",
-
-unsafe_allow_html=True
-
-)
-
+st.markdown("<div class='titulo'>Painel Administrativo</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitulo'>Doce Cesta Brasília</div>", unsafe_allow_html=True)
 
 
 # =====================================================
 # CONTROLE DE LOGIN
 # =====================================================
 
-
 if "usuario" not in st.session_state:
-
-
     st.session_state.usuario = None
 
 
-
 # =====================================================
-# LOGIN
+# TELA DE LOGIN (LOGOUT / NÃO AUTENTICADO)
 # =====================================================
-
 
 if st.session_state.usuario is None:
+    with st.container(border=True):
+        st.markdown("<div class='card-title'>🔐 Acesso Administrativo</div>", unsafe_allow_html=True)
 
+        login = st.text_input("Usuário", placeholder="Digite seu usuário")
+        senha = st.text_input("Senha", type="password", placeholder="Digite sua senha")
 
-    st.markdown(
+        st.write("")
 
-        "<div class='login-area'>",
+        entrar = st.button("Entrar no Sistema", use_container_width=True)
 
-        unsafe_allow_html=True
+        if entrar:
+            usuario = autenticar_usuario(login, senha)
 
-    )
-
-
-    st.subheader(
-
-        "🔐 Acesso Administrativo"
-
-    )
-
-
-    login = st.text_input(
-
-        "Usuário",
-
-        placeholder="Digite seu usuário"
-
-    )
-
-
-
-    senha = st.text_input(
-
-        "Senha",
-
-        type="password",
-
-        placeholder="Digite sua senha"
-
-    )
-
-
-
-    entrar = st.button(
-
-        "Entrar",
-
-        use_container_width=True
-
-    )
-
-
-
-    if entrar:
-
-
-        usuario = autenticar_usuario(
-
-            login,
-
-            senha
-
-        )
-
-
-
-        if usuario:
-
-
-            st.session_state.usuario = usuario
-
-            st.rerun()
-
-
-
-        else:
-
-
-            st.error(
-
-                "Usuário ou senha inválidos."
-
-            )
-
-
-
-    st.markdown(
-
-        "</div>",
-
-        unsafe_allow_html=True
-
-    )
-
+            if usuario:
+                st.session_state.usuario = usuario
+                st.rerun()
+            else:
+                st.error("Usuário ou senha inválidos.")
 
     st.stop()
 
 
-
 # =====================================================
-# USUÁRIO LOGADO
+# TELA PRINCIPAL (USUÁRIO AUTENTICADO)
 # =====================================================
-
 
 usuario = st.session_state.usuario
 
+# Card de Boas-Vindas
+with st.container(border=True):
+    col_u1, col_u2 = st.columns([3.5, 1])
+
+    with col_u1:
+        st.markdown(f"👤 **{usuario['login']}** | Perfil: **{usuario['perfil']}**")
+
+    with col_u2:
+        if st.button("🚪 Sair", use_container_width=True):
+            st.session_state.usuario = None
+            st.rerun()
 
 
-st.divider()
+# =====================================================
+# MENU DE MÓDULOS (COMPACTO GRID)
+# =====================================================
 
+st.subheader("📂 Módulos do Sistema")
+st.caption("Selecione o módulo que deseja acessar.")
 
-
-col1,col2 = st.columns(
-
-    [4,1]
-
-)
-
-
+# Linha 1
+col1, col2, col3 = st.columns(3)
 
 with col1:
-
-
-    st.success(
-
-        f"👤 {usuario['login']} | Perfil: {usuario['perfil']}"
-
-    )
-
-
-
-with col2:
-
-
-    sair = st.button(
-
-        "🚪 Sair",
-
-        use_container_width=True
-
-    )
-
-
-    if sair:
-
-
-        st.session_state.usuario = None
-
-        st.rerun()
-
-
-
-st.divider()
-
-
-
-# =====================================================
-# MENU PRINCIPAL
-# =====================================================
-
-
-st.subheader(
-
-    "📂 Módulos do Sistema"
-
-)
-
-
-st.caption(
-
-    "Selecione o módulo que deseja acessar."
-
-)
-
-
-
-# =====================================================
-# LINHA 1
-# =====================================================
-
-
-col1,col2,col3 = st.columns(3)
-
-
-
-with col1:
-
-
     st.page_link(
-
         "pages/02_Pedidos.py",
-
         label="📋 Pedidos",
-
         use_container_width=True
-
     )
 
-
-
 with col2:
-
-
     st.page_link(
-
         "pages/03_Clientes.py",
-
         label="👥 Clientes",
-
         use_container_width=True
-
     )
-
-
 
 with col3:
-
-
     st.page_link(
-
         "pages/04_Cestas.py",
-
         label="🎁 Cestas",
-
         use_container_width=True
-
     )
 
-
-
-# =====================================================
-# LINHA 2
-# =====================================================
-
-
-col1,col2,col3 = st.columns(3)
-
-
+# Linha 2
+col1, col2, col3 = st.columns(3)
 
 with col1:
-
-
     st.page_link(
-
         "pages/05_Produtos.py",
-
         label="🛒 Produtos",
-
         use_container_width=True
-
     )
-
-
 
 with col2:
-
-
-    if usuario["perfil"] in [
-
-        "Administrador",
-
-        "Operador"
-
-    ]:
-
-
+    if usuario["perfil"] in ["Administrador", "Operador"]:
         st.page_link(
-
             "pages/15_Categorias.py",
-
             label="📂 Categorias",
-
             use_container_width=True
-
         )
-
-
     else:
-
-
-        st.info(
-
-            "Sem acesso"
-
-        )
-
-
+        st.info("Sem acesso")
 
 with col3:
-
-
     if usuario["perfil"] == "Administrador":
-
-
         st.page_link(
-
             "pages/06_Financeiro.py",
-
             label="💰 Financeiro",
-
             use_container_width=True
-
         )
-
-
     else:
+        st.info("Sem acesso")
 
-
-        st.info(
-
-            "Sem acesso"
-
-        )
-
-
-
-# =====================================================
-# LINHA 3
-# =====================================================
-
-
-col1,col2,col3 = st.columns(3)
-
-
+# Linha 3
+col1, col2, col3 = st.columns(3)
 
 with col1:
-
-
     if usuario["perfil"] == "Administrador":
-
-
         st.page_link(
-
             "pages/07_Usuarios.py",
-
             label="👤 Usuários",
-
             use_container_width=True
-
         )
-
-
     else:
-
-
-        st.info(
-
-            "Sem acesso"
-
-        )
-
+        st.info("Sem acesso")
 
 
 # =====================================================
 # AVISO DE PERFIL
 # =====================================================
 
-
 if usuario["perfil"] != "Administrador":
-
-
-    st.warning(
-
-        "⚠️ Perfil Operador: acesso limitado aos módulos operacionais."
-
-    )
-
+    st.warning("⚠️ Perfil Operador: acesso limitado aos módulos operacionais.")
 
 
 # =====================================================
 # RODAPÉ
 # =====================================================
 
-
 st.divider()
 
-
-
 st.markdown(
-
-"""
-<div class="rodape">
-
-Doce Cesta Brasília<br>
-Sistema Administrativo
-
-</div>
-""",
-
-unsafe_allow_html=True
-
+    """
+    <div class="rodape">
+    Doce Cesta Brasília<br>
+    Sistema Administrativo © 2026
+    </div>
+    """,
+    unsafe_allow_html=True
 )
