@@ -69,12 +69,13 @@ div[data-testid="stVerticalBlock"] {
 }
 
 /* =========================================
-   ESTILIZAÇÃO DO CABEÇALHO (LOGO + TÍTULO)
+   ESTILIZAÇÃO DO CABEÇALHO CENTRALIZADO
 ========================================== */
 .header-container {
     display: flex;
     align-items: center;
-    gap: 15px;
+    justify-content: center;
+    gap: 18px;
     margin-bottom: 12px;
 }
 
@@ -82,14 +83,15 @@ div[data-testid="stVerticalBlock"] {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    text-align: left;
 }
 
 .header-title {
-    font-size: 26px !important;
+    font-size: 27px !important;
     font-weight: 800 !important;
     color: #5a3b28 !important;
     margin: 0 !important;
-    line-height: 1.2 !important;
+    line-height: 1.15 !important;
 }
 
 .header-subtitle {
@@ -206,7 +208,7 @@ div[data-testid="stFileUploader"] section button::after {
     }
 
     .header-subtitle {
-        font-size: 12px !important;
+        font-size: 11px !important;
     }
     
     div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -220,12 +222,13 @@ unsafe_allow_html=True
 
 
 # ==========================================================
-# LOGO E CABEÇALHO LADO A LADO
+# LOGO E CABEÇALHO LADO A LADO CENTRALIZADOS
 # ==========================================================
 
 logo = Path("assets/logo.webp")
 
-col_logo, col_titulo = st.columns([1, 3.5])
+# Colunas ajustadas para centralizar o conjunto logo + títulos
+col_esp1, col_logo, col_titulo, col_esp2 = st.columns([0.2, 1.2, 3, 0.2])
 
 with col_logo:
     if logo.exists():
