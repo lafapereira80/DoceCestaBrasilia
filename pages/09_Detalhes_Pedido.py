@@ -2336,10 +2336,6 @@ unsafe_allow_html=True
 # WHATSAPP
 # =====================================================
 
-
-st.divider()
-st.divider()
-
 st.markdown("### 📲 Atendimento WhatsApp")
 
 if valor_total_calculado > 0:
