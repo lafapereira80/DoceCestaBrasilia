@@ -1,4 +1,5 @@
 import streamlit as st
+import base64
 from pathlib import Path
 
 from services.usuario_service import (
@@ -25,7 +26,7 @@ configurar_pagina()
 
 
 # =====================================================
-# CSS ULTRA COMPACTO E ISOLADO (COM RESPONSIVIDADE NA LOGO)
+# CSS ULTRA COMPACTO E ISOLADO (COM LOGO RESPONSIVA)
 # =====================================================
 
 st.markdown(
@@ -68,21 +69,20 @@ div[data-testid="stVerticalBlock"] {
 }
 
 /* =========================================
-   AJUSTE RESPONSIVO DA LOGO
+   LOGO RESPONSIVA UNIFICADA
 ========================================== */
-.logo-container {
+.admin-logo-banner {
     display: flex;
     justify-content: center;
     align-items: center;
     width: 100%;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
 }
 
-.logo-container div[data-testid="stImage"] img {
-    max-width: 110px !important;
-    height: auto !important;
+.admin-logo-img {
+    width: 100px;
+    height: auto;
     object-fit: contain;
-    margin: 0 auto;
 }
 
 .titulo {
@@ -179,11 +179,11 @@ div[data-testid="stPageLink"] a:hover {
 }
 
 /* =========================================
-   MEDIA QUERY PARA SMARTPHONES
+   MEDIA QUERY EXCLUSIVA PARA CELULAR
 ========================================== */
 @media (max-width: 640px) {
-    .logo-container div[data-testid="stImage"] img {
-        max-width: 80px !important;
+    .admin-logo-img {
+        width: 50px !important;
     }
 
     .titulo {
@@ -201,15 +201,25 @@ unsafe_allow_html=True
 
 
 # =====================================================
-# LOGO E CABEÇALHO
+# LOGO E CABEÇALHO UNIFICADO
 # =====================================================
 
-logo = Path("assets/logo.webp")
+logo_path = Path("assets/logo.webp")
+logo_html = ""
 
-if logo.exists():
-    st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-    st.image(str(logo), use_container_width=False)
-    st.markdown('</div>', unsafe_allow_html=True)
+if logo_path.exists():
+    with open(logo_path, "rb") as img_file:
+        encoded_logo = base64.b64encode(img_file.read()).decode()
+    logo_html = f'<img src="data:image/webp;base64,{encoded_logo}" class="admin-logo-img" alt="Logo">'
+
+st.markdown(
+    f"""
+    <div class="admin-logo-banner">
+        {logo_html}
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 st.markdown("<div class='titulo'>Painel Administrativo</div>", unsafe_allow_html=True)
 st.markdown("<div class='subtitulo'>Doce Cesta Brasília</div>", unsafe_allow_html=True)
