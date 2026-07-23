@@ -71,6 +71,52 @@ p, div, span, label {
 }
 
 /* =========================================
+   CUSTOMIZAÇÃO DO UPLOADER MODERNO (DROPZONE)
+========================================== */
+div[data-testid="stFileUploader"] {
+    width: 100% !important;
+}
+
+/* Área principal de Drag & Drop */
+div[data-testid="stFileUploader"] section {
+    background-color: #faf7f3 !important;
+    border: 2px dashed #dfcdbb !important;
+    border-radius: 12px !important;
+    padding: 12px !important;
+    text-align: center !important;
+    transition: all 0.3s ease !important;
+}
+
+div[data-testid="stFileUploader"] section:hover {
+    border-color: #a87b57 !important;
+    background-color: #f5eee6 !important;
+}
+
+/* Botão Interno de Upload */
+div[data-testid="stFileUploader"] section button {
+    background-color: #ffffff !important;
+    border: 1px solid #dfcdbb !important;
+    color: #5a3b28 !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    padding: 4px 12px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03) !important;
+    transition: all 0.2s ease !important;
+}
+
+div[data-testid="stFileUploader"] section button:hover {
+    background-color: #5a3b28 !important;
+    color: #ffffff !important;
+    border-color: #5a3b28 !important;
+}
+
+/* Texto instrutivo dentro da Dropzone */
+div[data-testid="stFileUploaderDropzoneInstructions"] {
+    color: #775a46 !important;
+    font-size: 12px !important;
+}
+
+/* =========================================
    CONTAINERS DAS CESTAS (CARDS LINHA)
 ========================================== */
 div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -130,7 +176,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     margin-bottom: 4px;
 }
 
-/* Estilo para os botões da lista (Preserva totalmente o file_uploader) */
+/* Botões da Lista */
 div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button {
     font-size: 13px !important;
     padding: 2px 6px !important;
@@ -166,18 +212,19 @@ if usuario.get("perfil") == "Administrador":
 
     with st.container(border=True):
         with st.form("nova_cesta_form"):
-            col_f1, col_f2 = st.columns([1.5, 1])
+            col_f1, col_f2 = st.columns([1.4, 1])
 
             with col_f1:
-                nome = st.text_input("Nome da Cesta")
-                descricao = st.text_area("Descrição", height=90)
+                nome = st.text_input("Nome da Cesta", placeholder="Ex: Cesta Café da Manhã Premium")
+                descricao = st.text_area("Descrição", height=105, placeholder="Descreva os itens principais que acompanham a cesta...")
 
             with col_f2:
                 preco = st.number_input("Preço (R$)", min_value=0.0, value=0.0, step=1.0, format="%.2f")
+                
                 imagem_arquivo = st.file_uploader("📷 Foto da Cesta", type=["jpg", "jpeg", "png", "webp"])
 
                 if imagem_arquivo:
-                    st.image(imagem_arquivo, width=100)
+                    st.image(imagem_arquivo, width=90, caption="Pré-visualização")
 
             salvar = st.form_submit_button("💾 Cadastrar Cesta", use_container_width=True, type="primary")
 
