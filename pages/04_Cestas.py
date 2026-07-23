@@ -35,7 +35,7 @@ usuario = st.session_state.usuario
 
 
 # =====================================================
-# CSS COMPACTO E DESIGNER PROFISSIONAL
+# CSS COMPACTO, RESPONSIVO E CORREÇÃO DE BOTÕES
 # =====================================================
 
 st.markdown(
@@ -126,7 +126,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff;
     border: 1px solid #e8ddd3 !important;
     border-radius: 12px !important;
-    padding: 8px 12px !important;
+    padding: 10px 14px !important;
     margin-bottom: 8px !important;
     box-shadow: 0 1px 3px rgba(0,0,0,0.03);
 }
@@ -179,16 +179,39 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     margin-bottom: 4px;
 }
 
+/* =========================================
+   CORREÇÃO DOS BOTÕES E ENCAIXE DE ÍCONES
+========================================== */
 div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button {
-    font-size: 13px !important;
-    padding: 2px 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 15px !important;
+    padding: 4px 6px !important;
     border-radius: 8px !important;
-    min-height: 32px !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    width: 100% !important;
+    line-height: 1 !important;
+    overflow: hidden !important;
 }
 
 .stImage img {
     border-radius: 8px;
     object-fit: cover;
+}
+
+/* =========================================
+   AJUSTES DE RESPONSIVIDADE (MOBILE)
+========================================== */
+@media (max-width: 768px) {
+    .cabecalho-tabela-container {
+        display: none !important;
+    }
+    
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        padding: 10px !important;
+    }
 }
 </style>
 """,
@@ -271,7 +294,9 @@ st.subheader("📋 Cestas Cadastradas")
 if not cestas:
     st.info("Nenhuma cesta cadastrada.")
 else:
-    col_h1, col_h2, col_h3, col_h4 = st.columns([5.0, 1.8, 1.4, 1.8])
+    # Cabeçalho visível em telas maiores
+    st.markdown('<div class="cabecalho-tabela-container">', unsafe_allow_html=True)
+    col_h1, col_h2, col_h3, col_h4 = st.columns([4.5, 1.8, 1.4, 2.3])
     with col_h1:
         st.markdown('<div class="cabecalho-tabela">Cesta</div>', unsafe_allow_html=True)
     with col_h2:
@@ -280,16 +305,18 @@ else:
         st.markdown('<div class="cabecalho-tabela">Status</div>', unsafe_allow_html=True)
     with col_h4:
         st.markdown('<div class="cabecalho-tabela">Ações</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     for cesta in cestas:
         ativa = cesta.get("ativa", True)
 
         with st.container(border=True):
-            col1, col2, col3, col4 = st.columns([5.0, 1.8, 1.4, 1.8])
+            col1, col2, col3, col4 = st.columns([4.5, 1.8, 1.4, 2.3])
 
+            # Coluna 1: Imagem e Nome
             with col1:
                 if cesta.get("imagem"):
-                    img_col, txt_col = st.columns([1, 5])
+                    img_col, txt_col = st.columns([1, 4])
                     with img_col:
                         st.image(cesta["imagem"], width=60)
                     with txt_col:
@@ -307,6 +334,7 @@ else:
                             desc = desc[:85] + "..."
                         st.caption(desc)
 
+            # Coluna 2: Preço
             with col2:
                 try:
                     valor = float(cesta.get("preco", 0))
@@ -315,12 +343,14 @@ else:
                 except:
                     st.caption("Sem preço")
 
+            # Coluna 3: Status
             with col3:
                 if ativa:
                     st.markdown('<span class="badge-ativa">✓ Ativa</span>', unsafe_allow_html=True)
                 else:
                     st.markdown('<span class="badge-inativa">✕ Inativa</span>', unsafe_allow_html=True)
 
+            # Coluna 4: Botões de Ação
             with col4:
                 b1, b2, b3, b4 = st.columns(4)
 
