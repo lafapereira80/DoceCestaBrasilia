@@ -11,7 +11,8 @@ from reportlab.platypus import (
     Spacer,
     Table,
     TableStyle,
-    PageBreak
+    PageBreak,
+    KeepTogether
 )
 
 from reportlab.lib.styles import (
@@ -19,7 +20,10 @@ from reportlab.lib.styles import (
     ParagraphStyle
 )
 
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.enums import (
+    TA_LEFT,
+    TA_CENTER
+)
 
 
 from services.pedido_adicional_service import (
@@ -28,12 +32,9 @@ from services.pedido_adicional_service import (
 
 
 
-
-
 # =====================================================
 # NORMALIZA ITENS CONSULTA
 # =====================================================
-
 
 def normalizar_itens_consulta(valor):
 
@@ -68,7 +69,6 @@ def normalizar_itens_consulta(valor):
 # FORMATAÇÕES
 # =====================================================
 
-
 def formatar_data(data):
 
     if not data:
@@ -90,130 +90,47 @@ def formatar_data(data):
 
 
 
-def formatar_valor(valor):
+def formatar_horario(horario):
 
-    try:
+    if not horario:
 
-        return (
-
-            f"R$ {float(valor):,.2f}"
-
-            .replace(",", "X")
-
-            .replace(".", ",")
-
-            .replace("X",".")
-
-        )
+        return ""
 
 
-    except:
+    return str(horario)[:5]
 
-        return "R$ 0,00"
+
+
+
+
+def limitar_texto(
+    texto,
+    tamanho=120
+):
+
+    if not texto:
+
+        return "-"
+
+
+    texto = str(texto).replace(
+        "\n",
+        " "
+    )
+
+
+    if len(texto) > tamanho:
+
+        return texto[:tamanho] + "..."
+
+
+    return texto
 
 
 
 
 
 # =====================================================
-# BUSCA ITENS PARA MONTAGEM
-# =====================================================
-
-
-def buscar_itens_montagem(pedido):
-
-
-    itens = []
-
-
-
-    produtos = pedido.get(
-
-        "produtos",
-
-        ""
-
-    )
-
-
-
-    if produtos:
-
-
-        for item in produtos.split("\n"):
-
-
-            item = item.strip()
-
-
-            if item:
-
-                itens.append(item)
-
-
-
-
-
-    try:
-
-
-        adicionais = listar_adicionais_pedido(
-
-            pedido["id"]
-
-        )
-
-
-        for adicional in adicionais:
-
-
-            nome = adicional.get(
-
-                "nome_produto",
-
-                ""
-
-            )
-
-
-            if nome:
-
-                itens.append(nome)
-
-
-
-    except:
-
-
-        pass
-
-
-
-
-
-    consulta = normalizar_itens_consulta(
-
-        pedido.get(
-
-            "itens_consulta"
-
-        )
-
-    )
-
-
-
-    for nome in consulta.keys():
-
-
-        if nome not in itens:
-
-            itens.append(nome)
-
-
-
-    return itens
-    # =====================================================
 # ESTILOS PDF
 # =====================================================
 
@@ -234,7 +151,26 @@ estilo_titulo = ParagraphStyle(
 
     alignment=TA_CENTER,
 
-    spaceAfter=4
+    leading=10
+
+)
+
+
+
+
+estilo_cliente = ParagraphStyle(
+
+    "cliente",
+
+    parent=styles["Normal"],
+
+    fontName="Helvetica-Bold",
+
+    fontSize=8,
+
+    leading=9,
+
+    alignment=TA_LEFT
 
 )
 
@@ -249,23 +185,24 @@ estilo_normal = ParagraphStyle(
 
     fontSize=6.5,
 
-    leading=8
+    leading=7.5,
+
+    alignment=TA_LEFT
 
 )
 
 
 
-estilo_cliente = ParagraphStyle(
 
-    "cliente",
+estilo_pequeno = ParagraphStyle(
+
+    "pequeno",
 
     parent=styles["Normal"],
 
-    fontName="Helvetica-Bold",
+    fontSize=5.5,
 
-    fontSize=8,
-
-    leading=9
+    leading=6
 
 )
 
@@ -274,20 +211,200 @@ estilo_cliente = ParagraphStyle(
 
 
 # =====================================================
-# MONTA CONTEÚDO DE UMA CAIXA
+# CONFIGURAÇÃO TAMANHO ETIQUETA
 # =====================================================
 
 
-def montar_caixa_pedido(
+LARGURA_ETIQUETA = 7 * cm
+
+ALTURA_ETIQUETA = 10 * cm
+# =====================================================
+# BUSCA ITENS PARA MONTAGEM
+# =====================================================
+
+def buscar_itens_montagem(
     pedido
 ):
 
 
-    conteudo = []
+    itens = []
 
 
 
-    cliente = str(
+    # Produtos da cesta
+
+    produtos = pedido.get(
+        "produtos",
+        ""
+    )
+
+
+
+    if produtos:
+
+
+        for item in str(produtos).split("\n"):
+
+
+            item = item.strip()
+
+
+            if item:
+
+                itens.append(item)
+
+
+
+
+
+    # Adicionais
+
+    try:
+
+
+        adicionais = listar_adicionais_pedido(
+
+            pedido["id"]
+
+        )
+
+
+
+        for adicional in adicionais:
+
+
+            nome = adicional.get(
+
+                "nome_produto",
+
+                ""
+
+            )
+
+
+
+            if nome:
+
+                itens.append(nome)
+
+
+
+    except:
+
+
+        pass
+
+
+
+
+
+    # Itens sob consulta
+
+    consulta = normalizar_itens_consulta(
+
+        pedido.get(
+
+            "itens_consulta"
+
+        )
+
+    )
+
+
+
+
+    for nome in consulta.keys():
+
+
+        if nome not in itens:
+
+            itens.append(nome)
+
+
+
+
+    return itens
+
+
+
+
+
+
+
+# =====================================================
+# MONTA LISTA DE ITENS COMPACTA
+# =====================================================
+
+def montar_itens_pdf(
+    itens
+):
+
+
+    if not itens:
+
+        return Paragraph(
+
+            "Sem itens",
+
+            estilo_pequeno
+
+        )
+
+
+
+    linhas = []
+
+
+
+    for item in itens:
+
+
+        linhas.append(
+
+            f"☐ {item}"
+
+        )
+
+
+
+    texto = "<br/>".join(
+
+        linhas
+
+    )
+
+
+
+    return Paragraph(
+
+        texto,
+
+        estilo_pequeno
+
+    )
+
+
+
+
+
+
+
+
+# =====================================================
+# CONTEÚDO DA ETIQUETA
+# =====================================================
+
+
+def montar_conteudo_etiqueta(
+    pedido
+):
+
+
+    elementos = []
+
+
+
+    cliente = limitar_texto(
 
         pedido.get(
 
@@ -295,9 +412,11 @@ def montar_caixa_pedido(
 
             "-"
 
-        )
+        ),
 
-    ).strip()
+        35
+
+    )
 
 
 
@@ -311,11 +430,17 @@ def montar_caixa_pedido(
 
 
 
-    cesta = pedido.get(
+    cesta = limitar_texto(
 
-        "cesta_nome",
+        pedido.get(
 
-        "-"
+            "cesta_nome",
+
+            "-"
+
+        ),
+
+        30
 
     )
 
@@ -333,11 +458,13 @@ def montar_caixa_pedido(
 
 
 
-    horario = pedido.get(
+    horario = formatar_horario(
 
-        "horario_entrega",
+        pedido.get(
 
-        ""
+            "horario_entrega"
+
+        )
 
     )
 
@@ -349,13 +476,13 @@ def montar_caixa_pedido(
 
     if horario:
 
-        entrega += f" {str(horario)[:5]}"
+        entrega += " " + horario
 
 
 
 
 
-    conteudo.append(
+    elementos.append(
 
         Paragraph(
 
@@ -369,7 +496,7 @@ def montar_caixa_pedido(
 
 
 
-    conteudo.append(
+    elementos.append(
 
         Paragraph(
 
@@ -383,7 +510,7 @@ def montar_caixa_pedido(
 
 
 
-    conteudo.append(
+    elementos.append(
 
         Paragraph(
 
@@ -397,7 +524,7 @@ def montar_caixa_pedido(
 
 
 
-    conteudo.append(
+    elementos.append(
 
         Paragraph(
 
@@ -411,7 +538,7 @@ def montar_caixa_pedido(
 
 
 
-    conteudo.append(
+    elementos.append(
 
         Spacer(
 
@@ -425,7 +552,7 @@ def montar_caixa_pedido(
 
 
 
-    conteudo.append(
+    elementos.append(
 
         Paragraph(
 
@@ -439,54 +566,23 @@ def montar_caixa_pedido(
 
 
 
+    elementos.append(
 
-    itens = buscar_itens_montagem(
+        montar_itens_pdf(
 
-        pedido
+            buscar_itens_montagem(
 
-    )
-
-
-
-    if itens:
-
-
-        for item in itens:
-
-
-            conteudo.append(
-
-                Paragraph(
-
-                    f"☐ {item}",
-
-                    estilo_normal
-
-                )
-
-            )
-
-
-    else:
-
-
-        conteudo.append(
-
-            Paragraph(
-
-                "Sem itens",
-
-                estilo_normal
+                pedido
 
             )
 
         )
 
+    )
 
 
 
-
-    conteudo.append(
+    elementos.append(
 
         Spacer(
 
@@ -500,7 +596,7 @@ def montar_caixa_pedido(
 
 
 
-    endereco = str(
+    endereco = limitar_texto(
 
         pedido.get(
 
@@ -508,13 +604,15 @@ def montar_caixa_pedido(
 
             "-"
 
-        )
+        ),
+
+        70
 
     )
 
 
 
-    mensagem = str(
+    mensagem = limitar_texto(
 
         pedido.get(
 
@@ -522,21 +620,21 @@ def montar_caixa_pedido(
 
             "-"
 
-        )
+        ),
+
+        70
 
     )
 
 
 
-
-
-    conteudo.append(
+    elementos.append(
 
         Paragraph(
 
             f"<b>END:</b> {endereco}",
 
-            estilo_normal
+            estilo_pequeno
 
         )
 
@@ -544,13 +642,13 @@ def montar_caixa_pedido(
 
 
 
-    conteudo.append(
+    elementos.append(
 
         Paragraph(
 
             f"<b>MSG:</b> {mensagem}",
 
-            estilo_normal
+            estilo_pequeno
 
         )
 
@@ -558,27 +656,22 @@ def montar_caixa_pedido(
 
 
 
-    return conteudo
-
-
-
-
-
+    return elementos
+    # =====================================================
+# CRIA CAIXA 7X10
 # =====================================================
-# CRIA CAIXAS 7X10
-# =====================================================
-
 
 def criar_caixa_7x10(
     pedido
 ):
 
 
-    elementos = montar_caixa_pedido(
+    conteudo = montar_conteudo_etiqueta(
 
         pedido
 
     )
+
 
 
     tabela = Table(
@@ -587,7 +680,7 @@ def criar_caixa_7x10(
 
             [
 
-                elementos
+                conteudo
 
             ]
 
@@ -595,17 +688,12 @@ def criar_caixa_7x10(
 
         colWidths=[
 
-            7 * cm
-
-        ],
-
-        rowHeights=[
-
-            10 * cm
+            LARGURA_ETIQUETA - 0.4*cm
 
         ]
 
     )
+
 
 
     tabela.setStyle(
@@ -628,6 +716,7 @@ def criar_caixa_7x10(
 
                 ),
 
+
                 (
 
                     "VALIGN",
@@ -640,6 +729,7 @@ def criar_caixa_7x10(
 
                 ),
 
+
                 (
 
                     "LEFTPADDING",
@@ -648,9 +738,10 @@ def criar_caixa_7x10(
 
                     (-1,-1),
 
-                    5
+                    4
 
                 ),
+
 
                 (
 
@@ -660,9 +751,10 @@ def criar_caixa_7x10(
 
                     (-1,-1),
 
-                    5
+                    4
 
                 ),
+
 
                 (
 
@@ -672,9 +764,10 @@ def criar_caixa_7x10(
 
                     (-1,-1),
 
-                    5
+                    4
 
                 ),
+
 
                 (
 
@@ -684,7 +777,7 @@ def criar_caixa_7x10(
 
                     (-1,-1),
 
-                    5
+                    4
 
                 )
 
@@ -696,7 +789,14 @@ def criar_caixa_7x10(
 
 
     return tabela
-    # =====================================================
+
+
+
+
+
+
+
+# =====================================================
 # GERA PDF A4 - 12 PEDIDOS
 # =====================================================
 
@@ -763,7 +863,6 @@ def gerar_pdf_a4(
 
 
 
-
     caixas = []
 
 
@@ -784,15 +883,10 @@ def gerar_pdf_a4(
 
 
 
-
-    # completa espaços vazios
-
-    while len(caixas) % 3 != 0:
+    while len(caixas) < 12:
 
 
         caixas.append("")
-
-
 
 
 
@@ -820,22 +914,19 @@ def gerar_pdf_a4(
 
 
 
-
     tabela = Table(
 
         linhas,
 
         colWidths=[
 
-            7*cm,
+            LARGURA_ETIQUETA,
 
-            7*cm,
+            LARGURA_ETIQUETA,
 
-            7*cm
+            LARGURA_ETIQUETA
 
-        ],
-
-        hAlign="CENTER"
+        ]
 
     )
 
@@ -881,7 +972,7 @@ def gerar_pdf_a4(
 
                     2
 
-                ),
+                )
 
             ]
 
@@ -912,131 +1003,3 @@ def gerar_pdf_a4(
 
 
     return arquivo.getvalue()
-
-
-
-
-
-
-
-# =====================================================
-# GERA PDF INDIVIDUAL 7X10
-# =====================================================
-
-
-def gerar_pdf_individual(
-    pedidos
-):
-
-
-    arquivo = io.BytesIO()
-
-
-
-    doc = SimpleDocTemplate(
-
-        arquivo,
-
-        pagesize=(
-
-            7*cm,
-
-            10*cm
-
-        ),
-
-        rightMargin=0.2*cm,
-
-        leftMargin=0.2*cm,
-
-        topMargin=0.2*cm,
-
-        bottomMargin=0.2*cm
-
-    )
-
-
-
-    elementos = []
-
-
-
-    for pedido in pedidos:
-
-
-
-        elementos.append(
-
-            criar_caixa_7x10(
-
-                pedido
-
-            )
-
-        )
-
-
-        if pedido != pedidos[-1]:
-
-
-            elementos.append(
-
-                PageBreak()
-
-            )
-
-
-
-    doc.build(
-
-        elementos
-
-    )
-
-
-
-    arquivo.seek(0)
-
-
-
-    return arquivo.getvalue()
-
-
-
-
-
-
-# =====================================================
-# FUNÇÃO PRINCIPAL CHAMADA PELO SISTEMA
-# =====================================================
-
-
-def gerar_pdf_pedidos(
-    pedidos,
-    formato
-):
-
-
-    if formato.startswith(
-
-        "📄"
-
-    ):
-
-
-        return gerar_pdf_a4(
-
-            pedidos
-
-        )
-
-
-
-    else:
-
-
-        return gerar_pdf_individual(
-
-            pedidos
-
-        )
