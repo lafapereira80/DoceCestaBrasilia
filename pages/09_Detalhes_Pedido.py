@@ -49,7 +49,7 @@ usuario = st.session_state.usuario
 
 
 # =====================================================
-# CSS ULTRA COMPACTO E ISOLADO
+# CSS ULTRA COMPACTO, ISOLADO E RESPONSIVO
 # =====================================================
 
 st.markdown(
@@ -140,11 +140,38 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
 /* ==========================================
    BOTÕES E INPUTS
 ========================================== */
-div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button {
+div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button,
+div[data-testid="stColumn"] > div > div > div > div[data-testid="stLinkButton"] > a {
     font-size: 12px !important;
     padding: 2px 6px !important;
     border-radius: 8px !important;
-    min-height: 32px !important;
+    min-height: 34px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* ==========================================
+   REGRAS EXCLUSIVAS DE RESPONSIVIDADE MOBILE
+========================================== */
+@media (max-width: 768px) {
+    .block-container {
+        padding-top: 0.5rem !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+
+    h1 {
+        font-size: 18px !important;
+    }
+
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        padding: 8px !important;
+    }
+
+    .info-value {
+        font-size: 12px !important;
+    }
 }
 </style>
 """,
@@ -545,9 +572,9 @@ with col_direita:
         try:
             fotos = listar_fotos(pedido["id"])
             if fotos:
-                colunas = st.columns(4)
+                colunas = st.columns(2)  # Adaptado para 2 colunas para excelente visualização mobile e desktop
                 for i, foto in enumerate(fotos):
-                    with colunas[i % 4]:
+                    with colunas[i % 2]:
                         st.image(foto.get("url"), caption=foto.get("nome_original", "Foto"), use_container_width=True)
             else:
                 st.caption("Nenhuma foto enviada.")
