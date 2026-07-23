@@ -65,7 +65,8 @@ h2, h3 {
     margin-bottom: 8px !important;
 }
 
-p, div, span, label {
+.block-container p, 
+.block-container label {
     font-family: Arial, sans-serif !important;
     font-size: 13px !important;
 }
@@ -77,7 +78,6 @@ div[data-testid="stFileUploader"] {
     width: 100% !important;
 }
 
-/* Área principal de Drag & Drop */
 div[data-testid="stFileUploader"] section {
     background-color: #faf7f3 !important;
     border: 2px dashed #dfcdbb !important;
@@ -92,7 +92,6 @@ div[data-testid="stFileUploader"] section:hover {
     background-color: #f5eee6 !important;
 }
 
-/* Ajuste no texto duplicado do Botão Interno */
 div[data-testid="stFileUploader"] section button {
     background-color: #ffffff !important;
     border: 1px solid #dfcdbb !important;
@@ -105,11 +104,11 @@ div[data-testid="stFileUploader"] section button {
 }
 
 div[data-testid="stFileUploader"] section button span {
-    display: none !important; /* Esconde a duplicação padrão */
+    display: none !important;
 }
 
 div[data-testid="stFileUploader"] section button::after {
-    content: "📁 Selecionar Foto" !important; /* Texto limpo e único */
+    content: "📁 Selecionar Foto" !important;
     font-size: 13px !important;
     font-weight: 600 !important;
 }
@@ -180,7 +179,6 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     margin-bottom: 4px;
 }
 
-/* Botões da Lista */
 div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button {
     font-size: 13px !important;
     padding: 2px 6px !important;
@@ -273,7 +271,6 @@ st.subheader("📋 Cestas Cadastradas")
 if not cestas:
     st.info("Nenhuma cesta cadastrada.")
 else:
-    # Cabeçalho da Tabela
     col_h1, col_h2, col_h3, col_h4 = st.columns([5.0, 1.8, 1.4, 1.8])
     with col_h1:
         st.markdown('<div class="cabecalho-tabela">Cesta</div>', unsafe_allow_html=True)
@@ -284,14 +281,12 @@ else:
     with col_h4:
         st.markdown('<div class="cabecalho-tabela">Ações</div>', unsafe_allow_html=True)
 
-    # Cards da Lista
     for cesta in cestas:
         ativa = cesta.get("ativa", True)
 
         with st.container(border=True):
             col1, col2, col3, col4 = st.columns([5.0, 1.8, 1.4, 1.8])
 
-            # Coluna 1: Imagem + Nome + Descrição
             with col1:
                 if cesta.get("imagem"):
                     img_col, txt_col = st.columns([1, 5])
@@ -312,7 +307,6 @@ else:
                             desc = desc[:85] + "..."
                         st.caption(desc)
 
-            # Coluna 2: Preço
             with col2:
                 try:
                     valor = float(cesta.get("preco", 0))
@@ -321,14 +315,12 @@ else:
                 except:
                     st.caption("Sem preço")
 
-            # Coluna 3: Status
             with col3:
                 if ativa:
                     st.markdown('<span class="badge-ativa">✓ Ativa</span>', unsafe_allow_html=True)
                 else:
                     st.markdown('<span class="badge-inativa">✕ Inativa</span>', unsafe_allow_html=True)
 
-            # Coluna 4: Botões de Ação
             with col4:
                 b1, b2, b3, b4 = st.columns(4)
 
