@@ -160,12 +160,12 @@ st.divider()
 
 
 # =====================================================
-# NOVA CESTA (EXPANSIBLE FORM)
+# NOVA CESTA
 # =====================================================
 
 if usuario.get("perfil") == "Administrador":
-    with st.expander("➕ **Cadastrar Nova Cesta**", expanded=False):
-        with st.form("nova_cesta"):
+    with st.expander("➕ Cadastrar Nova Cesta", expanded=False):
+        with st.form("nova_cesta_form"):
             col_f1, col_f2 = st.columns([2, 1])
 
             with col_f1:
@@ -240,9 +240,8 @@ else:
 
             # Coluna 1: Imagem + Nome + Descrição
             with col1:
-                img_col, txt_col = st.columns([1, 5]) if cesta.get("imagem") else (None, col1)
-
                 if cesta.get("imagem"):
+                    img_col, txt_col = st.columns([1, 5])
                     with img_col:
                         st.image(cesta["imagem"], width=60)
                     with txt_col:
