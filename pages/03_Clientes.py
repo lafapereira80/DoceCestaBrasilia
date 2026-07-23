@@ -26,7 +26,7 @@ administrador_operador()
 
 
 # =====================================================
-# CSS COMPACTO E ESTILIZADO
+# CSS COMPACTO E ISOLADO
 # =====================================================
 
 st.markdown(
@@ -56,7 +56,8 @@ h2, h3 {
     margin-bottom: 8px !important;
 }
 
-p, div, span, label {
+.block-container p, 
+.block-container label {
     font-family: Arial, sans-serif !important;
     font-size: 13px !important;
 }
@@ -108,8 +109,8 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     margin-bottom: 4px;
 }
 
-/* Ajustes de botões */
-.stButton button {
+/* Ajustes direcionados de botões da lista */
+div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button {
     font-size: 13px !important;
     padding: 2px 8px !important;
     border-radius: 8px !important;
