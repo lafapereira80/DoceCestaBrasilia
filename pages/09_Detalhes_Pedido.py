@@ -1,18 +1,28 @@
 import streamlit as st
+import json
 import urllib.parse
-
-from datetime import datetime
 
 
 from services.pedido_service import (
     buscar_pedido,
-    atualizar_pedido
+    atualizar_pedido,
+    atualizar_anotacao_pedido
 )
 
 
 from services.pedido_adicional_service import (
-    listar_adicionais_pedido,
-    atualizar_valor_adicional
+    listar_adicionais_pedido
+)
+
+
+from services.foto_service import (
+    listar_fotos
+)
+
+
+from services.cesta_service import (
+    buscar_cesta,
+    listar_cestas
 )
 
 
@@ -32,22 +42,6 @@ from utils.permissao import (
 # CONFIGURAÇÃO
 # =====================================================
 
-st.set_page_config(
-
-    page_title="Detalhes do Pedido",
-
-    page_icon="📋",
-
-    layout="wide"
-
-)
-
-
-
-# =====================================================
-# ACESSO
-# =====================================================
-
 configurar_pagina()
 
 menu_lateral()
@@ -56,77 +50,249 @@ administrador_operador()
 
 
 
+usuario = st.session_state.usuario
+
+
+
 # =====================================================
 # CSS
 # =====================================================
 
 st.markdown(
-
 """
 <style>
 
-h1{
-font-size:24px !important;
+.block-container{
+
+    padding-top:1rem;
+
+    max-width:950px;
+
 }
+
+
+h1{
+
+    font-size:26px !important;
+
+}
+
 
 h2{
-font-size:18px !important;
+
+    font-size:19px !important;
+
 }
 
+
 h3{
-font-size:16px !important;
+
+    font-size:16px !important;
+
 }
 
 
 p,div,span,label{
-font-size:13px;
+
+    font-size:13px;
+
 }
+
 
 
 .stButton button{
 
-border-radius:8px;
+    font-size:13px;
+
+    padding:7px 12px;
+
+    border-radius:10px;
+
+}
+
+
+
+.resumo-card{
+
+    background:#fff8f2;
+
+    padding:18px;
+
+    border-radius:15px;
+
+    border:1px solid #ead8c7;
+
+}
+
+
+
+.edit-card{
+
+    background:#f7f7f7;
+
+    padding:15px;
+
+    border-radius:15px;
+
+    border:1px solid #ddd;
 
 }
 
 
 </style>
 """,
-
 unsafe_allow_html=True
+)
+
+
+
+# =====================================================
+# VALIDA PEDIDO ABERTO
+# =====================================================
+
+
+if "pedido_aberto" not in st.session_state:
+
+
+    st.error(
+        "Nenhum pedido selecionado."
+    )
+
+
+    if st.button("⬅ Voltar"):
+
+
+        st.switch_page(
+            "pages/02_Pedidos.py"
+        )
+
+
+    st.stop()
+
+
+
+
+
+pedido_id = st.session_state["pedido_aberto"]
+
+
+
+
+# =====================================================
+# BUSCA PEDIDO
+# =====================================================
+
+
+try:
+
+
+    pedido = buscar_pedido(
+
+        pedido_id
+
+    )
+
+
+except Exception as erro:
+
+
+    st.error(
+
+        f"Erro ao carregar pedido: {erro}"
+
+    )
+
+
+    st.stop()
+
+
+
+
+
+if not pedido:
+
+
+    st.error(
+
+        "Pedido não encontrado."
+
+    )
+
+
+    st.stop()
+
+
+
+
+
+# =====================================================
+# BUSCA ADICIONAIS
+# =====================================================
+
+
+try:
+
+
+    adicionais_pedido = listar_adicionais_pedido(
+
+        pedido["id"]
+
+    )
+
+
+except:
+
+
+    adicionais_pedido = []
+
+
+
+
+
+# =====================================================
+# CONTROLE DE EDIÇÃO
+# =====================================================
+
+
+if "editar_pedido" not in st.session_state:
+
+
+    st.session_state.editar_pedido = False
+
+
+
+
+
+# =====================================================
+# CONTROLE VALORES SOB CONSULTA
+# =====================================================
+
+
+itens_consulta_salvos = pedido.get(
+
+    "itens_consulta",
+
+    {}
 
 )
 
 
 
+if isinstance(
 
+    itens_consulta_salvos,
 
-# =====================================================
-# FUNÇÕES
-# =====================================================
+    str
 
-
-def formatar_data_br(data):
-
-
-    if not data:
-
-        return "-"
-
+):
 
 
     try:
 
 
-        return datetime.strptime(
+        itens_consulta_salvos = json.loads(
 
-            str(data)[:10],
-
-            "%Y-%m-%d"
-
-        ).strftime(
-
-            "%d/%m/%Y"
+            itens_consulta_salvos
 
         )
 
@@ -134,10 +300,30 @@ def formatar_data_br(data):
     except:
 
 
-        return str(data)
+        itens_consulta_salvos = {}
 
 
 
+
+
+if not isinstance(
+
+    itens_consulta_salvos,
+
+    dict
+
+):
+
+
+    itens_consulta_salvos = {}
+
+
+
+
+
+# =====================================================
+# FUNÇÕES AUXILIARES
+# =====================================================
 
 
 def formatar_valor(valor):
@@ -168,122 +354,268 @@ def formatar_valor(valor):
 
 
 
-# =====================================================
-# CARREGA PEDIDO
-# =====================================================
+
+def limpar_telefone(numero):
 
 
-if "pedido_aberto" not in st.session_state:
+    return (
 
+        str(numero)
 
-    st.warning(
+        .replace("(","")
 
-        "Nenhum pedido selecionado."
+        .replace(")","")
 
-    )
+        .replace("-","")
 
-
-    st.stop()
-
-
-
-
-
-pedido_id = st.session_state["pedido_aberto"]
-
-
-
-
-
-pedido = buscar_pedido(
-
-    pedido_id
-
-)
-
-
-
-
-
-if not pedido:
-
-
-    st.error(
-
-        "Pedido não encontrado."
+        .replace(" ","")
 
     )
 
 
-    st.stop()
 
 
 
+
+def formatar_data(data):
+
+
+    if not data:
+
+        return "-"
+
+
+    try:
+
+
+        ano,mes,dia = str(data)[:10].split("-")
+
+
+        return f"{dia}/{mes}/{ano}"
+
+
+    except:
+
+
+        return str(data)
+
+
+
+
+
+# =====================================================
+# GERA WHATSAPP
+# =====================================================
+
+
+def gerar_whatsapp(
+    pedido,
+    adicionais,
+    valor_final
+):
+
+
+    itens_consulta = pedido.get(
+
+        "itens_consulta",
+
+        {}
+
+    )
+
+
+    if isinstance(itens_consulta,str):
+
+        try:
+
+            itens_consulta=json.loads(
+                itens_consulta
+            )
+
+        except:
+
+            itens_consulta={}
+
+
+
+    lista_adicionais=[]
+
+
+
+    for item in adicionais:
+
+
+        nome=item.get(
+
+            "nome_produto",
+
+            "-"
+
+        )
+
+
+        valor=item.get(
+
+            "valor_unitario"
+
+        )
+
+
+
+        if valor is not None:
+
+
+            lista_adicionais.append(
+
+                f"• {nome} - {formatar_valor(valor)}"
+
+            )
+
+
+        else:
+
+
+            valor_manual=itens_consulta.get(
+
+                nome,
+
+                0
+
+            )
+
+
+            if valor_manual:
+
+
+                lista_adicionais.append(
+
+                    f"• {nome} - {formatar_valor(valor_manual)}"
+
+                )
+
+
+            else:
+
+
+                lista_adicionais.append(
+
+                    f"• {nome} (sob consulta)"
+
+                )
+
+
+
+    texto=(
+
+        f"🎁 *Doce Cesta Brasília*\n\n"
+
+        f"Olá {pedido.get('cliente_nome','')}!\n\n"
+
+        f"🎀 Cesta: {pedido.get('cesta_nome','-')}\n\n"
+
+        f"🛒 Produtos:\n"
+
+        f"{pedido.get('produtos','-')}\n\n"
+
+        f"🎀 Adicionais:\n"
+
+        f"{chr(10).join(lista_adicionais)}\n\n"
+
+        f"📍 Entrega:\n"
+
+        f"Data: {formatar_data(pedido.get('data_entrega'))}\n"
+
+        f"Período: {pedido.get('periodo_entrega','-')}\n"
+
+        f"Horário: {pedido.get('horario_combinado','-')}\n\n"
+
+        f"💳 Pagamento: {pedido.get('pagamento','-')}\n"
+
+        f"💰 Valor Final: {formatar_valor(valor_final)}\n\n"
+
+        f"Obrigado! ❤️"
+
+    )
+
+
+
+    telefone=limpar_telefone(
+
+        pedido.get(
+
+            "cliente_telefone",
+
+            ""
+
+        )
+
+    )
+
+
+    return (
+
+        f"https://wa.me/55{telefone}?text={urllib.parse.quote(texto)}"
+
+    )
+
+
+
+
+
+# =====================================================
+# CABEÇALHO
+# =====================================================
 
 
 st.title(
 
-"📋 Detalhes do Pedido"
+    "📋 Detalhes do Pedido"
 
 )
+
 
 
 st.caption(
 
-f"Pedido #{pedido_id}"
+    f"Pedido #{pedido.get('id')} | Status: {pedido.get('status','-')}"
 
 )
-
-
-st.divider()
 # =====================================================
-# DADOS DO CLIENTE
+# BOTÕES PRINCIPAIS
 # =====================================================
 
-st.subheader(
 
-    "👤 Cliente"
-
-)
-
-
-
-col1, col2, col3 = st.columns(
-
-    [3,2,2]
-
-)
+col1, col2 = st.columns(2)
 
 
 
 with col1:
 
 
-    st.write(
+    if st.button(
 
-        f"**{pedido.get('cliente_nome','-')}**"
+        "✏️ Alterar Pedido",
 
-    )
+        use_container_width=True
+
+    ):
+
+
+        st.session_state.editar_pedido = (
+
+            not st.session_state.editar_pedido
+
+        )
+
 
 
 
 with col2:
 
 
-    st.write(
+    st.info(
 
-        f"CPF: {pedido.get('cliente_cpf','-')}"
-
-    )
-
-
-
-with col3:
-
-
-    st.write(
-
-        f"☎ {pedido.get('cliente_telefone','-')}"
+        "📲 WhatsApp será liberado após salvar o atendimento."
 
     )
 
@@ -291,278 +623,499 @@ with col3:
 
 
 
-st.divider()
-
-
-
-
-
 # =====================================================
-# ENTREGA
+# MODO EDIÇÃO
 # =====================================================
 
 
-st.subheader(
-
-    "🚚 Informações da Entrega"
-
-)
+if st.session_state.editar_pedido:
 
 
+    st.markdown(
 
-col1, col2, col3 = st.columns(
+        "### ✏️ Editando Pedido"
 
-    [2,2,2]
-
-)
-
+    )
 
 
+    st.markdown(
+
+        '<div class="edit-card">',
+
+        unsafe_allow_html=True
+
+    )
 
 
-# -----------------------------
-# DATA
-# -----------------------------
+    novo_nome = st.text_input(
+
+        "👤 Nome",
+
+        value=pedido.get(
+
+            "cliente_nome",
+
+            ""
+
+        )
+
+    )
 
 
-with col1:
+
+    novo_telefone = st.text_input(
+
+        "📱 Telefone",
+
+        value=pedido.get(
+
+            "cliente_telefone",
+
+            ""
+
+        )
+
+    )
 
 
-    data_atual = pedido.get(
 
-        "data_entrega",
+
+
+    try:
+
+
+        cestas = listar_cestas()
+
+
+        nomes_cestas = [
+
+            c.get(
+
+                "nome",
+
+                ""
+
+            )
+
+            for c in cestas
+
+        ]
+
+
+    except:
+
+
+        nomes_cestas = []
+
+
+
+
+
+    cesta_atual = pedido.get(
+
+        "cesta_nome",
 
         ""
 
     )
 
 
-    try:
+
+    if nomes_cestas:
 
 
-        data_valor = datetime.strptime(
+        if cesta_atual in nomes_cestas:
 
-            str(data_atual)[:10],
+            indice_cesta = nomes_cestas.index(
 
-            "%Y-%m-%d"
+                cesta_atual
 
-        ).date()
+            )
 
+        else:
 
-
-    except:
-
-
-        data_valor = datetime.today().date()
-
-
-
-    nova_data = st.date_input(
-
-        "Data de entrega",
-
-        value=data_valor
-
-    )
+            indice_cesta = 0
 
 
 
+        nova_cesta = st.selectbox(
 
+            "🎁 Cesta",
 
+            nomes_cestas,
 
-
-
-# -----------------------------
-# PERÍODO
-# -----------------------------
-
-
-with col2:
-
-
-    periodos = [
-
-        "Manhã",
-
-        "Tarde",
-
-        "Noite"
-
-    ]
-
-
-
-    periodo_atual = pedido.get(
-
-        "periodo_entrega",
-
-        "Tarde"
-
-    )
-
-
-
-    if periodo_atual not in periodos:
-
-
-        periodo_atual = "Tarde"
-
-
-
-
-
-    novo_periodo = st.selectbox(
-
-        "Período",
-
-        periodos,
-
-        index=periodos.index(
-
-            periodo_atual
+            index=indice_cesta
 
         )
-
-    )
-
-
-
-
-
-
-
-
-# -----------------------------
-# HORÁRIO COMBINADO
-# -----------------------------
-
-
-with col3:
-
-
-    novo_horario = st.text_input(
-
-        "Horário combinado",
-
-        value=pedido.get(
-
-            "horario_combinado",
-
-            ""
-
-        ),
-
-        placeholder="Ex: 15:30"
-
-    )
-
-
-
-
-
-
-if st.button(
-
-    "💾 Salvar informações da entrega",
-
-    type="primary"
-
-):
-
-
-
-    dados = {
-
-
-        "data_entrega":
-
-            nova_data.strftime(
-
-                "%Y-%m-%d"
-
-            ),
-
-
-
-        "periodo_entrega":
-
-            novo_periodo,
-
-
-
-        "horario_combinado":
-
-            novo_horario
-
-
-    }
-
-
-
-    sucesso, mensagem = atualizar_pedido(
-
-        pedido_id,
-
-        dados
-
-    )
-
-
-
-    if sucesso:
-
-
-        st.success(
-
-            "Entrega atualizada com sucesso."
-
-        )
-
-
-        st.rerun()
-
 
 
     else:
 
 
-        st.error(
+        nova_cesta = cesta_atual
 
-            mensagem
+
+
+
+
+    nova_mensagem = st.text_area(
+
+        "💌 Mensagem",
+
+        value=pedido.get(
+
+            "mensagem",
+
+            ""
+
+        ),
+
+        height=80
+
+    )
+
+
+
+
+
+    novo_especial = st.text_area(
+
+        "✨ Pedido Especial",
+
+        value=pedido.get(
+
+            "pedido_especial",
+
+            ""
+
+        ),
+
+        height=80
+
+    )
+
+
+
+
+
+    novo_endereco = st.text_area(
+
+        "📍 Endereço",
+
+        value=pedido.get(
+
+            "endereco",
+
+            ""
+
+        ),
+
+        height=100
+
+    )
+
+
+
+
+
+
+    col_salvar,col_cancelar = st.columns(2)
+
+
+
+
+
+    with col_salvar:
+
+
+        if st.button(
+
+            "💾 Salvar Alterações",
+
+            use_container_width=True,
+
+            type="primary"
+
+        ):
+
+
+            dados={
+
+
+                "cliente_nome":
+
+                    novo_nome,
+
+
+                "cliente_telefone":
+
+                    novo_telefone,
+
+
+                "cesta_nome":
+
+                    nova_cesta,
+
+
+                "mensagem":
+
+                    nova_mensagem,
+
+
+                "pedido_especial":
+
+                    novo_especial,
+
+
+                "endereco":
+
+                    novo_endereco
+
+
+            }
+
+
+
+            atualizar_pedido(
+
+                pedido["id"],
+
+                dados
+
+            )
+
+
+
+            st.success(
+
+                "Pedido alterado com sucesso!"
+
+            )
+
+
+            st.session_state.editar_pedido=False
+
+
+            st.rerun()
+
+
+
+
+
+    with col_cancelar:
+
+
+        if st.button(
+
+            "❌ Cancelar",
+
+            use_container_width=True
+
+        ):
+
+
+            st.session_state.editar_pedido=False
+
+
+            st.rerun()
+
+
+
+
+
+    st.markdown(
+
+        "</div>",
+
+        unsafe_allow_html=True
+
+    )
+
+
+
+
+
+
+# =====================================================
+# CLIENTE
+# =====================================================
+
+
+st.markdown(
+
+    "### 👤 Cliente"
+
+)
+
+
+
+col1,col2,col3 = st.columns(3)
+
+
+
+with col1:
+
+    st.write("**Nome**")
+
+    st.write(
+
+        pedido.get(
+
+            "cliente_nome",
+
+            "-"
 
         )
 
+    )
 
 
+
+with col2:
+
+    st.write("**CPF**")
+
+    st.write(
+
+        pedido.get(
+
+            "cliente_cpf",
+
+            "-"
+
+        )
+
+    )
+
+
+
+with col3:
+
+    st.write("**Telefone**")
+
+    st.write(
+
+        pedido.get(
+
+            "cliente_telefone",
+
+            "-"
+
+        )
+
+    )
+
+
+
+
+
+
+
+# =====================================================
+# INFORMAÇÕES PRINCIPAIS
+# =====================================================
+
+
+st.markdown(
+
+    "### 🎁 Pedido"
+
+)
+
+
+
+col1,col2,col3,col4 = st.columns(4)
+
+
+
+with col1:
+
+    st.write("**Cesta**")
+
+    st.write(
+
+        pedido.get(
+
+            "cesta_nome",
+
+            "-"
+
+        )
+
+    )
+
+
+
+with col2:
+
+    st.write("**Pagamento**")
+
+    st.write(
+
+        pedido.get(
+
+            "pagamento",
+
+            "-"
+
+        )
+
+    )
+
+
+
+with col3:
+
+    st.write("**Entrega**")
+
+    st.write(
+
+        formatar_data(
+
+            pedido.get(
+
+                "data_entrega"
+
+            )
+
+        )
+
+    )
+
+
+
+with col4:
+
+    st.write("**Período**")
+
+    st.write(
+
+        pedido.get(
+
+            "periodo_entrega",
+
+            "-"
+
+        )
+
+    )
+
+
+
+
+
+
+
+# =====================================================
+# PRODUTOS E ADICIONAIS
+# =====================================================
 
 
 st.divider()
-# =====================================================
-# MONTAGEM DO PEDIDO
-# =====================================================
 
 
-st.subheader(
+col1,col2 = st.columns(2)
 
-    "🎁 Montagem do Pedido"
-
-)
-
-
-
-col1, col2 = st.columns(
-
-    [1.5,1]
-
-)
-
-
-
-
-
-# =====================================================
-# PRODUTOS DA CESTA
-# =====================================================
 
 
 with col1:
@@ -570,9 +1123,10 @@ with col1:
 
     st.markdown(
 
-        "**🎁 Produtos da cesta**"
+        "### 🛒 Produtos da Cesta"
 
     )
+
 
 
     produtos = pedido.get(
@@ -588,20 +1142,14 @@ with col1:
     if produtos:
 
 
-        st.text_area(
+        for item in produtos.split("\n"):
 
-            "Produtos",
 
-            value=produtos,
+            st.write(
 
-            height=160,
+                f"• {item}"
 
-            disabled=True,
-
-            key="produtos_pedido"
-
-        )
-
+            )
 
 
     else:
@@ -609,7 +1157,7 @@ with col1:
 
         st.info(
 
-            "Nenhum produto cadastrado."
+            "Nenhum produto informado."
 
         )
 
@@ -617,11 +1165,6 @@ with col1:
 
 
 
-
-
-# =====================================================
-# ADICIONAIS
-# =====================================================
 
 
 with col2:
@@ -629,48 +1172,28 @@ with col2:
 
     st.markdown(
 
-        "**➕ Adicionais**"
+        "### 🎀 Adicionais"
 
     )
 
 
 
-    try:
+    valor_adicionais=0.0
+
+    valor_consulta=0.0
 
 
-        adicionais = listar_adicionais_pedido(
-
-            pedido_id
-
-        )
-
-
-    except:
-
-
-        adicionais = []
+    itens_consulta={}
 
 
 
+    if adicionais_pedido:
 
 
-    if adicionais:
+        for adicional in adicionais_pedido:
 
 
-
-        for adicional in adicionais:
-
-
-
-            adicional_id = adicional.get(
-
-                "id"
-
-            )
-
-
-
-            nome = adicional.get(
+            nome=adicional.get(
 
                 "nome_produto",
 
@@ -680,21 +1203,9 @@ with col2:
 
 
 
-            quantidade = adicional.get(
+            valor=adicional.get(
 
-                "quantidade",
-
-                1
-
-            )
-
-
-
-            valor = adicional.get(
-
-                "valor",
-
-                0
+                "valor_unitario"
 
             )
 
@@ -702,113 +1213,75 @@ with col2:
 
 
 
-            st.write(
-
-                f"• {nome}"
-
-            )
+            if valor is not None:
 
 
-
-            st.caption(
-
-                f"Quantidade: {quantidade}"
-
-            )
+                valor=float(valor)
 
 
+                valor_adicionais += valor
 
 
+                st.success(
 
-            # ---------------------------------
-            # SOB CONSULTA
-            # ---------------------------------
-
-
-            if adicional.get(
-
-                "preco_consulta",
-
-                False
-
-            ):
-
-
-
-                novo_valor = st.number_input(
-
-                    "Valor",
-
-                    min_value=0.0,
-
-                    value=float(valor or 0),
-
-                    step=1.0,
-
-                    key=f"valor_adicional_{adicional_id}"
+                    f"✅ {nome} - {formatar_valor(valor)}"
 
                 )
-
-
-
-
-                if st.button(
-
-                    "💾 Salvar valor",
-
-                    key=f"salvar_valor_{adicional_id}"
-
-                ):
-
-
-
-                    sucesso, mensagem = atualizar_valor_adicional(
-
-                        adicional_id,
-
-                        novo_valor
-
-                    )
-
-
-
-                    if sucesso:
-
-
-                        st.success(
-
-                            "Valor atualizado."
-
-                        )
-
-
-                        st.rerun()
-
-
-
-                    else:
-
-
-                        st.error(
-
-                            mensagem
-
-                        )
-
 
 
 
             else:
 
 
-                if valor:
+                st.warning(
+
+                    f"⚠️ {nome}"
+
+                )
 
 
-                    st.caption(
+                valor_salvo=float(
 
-                        formatar_valor(valor)
+                    itens_consulta_salvos.get(
+
+                        nome,
+
+                        0
 
                     )
+
+                    or 0
+
+                )
+
+
+
+                valor_digitado=st.number_input(
+
+                    f"Definir valor {nome}",
+
+                    min_value=0.0,
+
+                    value=valor_salvo,
+
+                    step=1.0,
+
+                    key=f"consulta_{nome}"
+
+                )
+
+
+
+                itens_consulta[nome]=valor_digitado
+
+
+
+                if valor_digitado>0:
+
+
+                    valor_consulta += valor_digitado
+
+                    valor_adicionais += valor_digitado
 
 
 
@@ -817,61 +1290,111 @@ with col2:
 
         st.info(
 
-            "Nenhum adicional."
+            "Nenhum adicional selecionado."
 
         )
 
 
 
-
-
 st.divider()
 # =====================================================
-# ENDEREÇO E MENSAGEM
+# RESUMO DOS ADICIONAIS
 # =====================================================
 
 
-col1, col2 = st.columns(
-
-    [1,1]
-
-)
-
-
+col1,col2 = st.columns(2)
 
 
 
 with col1:
 
 
-    st.subheader(
+    st.write(
 
-        "📍 Endereço de entrega"
+        "🎀 Total Adicionais"
+
+    )
+
+
+    st.success(
+
+        formatar_valor(
+
+            valor_adicionais
+
+        )
+
+    )
+
+
+
+
+with col2:
+
+
+    st.write(
+
+        "⚠️ Valores Sob Consulta"
+
+    )
+
+
+    st.info(
+
+        formatar_valor(
+
+            valor_consulta
+
+        )
+
+    )
+
+
+
+
+
+# =====================================================
+# MENSAGEM E PEDIDO ESPECIAL
+# =====================================================
+
+
+st.divider()
+
+
+
+col1,col2 = st.columns(2)
+
+
+
+with col1:
+
+
+    st.markdown(
+
+        "### 💌 Mensagem da Cesta"
 
     )
 
 
     st.text_area(
 
-        "Endereço",
+        "",
 
         value=pedido.get(
 
-            "endereco",
+            "mensagem",
 
-            "-"
+            ""
 
         ),
 
-        height=100,
-
         disabled=True,
 
-        key="endereco_entrega"
+        height=90,
+
+        key="mensagem_cliente"
 
     )
-
-
 
 
 
@@ -880,83 +1403,222 @@ with col1:
 with col2:
 
 
-    st.subheader(
+    st.markdown(
 
-        "💌 Mensagem da cesta"
+        "### ✨ Pedido Especial"
 
     )
-
 
 
     st.text_area(
 
-        "Mensagem",
+        "",
 
         value=pedido.get(
 
-            "mensagem",
+            "pedido_especial",
 
-            "-"
+            ""
 
         ),
 
-        height=100,
-
         disabled=True,
 
-        key="mensagem_cesta"
+        height=90,
+
+        key="pedido_especial"
 
     )
 
 
 
 
+
+
+
+# =====================================================
+# ENDEREÇO DE ENTREGA
+# =====================================================
+
+
+st.markdown(
+
+    "### 📍 Endereço de Entrega"
+
+)
+
+
+
+st.text_area(
+
+    "",
+
+    value=pedido.get(
+
+        "endereco",
+
+        ""
+
+    ),
+
+    disabled=True,
+
+    height=90,
+
+    key="endereco_entrega"
+
+)
+
+
+
+
+
+
+
+# =====================================================
+# FOTOS POLAROID
+# =====================================================
 
 
 st.divider()
 
 
 
+st.markdown(
 
-
-# =====================================================
-# OBSERVAÇÃO ADMINISTRATIVA
-# =====================================================
-
-
-st.subheader(
-
-    "📝 Observação Administrativa"
+    "### 📷 Fotos da Polaroid"
 
 )
 
 
 
-observacao_atual = pedido.get(
+try:
 
-    "observacao_admin",
+
+    fotos = listar_fotos(
+
+        pedido["id"]
+
+    )
+
+
+
+    if fotos:
+
+
+
+        colunas = st.columns(4)
+
+
+
+        for i,foto in enumerate(fotos):
+
+
+            with colunas[i % 4]:
+
+
+                st.image(
+
+                    foto.get("url"),
+
+                    caption=foto.get(
+
+                        "nome_original",
+
+                        "Foto"
+
+                    ),
+
+                    use_container_width=True
+
+                )
+
+
+
+    else:
+
+
+        st.info(
+
+            "Nenhuma foto enviada."
+
+        )
+
+
+
+except Exception as erro:
+
+
+    st.error(
+
+        f"Erro ao carregar fotos: {erro}"
+
+    )
+
+
+
+
+
+
+
+
+# =====================================================
+# ANOTAÇÕES INTERNAS
+# =====================================================
+
+
+st.divider()
+
+
+
+st.markdown(
+
+    "### 📝 Anotações Internas"
+
+)
+
+
+
+st.caption(
+
+    "Uso exclusivo da equipe."
+
+)
+
+
+
+anotacao_atual = pedido.get(
+
+    "anotacoes_internas",
 
     ""
 
-)
+) or ""
 
 
 
-nova_observacao = st.text_area(
 
-    "Uso interno (não enviado ao cliente)",
 
-    value=observacao_atual,
+anotacao = st.text_area(
 
-    height=100,
+    "Observações do atendimento",
 
-    placeholder=(
+    value=anotacao_atual,
 
-        "Ex: ligar antes da entrega, "
+    height=120,
 
-        "cliente pediu cuidado especial..."
+    placeholder="""
 
-    )
+Exemplos:
+
+- Cliente confirmou endereço
+- Aguardando pagamento
+- Alteração solicitada
+- Observação da montagem
+
+""",
+
+    key="campo_anotacao"
 
 )
 
@@ -966,35 +1628,28 @@ nova_observacao = st.text_area(
 
 if st.button(
 
-    "💾 Salvar observação",
+    "💾 Salvar Anotação",
 
-    key="salvar_obs"
+    use_container_width=True
 
 ):
 
 
-    sucesso, mensagem = atualizar_pedido(
-
-        pedido_id,
-
-        {
-
-            "observacao_admin":
-
-                nova_observacao
-
-        }
-
-    )
+    try:
 
 
+        atualizar_anotacao_pedido(
 
-    if sucesso:
+            pedido["id"],
+
+            anotacao
+
+        )
 
 
         st.success(
 
-            "Observação salva."
+            "✅ Anotação salva!"
 
         )
 
@@ -1003,45 +1658,95 @@ if st.button(
 
 
 
-    else:
+    except Exception as erro:
 
 
         st.error(
 
-            mensagem
+            f"Erro ao salvar anotação: {erro}"
 
         )
-
-
-
-
-
+        # =====================================================
+# FECHAMENTO FINANCEIRO
+# =====================================================
 
 st.divider()
 
 
+st.markdown(
+
+    "### 💰 Fechamento Financeiro"
+
+)
 
 
+st.caption(
 
-# =====================================================
-# RESUMO FINANCEIRO
-# =====================================================
-
-
-st.subheader(
-
-    "💰 Resumo Financeiro"
+    "Valores sob consulta entram no total após definição."
 
 )
 
 
 
 
-col1, col2, col3, col4 = st.columns(
 
-    [1,1,1,1]
+# =====================================================
+# VALOR DA CESTA
+# =====================================================
 
-)
+
+valor_cesta = 0.0
+
+
+
+try:
+
+
+    if pedido.get("cesta_id"):
+
+
+        cesta = buscar_cesta(
+
+            pedido["cesta_id"]
+
+        )
+
+
+        if cesta:
+
+
+            valor_cesta = float(
+
+                cesta.get(
+
+                    "preco",
+
+                    0
+
+                )
+
+                or 0
+
+            )
+
+
+
+except:
+
+
+    valor_cesta = 0.0
+
+
+
+
+
+# =====================================================
+# FRETE / DESCONTO / STATUS
+# =====================================================
+
+
+col1,col2,col3 = st.columns(3)
+
 
 
 
@@ -1049,21 +1754,29 @@ col1, col2, col3, col4 = st.columns(
 with col1:
 
 
-    st.metric(
+    valor_frete = st.number_input(
 
-        "Produtos",
+        "🚚 Frete",
 
-        formatar_valor(
+        min_value=0.0,
+
+        value=float(
 
             pedido.get(
 
-                "valor_produtos",
+                "valor_frete",
 
                 0
 
             )
 
-        )
+            or 0
+
+        ),
+
+        step=1.0,
+
+        key="frete"
 
     )
 
@@ -1075,21 +1788,29 @@ with col1:
 with col2:
 
 
-    st.metric(
+    desconto = st.number_input(
 
-        "Frete",
+        "🏷️ Desconto",
 
-        formatar_valor(
+        min_value=0.0,
+
+        value=float(
 
             pedido.get(
 
-                "valor_frete",
+                "desconto",
 
                 0
 
             )
 
-        )
+            or 0
+
+        ),
+
+        step=1.0,
+
+        key="desconto"
 
     )
 
@@ -1102,19 +1823,45 @@ with col2:
 with col3:
 
 
-    st.metric(
+    status_opcoes = [
 
-        "Desconto",
+        "Recebido",
 
-        formatar_valor(
+        "Pago",
 
-            pedido.get(
+        "Desistência",
 
-                "desconto",
+        "Entregue"
 
-                0
+    ]
 
-            )
+
+
+    status_atual = pedido.get(
+
+        "status",
+
+        "Recebido"
+
+    )
+
+
+
+    if status_atual not in status_opcoes:
+
+        status_atual = "Recebido"
+
+
+
+    status = st.selectbox(
+
+        "Status",
+
+        status_opcoes,
+
+        index=status_opcoes.index(
+
+            status_atual
 
         )
 
@@ -1126,29 +1873,210 @@ with col3:
 
 
 
-with col4:
+# =====================================================
+# HORÁRIO DE ENTREGA
+# =====================================================
 
 
-    st.metric(
+st.markdown(
 
-        "Total",
+    "### 🕒 Horário da Entrega"
 
-        formatar_valor(
-
-            pedido.get(
-
-                "valor_total",
-
-                0
-
-            )
-
-        )
-
-    )
+)
 
 
 
+horario_combinado = st.text_input(
+
+    "Horário combinado",
+
+    value=pedido.get(
+
+        "horario_combinado",
+
+        ""
+
+    ),
+
+    placeholder="Ex: 15:30"
+
+)
+
+
+
+
+
+
+
+# =====================================================
+# TOTAL FINAL
+# =====================================================
+
+
+valor_total_calculado = (
+
+    valor_cesta
+
+    +
+
+    valor_adicionais
+
+    +
+
+    valor_frete
+
+    -
+
+    desconto
+
+)
+
+
+
+if valor_total_calculado < 0:
+
+
+    valor_total_calculado = 0
+
+
+
+
+
+
+# =====================================================
+# RESUMO FINAL
+# =====================================================
+
+
+st.markdown(
+
+    "### 🧮 Resumo do Pedido"
+
+)
+
+
+
+
+
+st.markdown(
+
+f"""
+
+<div class="resumo-card">
+
+
+<table style="width:100%">
+
+
+<tr>
+
+<td>🎁 Cesta</td>
+
+<td align="right">
+
+<b>{formatar_valor(valor_cesta)}</b>
+
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>🎀 Adicionais</td>
+
+<td align="right">
+
+<b>{formatar_valor(valor_adicionais)}</b>
+
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>⚠️ Sob consulta</td>
+
+<td align="right">
+
+<b>{formatar_valor(valor_consulta)}</b>
+
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>🚚 Frete</td>
+
+<td align="right">
+
+<b>{formatar_valor(valor_frete)}</b>
+
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>🏷️ Desconto</td>
+
+<td align="right">
+
+<b>{formatar_valor(desconto)}</b>
+
+</td>
+
+</tr>
+
+
+<tr>
+
+<td colspan="2">
+
+<hr>
+
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+
+<b>💰 TOTAL</b>
+
+</td>
+
+
+<td align="right">
+
+<h3>
+
+{formatar_valor(valor_total_calculado)}
+
+</h3>
+
+</td>
+
+
+</tr>
+
+
+</table>
+
+
+</div>
+
+""",
+
+unsafe_allow_html=True
+
+)
 
 
 
@@ -1157,184 +2085,16 @@ st.write(
     f"💳 Pagamento: **{pedido.get('pagamento','-')}**"
 
 )
-
-
-
-st.divider()
-# =====================================================
-# FECHAMENTO DO PEDIDO
-# =====================================================
-
-
-st.subheader(
-
-    "✅ Fechamento do Pedido"
-
-)
-
-
-
-col1, col2 = st.columns(
-
-    [1,2]
-
-)
-
-
-
-
-with col1:
-
-
-    st.write(
-
-        "**Status:**"
-
-    )
-
-
-    status = pedido.get(
-
-        "status",
-
-        "-"
-
-    )
-
-
-
-    if status == "Pago":
-
-
-        st.success(
-
-            status
-
-        )
-
-
-    elif status == "Recebido":
-
-
-        st.warning(
-
-            status
-
-        )
-
-
-    else:
-
-
-        st.info(
-
-            status
-
-        )
-
-
-
-
-
-
-with col2:
-
-
-    st.write(
-
-        "**Entrega combinada:**"
-
-    )
-
-
-    resumo_entrega = (
-
-        f"{formatar_data_br(pedido.get('data_entrega'))}"
-
-        f" - "
-
-        f"{pedido.get('periodo_entrega','-')}"
-
-    )
-
-
-
-    if pedido.get(
-
-        "horario_combinado"
-
-    ):
-
-
-        resumo_entrega += (
-
-            f" às "
-
-            f"{pedido.get('horario_combinado')}"
-
-        )
-
-
-
-    st.info(
-
-        resumo_entrega
-
-    )
-
-
-
-
-
-
-
-st.divider()
-
-
-
-
-
 # =====================================================
 # WHATSAPP
 # =====================================================
 
-
-st.subheader(
-
-    "📲 Mensagem WhatsApp"
-
-)
+st.divider()
 
 
+st.markdown(
 
-
-data_entrega = formatar_data_br(
-
-    pedido.get(
-
-        "data_entrega"
-
-    )
-
-)
-
-
-
-periodo = pedido.get(
-
-    "periodo_entrega",
-
-    "-"
-
-)
-
-
-
-horario = pedido.get(
-
-    "horario_combinado",
-
-    ""
+    "### 📲 Atendimento WhatsApp"
 
 )
 
@@ -1342,166 +2102,145 @@ horario = pedido.get(
 
 
 
-mensagem_whatsapp = f"""
-
-Olá {pedido.get('cliente_nome','')}! 😊
+if valor_total_calculado > 0:
 
 
-Seu pedido está confirmado. ❤️
+    link_whatsapp = gerar_whatsapp(
 
+        pedido,
 
-🎁 Cesta:
-{pedido.get('cesta_nome','-')}
+        adicionais_pedido,
 
-
-📅 Entrega:
-{data_entrega}
-
-
-🕒 Período:
-{periodo}
-
-"""
-
-
-
-if horario:
-
-
-    mensagem_whatsapp += f"""
-
-⏰ Horário combinado:
-{horario}
-
-"""
-
-
-
-mensagem_whatsapp += f"""
-
-💰 Valor total:
-{formatar_valor(
-    pedido.get(
-        'valor_total',
-        0
-    )
-)}
-
-
-Obrigado pela preferência! ❤️
-"""
-
-
-
-
-
-st.text_area(
-
-    "Mensagem para copiar",
-
-    mensagem_whatsapp,
-
-    height=220
-
-)
-
-
-
-
-
-telefone = (
-
-    str(
-
-        pedido.get(
-
-            "cliente_telefone",
-
-            ""
-
-        )
+        valor_total_calculado
 
     )
 
-    .replace(
 
-        "(",
 
-        ""
+    st.link_button(
 
-    )
+        "📲 Enviar resumo pelo WhatsApp",
 
-    .replace(
+        link_whatsapp,
 
-        ")",
-
-        ""
+        use_container_width=True
 
     )
 
-    .replace(
 
-        "-",
+else:
 
-        ""
 
-    )
+    st.info(
 
-    .replace(
-
-        " ",
-
-        ""
+        "Defina os valores para liberar o WhatsApp."
 
     )
 
-)
 
 
 
 
 
-link_whatsapp = (
 
-    "https://wa.me/55"
-
-    +
-
-    telefone
-
-    +
-
-    "?text="
-
-    +
-
-    urllib.parse.quote(
-
-        mensagem_whatsapp
-
-    )
-
-)
-
-
-
-
-
-st.link_button(
-
-    "📲 Abrir WhatsApp",
-
-    link_whatsapp,
-
-    use_container_width=True
-
-)
-
-
-
+# =====================================================
+# SALVAR ATENDIMENTO
+# =====================================================
 
 
 st.divider()
+
+
+
+if st.button(
+
+    "💾 Salvar Atendimento",
+
+    use_container_width=True,
+
+    type="primary"
+
+):
+
+
+    try:
+
+
+
+        dados = {
+
+
+            "status":
+
+                status,
+
+
+            "valor_frete":
+
+                valor_frete,
+
+
+            "desconto":
+
+                desconto,
+
+
+            "valor_total":
+
+                valor_total_calculado,
+
+
+            "horario_combinado":
+
+                horario_combinado,
+
+
+            "itens_consulta":
+
+                itens_consulta
+
+
+        }
+
+
+
+
+        atualizar_pedido(
+
+            pedido["id"],
+
+            dados
+
+        )
+
+
+
+
+
+        st.success(
+
+            "✅ Atendimento salvo com sucesso!"
+
+        )
+
+
+
+        st.rerun()
+
+
+
+
+
+    except Exception as erro:
+
+
+        st.error(
+
+            f"Erro ao salvar atendimento: {erro}"
+
+        )
+
+
 
 
 
@@ -1512,9 +2251,13 @@ st.divider()
 # =====================================================
 
 
+st.divider()
+
+
+
 if st.button(
 
-    "⬅️ Voltar para pedidos",
+    "⬅ Voltar para Pedidos",
 
     use_container_width=True
 
