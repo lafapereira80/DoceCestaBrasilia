@@ -9,14 +9,27 @@ def configurar_pagina():
     st.markdown(
         """
         <style>
-        /* Esconde elementos padrão do Streamlit */
-        #MainMenu { display: none; }
-        header { display: none; }
-        footer { display: none; }
-        [data-testid="stSidebarNav"] { display: none; }
-        [data-testid="collapsedControl"] { display: none; }
+        /* =========================================
+           REMOÇÃO LIMPA DE ELEMENTOS PADRÃO
+        ========================================== */
+        #MainMenu { display: none !important; }
+        header { display: none !important; }
+        footer { display: none !important; }
+        [data-testid="stSidebarNav"] { display: none !important; }
 
-        /* Estilização Geral da Sidebar */
+        /* Remove o botão de recolher sem vazar o texto dos ícones */
+        [data-testid="collapsedControl"],
+        [data-testid="stSidebarCollapseButton"],
+        button[data-testid="stSidebarCollapseButton"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+
+        /* =========================================
+           ESTILIZAÇÃO DA SIDEBAR (LAYOUT MODERNO)
+        ========================================== */
         section[data-testid="stSidebar"] {
             background-color: #faf7f3 !important;
             border-right: 1px solid #e8ddd3 !important;
