@@ -53,7 +53,7 @@ administrador_operador()
 usuario = st.session_state.usuario
 
 # =====================================================
-# CSS COMPACTO
+# CSS - COMPACTAR ESPAÇO VERTICAL
 # =====================================================
 
 st.markdown(
@@ -65,80 +65,105 @@ st.markdown(
 
 .block-container{
 
-    padding-top:0.5rem !important;
+    padding-top:0.8rem !important;
 
     padding-bottom:1rem !important;
 
-    max-width:1000px;
+    max-width:950px;
 
 }
 
 
-/* Títulos */
+/* Mantém fontes originais */
 
 h1{
 
-    font-size:24px !important;
+    font-size:26px !important;
 
-    margin-bottom:0.2rem !important;
+    margin-top:0 !important;
+
+    margin-bottom:0.15rem !important;
 
 }
 
 
 h2{
 
-    font-size:18px !important;
+    font-size:19px !important;
 
-    margin-top:0.5rem !important;
+    margin-top:0.35rem !important;
 
-    margin-bottom:0.3rem !important;
+    margin-bottom:0.15rem !important;
 
 }
 
 
 h3{
 
-    font-size:15px !important;
+    font-size:16px !important;
 
-    margin-top:0.3rem !important;
+    margin-top:0.25rem !important;
 
-    margin-bottom:0.2rem !important;
+    margin-bottom:0.15rem !important;
 
 }
 
 
-/* Texto geral */
+
+/* Texto mantém tamanho */
 
 p,
 div,
 span,
 label{
 
-    font-size:12px !important;
+    font-size:13px;
 
 }
 
 
-/* Reduz espaço entre elementos */
 
-.stMarkdown{
+/* Reduz espaços automáticos do Streamlit */
 
-    margin-bottom:0.2rem !important;
+.element-container{
+
+    margin-bottom:0.15rem !important;
 
 }
 
 
-/* Botões */
+
+/* Reduz espaço dos blocos */
+
+div[data-testid="stVerticalBlock"]{
+
+    gap:0.35rem !important;
+
+}
+
+
+
+/* Colunas mais próximas */
+
+div[data-testid="column"]{
+
+    padding-left:0.25rem !important;
+
+    padding-right:0.25rem !important;
+
+}
+
+
+
+/* Botões continuam com acabamento */
 
 .stButton button{
 
-    font-size:12px !important;
+    font-size:13px !important;
 
-    padding:4px 10px !important;
+    padding:7px 12px !important;
 
-    border-radius:8px !important;
-
-    min-height:32px !important;
+    border-radius:10px !important;
 
 }
 
@@ -146,35 +171,48 @@ label{
 
 /* Inputs */
 
-input,
-textarea{
+.stTextInput,
+.stTextArea,
+.stSelectbox,
+.stNumberInput{
 
-    font-size:12px !important;
+    margin-bottom:0 !important;
 
 }
 
 
 
-/* caixas de mensagem */
+/* Textareas sem exagero */
+
+textarea{
+
+    padding:8px !important;
+
+}
+
+
+
+/* Alertas menores sem perder estilo */
 
 div[data-testid="stAlert"]{
 
-    padding:6px 10px !important;
+    padding:8px 12px !important;
 
-    margin:4px 0 !important;
+    margin:3px 0 !important;
 
 }
 
 
-/* Cards */
+
+/* Cards continuam iguais */
 
 .resumo-card{
 
     background:#fff8f2;
 
-    padding:10px;
+    padding:14px;
 
-    border-radius:10px;
+    border-radius:15px;
 
     border:1px solid #ead8c7;
 
@@ -186,34 +224,23 @@ div[data-testid="stAlert"]{
 
     background:#f7f7f7;
 
-    padding:10px;
+    padding:12px;
 
-    border-radius:10px;
+    border-radius:15px;
 
     border:1px solid #ddd;
 
 }
 
 
-/* Reduz espaçamento das colunas */
 
-div[data-testid="column"]{
-
-    padding-left:3px !important;
-
-    padding-right:3px !important;
-
-}
-
-
-
-/* Dividers menores */
+/* Divisores mais próximos */
 
 hr{
 
-    margin-top:8px !important;
+    margin-top:6px !important;
 
-    margin-bottom:8px !important;
+    margin-bottom:6px !important;
 
 }
 
@@ -223,6 +250,8 @@ hr{
 """,
 unsafe_allow_html=True
 )
+
+
 # =====================================================
 # VALIDA PEDIDO ABERTO
 # =====================================================
@@ -1501,7 +1530,7 @@ with col2:
 
         disabled=True,
 
-        height=90,
+        height=75,
 
         key="pedido_especial"
 
@@ -1540,7 +1569,7 @@ st.text_area(
 
     disabled=True,
 
-    height=90,
+    height=75,
 
     key="endereco_entrega"
 
@@ -1682,7 +1711,7 @@ anotacao = st.text_area(
 
     value=anotacao_atual,
 
-    height=80,
+    height=100,
 
     placeholder="""
 
