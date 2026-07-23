@@ -599,9 +599,6 @@ def categoria_possui_preco(
     )
 
 
-
-
-
 # =====================================================
 # PRODUTOS SOB CONSULTA
 # =====================================================
@@ -618,4 +615,13 @@ def listar_produtos_sob_consulta():
                 id,
                 nome,
                 possui_preco
-           
+            )
+            """
+        )
+        .is_("preco", None)
+        .eq("ativo", True)
+        .order("nome")
+        .execute()
+    )
+
+    return resposta.data or []
