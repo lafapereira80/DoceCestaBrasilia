@@ -406,139 +406,93 @@ def limpar_telefone(numero):
 
 
 def gerar_whatsapp(
-
     pedido,
-
     adicionais,
-
     valor_final
-
 ):
 
+    itens_consulta = pedido.get("itens_consulta", {})
 
-    lista_adicionais = ""
+    if isinstance(itens_consulta, str):
+        try:
+            itens_consulta = json.loads(itens_consulta)
+        except:
+            itens_consulta = {}
 
-
+    lista_adicionais = []
 
     if adicionais:
 
-
         for item in adicionais:
 
-
             nome = item.get(
-
                 "nome_produto",
-
                 "-"
-
             )
-
 
             valor = item.get(
-
                 "valor_unitario"
-
             )
 
+            # possui preço cadastrado
+            if valor is not None:
 
-            if valor:
-
-
-                lista_adicionais += (
-
-                    f"• {nome} - "
-
-                    f"{formatar_valor(valor)}\n"
-
+                lista_adicionais.append(
+                    f"• {nome} - {formatar_valor(valor)}"
                 )
 
-
+            # preço informado manualmente
             else:
 
+                valor_manual = itens_consulta.get(nome)
 
-                lista_adicionais += (
+                if valor_manual:
 
-                    f"• {nome}\n"
+                    lista_adicionais.append(
+                        f"• {nome} - {formatar_valor(valor_manual)}"
+                    )
 
-                )
+                else:
 
+                    lista_adicionais.append(
+                        f"• {nome} (sob consulta)"
+                    )
 
     else:
 
-
-        lista_adicionais = "Nenhum adicional\n"
-
-
-
-
-
-    texto = f"""
-🎁 *Doce Cesta Brasília*
-
-Olá {pedido.get('cliente_nome','')}!
-
-Segue resumo do seu pedido:
-
-🎀 *Cesta*
-{pedido.get('cesta_nome','-')}
-
-
-🛒 *Produtos*
-{pedido.get('produtos','-')}
-
-
-🎀 *Adicionais*
-{lista_adicionais}
-
-
-📍 *Entrega*
-
-Data:
-{pedido.get('data_entrega','-')}
-
-Período:
-{pedido.get('periodo_entrega','-')}
-
-
-💳 Pagamento:
-{pedido.get('pagamento','-')}
-
-
-💰 *Valor final*
-{formatar_valor(valor_final)}
-
-
-Aguardamos sua confirmação.
-"""
-
-
-    mensagem = urllib.parse.quote(
-
-        texto
-
-    )
-
-
-    telefone = limpar_telefone(
-
-        pedido.get(
-
-            "cliente_telefone",
-
-            ""
-
+        lista_adicionais.append(
+            "Nenhum adicional"
         )
 
+    texto = (
+        f"🎁 *Doce Cesta Brasília*\n\n"
+        f"Olá {pedido.get('cliente_nome','')}!\n\n"
+        f"Segue o resumo do seu pedido:\n\n"
+        f"🎀 *Cesta:* {pedido.get('cesta_nome','-')}\n\n"
+        f"🛒 *Produtos:*\n"
+        f"{pedido.get('produtos','-')}\n\n"
+        f"🎀 *Adicionais:*\n"
+        f"{chr(10).join(lista_adicionais)}\n\n"
+        f"📍 *Entrega:*\n"
+        f"• Data: {pedido.get('data_entrega','-')}\n"
+        f"• Período: {pedido.get('periodo_entrega','-')}\n\n"
+        f"💳 *Pagamento:* {pedido.get('pagamento','-')}\n"
+        f"💰 *Valor Final:* {formatar_valor(valor_final)}\n\n"
+        f"Obrigado! ❤️"
     )
 
+    telefone = limpar_telefone(
+        pedido.get(
+            "cliente_telefone",
+            ""
+        )
+    )
 
     return (
-
-        f"https://wa.me/55{telefone}?text={mensagem}"
-
+        f"https://wa.me/55{telefone}?text={urllib.parse.quote(texto)}"
     )
-    # =====================================================
+    
+# =====================================================
 # CABEÇALHO
 # =====================================================
 
