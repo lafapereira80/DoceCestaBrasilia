@@ -92,7 +92,7 @@ div[data-testid="stFileUploader"] section:hover {
     background-color: #f5eee6 !important;
 }
 
-/* Botão Interno de Upload */
+/* Ajuste no texto duplicado do Botão Interno */
 div[data-testid="stFileUploader"] section button {
     background-color: #ffffff !important;
     border: 1px solid #dfcdbb !important;
@@ -104,16 +104,20 @@ div[data-testid="stFileUploader"] section button {
     transition: all 0.2s ease !important;
 }
 
+div[data-testid="stFileUploader"] section button span {
+    display: none !important; /* Esconde a duplicação padrão */
+}
+
+div[data-testid="stFileUploader"] section button::after {
+    content: "📁 Selecionar Foto" !important; /* Texto limpo e único */
+    font-size: 13px !important;
+    font-weight: 600 !important;
+}
+
 div[data-testid="stFileUploader"] section button:hover {
     background-color: #5a3b28 !important;
     color: #ffffff !important;
     border-color: #5a3b28 !important;
-}
-
-/* Texto instrutivo dentro da Dropzone */
-div[data-testid="stFileUploaderDropzoneInstructions"] {
-    color: #775a46 !important;
-    font-size: 12px !important;
 }
 
 /* =========================================
