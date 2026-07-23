@@ -1,9 +1,26 @@
 import io
 import json
 
-from reportlab.pdfgen import canvas
-from reportlab.lib.units import cm, mm
+
 from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import cm
+
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+    PageBreak
+)
+
+from reportlab.lib.styles import (
+    getSampleStyleSheet,
+    ParagraphStyle
+)
+
+from reportlab.lib.enums import TA_CENTER
+
 
 from services.pedido_adicional_service import (
     listar_adicionais_pedido
@@ -11,14 +28,19 @@ from services.pedido_adicional_service import (
 
 
 
+
+
 # =====================================================
 # NORMALIZA ITENS CONSULTA
 # =====================================================
 
+
 def normalizar_itens_consulta(valor):
 
     if not valor:
+
         return {}
+
 
     if isinstance(valor, dict):
 
@@ -43,33 +65,9 @@ def normalizar_itens_consulta(valor):
 
 
 # =====================================================
-# FORMATA VALORES
+# FORMATAÇÕES
 # =====================================================
 
-def formatar_valor(valor):
-
-    try:
-
-        valor = float(valor)
-
-        return (
-            f"R$ {valor:,.2f}"
-            .replace(",", "X")
-            .replace(".", ",")
-            .replace("X", ".")
-        )
-
-    except:
-
-        return "R$ 0,00"
-
-
-
-
-
-# =====================================================
-# FORMATA DATA
-# =====================================================
 
 def formatar_data(data):
 
@@ -92,39 +90,26 @@ def formatar_data(data):
 
 
 
-# =====================================================
-# FORMATA HORÁRIO
-# =====================================================
+def formatar_valor(valor):
 
-def formatar_horario(horario):
+    try:
 
-    if not horario:
+        return (
 
-        return ""
+            f"R$ {float(valor):,.2f}"
 
+            .replace(",", "X")
 
-    return str(horario)[:5]
+            .replace(".", ",")
 
+            .replace("X",".")
 
-
-
-
-# =====================================================
-# LIMPA TEXTO
-# =====================================================
-
-def limpar_texto(texto):
-
-    if not texto:
-
-        return "-"
+        )
 
 
-    return (
-        str(texto)
-        .replace("\n", " ")
-        .strip()
-    )
+    except:
+
+        return "R$ 0,00"
 
 
 
@@ -134,20 +119,22 @@ def limpar_texto(texto):
 # BUSCA ITENS PARA MONTAGEM
 # =====================================================
 
+
 def buscar_itens_montagem(pedido):
+
 
     itens = []
 
 
 
-    # -----------------------------
-    # Produtos da cesta
-    # -----------------------------
-
     produtos = pedido.get(
+
         "produtos",
+
         ""
+
     )
+
 
 
     if produtos:
@@ -167,15 +154,13 @@ def buscar_itens_montagem(pedido):
 
 
 
-    # -----------------------------
-    # Adicionais cadastrados
-    # -----------------------------
-
     try:
 
 
         adicionais = listar_adicionais_pedido(
+
             pedido["id"]
+
         )
 
 
@@ -183,8 +168,11 @@ def buscar_itens_montagem(pedido):
 
 
             nome = adicional.get(
+
                 "nome_produto",
+
                 ""
+
             )
 
 
@@ -194,7 +182,7 @@ def buscar_itens_montagem(pedido):
 
 
 
-    except Exception:
+    except:
 
 
         pass
@@ -203,17 +191,16 @@ def buscar_itens_montagem(pedido):
 
 
 
-    # -----------------------------
-    # Itens sob consulta
-    # -----------------------------
-
     consulta = normalizar_itens_consulta(
 
         pedido.get(
+
             "itens_consulta"
+
         )
 
     )
+
 
 
     for nome in consulta.keys():
@@ -225,283 +212,496 @@ def buscar_itens_montagem(pedido):
 
 
 
-
     return itens
+    # =====================================================
+# ESTILOS PDF
+# =====================================================
+
+
+styles = getSampleStyleSheet()
+
+
+
+estilo_titulo = ParagraphStyle(
+
+    "titulo",
+
+    parent=styles["Normal"],
+
+    fontName="Helvetica-Bold",
+
+    fontSize=9,
+
+    alignment=TA_CENTER,
+
+    spaceAfter=4
+
+)
+
+
+
+
+estilo_normal = ParagraphStyle(
+
+    "normal",
+
+    parent=styles["Normal"],
+
+    fontSize=6.5,
+
+    leading=8
+
+)
+
+
+
+estilo_cliente = ParagraphStyle(
+
+    "cliente",
+
+    parent=styles["Normal"],
+
+    fontName="Helvetica-Bold",
+
+    fontSize=8,
+
+    leading=9
+
+)
 
 
 
 
 
 # =====================================================
-# DESENHA TEXTO LIMITADO
+# MONTA CONTEÚDO DE UMA CAIXA
 # =====================================================
 
-def desenhar_linha(
-    pdf,
-    texto,
-    x,
-    y,
-    tamanho=7
+
+def montar_caixa_pedido(
+    pedido
 ):
 
-    pdf.setFont(
-        "Helvetica",
-        tamanho
-    )
 
-
-    pdf.drawString(
-        x,
-        y,
-        limpar_texto(texto)[:45]
-    )
-
-# =====================================================
-# DESENHA CAIXA DE PEDIDO
-# =====================================================
-
-def desenhar_caixa_pedido(
-    pdf,
-    pedido,
-    x,
-    y,
-    largura,
-    altura
-):
-
-
-    # borda da caixa
-
-    pdf.rect(
-        x,
-        y,
-        largura,
-        altura
-    )
-
-
-    margem = 4 * mm
-
-
-    pos_y = y + altura - margem
+    conteudo = []
 
 
 
-    # -----------------------------
-    # CABEÇALHO
-    # -----------------------------
+    cliente = str(
 
-    pdf.setFont(
-        "Helvetica-Bold",
-        9
-    )
-
-
-    pdf.drawString(
-        x + margem,
-        pos_y,
-        "DOCE CESTA"
-    )
-
-
-    pos_y -= 12
-
-
-
-    pdf.setFont(
-        "Helvetica-Bold",
-        8
-    )
-
-
-    pdf.drawString(
-        x + margem,
-        pos_y,
-        limpar_texto(
-            pedido.get(
-                "cliente_nome",
-                "-"
-            )
-        )[:32]
-    )
-
-
-    pos_y -= 11
-
-
-
-    pdf.setFont(
-        "Helvetica",
-        7
-    )
-
-
-    pdf.drawString(
-        x + margem,
-        pos_y,
-        f"Tel: {pedido.get('cliente_telefone','-')}"
-    )
-
-
-    pos_y -= 11
-
-
-
-    # -----------------------------
-    # DADOS PEDIDO
-    # -----------------------------
-
-    pdf.drawString(
-        x + margem,
-        pos_y,
-        f"Cesta: {limpar_texto(pedido.get('cesta_nome'))[:25]}"
-    )
-
-
-    pos_y -= 11
-
-
-
-    entrega = formatar_data(
         pedido.get(
+
+            "cliente_nome",
+
+            "-"
+
+        )
+
+    ).strip()
+
+
+
+    telefone = pedido.get(
+
+        "cliente_telefone",
+
+        "-"
+
+    )
+
+
+
+    cesta = pedido.get(
+
+        "cesta_nome",
+
+        "-"
+
+    )
+
+
+
+    data = formatar_data(
+
+        pedido.get(
+
             "data_entrega"
+
         )
+
     )
 
 
-    horario = formatar_horario(
-        pedido.get(
-            "horario_entrega"
-        )
+
+    horario = pedido.get(
+
+        "horario_entrega",
+
+        ""
+
     )
+
+
+
+    entrega = data
+
 
 
     if horario:
 
-        entrega += f" {horario}"
+        entrega += f" {str(horario)[:5]}"
 
 
 
-    pdf.drawString(
-        x + margem,
-        pos_y,
-        f"Entrega: {entrega}"
+
+
+    conteudo.append(
+
+        Paragraph(
+
+            cliente,
+
+            estilo_cliente
+
+        )
+
     )
 
 
-    pos_y -= 14
 
+    conteudo.append(
 
+        Paragraph(
 
+            f"☎ {telefone}",
 
-    # -----------------------------
-    # MONTAGEM
-    # -----------------------------
+            estilo_normal
 
-    pdf.setFont(
-        "Helvetica-Bold",
-        7
+        )
+
     )
 
 
-    pdf.drawString(
-        x + margem,
-        pos_y,
-        "MONTAGEM:"
+
+    conteudo.append(
+
+        Paragraph(
+
+            f"🎁 {cesta}",
+
+            estilo_normal
+
+        )
+
     )
 
 
-    pos_y -= 10
 
+    conteudo.append(
 
+        Paragraph(
 
-    pdf.setFont(
-        "Helvetica",
-        6.5
+            f"📅 {entrega}",
+
+            estilo_normal
+
+        )
+
     )
+
+
+
+    conteudo.append(
+
+        Spacer(
+
+            1,
+
+            3
+
+        )
+
+    )
+
+
+
+    conteudo.append(
+
+        Paragraph(
+
+            "<b>MONTAGEM</b>",
+
+            estilo_normal
+
+        )
+
+    )
+
+
 
 
     itens = buscar_itens_montagem(
+
         pedido
+
     )
 
 
-    for item in itens:
+
+    if itens:
 
 
-        if pos_y < y + 25:
-
-            break
+        for item in itens:
 
 
-        texto = (
-            "☐ "
-            +
-            limpar_texto(item)
-        )
+            conteudo.append(
 
+                Paragraph(
 
-        pdf.drawString(
-            x + margem,
-            pos_y,
-            texto[:38]
-        )
+                    f"☐ {item}",
 
+                    estilo_normal
 
-        pos_y -= 9
-
-
-
-
-    # -----------------------------
-    # MENSAGEM
-    # -----------------------------
-
-    if pos_y > y + 15:
-
-
-        pdf.setFont(
-            "Helvetica-Bold",
-            6
-        )
-
-
-        pdf.drawString(
-            x + margem,
-            pos_y,
-            "MSG:"
-        )
-
-
-        pos_y -= 8
-
-
-        pdf.setFont(
-            "Helvetica",
-            6
-        )
-
-
-        pdf.drawString(
-            x + margem,
-            pos_y,
-            limpar_texto(
-                pedido.get(
-                    "mensagem",
-                    "-"
                 )
-            )[:38]
+
+            )
+
+
+    else:
+
+
+        conteudo.append(
+
+            Paragraph(
+
+                "Sem itens",
+
+                estilo_normal
+
+            )
+
         )
 
 
 
 
 
+    conteudo.append(
+
+        Spacer(
+
+            1,
+
+            3
+
+        )
+
+    )
+
+
+
+    endereco = str(
+
+        pedido.get(
+
+            "endereco",
+
+            "-"
+
+        )
+
+    )
+
+
+
+    mensagem = str(
+
+        pedido.get(
+
+            "mensagem",
+
+            "-"
+
+        )
+
+    )
+
+
+
+
+
+    conteudo.append(
+
+        Paragraph(
+
+            f"<b>END:</b> {endereco}",
+
+            estilo_normal
+
+        )
+
+    )
+
+
+
+    conteudo.append(
+
+        Paragraph(
+
+            f"<b>MSG:</b> {mensagem}",
+
+            estilo_normal
+
+        )
+
+    )
+
+
+
+    return conteudo
+
+
+
+
+
 # =====================================================
-# GERA PDF A4 PRODUÇÃO
+# CRIA CAIXAS 7X10
 # =====================================================
 
-def gerar_pdf_producao_a4(
+
+def criar_caixa_7x10(
+    pedido
+):
+
+
+    elementos = montar_caixa_pedido(
+
+        pedido
+
+    )
+
+
+    tabela = Table(
+
+        [
+
+            [
+
+                elementos
+
+            ]
+
+        ],
+
+        colWidths=[
+
+            7 * cm
+
+        ],
+
+        rowHeights=[
+
+            10 * cm
+
+        ]
+
+    )
+
+
+    tabela.setStyle(
+
+        TableStyle(
+
+            [
+
+                (
+
+                    "BOX",
+
+                    (0,0),
+
+                    (-1,-1),
+
+                    0.8,
+
+                    None
+
+                ),
+
+                (
+
+                    "VALIGN",
+
+                    (0,0),
+
+                    (-1,-1),
+
+                    "TOP"
+
+                ),
+
+                (
+
+                    "LEFTPADDING",
+
+                    (0,0),
+
+                    (-1,-1),
+
+                    5
+
+                ),
+
+                (
+
+                    "RIGHTPADDING",
+
+                    (0,0),
+
+                    (-1,-1),
+
+                    5
+
+                ),
+
+                (
+
+                    "TOPPADDING",
+
+                    (0,0),
+
+                    (-1,-1),
+
+                    5
+
+                ),
+
+                (
+
+                    "BOTTOMPADDING",
+
+                    (0,0),
+
+                    (-1,-1),
+
+                    5
+
+                )
+
+            ]
+
+        )
+
+    )
+
+
+    return tabela
+    # =====================================================
+# GERA PDF A4 - 12 PEDIDOS
+# =====================================================
+
+
+def gerar_pdf_a4(
     pedidos
 ):
 
@@ -510,44 +710,254 @@ def gerar_pdf_producao_a4(
 
 
 
-    pdf = canvas.Canvas(
+    doc = SimpleDocTemplate(
+
         arquivo,
-        pagesize=A4
+
+        pagesize=A4,
+
+        rightMargin=0.5*cm,
+
+        leftMargin=0.5*cm,
+
+        topMargin=0.5*cm,
+
+        bottomMargin=0.5*cm
+
     )
 
 
 
-    largura_pagina, altura_pagina = A4
+    elementos = []
 
 
 
-    largura_caixa = 7 * cm
+    titulo = Paragraph(
 
-    altura_caixa = 10 * cm
+        "PEDIDOS PARA PRODUÇÃO",
 
+        estilo_titulo
 
-
-    margem_x = (
-        largura_pagina
-        -
-        (3 * largura_caixa)
-    ) / 2
+    )
 
 
+    elementos.append(
 
-    margem_y = (
-        altura_pagina
-        -
-        (4 * altura_caixa)
-    ) / 2
+        titulo
 
+    )
 
 
+    elementos.append(
+
+        Spacer(
+
+            1,
+
+            5
+
+        )
+
+    )
 
 
-    coluna = 0
 
-    linha = 0
+
+
+    caixas = []
+
+
+
+    for pedido in pedidos:
+
+
+        caixas.append(
+
+            criar_caixa_7x10(
+
+                pedido
+
+            )
+
+        )
+
+
+
+
+
+    # completa espaços vazios
+
+    while len(caixas) % 3 != 0:
+
+
+        caixas.append("")
+
+
+
+
+
+    linhas = []
+
+
+
+    for i in range(
+
+        0,
+
+        len(caixas),
+
+        3
+
+    ):
+
+
+        linhas.append(
+
+            caixas[i:i+3]
+
+        )
+
+
+
+
+
+    tabela = Table(
+
+        linhas,
+
+        colWidths=[
+
+            7*cm,
+
+            7*cm,
+
+            7*cm
+
+        ],
+
+        hAlign="CENTER"
+
+    )
+
+
+
+    tabela.setStyle(
+
+        TableStyle(
+
+            [
+
+                (
+
+                    "VALIGN",
+
+                    (0,0),
+
+                    (-1,-1),
+
+                    "TOP"
+
+                ),
+
+                (
+
+                    "LEFTPADDING",
+
+                    (0,0),
+
+                    (-1,-1),
+
+                    2
+
+                ),
+
+                (
+
+                    "RIGHTPADDING",
+
+                    (0,0),
+
+                    (-1,-1),
+
+                    2
+
+                ),
+
+            ]
+
+        )
+
+    )
+
+
+
+    elementos.append(
+
+        tabela
+
+    )
+
+
+
+    doc.build(
+
+        elementos
+
+    )
+
+
+
+    arquivo.seek(0)
+
+
+
+    return arquivo.getvalue()
+
+
+
+
+
+
+
+# =====================================================
+# GERA PDF INDIVIDUAL 7X10
+# =====================================================
+
+
+def gerar_pdf_individual(
+    pedidos
+):
+
+
+    arquivo = io.BytesIO()
+
+
+
+    doc = SimpleDocTemplate(
+
+        arquivo,
+
+        pagesize=(
+
+            7*cm,
+
+            10*cm
+
+        ),
+
+        rightMargin=0.2*cm,
+
+        leftMargin=0.2*cm,
+
+        topMargin=0.2*cm,
+
+        bottomMargin=0.2*cm
+
+    )
+
+
+
+    elementos = []
 
 
 
@@ -555,70 +965,33 @@ def gerar_pdf_producao_a4(
 
 
 
-        x = (
-            margem_x
-            +
-            coluna * largura_caixa
-        )
+        elementos.append(
 
+            criar_caixa_7x10(
 
-        y = (
-            altura_pagina
-            -
-            margem_y
-            -
-            (linha + 1)
-            *
-            altura_caixa
-        )
+                pedido
 
-
-
-        desenhar_caixa_pedido(
-
-            pdf,
-
-            pedido,
-
-            x,
-
-            y,
-
-            largura_caixa,
-
-            altura_caixa
+            )
 
         )
 
 
-
-        coluna += 1
-
+        if pedido != pedidos[-1]:
 
 
-        if coluna == 3:
+            elementos.append(
 
+                PageBreak()
 
-            coluna = 0
-
-            linha += 1
+            )
 
 
 
+    doc.build(
 
-        if linha == 4:
+        elementos
 
-
-            pdf.showPage()
-
-            coluna = 0
-
-            linha = 0
-
-
-
-
-    pdf.save()
+    )
 
 
 
@@ -632,79 +1005,38 @@ def gerar_pdf_producao_a4(
 
 
 
+
 # =====================================================
-# GERA PDF INDIVIDUAL 7x10
+# FUNÇÃO PRINCIPAL CHAMADA PELO SISTEMA
 # =====================================================
 
-def gerar_pdf_individual_7x10(
-    pedido
+
+def gerar_pdf_pedidos(
+    pedidos,
+    formato
 ):
 
 
-    arquivo = io.BytesIO()
+    if formato.startswith(
+
+        "📄"
+
+    ):
+
+
+        return gerar_pdf_a4(
+
+            pedidos
+
+        )
 
 
 
-    tamanho = (
-        70 * mm,
-        100 * mm
-    )
+    else:
 
 
+        return gerar_pdf_individual(
 
-    pdf = canvas.Canvas(
+            pedidos
 
-        arquivo,
-
-        pagesize=tamanho
-
-    )
-
-
-
-    desenhar_caixa_pedido(
-
-        pdf,
-
-        pedido,
-
-        0,
-
-        0,
-
-        70 * mm,
-
-        100 * mm
-
-    )
-
-
-
-    pdf.save()
-
-
-
-    arquivo.seek(0)
-
-
-
-    return arquivo.getvalue()
-
-
-
-
-
-# =====================================================
-# COMPATIBILIDADE ATUAL
-# =====================================================
-
-def abrir_impressao(
-    pedidos
-):
-
-    pdf = gerar_pdf_producao_a4(
-        pedidos
-    )
-
-
-    return pdf
+        )
