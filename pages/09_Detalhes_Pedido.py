@@ -690,7 +690,7 @@ st.caption(
 # BOTÕES PRINCIPAIS
 # =====================================================
 
-col1, col2 = st.columns(1)
+col1 = st.columns(1)
 
 
 
