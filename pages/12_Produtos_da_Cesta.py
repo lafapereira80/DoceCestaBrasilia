@@ -1,28 +1,23 @@
 import streamlit as st
 
-
 from services.produto_service import (
     listar_produtos,
     listar_categorias
 )
-
 
 from services.cesta_produto_service import (
     listar_produtos_da_cesta,
     salvar_produtos_da_cesta
 )
 
-
 from utils.menu import (
     configurar_pagina,
     menu_lateral
 )
 
-
 from utils.permissao import (
     administrador_operador
 )
-
 
 
 # =====================================================
@@ -30,113 +25,104 @@ from utils.permissao import (
 # =====================================================
 
 st.set_page_config(
-
     page_title="Produtos da Cesta",
-
     page_icon="📦",
-
     layout="wide"
-
 )
 
-
-
-# =====================================================
-# CONTROLE DE ACESSO
-# =====================================================
-
 configurar_pagina()
-
 menu_lateral()
-
 administrador_operador()
 
 
-
 # =====================================================
-# CSS COMPACTO
+# CSS ULTRA COMPACTO E ISOLADO
 # =====================================================
 
 st.markdown(
 """
 <style>
+/* =========================================
+   CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
+========================================== */
+.block-container {
+    padding-top: 1rem !important;
+    padding-bottom: 2rem !important;
+    max-width: 1050px;
+}
 
+div[data-testid="stVerticalBlock"] {
+    gap: 0.4rem !important;
+}
 
 h1 {
-
-font-size:24px !important;
-
-margin-bottom:5px;
-
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    color: #5a3b28;
+    margin-bottom: 2px !important;
 }
 
-
-h2 {
-
-font-size:17px !important;
-
-margin-top:8px;
-
-margin-bottom:5px;
-
+h2, h3 {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #5a3b28;
+    margin-top: 4px !important;
+    margin-bottom: 6px !important;
 }
 
-
-p, div, span {
-
-font-size:13px;
-
+.block-container p, 
+.block-container label {
+    font-family: Arial, sans-serif !important;
+    font-size: 13px !important;
 }
 
-
-label {
-
-font-size:13px !important;
-
+/* =========================================
+   CONTAINERS DAS CATEGORIAS (CARDS COMPACTOS)
+========================================== */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #ffffff;
+    border: 1px solid #e8ddd3 !important;
+    border-radius: 12px !important;
+    padding: 10px 14px !important;
+    margin-bottom: 8px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
 
-
-.stCheckbox {
-
-margin-bottom:-8px;
-
+.categoria-title {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #5a3b28 !important;
+    margin-bottom: 8px !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-
-.stButton button {
-
-height:34px;
-
-font-size:13px;
-
-padding:4px 10px;
-
+/* Ajustes direcionados para os checkboxes */
+div[data-testid="stCheckbox"] {
+    margin-bottom: 2px !important;
+    background: #faf7f3;
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid #f0e6dd;
+    transition: all 0.2s ease;
 }
 
-
-.block-container {
-
-padding-top:1rem;
-
-padding-bottom:1rem;
-
+div[data-testid="stCheckbox"]:hover {
+    border-color: #dfcdbb;
+    background: #f5eee6;
 }
 
-
-hr {
-
-margin-top:8px;
-
-margin-bottom:8px;
-
+/* Botões da Página */
+div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button {
+    font-size: 13px !important;
+    border-radius: 8px !important;
+    min-height: 36px !important;
 }
-
-
 </style>
 """,
 unsafe_allow_html=True
 )
-
 
 
 # =====================================================
@@ -144,47 +130,21 @@ unsafe_allow_html=True
 # =====================================================
 
 if "cesta_produtos" not in st.session_state:
-
-
-    st.error(
-        "Nenhuma cesta selecionada."
-    )
-
-
-    if st.button(
-        "⬅ Voltar"
-    ):
-
-
-        st.switch_page(
-            "pages/04_Cestas.py"
-        )
-
-
+    st.error("Nenhuma cesta selecionada.")
+    if st.button("⬅ Voltar"):
+        st.switch_page("pages/04_Cestas.py")
     st.stop()
-
-
 
 cesta_id = st.session_state["cesta_produtos"]
 
 
-
 # =====================================================
-# TÍTULO
+# TÍTULO E CABEÇALHO
 # =====================================================
 
-st.title(
-    "📦 Produtos da Cesta"
-)
-
-
-st.caption(
-    "Selecione os produtos que fazem parte desta cesta."
-)
-
-
+st.title("📦 Produtos da Cesta")
+st.caption("Selecione os produtos que fazem parte da composição desta cesta.")
 st.divider()
-
 
 
 # =====================================================
@@ -192,33 +152,12 @@ st.divider()
 # =====================================================
 
 try:
-
-
     categorias = listar_categorias()
-
-
     produtos = listar_produtos()
-
-
-    produtos_da_cesta = listar_produtos_da_cesta(
-
-        cesta_id
-
-    )
-
-
+    produtos_da_cesta = listar_produtos_da_cesta(cesta_id)
 except Exception as erro:
-
-
-    st.error(
-
-        f"Erro ao carregar dados: {erro}"
-
-    )
-
-
+    st.error(f"Erro ao carregar dados: {erro}")
     st.stop()
-
 
 
 # =====================================================
@@ -226,284 +165,108 @@ except Exception as erro:
 # =====================================================
 
 categorias_dict = {
-
-
     categoria["id"]: categoria["nome"]
-
-
     for categoria in categorias
-
 }
-
-
 
 produtos_por_categoria = {}
 
-
-
 for categoria in categorias:
-
-
-    produtos_por_categoria[
-
-        categoria["nome"]
-
-    ] = []
-
-
+    produtos_por_categoria[categoria["nome"]] = []
 
 for produto in produtos:
-
-
-    # ---------------------------------------------
     # Ignora produtos inativos
-    # ---------------------------------------------
-
-    if (
-
-        "ativo" in produto
-
-        and not produto["ativo"]
-
-    ):
-
+    if "ativo" in produto and not produto["ativo"]:
         continue
 
-
-
     nome_categoria = categorias_dict.get(
-
         produto.get("categoria_id"),
-
         "Sem Categoria"
-
     )
-
-
 
     produtos_por_categoria.setdefault(
-
         nome_categoria,
-
         []
-
-    ).append(
-
-        produto
-
-    )
+    ).append(produto)
 
 
-
-# =====================================================
-# REMOVE CATEGORIAS SEM PRODUTOS
-# =====================================================
-
+# Remove categorias sem produtos
 produtos_por_categoria = {
-
-
     categoria: lista
-
-
     for categoria, lista in produtos_por_categoria.items()
-
-
     if lista
-
 }
 
 
-
-# =====================================================
-# ORDENAÇÃO DINÂMICA
-# =====================================================
-
+# Ordenação dinâmica
 categorias_ordenadas = sorted(
-
     produtos_por_categoria.keys(),
-
     key=lambda x: x.lower()
-
 )
+
+
 # =====================================================
 # PRODUTOS VINCULADOS À CESTA
 # =====================================================
 
 produtos_marcados = [
-
-
     item["produto_id"]
-
-
     for item in produtos_da_cesta
-
 ]
 
 
-
 # =====================================================
-# SELEÇÃO DINÂMICA DOS PRODUTOS
+# SELEÇÃO DINÂMICA DOS PRODUTOS (CARDS COMPACTOS)
 # =====================================================
 
 selecionados = []
 
-
-
 for categoria in categorias_ordenadas:
+    produtos_lista = produtos_por_categoria[categoria]
 
+    with st.container(border=True):
+        st.markdown(
+            f'<div class="categoria-title">📂 {categoria}</div>',
+            unsafe_allow_html=True
+        )
 
+        col1, col2 = st.columns(2)
 
-    st.subheader(
+        for index, produto in enumerate(produtos_lista):
+            marcado = produto["id"] in produtos_marcados
 
-        f"📦 {categoria}"
-
-    )
-
-
-
-    produtos_lista = produtos_por_categoria[
-
-        categoria
-
-    ]
-
-
-
-    col1, col2 = st.columns(2)
-
-
-
-    for index, produto in enumerate(produtos_lista):
-
-
-        marcado = produto["id"] in produtos_marcados
-
-
-
-        with col1 if index % 2 == 0 else col2:
-
-
-
-            escolhido = st.checkbox(
-
-                produto["nome"],
-
-                value=marcado,
-
-                key=f"produto_{produto['id']}"
-
-            )
-
-
-
-            if escolhido:
-
-
-                selecionados.append(
-
-                    produto["id"]
-
+            with col1 if index % 2 == 0 else col2:
+                escolhido = st.checkbox(
+                    produto["nome"],
+                    value=marcado,
+                    key=f"produto_{produto['id']}"
                 )
 
-
-
-    st.write("")
-
-
-
+                if escolhido:
+                    selecionados.append(produto["id"])
 
 
 # =====================================================
-# BOTÕES
+# BOTÕES DE AÇÃO
 # =====================================================
 
 st.divider()
 
-
-
 col1, col2 = st.columns(2)
 
-
-
 with col1:
-
-
-
-    if st.button(
-
-        "💾 Salvar Produtos",
-
-        use_container_width=True
-
-    ):
-
-
+    if st.button("💾 Salvar Produtos", use_container_width=True, type="primary"):
         try:
-
-
-
             salvar_produtos_da_cesta(
-
                 cesta_id,
-
                 selecionados
-
             )
-
-
-
-            st.success(
-
-                "Produtos da cesta atualizados!"
-
-            )
-
-
-
+            st.success("Produtos da cesta atualizados com sucesso!")
             st.rerun()
-
-
-
         except Exception as erro:
-
-
-
-            st.error(
-
-                f"Erro ao salvar: {erro}"
-
-            )
-
-
-
-
+            st.error(f"Erro ao salvar: {erro}")
 
 with col2:
-
-
-
-    if st.button(
-
-        "⬅ Voltar",
-
-        use_container_width=True
-
-    ):
-
-
-
-        st.session_state.pop(
-
-            "cesta_produtos",
-
-            None
-
-        )
-
-
-
-        st.switch_page(
-
-            "pages/04_Cestas.py"
-
-        )
+    if st.button("⬅ Voltar ao Catálogo", use_container_width=True):
+        st.session_state.pop("cesta_produtos", None)
+        st.switch_page("pages/04_Cestas.py")
