@@ -25,7 +25,7 @@ configurar_pagina()
 
 
 # =====================================================
-# CSS ULTRA COMPACTO E ISOLADO
+# CSS ULTRA COMPACTO E ISOLADO (COM RESPONSIVIDADE NA LOGO)
 # =====================================================
 
 st.markdown(
@@ -67,12 +67,30 @@ div[data-testid="stVerticalBlock"] {
     gap: 0.8rem !important;
 }
 
+/* =========================================
+   AJUSTE RESPONSIVO DA LOGO
+========================================== */
+.logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.logo-container div[data-testid="stImage"] img {
+    max-width: 110px !important;
+    height: auto !important;
+    object-fit: contain;
+    margin: 0 auto;
+}
+
 .titulo {
     text-align: center;
     font-size: 24px;
     font-weight: 700;
     color: #5a3b28;
-    margin-top: 8px;
+    margin-top: 4px;
 }
 
 .subtitulo {
@@ -159,6 +177,23 @@ div[data-testid="stPageLink"] a:hover {
     color: #888;
     margin-top: 15px;
 }
+
+/* =========================================
+   MEDIA QUERY PARA SMARTPHONES
+========================================== */
+@media (max-width: 640px) {
+    .logo-container div[data-testid="stImage"] img {
+        max-width: 80px !important;
+    }
+
+    .titulo {
+        font-size: 20px !important;
+    }
+
+    .subtitulo {
+        font-size: 12px !important;
+    }
+}
 </style>
 """,
 unsafe_allow_html=True
@@ -172,9 +207,9 @@ unsafe_allow_html=True
 logo = Path("assets/logo.webp")
 
 if logo.exists():
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        st.image(str(logo), width=120)
+    st.markdown('<div class="logo-container">', unsafe_allow_html=True)
+    st.image(str(logo), use_container_width=False)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("<div class='titulo'>Painel Administrativo</div>", unsafe_allow_html=True)
 st.markdown("<div class='subtitulo'>Doce Cesta Brasília</div>", unsafe_allow_html=True)
