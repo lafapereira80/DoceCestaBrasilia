@@ -64,7 +64,7 @@ footer {
 }
 
 div[data-testid="stVerticalBlock"] {
-    gap: 0.4rem !important;
+    gap: 0.8rem !important;
 }
 
 .titulo {
@@ -79,7 +79,7 @@ div[data-testid="stVerticalBlock"] {
     text-align: center;
     font-size: 14px;
     color: #775a46;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 /* =========================================
@@ -128,7 +128,11 @@ input {
     color: white !important;
 }
 
-/* Links dos Módulos */
+/* Links dos Módulos com Espaçamento Correto */
+div[data-testid="stPageLink"] {
+    margin-bottom: 6px !important;
+}
+
 div[data-testid="stPageLink"] a {
     border-radius: 10px !important;
     background-color: #faf7f3 !important;
@@ -140,6 +144,8 @@ div[data-testid="stPageLink"] a {
     text-align: center !important;
     justify-content: center !important;
     transition: all 0.2s ease !important;
+    display: flex !important;
+    box-sizing: border-box !important;
 }
 
 div[data-testid="stPageLink"] a:hover {
@@ -229,7 +235,7 @@ with st.container(border=True):
 
 
 # =====================================================
-# MENU DE MÓDULOS (COMPACTO GRID)
+# MENU DE MÓDULOS (GRID SEPARADO)
 # =====================================================
 
 st.subheader("📂 Módulos do Sistema")
