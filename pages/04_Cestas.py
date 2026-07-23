@@ -164,7 +164,7 @@ st.divider()
 # =====================================================
 
 if usuario.get("perfil") == "Administrador":
-    with st.expander("➕ Cadastrar Nova Cesta", expanded=False):
+    with st.expander("Cadastrar Nova Cesta", expanded=False):
         with st.form("nova_cesta_form"):
             col_f1, col_f2 = st.columns([2, 1])
 
