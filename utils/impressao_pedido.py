@@ -12,7 +12,8 @@ from reportlab.platypus import (
     Spacer,
     Table,
     TableStyle,
-    PageBreak
+    PageBreak,
+    KeepTogether
 )
 
 
@@ -34,6 +35,8 @@ from services.pedido_adicional_service import (
 
 
 
+
+
 # =====================================================
 # CONFIGURAÇÃO DOS FORMATOS
 # =====================================================
@@ -44,8 +47,10 @@ ALTURA_ETIQUETA = 10 * cm
 
 
 
+
+
 # =====================================================
-# NORMALIZA ITENS CONSULTA
+# NORMALIZA JSON
 # =====================================================
 
 def normalizar_itens_consulta(valor):
@@ -73,6 +78,7 @@ def normalizar_itens_consulta(valor):
 
         except:
 
+
             return {}
 
 
@@ -98,14 +104,41 @@ def formatar_data(data):
 
     try:
 
+
+        if isinstance(data, str):
+
+
+            data = data[:10]
+
+
+
+            from datetime import datetime
+
+
+            data = datetime.strptime(
+
+                data,
+
+                "%Y-%m-%d"
+
+            )
+
+
+
         return data.strftime(
+
             "%d/%m/%Y"
+
         )
+
 
 
     except:
 
+
         return str(data)
+
+
 
 
 
@@ -116,7 +149,9 @@ def formatar_horario(horario):
 
     if not horario:
 
+
         return ""
+
 
 
     return str(horario)[:5]
@@ -125,9 +160,11 @@ def formatar_horario(horario):
 
 
 
+
+
 def limitar_texto(
     texto,
-    tamanho=120
+    tamanho=80
 ):
 
 
@@ -138,19 +175,56 @@ def limitar_texto(
 
 
     texto = str(texto).replace(
+
         "\n",
+
         " "
+
     )
 
 
 
     if len(texto) > tamanho:
 
+
         return texto[:tamanho] + "..."
 
 
 
     return texto
+
+
+
+
+
+
+
+def formatar_valor(valor):
+
+
+    try:
+
+
+        return (
+
+            f"R$ {float(valor):,.2f}"
+
+            .replace(",", "X")
+
+            .replace(".", ",")
+
+            .replace("X",".")
+
+        )
+
+
+
+    except:
+
+
+        return "R$ 0,00"
+
+
 
 
 
@@ -174,13 +248,14 @@ estilo_titulo = ParagraphStyle(
 
     fontName="Helvetica-Bold",
 
-    fontSize=9,
+    fontSize=11,
 
     alignment=TA_CENTER,
 
-    leading=10
+    leading=12
 
 )
+
 
 
 
@@ -194,6 +269,26 @@ estilo_cliente = ParagraphStyle(
 
     fontName="Helvetica-Bold",
 
+    fontSize=10,
+
+    leading=11,
+
+    alignment=TA_LEFT
+
+)
+
+
+
+
+
+
+
+estilo_normal = ParagraphStyle(
+
+    "normal",
+
+    parent=styles["Normal"],
+
     fontSize=8,
 
     leading=9,
@@ -206,15 +301,18 @@ estilo_cliente = ParagraphStyle(
 
 
 
-estilo_normal = ParagraphStyle(
 
-    "normal",
+
+
+estilo_item = ParagraphStyle(
+
+    "item",
 
     parent=styles["Normal"],
 
-    fontSize=6.5,
+    fontSize=7,
 
-    leading=7.5,
+    leading=8,
 
     alignment=TA_LEFT
 
@@ -224,38 +322,36 @@ estilo_normal = ParagraphStyle(
 
 
 
-estilo_pequeno = ParagraphStyle(
 
-    "pequeno",
+
+
+estilo_observacao = ParagraphStyle(
+
+    "observacao",
 
     parent=styles["Normal"],
 
-    fontSize=5.5,
+    fontSize=7,
 
-    leading=6,
+    leading=8,
 
     alignment=TA_LEFT
 
 )
-
-
-
-
-
 # =====================================================
 # BUSCA ITENS PARA MONTAGEM
 # =====================================================
 
-def buscar_itens_montagem(
-    pedido
-):
+def buscar_itens_montagem(pedido):
 
 
     itens = []
 
 
 
+    # ---------------------------------------------
     # Produtos da cesta
+    # ---------------------------------------------
 
     produtos = pedido.get(
 
@@ -279,13 +375,16 @@ def buscar_itens_montagem(
 
             if item:
 
+
                 itens.append(item)
 
 
 
 
 
+    # ---------------------------------------------
     # Adicionais
+    # ---------------------------------------------
 
     try:
 
@@ -313,11 +412,12 @@ def buscar_itens_montagem(
 
             if nome:
 
+
                 itens.append(nome)
 
 
 
-    except:
+    except Exception:
 
 
         pass
@@ -326,7 +426,9 @@ def buscar_itens_montagem(
 
 
 
+    # ---------------------------------------------
     # Itens preço sob consulta
+    # ---------------------------------------------
 
     consulta = normalizar_itens_consulta(
 
@@ -345,28 +447,34 @@ def buscar_itens_montagem(
 
         if nome not in itens:
 
+
             itens.append(nome)
 
 
 
     return itens
 
+
+
+
+
+
+
 # =====================================================
 # MONTA LISTA DE ITENS
 # =====================================================
 
-def montar_itens_pdf(
-    itens
-):
+def montar_itens_pdf(itens):
 
 
     if not itens:
+
 
         return Paragraph(
 
             "Sem itens",
 
-            estilo_pequeno
+            estilo_item
 
         )
 
@@ -387,28 +495,22 @@ def montar_itens_pdf(
 
 
 
-    texto = "<br/>".join(
-
-        linhas
-
-    )
-
-
-
     return Paragraph(
 
-        texto,
+        "<br/>".join(linhas),
 
-        estilo_pequeno
+        estilo_item
 
     )
+
+
 
 
 
 
 
 # =====================================================
-# CONTEÚDO DA CAIXA A4
+# MONTA CONTEÚDO DA ETIQUETA
 # =====================================================
 
 def montar_conteudo_etiqueta(
@@ -417,6 +519,8 @@ def montar_conteudo_etiqueta(
 
 
     elementos = []
+
+
 
 
 
@@ -430,7 +534,7 @@ def montar_conteudo_etiqueta(
 
         ),
 
-        35
+        40
 
     )
 
@@ -456,9 +560,11 @@ def montar_conteudo_etiqueta(
 
         ),
 
-        30
+        35
 
     )
+
+
 
 
 
@@ -478,7 +584,7 @@ def montar_conteudo_etiqueta(
 
         pedido.get(
 
-            "horario_entrega"
+            "horario_combinado"
 
         )
 
@@ -486,17 +592,23 @@ def montar_conteudo_etiqueta(
 
 
 
-    entrega = data
+
+
+    periodo = pedido.get(
+
+        "periodo_entrega",
+
+        ""
+
+    )
 
 
 
-    if horario:
-
-        entrega += f" {horario}"
 
 
-
-
+    # ---------------------------------------------
+    # Cliente
+    # ---------------------------------------------
 
     elementos.append(
 
@@ -526,6 +638,12 @@ def montar_conteudo_etiqueta(
 
 
 
+
+
+    # ---------------------------------------------
+    # Cesta
+    # ---------------------------------------------
+
     elementos.append(
 
         Paragraph(
@@ -540,11 +658,17 @@ def montar_conteudo_etiqueta(
 
 
 
+
+
+    # ---------------------------------------------
+    # Entrega
+    # ---------------------------------------------
+
     elementos.append(
 
         Paragraph(
 
-            f"📅 {entrega}",
+            f"📅 {data}",
 
             estilo_normal
 
@@ -554,19 +678,61 @@ def montar_conteudo_etiqueta(
 
 
 
+    if periodo:
+
+
+        elementos.append(
+
+            Paragraph(
+
+                f"🕒 {periodo}",
+
+                estilo_normal
+
+            )
+
+        )
+
+
+
+    if horario:
+
+
+        elementos.append(
+
+            Paragraph(
+
+                f"⏰ Horário: {horario}",
+
+                estilo_normal
+
+            )
+
+        )
+
+
+
+
+
     elementos.append(
 
         Spacer(
 
             1,
 
-            3
+            4
 
         )
 
     )
 
 
+
+
+
+    # ---------------------------------------------
+    # Montagem
+    # ---------------------------------------------
 
     elementos.append(
 
@@ -598,19 +764,27 @@ def montar_conteudo_etiqueta(
 
 
 
+
+
     elementos.append(
 
         Spacer(
 
             1,
 
-            3
+            4
 
         )
 
     )
 
 
+
+
+
+    # ---------------------------------------------
+    # Endereço
+    # ---------------------------------------------
 
     endereco = limitar_texto(
 
@@ -622,23 +796,7 @@ def montar_conteudo_etiqueta(
 
         ),
 
-        65
-
-    )
-
-
-
-    mensagem = limitar_texto(
-
-        pedido.get(
-
-            "mensagem",
-
-            "-"
-
-        ),
-
-        65
+        90
 
     )
 
@@ -650,9 +808,31 @@ def montar_conteudo_etiqueta(
 
             f"<b>END:</b> {endereco}",
 
-            estilo_pequeno
+            estilo_observacao
 
         )
+
+    )
+
+
+
+
+
+    # ---------------------------------------------
+    # Mensagem cliente
+    # ---------------------------------------------
+
+    mensagem = limitar_texto(
+
+        pedido.get(
+
+            "mensagem",
+
+            "-"
+
+        ),
+
+        90
 
     )
 
@@ -664,7 +844,7 @@ def montar_conteudo_etiqueta(
 
             f"<b>MSG:</b> {mensagem}",
 
-            estilo_pequeno
+            estilo_observacao
 
         )
 
@@ -672,13 +852,61 @@ def montar_conteudo_etiqueta(
 
 
 
+
+
+    # ---------------------------------------------
+    # Observação interna
+    # ---------------------------------------------
+
+    observacao = limitar_texto(
+
+        pedido.get(
+
+            "observacao_admin",
+
+            ""
+
+        ),
+
+        100
+
+    )
+
+
+
+    if observacao and observacao != "-":
+
+
+        elementos.append(
+
+            Spacer(
+
+                1,
+
+                3
+
+            )
+
+        )
+
+
+
+        elementos.append(
+
+            Paragraph(
+
+                f"<b>OBS ADM:</b> {observacao}",
+
+                estilo_observacao
+
+            )
+
+        )
+
+
+
     return elementos
-
-
-
-
-
-# =====================================================
+    # =====================================================
 # CRIA CAIXA 7X10 PARA FOLHA A4
 # =====================================================
 
@@ -709,13 +937,13 @@ def criar_caixa_7x10(
 
         colWidths=[
 
-            LARGURA_ETIQUETA - 0.4*cm
+            LARGURA_ETIQUETA - 0.3*cm
 
         ],
 
         rowHeights=[
 
-            ALTURA_ETIQUETA - 0.4*cm
+            ALTURA_ETIQUETA - 0.3*cm
 
         ]
 
@@ -765,7 +993,7 @@ def criar_caixa_7x10(
 
                     (-1,-1),
 
-                    4
+                    5
 
                 ),
 
@@ -778,7 +1006,7 @@ def criar_caixa_7x10(
 
                     (-1,-1),
 
-                    4
+                    5
 
                 ),
 
@@ -791,7 +1019,7 @@ def criar_caixa_7x10(
 
                     (-1,-1),
 
-                    4
+                    5
 
                 ),
 
@@ -804,7 +1032,7 @@ def criar_caixa_7x10(
 
                     (-1,-1),
 
-                    4
+                    5
 
                 )
 
@@ -815,10 +1043,17 @@ def criar_caixa_7x10(
     )
 
 
+
     return tabela
 
+
+
+
+
+
+
 # =====================================================
-# GERA PDF A4 - 12 PEDIDOS POR FOLHA
+# PDF A4 - 12 PEDIDOS
 # =====================================================
 
 def gerar_pdf_a4(
@@ -836,49 +1071,19 @@ def gerar_pdf_a4(
 
         pagesize=A4,
 
-        rightMargin=0.5*cm,
+        rightMargin=0.4*cm,
 
-        leftMargin=0.5*cm,
+        leftMargin=0.4*cm,
 
-        topMargin=0.5*cm,
+        topMargin=0.4*cm,
 
-        bottomMargin=0.5*cm
+        bottomMargin=0.4*cm
 
     )
 
 
 
     elementos = []
-
-
-
-    elementos.append(
-
-        Paragraph(
-
-            "PEDIDOS PARA PRODUÇÃO",
-
-            estilo_titulo
-
-        )
-
-    )
-
-
-
-    elementos.append(
-
-        Spacer(
-
-            1,
-
-            5
-
-        )
-
-    )
-
-
 
 
 
@@ -903,9 +1108,9 @@ def gerar_pdf_a4(
 
 
 
-    # completa espaços vazios
+    # fecha sempre grupos de 12
 
-    while len(caixas) % 3 != 0:
+    while len(caixas) % 12 != 0:
 
 
         caixas.append("")
@@ -914,136 +1119,176 @@ def gerar_pdf_a4(
 
 
 
-    linhas = []
-
-
-
-    for i in range(
+    for pagina_inicio in range(
 
         0,
 
         len(caixas),
 
-        3
+        12
 
     ):
 
 
-        linhas.append(
 
-            caixas[i:i+3]
+        pagina = caixas[
 
-        )
+            pagina_inicio:
 
-
-
-
-
-    tabela = Table(
-
-        linhas,
-
-        colWidths=[
-
-            LARGURA_ETIQUETA,
-
-            LARGURA_ETIQUETA,
-
-            LARGURA_ETIQUETA
+            pagina_inicio + 12
 
         ]
 
-    )
+
+
+        linhas = []
+
+
+
+        for i in range(
+
+            0,
+
+            12,
+
+            3
+
+        ):
+
+
+            linhas.append(
+
+                pagina[i:i+3]
+
+            )
 
 
 
 
 
-    tabela.setStyle(
+        tabela = Table(
 
-        TableStyle(
+            linhas,
 
-            [
+            colWidths=[
 
-                (
+                LARGURA_ETIQUETA,
 
-                    "VALIGN",
+                LARGURA_ETIQUETA,
 
-                    (0,0),
+                LARGURA_ETIQUETA
 
-                    (-1,-1),
+            ],
 
-                    "TOP"
+            rowHeights=[
 
-                ),
+                ALTURA_ETIQUETA
 
-
-                (
-
-                    "LEFTPADDING",
-
-                    (0,0),
-
-                    (-1,-1),
-
-                    2
-
-                ),
-
-
-                (
-
-                    "RIGHTPADDING",
-
-                    (0,0),
-
-                    (-1,-1),
-
-                    2
-
-                ),
-
-
-                (
-
-                    "TOPPADDING",
-
-                    (0,0),
-
-                    (-1,-1),
-
-                    2
-
-                ),
-
-
-                (
-
-                    "BOTTOMPADDING",
-
-                    (0,0),
-
-                    (-1,-1),
-
-                    2
-
-                )
-
-            ]
+            ] * 4
 
         )
 
-    )
+
+
+
+
+        tabela.setStyle(
+
+            TableStyle(
+
+                [
+
+                    (
+
+                        "VALIGN",
+
+                        (0,0),
+
+                        (-1,-1),
+
+                        "TOP"
+
+                    ),
+
+
+                    (
+
+                        "LEFTPADDING",
+
+                        (0,0),
+
+                        (-1,-1),
+
+                        0
+
+                    ),
+
+
+                    (
+
+                        "RIGHTPADDING",
+
+                        (0,0),
+
+                        (-1,-1),
+
+                        0
+
+                    ),
+
+
+                    (
+
+                        "TOPPADDING",
+
+                        (0,0),
+
+                        (-1,-1),
+
+                        0
+
+                    ),
+
+
+                    (
+
+                        "BOTTOMPADDING",
+
+                        (0,0),
+
+                        (-1,-1),
+
+                        0
+
+                    )
+
+                ]
+
+            )
+
+        )
+
+
+
+
+        elementos.append(
+
+            tabela
+
+        )
 
 
 
 
 
-    elementos.append(
+        if pagina_inicio + 12 < len(caixas):
 
-        tabela
 
-    )
+            elementos.append(
+
+                PageBreak()
+
+            )
 
 
 
@@ -1062,9 +1307,8 @@ def gerar_pdf_a4(
 
 
     return arquivo.getvalue()
-
-# =====================================================
-# GERA PDF INDIVIDUAL 7X10 CM
+    # =====================================================
+# PDF INDIVIDUAL 7X10 CM
 # =====================================================
 
 def gerar_pdf_individual(
@@ -1107,9 +1351,6 @@ def gerar_pdf_individual(
     for indice, pedido in enumerate(pedidos):
 
 
-        # IMPORTANTE:
-        # No formato individual não cria caixa.
-        # A própria folha 7x10 é o limite.
 
         conteudo = montar_conteudo_etiqueta(
 
@@ -1118,7 +1359,8 @@ def gerar_pdf_individual(
         )
 
 
-        elementos.extend(
+
+        bloco = KeepTogether(
 
             conteudo
 
@@ -1126,7 +1368,15 @@ def gerar_pdf_individual(
 
 
 
-        if indice < len(pedidos) - 1:
+        elementos.append(
+
+            bloco
+
+        )
+
+
+
+        if indice < len(pedidos)-1:
 
 
             elementos.append(
@@ -1160,12 +1410,15 @@ def gerar_pdf_individual(
 
 
 # =====================================================
-# FUNÇÃO PRINCIPAL DE GERAÇÃO
+# FUNÇÃO PRINCIPAL
 # =====================================================
 
 def gerar_pdf_pedidos(
+
     pedidos,
+
     formato
+
 ):
 
 
@@ -1184,11 +1437,8 @@ def gerar_pdf_pedidos(
 
 
 
-    else:
+    return gerar_pdf_individual(
 
+        pedidos
 
-        return gerar_pdf_individual(
-
-            pedidos
-
-        )
+    )
