@@ -31,40 +31,44 @@ usuario = st.session_state.usuario
 
 
 # =====================================================
-# CSS COMPACTO E ISOLADO
+# CSS ULTRA COMPACTO E ISOLADO
 # =====================================================
 
 st.markdown(
 """
 <style>
 /* =========================================
-   CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
+   CONFIGURAÇÃO GERAL E REDUÇÃO DE ESPAÇOS
 ========================================== */
 .block-container {
-    padding-top: 1rem !important;
-    padding-bottom: 2rem !important;
-    max-width: 1200px;
+    padding-top: 0.8rem !important;
+    padding-bottom: 1.5rem !important;
+    max-width: 1250px;
+}
+
+div[data-testid="stVerticalBlock"] {
+    gap: 0.4rem !important;
 }
 
 h1 {
-    font-size: 24px !important;
+    font-size: 22px !important;
     font-weight: 700 !important;
     color: #5a3b28;
-    margin-bottom: 2px !important;
+    margin-bottom: 0px !important;
 }
 
 h2, h3 {
-    font-size: 16px !important;
+    font-size: 14px !important;
     font-weight: 700 !important;
     color: #5a3b28;
-    margin-top: 12px !important;
-    margin-bottom: 8px !important;
+    margin-top: 6px !important;
+    margin-bottom: 4px !important;
 }
 
 .block-container p, 
 .block-container label {
     font-family: Arial, sans-serif !important;
-    font-size: 13px !important;
+    font-size: 12px !important;
 }
 
 /* =========================================
@@ -73,37 +77,42 @@ h2, h3 {
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff;
     border: 1px solid #e8ddd3 !important;
-    border-radius: 12px !important;
-    padding: 10px 14px !important;
-    margin-bottom: 8px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    border-radius: 10px !important;
+    padding: 6px 10px !important;
+    margin-bottom: 2px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
 
 .kpi-title {
-    font-size: 12px !important;
+    font-size: 11px !important;
     font-weight: 700;
     color: #775a46;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
+    letter-spacing: 0.4px;
+    margin-bottom: 2px;
 }
 
 .kpi-value {
-    font-size: 20px !important;
+    font-size: 17px !important;
     font-weight: 700;
     color: #2e7d32;
 }
 
 .kpi-value-neutral {
-    font-size: 20px !important;
+    font-size: 17px !important;
     font-weight: 700;
     color: #5a3b28;
 }
 
-/* Ajustes direcionados de tabelas */
+/* Redução das tabelas e seletores */
 div[data-testid="stDataFrame"] {
     border: 1px solid #e8ddd3 !important;
     border-radius: 8px !important;
+}
+
+hr {
+    margin-top: 6px !important;
+    margin-bottom: 6px !important;
 }
 </style>
 """,
@@ -117,7 +126,6 @@ unsafe_allow_html=True
 
 st.title("💰 Financeiro")
 st.caption("Controle de faturamento, vendas e resultados.")
-st.divider()
 
 
 # =====================================================
@@ -206,19 +214,17 @@ def moeda(valor):
 
 
 # =====================================================
-# FILTROS
+# FILTROS (MUITO COMPACTO)
 # =====================================================
 
-st.subheader("🔎 Filtros")
-
 with st.container(border=True):
-    col1, col2, col3 = st.columns(3)
+    col_f1, col_f2, col_f3 = st.columns(3)
 
-    with col1:
+    with col_f1:
         anos = sorted(df["ano"].dropna().unique(), reverse=True)
         ano_selecionado = st.selectbox("Ano", ["Todos"] + list(anos))
 
-    with col2:
+    with col_f2:
         meses = {
             1:"Janeiro", 2:"Fevereiro", 3:"Março", 4:"Abril",
             5:"Maio", 6:"Junho", 7:"Julho", 8:"Agosto",
@@ -226,7 +232,7 @@ with st.container(border=True):
         }
         mes_selecionado = st.selectbox("Mês", ["Todos"] + list(meses.values()))
 
-    with col3:
+    with col_f3:
         status_lista = sorted(df["status"].dropna().unique().tolist())
         status_selecionado = st.selectbox("Status", ["Todos"] + status_lista)
 
@@ -249,10 +255,8 @@ if status_selecionado != "Todos":
 
 
 # =====================================================
-# RESUMO FINANCEIRO
+# RESUMO FINANCEIRO (KPIs EM 1 LINHA)
 # =====================================================
-
-st.subheader("📊 Resumo financeiro (Pedidos Pagos e Entregues)")
 
 col1, col2, col3, col4 = st.columns(4)
 
@@ -282,116 +286,88 @@ with col4:
         st.markdown(f'<div class="kpi-value-neutral">{moeda(ticket_medio)}</div>', unsafe_allow_html=True)
 
 
-st.divider()
-
-
 # =====================================================
-# FATURAMENTO POR MÊS
+# BLOCO DE VISÃO GERAL (SIDES BY SIDE)
 # =====================================================
 
-st.subheader("📅 Faturamento mensal")
+col_left, col_right = st.columns(2)
 
-if not df_filtrado.empty:
-    faturamento_mes = (
-        df_filtrado
-        .groupby(df_filtrado["created_at"].dt.strftime("%m/%Y"))["valor_total"]
-        .sum()
-        .reset_index()
-    )
-    faturamento_mes.columns = ["Mês", "Faturamento"]
-    faturamento_mes["Faturamento"] = faturamento_mes["Faturamento"].apply(moeda)
-
-    st.dataframe(faturamento_mes, use_container_width=True, hide_index=True)
-else:
-    st.info("Nenhum dado para o período selecionado.")
-
-
-st.divider()
-
-
-# =====================================================
-# CESTAS VENDIDAS
-# =====================================================
-
-st.subheader("🧺 Cestas vendidas")
-
-if "cesta_nome" in df_filtrado.columns:
-    cestas = (
-        df_filtrado
-        .groupby("cesta_nome")
-        .size()
-        .reset_index(name="Quantidade vendida")
-        .sort_values("Quantidade vendida", ascending=False)
-    )
-    cestas.columns = ["Cesta", "Quantidade vendida"]
-    st.dataframe(cestas, use_container_width=True, hide_index=True)
-else:
-    st.info("Nenhuma informação de cesta encontrada.")
-
-
-st.divider()
-
-
-# =====================================================
-# ADICIONAIS VENDIDOS
-# =====================================================
-
-st.subheader("🎀 Adicionais vendidos")
-
-if not df_adicionais.empty:
-    pedidos_filtrados_ids = df_filtrado["id"].tolist()
-    adicionais_filtrados = df_adicionais[df_adicionais["pedido_id"].isin(pedidos_filtrados_ids)].copy()
-
-    if not adicionais_filtrados.empty:
-        adicionais_filtrados["quantidade"] = pd.to_numeric(adicionais_filtrados["quantidade"], errors="coerce").fillna(1)
-        adicionais_filtrados["valor_unitario"] = pd.to_numeric(adicionais_filtrados["valor_unitario"], errors="coerce").fillna(0)
-        adicionais_filtrados["total"] = adicionais_filtrados["quantidade"] * adicionais_filtrados["valor_unitario"]
-
-        resumo_adicionais = (
-            adicionais_filtrados
-            .groupby("nome_produto")
-            .agg(Quantidade=("quantidade", "sum"), Faturamento=("total", "sum"))
+# Coluna 1: Faturamento Mensal + Resumo por Status
+with col_left:
+    st.subheader("📅 Faturamento Mensal")
+    if not df_filtrado.empty:
+        faturamento_mes = (
+            df_filtrado
+            .groupby(df_filtrado["created_at"].dt.strftime("%m/%Y"))["valor_total"]
+            .sum()
             .reset_index()
         )
-        resumo_adicionais.columns = ["Adicional", "Quantidade vendida", "Faturamento"]
-        resumo_adicionais["Faturamento"] = resumo_adicionais["Faturamento"].apply(moeda)
-        resumo_adicionais = resumo_adicionais.sort_values("Quantidade vendida", ascending=False)
-
-        st.dataframe(resumo_adicionais, use_container_width=True, hide_index=True)
+        faturamento_mes.columns = ["Mês", "Faturamento"]
+        faturamento_mes["Faturamento"] = faturamento_mes["Faturamento"].apply(moeda)
+        st.dataframe(faturamento_mes, use_container_width=True, hide_index=True, height=160)
     else:
-        st.info("Nenhum adicional encontrado para o período.")
-else:
-    st.info("Nenhum adicional vendido.")
+        st.info("Nenhum dado para o período.")
 
+    st.subheader("📌 Resumo por Status")
+    if "status" in df_filtrado.columns and not df_filtrado.empty:
+        resumo_status = (
+            df_filtrado
+            .groupby("status")
+            .agg(Quantidade=("id", "count"), Valor=("valor_total", "sum"))
+            .reset_index()
+        )
+        resumo_status.columns = ["Status", "Qtd", "Valor Total"]
+        resumo_status["Valor Total"] = resumo_status["Valor Total"].apply(moeda)
+        st.dataframe(resumo_status, use_container_width=True, hide_index=True, height=140)
 
-st.divider()
+# Coluna 2: Cestas Vendidas + Adicionais Vendidos
+with col_right:
+    st.subheader("🧺 Cestas Vendidas")
+    if "cesta_nome" in df_filtrado.columns and not df_filtrado.empty:
+        cestas = (
+            df_filtrado
+            .groupby("cesta_nome")
+            .size()
+            .reset_index(name="Vendas")
+            .sort_values("Vendas", ascending=False)
+        )
+        cestas.columns = ["Cesta", "Vendas"]
+        st.dataframe(cestas, use_container_width=True, hide_index=True, height=160)
+    else:
+        st.info("Nenhuma cesta encontrada.")
+
+    st.subheader("🎀 Adicionais Vendidos")
+    if not df_adicionais.empty and not df_filtrado.empty:
+        pedidos_filtrados_ids = df_filtrado["id"].tolist()
+        adicionais_filtrados = df_adicionais[df_adicionais["pedido_id"].isin(pedidos_filtrados_ids)].copy()
+
+        if not adicionais_filtrados.empty:
+            adicionais_filtrados["quantidade"] = pd.to_numeric(adicionais_filtrados["quantidade"], errors="coerce").fillna(1)
+            adicionais_filtrados["valor_unitario"] = pd.to_numeric(adicionais_filtrados["valor_unitario"], errors="coerce").fillna(0)
+            adicionais_filtrados["total"] = adicionais_filtrados["quantidade"] * adicionais_filtrados["valor_unitario"]
+
+            resumo_adicionais = (
+                adicionais_filtrados
+                .groupby("nome_produto")
+                .agg(Quantidade=("quantidade", "sum"), Faturamento=("total", "sum"))
+                .reset_index()
+            )
+            resumo_adicionais.columns = ["Adicional", "Qtd", "Total"]
+            resumo_adicionais["Total"] = resumo_adicionais["Total"].apply(moeda)
+            resumo_adicionais = resumo_adicionais.sort_values("Qtd", ascending=False)
+
+            st.dataframe(resumo_adicionais, use_container_width=True, hide_index=True, height=140)
+        else:
+            st.info("Nenhum adicional no período.")
+    else:
+        st.info("Nenhum adicional vendido.")
 
 
 # =====================================================
-# VALORES POR STATUS
+# DETALHAMENTO FINANCEIRO COMPACTO
 # =====================================================
 
-st.subheader("📌 Resumo por status")
-
-if "status" in df_filtrado.columns:
-    resumo_status = (
-        df_filtrado
-        .groupby("status")
-        .agg(Quantidade=("id", "count"), Valor=("valor_total", "sum"))
-        .reset_index()
-    )
-    resumo_status.columns = ["Status", "Quantidade", "Valor"]
-    resumo_status["Valor"] = resumo_status["Valor"].apply(moeda)
-
-    st.dataframe(resumo_status, use_container_width=True, hide_index=True)
-
-
-# =====================================================
-# DETALHAMENTO FINANCEIRO
-# =====================================================
-
-st.divider()
-st.subheader("📋 Detalhamento financeiro dos pedidos")
+st.subheader("📋 Detalhamento dos Pedidos")
 
 colunas_detalhamento = [
     "created_at", "cliente_nome", "cliente_telefone",
@@ -426,49 +402,13 @@ detalhamento = detalhamento.rename(
     }
 )
 
-st.dataframe(detalhamento, use_container_width=True, hide_index=True)
+st.dataframe(detalhamento, use_container_width=True, hide_index=True, height=220)
 
 
 # =====================================================
-# CONFERÊNCIA DE VALORES
-# =====================================================
-
-st.divider()
-st.subheader("🔎 Conferência de valores")
-st.caption(
-    """
-O valor apresentado abaixo utiliza o campo **valor_total** salvo no pedido.
-
-Esse valor é atualizado:
-✅ Inicialmente pelo formulário do cliente  
-✅ Depois pelo atendimento administrativo em Detalhes do Pedido  
-✅ Considerando frete, descontos e adicionais sob consulta
-"""
-)
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    with st.container(border=True):
-        st.markdown('<div class="kpi-title">Pedidos Analisados</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="kpi-value-neutral">{len(df_filtrado)}</div>', unsafe_allow_html=True)
-
-with col2:
-    with st.container(border=True):
-        st.markdown('<div class="kpi-title">Total Vendido</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="kpi-value">{moeda(df_filtrado["valor_total"].sum())}</div>', unsafe_allow_html=True)
-
-with col3:
-    with st.container(border=True):
-        st.markdown('<div class="kpi-title">Média por Pedido</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="kpi-value-neutral">{moeda(df_filtrado["valor_total"].mean() if len(df_filtrado) > 0 else 0)}</div>', unsafe_allow_html=True)
-
-
-# =====================================================
-# AVISO DE PEDIDOS SEM VALOR
+# AVISOS E ALERTAS (RODAPÉ INTEGRADO)
 # =====================================================
 
 pedidos_sem_valor = df_filtrado[df_filtrado["valor_total"] <= 0]
-
 if not pedidos_sem_valor.empty:
     st.warning(f"⚠️ Existem {len(pedidos_sem_valor)} pedido(s) sem valor total definido.")
