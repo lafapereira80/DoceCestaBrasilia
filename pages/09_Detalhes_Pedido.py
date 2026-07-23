@@ -32,7 +32,7 @@ from utils.permissao import (
 
 
 # =====================================================
-# CONFIGURAÇÃO
+# CONFIGURAÇÃO DA PÁGINA
 # =====================================================
 
 st.set_page_config(
@@ -119,22 +119,47 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
 }
 
 /* ==========================================
-   CARD RESUMO
+   CARD RESUMO DO PEDIDO 100% RESPONSIVO
 ========================================== */
-.resumo-card {
+.resumo-container {
     background: #fff8ef;
     border: 1px solid #e6d1bb;
     border-radius: 10px;
     padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
-.resumo-card table {
-    width: 100%;
-}
-
-.resumo-card td {
-    padding: 3px 0;
+.resumo-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-size: 12px !important;
+    color: #444;
+    padding: 2px 0;
+    border-bottom: 1px dashed #f0e0d0;
+}
+
+.resumo-row:last-child {
+    border-bottom: none;
+    padding-top: 6px;
+}
+
+.resumo-label {
+    font-weight: 600;
+    color: #5a3b28;
+}
+
+.resumo-val {
+    font-weight: 700;
+    color: #222;
+}
+
+.resumo-total-val {
+    font-size: 20px !important;
+    font-weight: 800 !important;
+    color: #2e7d32 !important;
 }
 
 /* ==========================================
@@ -171,6 +196,14 @@ div[data-testid="stColumn"] > div > div > div > div[data-testid="stLinkButton"] 
 
     .info-value {
         font-size: 12px !important;
+    }
+
+    .resumo-total-val {
+        font-size: 17px !important;
+    }
+
+    .resumo-container {
+        padding: 8px 10px;
     }
 }
 </style>
@@ -523,7 +556,7 @@ with col_direita:
 
         horario_combinado = st.text_input("🕒 Horário Combinado de Entrega", value=pedido.get("horario_combinado", ""), placeholder="Ex: 15:30")
 
-    # Resumo Final do Valor
+    # Resumo Final do Valor (Novo Container Responsivo Flexbox)
     valor_total_calculado = valor_cesta + valor_adicionais + valor_frete - desconto
     if valor_total_calculado < 0:
         valor_total_calculado = 0
@@ -533,19 +566,36 @@ with col_direita:
 
         st.markdown(
             f"""
-            <div class="resumo-card">
-            <table>
-            <tr><td>🎁 Cesta</td><td align="right"><b>{formatar_valor(valor_cesta)}</b></td></tr>
-            <tr><td>🎀 Adicionais</td><td align="right"><b>{formatar_valor(valor_adicionais)}</b></td></tr>
-            <tr><td>⚠️ Sob consulta</td><td align="right"><b>{formatar_valor(valor_consulta)}</b></td></tr>
-            <tr><td>🚚 Frete</td><td align="right"><b>{formatar_valor(valor_frete)}</b></td></tr>
-            <tr><td>🏷️ Desconto</td><td align="right"><b>{formatar_valor(desconto)}</b></td></tr>
-            <tr><td><b>💰 TOTAL</b></td><td align="right"><h3 style="margin:0; color:#2e7d32;">{formatar_valor(valor_total_calculado)}</h3></td></tr>
-            </table>
+            <div class="resumo-container">
+                <div class="resumo-row">
+                    <span class="resumo-label">🎁 Cesta</span>
+                    <span class="resumo-val">{formatar_valor(valor_cesta)}</span>
+                </div>
+                <div class="resumo-row">
+                    <span class="resumo-label">🎀 Adicionais</span>
+                    <span class="resumo-val">{formatar_valor(valor_adicionais)}</span>
+                </div>
+                <div class="resumo-row">
+                    <span class="resumo-label">⚠️ Sob consulta</span>
+                    <span class="resumo-val">{formatar_valor(valor_consulta)}</span>
+                </div>
+                <div class="resumo-row">
+                    <span class="resumo-label">🚚 Frete</span>
+                    <span class="resumo-val">{formatar_valor(valor_frete)}</span>
+                </div>
+                <div class="resumo-row">
+                    <span class="resumo-label">🏷️ Desconto</span>
+                    <span class="resumo-val">{formatar_valor(desconto)}</span>
+                </div>
+                <div class="resumo-row">
+                    <span class="resumo-label" style="font-size:14px; font-weight:700;">💰 TOTAL</span>
+                    <span class="resumo-total-val">{formatar_valor(valor_total_calculado)}</span>
+                </div>
             </div>
             """,
             unsafe_allow_html=True
         )
+        st.write("")
         st.caption(f"💳 Forma de Pagamento: **{pedido.get('pagamento','-')}**")
 
     # WhatsApp Link
@@ -572,7 +622,7 @@ with col_direita:
         try:
             fotos = listar_fotos(pedido["id"])
             if fotos:
-                colunas = st.columns(2)  # Adaptado para 2 colunas para excelente visualização mobile e desktop
+                colunas = st.columns(2)
                 for i, foto in enumerate(fotos):
                     with colunas[i % 2]:
                         st.image(foto.get("url"), caption=foto.get("nome_original", "Foto"), use_container_width=True)
