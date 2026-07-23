@@ -130,12 +130,17 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     margin-bottom: 4px;
 }
 
-/* Ajustes de botões */
-.stButton button {
+/* Ajustes direcionados exclusivamente aos botões normais */
+div[data-testid="stButton"] > button {
     font-size: 13px !important;
     padding: 2px 6px !important;
     border-radius: 8px !important;
     min-height: 32px !important;
+}
+
+/* Correção visual do componente de upload */
+div[data-testid="stFileUploader"] {
+    width: 100% !important;
 }
 
 .stImage img {
@@ -166,18 +171,18 @@ if usuario.get("perfil") == "Administrador":
     
     with st.container(border=True):
         with st.form("nova_cesta_form"):
-            col_f1, col_f2 = st.columns([2, 1])
+            col_f1, col_f2 = st.columns([1.2, 1])
 
             with col_f1:
                 nome = st.text_input("Nome da Cesta")
-                descricao = st.text_area("Descrição", height=70)
+                descricao = st.text_area("Descrição", height=95)
 
             with col_f2:
                 preco = st.number_input("Preço (R$)", min_value=0.0, value=0.0, step=1.0, format="%.2f")
                 imagem_arquivo = st.file_uploader("📷 Foto da Cesta", type=["jpg", "jpeg", "png", "webp"])
 
                 if imagem_arquivo:
-                    st.image(imagem_arquivo, width=100)
+                    st.image(imagem_arquivo, width=80)
 
             salvar = st.form_submit_button("💾 Cadastrar Cesta", use_container_width=True, type="primary")
 
