@@ -64,7 +64,7 @@ def atualizar_selecao_impressao(pedido_id):
 
 
 # =====================================================
-# CSS COMPACTO E MODERNO
+# CSS COMPACTO E ISOLADO
 # =====================================================
 
 st.markdown(
@@ -94,7 +94,8 @@ h2, h3 {
     margin-bottom: 8px !important;
 }
 
-p, div, span, label {
+.block-container p, 
+.block-container label {
     font-family: Arial, sans-serif !important;
     font-size: 13px !important;
 }
@@ -159,8 +160,17 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     font-size: 14px !important;
 }
 
-/* Ajuste nos Botões Pequenos */
-.stButton button {
+.cabecalho-tabela {
+    font-weight: 700;
+    color: #775a46;
+    font-size: 12px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+/* Botões da Tabela */
+div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button {
     font-size: 13px !important;
     padding: 2px 8px !important;
     border-radius: 8px !important;
@@ -270,8 +280,6 @@ def mostrar_lista(
             col_check, col_info1, col_info2, col_status, col_valor, col_acoes = st.columns(
                 [1.2, 3.2, 2.8, 1.8, 1.8, 1.2] if permitir_impressao else [3.8, 3.0, 2.0, 2.0, 1.2]
             )
-
-            idx_col = 0
 
             # Seleção de Impressão
             if permitir_impressao:
