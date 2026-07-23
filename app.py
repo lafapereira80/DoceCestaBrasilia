@@ -115,55 +115,6 @@ p, label, div{
 }
 
 
-div[data-baseweb="input"]{
-
-    background:white;
-
-    border-radius:10px;
-
-    border:1px solid #c9b8a8;
-
-}
-
-
-input{
-
-    height:42px !important;
-
-    font-size:15px !important;
-
-}
-
-
-textarea{
-
-    font-size:15px !important;
-
-    border-radius:10px !important;
-
-}
-
-
-div[data-baseweb="select"] > div{
-
-    border-radius:10px;
-
-    border:1px solid #c9b8a8;
-
-}
-
-
-div[data-testid="stCheckbox"]{
-
-    background:#fffaf5;
-
-    padding:8px;
-
-    border-radius:8px;
-
-}
-
-
 .stButton button{
 
     background:#8B5A2B;
@@ -187,8 +138,6 @@ div[data-testid="stCheckbox"]{
 
     border-radius:15px;
 
-    border:1px solid #ead8c7;
-
 }
 
 
@@ -196,6 +145,7 @@ div[data-testid="stCheckbox"]{
 """,
 unsafe_allow_html=True
 )
+
 
 
 
@@ -233,7 +183,6 @@ st.markdown(
 <h1 style="
 text-align:center;
 color:#8B5A2B;
-margin-bottom:0;
 ">
 
 Doce Cesta Brasília
@@ -249,7 +198,6 @@ st.markdown(
 """
 <p style="
 text-align:center;
-margin-top:5px;
 ">
 
 Cestas personalizadas para momentos especiais 💝
@@ -261,6 +209,7 @@ unsafe_allow_html=True
 
 
 
+
 # ==========================================================
 # FORMULÁRIO
 # ==========================================================
@@ -269,6 +218,10 @@ unsafe_allow_html=True
 st.markdown(
 "### 📝 Faça seu pedido"
 )
+
+
+
+
 # ==========================================================
 # CLIENTE
 # ==========================================================
@@ -315,10 +268,6 @@ cpf = st.text_input(
     placeholder="000.000.000-00"
 
 )
-
-
-
-
 
 # ==========================================================
 # CESTAS
@@ -407,6 +356,8 @@ else:
 
 
 
+
+
 # ==========================================================
 # INFORMAÇÕES VISUAIS DA CESTA
 # ==========================================================
@@ -489,6 +440,7 @@ if cesta:
 
             try:
 
+
                 valor = float(
 
                     cesta["preco"]
@@ -507,6 +459,7 @@ if cesta:
                     .replace("X",".")
 
                 )
+
 
 
                 st.markdown(
@@ -528,13 +481,28 @@ if cesta:
 
 
                 pass
-                # ==========================================================
+
+
+
+
+
+# ==========================================================
 # PERSONALIZAÇÃO DA CESTA
+#
+# IMPORTANTE:
+#
+# As categorias são totalmente dinâmicas.
+#
+# A página mostra somente o que foi configurado
+# para aquela cesta.
+#
 # ==========================================================
 
 
 st.markdown(
+
     "### 🍓 Personalize sua cesta"
+
 )
 
 
@@ -543,15 +511,14 @@ selecoes_cliente = {}
 
 
 
-# ==========================================================
-# SOMENTE MOSTRA PRODUTOS SE EXISTIR CESTA
-# ==========================================================
+configuracao_cesta = []
+
 
 
 if cesta:
 
 
-    configuracao = carregar_configuracao_cesta(
+    configuracao_cesta = carregar_configuracao_cesta(
 
         cesta["id"]
 
@@ -559,11 +526,11 @@ if cesta:
 
 
 
-    if configuracao:
+    if configuracao_cesta:
 
 
 
-        for grupo in configuracao:
+        for grupo in configuracao_cesta:
 
 
 
@@ -609,8 +576,6 @@ if cesta:
 
 
 
-            # Ignora grupo sem produtos
-
             if not produtos:
 
 
@@ -629,13 +594,6 @@ if cesta:
 
                 )
 
-
-
-
-
-                # ==========================================
-                # APENAS 1 ESCOLHA
-                # ==========================================
 
 
                 if maximo == 1:
@@ -667,13 +625,6 @@ if cesta:
 
                         ]
 
-
-
-
-
-                # ==========================================
-                # MULTIPLAS ESCOLHAS
-                # ==========================================
 
 
                 else:
@@ -715,8 +666,6 @@ if cesta:
 
 
 
-
-
 else:
 
 
@@ -725,14 +674,16 @@ else:
         "Escolha uma cesta para visualizar os produtos disponíveis."
 
     )
-    # ==========================================================
+
+# ==========================================================
 # COMPLEMENTOS
 #
-# Regras:
+# REGRA:
 #
-# 1 - Adicionais sempre aparece
-# 2 - Outras categorias somente aparecem
-#     quando configuradas na cesta
+# Somente categoria "Adicionais" aparece aqui.
+#
+# Todas as demais categorias pertencem exclusivamente
+# à configuração da cesta.
 #
 # ==========================================================
 
@@ -746,7 +697,7 @@ st.markdown(
 
 st.caption(
 
-    "Escolha os itens adicionais que deseja:"
+    "Escolha itens adicionais para complementar sua cesta."
 
 )
 
@@ -785,19 +736,12 @@ except Exception as erro:
 
 
 # ==========================================================
-# DEFINIR CATEGORIAS DISPONÍVEIS
+# FILTRAR SOMENTE ADICIONAIS
 # ==========================================================
 
 
-categorias_exibir = []
+categoria_adicionais = None
 
-
-
-
-
-# ==========================================================
-# ADICIONAIS SEMPRE DISPONÍVEL
-# ==========================================================
 
 
 for categoria in categorias_pedido:
@@ -817,88 +761,35 @@ for categoria in categorias_pedido:
     if nome_categoria.lower() == "adicionais":
 
 
-        categorias_exibir.append(
-
-            categoria
-
-        )
+        categoria_adicionais = categoria
 
 
 
-
-
-# ==========================================================
-# CATEGORIAS DA CESTA
-# ==========================================================
-
-
-if cesta:
+        break
 
 
 
-    configuracao = carregar_configuracao_cesta(
 
-        cesta["id"]
+
+categorias_exibir = []
+
+
+
+if categoria_adicionais:
+
+
+    categorias_exibir.append(
+
+        categoria_adicionais
 
     )
 
 
 
-    categorias_cesta = []
-
-
-
-    for grupo in configuracao:
-
-
-
-        categorias_cesta.append(
-
-            grupo.get(
-
-                "categoria"
-
-            )
-
-        )
-
-
-
-
-
-    for categoria in categorias_pedido:
-
-
-
-        nome_categoria = categoria.get(
-
-            "nome",
-
-            ""
-
-        ).strip()
-
-
-
-        if nome_categoria in categorias_cesta:
-
-
-
-            if categoria not in categorias_exibir:
-
-
-                categorias_exibir.append(
-
-                    categoria
-
-                )
-
-
-
 
 
 # ==========================================================
-# MOSTRAR PRODUTOS
+# EXIBIÇÃO DOS COMPLEMENTOS
 # ==========================================================
 
 
@@ -959,62 +850,21 @@ for categoria in categorias_exibir:
 
 
 
-                mostrar_valor = (
+                preco = produto.get(
 
-                    nome_categoria.lower()
-
-                    ==
-
-                    "adicionais"
+                    "preco"
 
                 )
 
 
 
-
-
-                if mostrar_valor:
-
-
-
-                    preco = produto.get(
-
-                        "preco"
-
-                    )
+                if preco is None:
 
 
 
-                    if preco is None:
+                    texto_valor = (
 
-
-                        texto_valor = "Consultar valor"
-
-
-
-                    else:
-
-
-                        valor = float(preco)
-
-
-                        texto_valor = (
-
-                            f"R$ {valor:,.2f}"
-
-                            .replace(",", "X")
-
-                            .replace(".", ",")
-
-                            .replace("X",".")
-
-                        )
-
-
-
-                    label_produto = (
-
-                        f"{produto['nome']} | {texto_valor}"
+                        "Consultar valor"
 
                     )
 
@@ -1023,7 +873,32 @@ for categoria in categorias_exibir:
                 else:
 
 
-                    label_produto = produto["nome"]
+
+                    valor = float(preco)
+
+
+
+                    texto_valor = (
+
+                        f"R$ {valor:,.2f}"
+
+                        .replace(",", "X")
+
+                        .replace(".", ",")
+
+                        .replace("X",".")
+
+                    )
+
+
+
+
+
+                label_produto = (
+
+                    f"{produto['nome']} | {texto_valor}"
+
+                )
 
 
 
@@ -1065,11 +940,7 @@ for categoria in categorias_exibir:
 
                             "preco":
 
-                                produto.get("preco")
-
-                                if mostrar_valor
-
-                                else None,
+                                produto.get("preco"),
 
 
 
@@ -1331,6 +1202,7 @@ if cesta:
 
     try:
 
+
         valor_cesta = float(
 
             cesta.get(
@@ -1354,6 +1226,7 @@ if cesta:
 
 
 for item in adicionais_selecionados:
+
 
 
     if item["preco"] is None:
@@ -1485,6 +1358,8 @@ if cesta:
 
 
 
+
+
     if tem_adicional_consulta:
 
 
@@ -1493,10 +1368,6 @@ if cesta:
             "⚠️ Existem itens com valor sob consulta. Nossa equipe confirmará o valor final."
 
         )
-
-
-
-
 
 # ==========================================================
 # BOTÃO ENVIO
@@ -1529,6 +1400,7 @@ enviar = st.button(
 
 
 if enviar:
+
 
 
     if not nome.strip():
@@ -1612,6 +1484,7 @@ if enviar:
     for item in adicionais_selecionados:
 
 
+
         if item["preco"] is None:
 
 
@@ -1638,9 +1511,11 @@ if enviar:
     dados = {
 
 
+
         "cliente_nome":
 
             nome,
+
 
 
         "cliente_cpf":
@@ -1648,9 +1523,11 @@ if enviar:
             cpf,
 
 
+
         "cliente_telefone":
 
             telefone,
+
 
 
         "cesta_id":
@@ -1658,9 +1535,11 @@ if enviar:
             cesta["id"],
 
 
+
         "cesta_nome":
 
             cesta["nome"],
+
 
 
         "produtos":
@@ -1668,9 +1547,11 @@ if enviar:
             "\n".join(produtos_escolhidos),
 
 
+
         "adicionais":
 
             ", ".join(complementos_texto),
+
 
 
         "pagamento":
@@ -1678,9 +1559,11 @@ if enviar:
             pagamento,
 
 
+
         "mensagem":
 
             mensagem,
+
 
 
         "pedido_especial":
@@ -1688,9 +1571,11 @@ if enviar:
             pedido_especial,
 
 
+
         "endereco":
 
             endereco,
+
 
 
         "data_entrega":
@@ -1698,9 +1583,11 @@ if enviar:
             data_entrega.strftime("%Y-%m-%d"),
 
 
+
         "periodo_entrega":
 
             periodo_entrega,
+
 
 
         "status":
@@ -1708,14 +1595,18 @@ if enviar:
             "Recebido",
 
 
+
         "valor_frete":
 
             0,
 
 
+
         "valor_total":
 
             valor_estimado
+
+
 
     }
 
@@ -1726,6 +1617,7 @@ if enviar:
     try:
 
 
+
         sucesso, pedido_id = salvar_pedido(
 
             dados
@@ -1733,7 +1625,9 @@ if enviar:
         )
 
 
+
     except Exception as erro:
+
 
 
         st.error(
@@ -1751,7 +1645,14 @@ if enviar:
     if sucesso:
 
 
+
+        # ===============================
+        # SALVAR ADICIONAIS
+        # ===============================
+
+
         if adicionais_selecionados:
+
 
 
             salvar_adicionais_pedido(
@@ -1764,7 +1665,15 @@ if enviar:
 
 
 
+
+
+        # ===============================
+        # SALVAR FOTOS
+        # ===============================
+
+
         if polaroid and fotos:
+
 
 
             salvar_fotos(
@@ -1774,6 +1683,8 @@ if enviar:
                 fotos
 
             )
+
+
 
 
 
@@ -1801,7 +1712,9 @@ Nossa equipe entrará em contato para confirmar:
         )
 
 
+
     else:
+
 
 
         st.error(
