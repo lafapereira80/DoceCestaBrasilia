@@ -69,14 +69,20 @@ div[data-testid="stVerticalBlock"] {
 }
 
 /* =========================================
-   ESTILIZAÇÃO DO CABEÇALHO CENTRALIZADO
+   ESTILIZAÇÃO E CONTROLE DA LOGO (MOBILE FIRST)
 ========================================== */
-.header-container {
+.logo-container {
     display: flex;
-    align-items: center;
     justify-content: center;
-    gap: 18px;
-    margin-bottom: 12px;
+    align-items: center;
+    width: 100%;
+}
+
+/* Limita o tamanho máximo da logo no Desktop */
+.logo-container div[data-testid="stImage"] img {
+    max-width: 95px !important;
+    height: auto !important;
+    object-fit: contain;
 }
 
 .header-text {
@@ -87,7 +93,7 @@ div[data-testid="stVerticalBlock"] {
 }
 
 .header-title {
-    font-size: 27px !important;
+    font-size: 25px !important;
     font-weight: 800 !important;
     color: #5a3b28 !important;
     margin: 0 !important;
@@ -97,7 +103,7 @@ div[data-testid="stVerticalBlock"] {
 .header-subtitle {
     font-size: 13px !important;
     color: #775a46 !important;
-    margin-top: 4px !important;
+    margin-top: 3px !important;
     margin-bottom: 0 !important;
 }
 
@@ -196,15 +202,20 @@ div[data-testid="stFileUploader"] section button::after {
 }
 
 /* =========================================
-   AJUSTES RESPONSIVOS (MOBILE)
+   AJUSTES RESPONSIVOS (MOBILE EXCLUSIVO)
 ========================================== */
 @media (max-width: 640px) {
     .block-container {
         padding-top: 0.5rem !important;
     }
     
+    /* Logo em tamanho elegante e delicado no celular */
+    .logo-container div[data-testid="stImage"] img {
+        max-width: 65px !important;
+    }
+
     .header-title {
-        font-size: 20px !important;
+        font-size: 18px !important;
     }
 
     .header-subtitle {
@@ -227,12 +238,14 @@ unsafe_allow_html=True
 
 logo = Path("assets/logo.webp")
 
-# Colunas ajustadas para centralizar o conjunto logo + títulos
-col_esp1, col_logo, col_titulo, col_esp2 = st.columns([0.2, 1.2, 3, 0.2])
+# Alinhamento vertical centralizado para evitar desalinhamento da imagem com o texto
+col_logo, col_titulo = st.columns([0.8, 3.2], vertical_alignment="center")
 
 with col_logo:
     if logo.exists():
+        st.markdown('<div class="logo-container">', unsafe_allow_html=True)
         st.image(str(logo), use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 with col_titulo:
     st.markdown(
