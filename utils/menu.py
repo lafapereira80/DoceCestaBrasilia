@@ -16,46 +16,45 @@ def configurar_pagina():
         footer { display: none !important; }
         [data-testid="stSidebarNav"] { display: none !important; }
 
-        /* Torna o header transparente sem esconder os botões de controle */
+        /* Deixa o header transparente para mostrar a seta no topo */
         header[data-testid="stHeader"] {
             background: transparent !important;
+            z-index: 99999 !important;
         }
 
         /* =========================================
-           SOLUÇÃO DEFINITIVA PARA O BOTÃO DA SIDEBAR
+           CORREÇÃO DOS BOTAOES ABRIR/FECHAR SIDEBAR
         ========================================== */
-        /* Esconde o texto/ícone nativo que está vazando */
-        [data-testid="stSidebarCollapseButton"] *,
-        [data-testid="collapsedControl"] * {
-            font-size: 0 !important;
-            color: transparent !important;
+        /* Oculta os textos de ícones vazados nativos */
+        [data-testid="stSidebarCollapseButton"] button span,
+        [data-testid="collapsedControl"] button span,
+        button[aria-label="Close sidebar"] span,
+        button[aria-label="Open sidebar"] span {
+            display: none !important;
         }
 
-        /* Substitui o ícone quebrado por uma seta limpa (para fechar) */
-        [data-testid="stSidebarCollapseButton"] button::after {
-            content: "«" !important;
-            font-size: 20px !important;
-            font-weight: bold !important;
+        /* Ícone bonito para fechar no menu */
+        [data-testid="stSidebarCollapseButton"] button::after,
+        button[aria-label="Close sidebar"]::after {
+            content: "✕" !important;
+            font-size: 16px !important;
+            font-weight: 700 !important;
             color: #5a3b28 !important;
-            display: block !important;
         }
 
-        /* Substitui o ícone quebrado por uma seta limpa (para abrir) */
+        /* Ícone bonito para abrir na tela principal */
         [data-testid="collapsedControl"] button::after,
-        div[data-testid="collapsedControl"]::after {
-            content: "»" !important;
+        button[aria-label="Open sidebar"]::after {
+            content: "☰" !important;
             font-size: 20px !important;
-            font-weight: bold !important;
+            font-weight: 700 !important;
             color: #5a3b28 !important;
-            display: block !important;
         }
 
-        /* Ajusta o estilo do container do botão de abrir/fechar */
+        /* Ajusta área clicável */
         [data-testid="stSidebarCollapseButton"],
         [data-testid="collapsedControl"] {
             display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
             visibility: visible !important;
             opacity: 1 !important;
         }
@@ -68,7 +67,6 @@ def configurar_pagina():
             border-right: 1px solid #e8ddd3 !important;
         }
 
-        /* Título da Marca */
         .sidebar-brand {
             font-size: 18px !important;
             font-weight: 700 !important;
@@ -77,7 +75,6 @@ def configurar_pagina():
             text-align: center;
         }
 
-        /* Card do Usuário */
         .user-card {
             background: #ffffff;
             border: 1px solid #dfcdbb;
@@ -104,7 +101,6 @@ def configurar_pagina():
             margin-top: 4px;
         }
 
-        /* Estilização dos Links da Sidebar */
         div[data-testid="stPageLink"] a {
             border-radius: 8px !important;
             padding: 6px 10px !important;
@@ -120,7 +116,6 @@ def configurar_pagina():
             color: #333 !important;
         }
 
-        /* Botão Sair na Sidebar */
         div[data-testid="stSidebar"] button {
             border-radius: 8px !important;
             font-size: 13px !important;
@@ -153,10 +148,8 @@ def menu_lateral():
     perfil = usuario.get("perfil", "Operador")
 
     with st.sidebar:
-        # Marca e Título
         st.markdown('<div class="sidebar-brand">🎁 Doce Cesta Brasília</div>', unsafe_allow_html=True)
 
-        # Card de Perfil do Usuário
         st.markdown(
             f"""
             <div class="user-card">
@@ -169,18 +162,10 @@ def menu_lateral():
 
         st.divider()
 
-        # =====================================================
-        # NAVEGAÇÃO PRINCIPAL (ADMIN / PAINEL)
-        # =====================================================
-
         st.page_link(
             "pages/99_Admin.py",
             label="🏠 Administração"
         )
-
-        # =====================================================
-        # OPERACIONAL (ADMINISTRADOR + OPERADOR)
-        # =====================================================
 
         if perfil in ["Administrador", "Operador"]:
             st.page_link(
@@ -208,10 +193,6 @@ def menu_lateral():
                 label="📂 Categorias"
             )
 
-        # =====================================================
-        # SOMENTE ADMINISTRADOR
-        # =====================================================
-
         if perfil == "Administrador":
             st.divider()
 
@@ -226,10 +207,6 @@ def menu_lateral():
             )
 
         st.divider()
-
-        # =====================================================
-        # SAIR
-        # =====================================================
 
         if st.button(
             "🚪 Sair da Conta",
