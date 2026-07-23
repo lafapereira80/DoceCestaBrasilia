@@ -71,6 +71,41 @@ if "pdf_gerado" not in st.session_state:
 
 
 # =====================================================
+# FUNÇÃO CHECKBOX IMPRESSÃO
+# =====================================================
+
+def atualizar_selecao_impressao(
+    pedido_id
+):
+
+
+    chave = f"imprimir_{pedido_id}"
+
+
+
+    if st.session_state.get(chave):
+
+
+        if pedido_id not in st.session_state["pedidos_impressao"]:
+
+            st.session_state["pedidos_impressao"].append(
+                pedido_id
+            )
+
+
+
+    else:
+
+
+        if pedido_id in st.session_state["pedidos_impressao"]:
+
+            st.session_state["pedidos_impressao"].remove(
+                pedido_id
+            )
+
+
+
+# =====================================================
 # CSS COMPACTO
 # =====================================================
 
@@ -186,7 +221,6 @@ except Exception as erro:
         f"Erro ao carregar pedidos: {erro}"
     )
 
-
     st.stop()
 
 
@@ -197,7 +231,6 @@ if not pedidos:
     st.info(
         "Nenhum pedido em andamento."
     )
-
 
     st.stop()
 
@@ -219,7 +252,6 @@ if "created_at" in df.columns:
     df["created_at"] = pd.to_datetime(
         df["created_at"]
     )
-
 
 
     df = df.sort_values(
@@ -268,7 +300,7 @@ if pesquisa.strip():
 
 
 # =====================================================
-# FUNÇÃO STATUS
+# STATUS VISUAL
 # =====================================================
 
 def status_visual(status):
@@ -326,7 +358,6 @@ def mostrar_lista(
             "Nenhum pedido encontrado."
         )
 
-
         return
 
 
@@ -338,7 +369,7 @@ def mostrar_lista(
 
 
         # =================================================
-        # BUSCA PEDIDO ATUALIZADO
+        # BUSCA DADOS ATUALIZADOS
         # =================================================
 
         try:
@@ -371,50 +402,28 @@ def mostrar_lista(
 
 
             # =============================================
-            # CHECKBOX DE IMPRESSÃO
+            # SELEÇÃO PARA IMPRESSÃO
             # =============================================
 
             if permitir_impressao:
 
 
 
-                marcado = st.checkbox(
+                st.checkbox(
 
-                    "🖨️ Selecionar para impressão",
+                    "🖨️ Selecionar",
 
-                    key=f"imprimir_{pedido['id']}"
+                    key=f"imprimir_{pedido['id']}",
+
+                    on_change=atualizar_selecao_impressao,
+
+                    args=(
+
+                        pedido["id"],
+
+                    )
 
                 )
-
-
-
-                if marcado:
-
-
-
-                    if pedido["id"] not in st.session_state["pedidos_impressao"]:
-
-
-                        st.session_state["pedidos_impressao"].append(
-
-                            pedido["id"]
-
-                        )
-
-
-
-                else:
-
-
-
-                    if pedido["id"] in st.session_state["pedidos_impressao"]:
-
-
-                        st.session_state["pedidos_impressao"].remove(
-
-                            pedido["id"]
-
-                        )
 
 
 
@@ -427,6 +436,8 @@ def mostrar_lista(
                 [3.5, 2.5, 1.8, 1.5, 1.2]
 
             )
+
+
 
 
 
@@ -449,8 +460,6 @@ def mostrar_lista(
                 ).strip()
 
 
-
-                # remove espaços duplicados
 
                 nome_cliente = " ".join(
 
@@ -503,7 +512,6 @@ def mostrar_lista(
                     f"Entrega: {pedido.get('data_entrega','-')}"
 
                 )
-
 
 
 
@@ -583,7 +591,6 @@ def mostrar_lista(
 
 
 
-
             with col5:
 
 
@@ -600,11 +607,7 @@ def mostrar_lista(
 
 
 
-                    st.session_state[
-
-                        "pedido_aberto"
-
-                    ] = pedido["id"]
+                    st.session_state["pedido_aberto"] = pedido["id"]
 
 
 
@@ -613,6 +616,7 @@ def mostrar_lista(
                         "pages/09_Detalhes_Pedido.py"
 
                     )
+
 
 
 
@@ -670,168 +674,13 @@ def mostrar_lista(
                                 mensagem
 
                             )
-      # =====================================================
-# IMPRESSÃO DOS PEDIDOS SELECIONADOS
-# =====================================================
 
 
-if st.session_state["pedidos_impressao"]:
 
 
-    st.divider()
-
-
-    st.subheader(
-        "🖨️ Impressão"
-    )
-
-
-
-    quantidade = len(
-
-        st.session_state["pedidos_impressao"]
-
-    )
-
-
-
-    st.info(
-
-        f"{quantidade} pedido(s) selecionado(s)"
-
-    )
-
-
-
-
-
-    formato_impressao = st.radio(
-
-
-        "Escolha o formato",
-
-
-        [
-
-            "📄 Folha A4 - 12 pedidos por página",
-
-            "🧾 Etiqueta individual 7x10 cm"
-
-        ],
-
-
-        horizontal=True
-
-
-    )
-
-
-
-
-
-    if st.button(
-
-
-        "📄 Gerar PDF",
-
-
-        use_container_width=True,
-
-
-        type="primary"
-
-
-    ):
-
-
-
-        pedidos_para_imprimir = []
-
-
-
-        for pedido_id in st.session_state["pedidos_impressao"]:
-
-
-
-            pedido = buscar_pedido(
-
-                pedido_id
-
-            )
-
-
-
-            if pedido:
-
-
-                pedidos_para_imprimir.append(
-
-                    pedido
-
-                )
-
-
-
-
-
-        if pedidos_para_imprimir:
-
-
-
-            pdf = gerar_pdf_pedidos(
-
-                pedidos_para_imprimir,
-
-                formato_impressao
-
-            )
-
-
-
-            st.session_state["pdf_gerado"] = pdf
-
-
-
-
-
-            st.success(
-
-                "✅ PDF criado com sucesso!"
-
-            )
-
-
-
-
-
-
-
-    if st.session_state["pdf_gerado"]:
-
-
-
-        st.download_button(
-
-
-            "⬇️ Baixar PDF para impressão",
-
-
-            st.session_state["pdf_gerado"],
-
-
-            file_name="pedidos_producao.pdf",
-
-
-            mime="application/pdf",
-
-
-            use_container_width=True
-
-
-        )
 
 # =====================================================
-# STATUS RECEBIDOS
+# ORDEM DOS PEDIDOS
 # =====================================================
 
 
@@ -843,9 +692,8 @@ mostrar_lista(
 
 )
 
-# =====================================================
-# STATUS PAGOS
-# =====================================================
+
+
 
 
 mostrar_lista(
@@ -859,9 +707,7 @@ mostrar_lista(
 )
 
 
-# =====================================================
-# STATUS DESISTÊNCIA
-# =====================================================
+
 
 
 mostrar_lista(
@@ -881,6 +727,154 @@ mostrar_lista(
     )
 
 )
+# =====================================================
+# IMPRESSÃO DOS PEDIDOS SELECIONADOS
+# =====================================================
+
+
+if st.session_state["pedidos_impressao"]:
+
+
+    st.divider()
+
+
+    st.subheader(
+        "🖨️ Impressão de Pedidos"
+    )
+
+
+
+    quantidade = len(
+
+        st.session_state["pedidos_impressao"]
+
+    )
+
+
+
+    st.success(
+
+        f"{quantidade} pedido(s) selecionado(s) para impressão."
+
+    )
+
+
+
+    formato_impressao = st.radio(
+
+
+        "Formato do PDF",
+
+
+        [
+
+            "📄 Folha A4 - 12 pedidos por página",
+
+            "🧾 Individual 7x10 cm"
+
+        ],
+
+
+        horizontal=True
+
+    )
+
+
+
+
+
+    if st.button(
+
+        "📄 Gerar PDF",
+
+        use_container_width=True,
+
+        type="primary"
+
+    ):
+
+
+
+        pedidos_pdf = []
+
+
+
+        for pedido_id in st.session_state["pedidos_impressao"]:
+
+
+
+            pedido = buscar_pedido(
+
+                pedido_id
+
+            )
+
+
+
+            if pedido:
+
+                pedidos_pdf.append(
+
+                    pedido
+
+                )
+
+
+
+
+
+        if pedidos_pdf:
+
+
+
+            pdf = gerar_pdf_pedidos(
+
+                pedidos_pdf,
+
+                formato_impressao
+
+            )
+
+
+
+            st.session_state["pdf_gerado"] = pdf
+
+
+
+            st.success(
+
+                "✅ PDF gerado com sucesso!"
+
+            )
+
+
+
+
+
+
+
+    if st.session_state["pdf_gerado"]:
+
+
+
+        st.download_button(
+
+            "⬇️ Baixar PDF",
+
+            st.session_state["pdf_gerado"],
+
+            file_name="pedidos_producao.pdf",
+
+            mime="application/pdf",
+
+            use_container_width=True
+
+        )
+
+
+
+
+
 
 
 # =====================================================
@@ -896,4 +890,4 @@ st.caption(
 
     f"Total de pedidos ativos: {len(df)}"
 
-)                      
+)
