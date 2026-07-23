@@ -721,7 +721,7 @@ with col2:
 
     st.info(
 
-        "📲"
+        "📲 WhatsApp será liberado após salvar o atendimento."
 
     )
 
