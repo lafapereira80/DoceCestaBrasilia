@@ -1150,13 +1150,9 @@ if st.session_state.editar_pedido:
 
 
 st.markdown(
-    "### 👤 Cliente"
-)
 
-
-
-st.markdown(
     '<div class="card">',
+        "### 👤 Cliente",
     unsafe_allow_html=True
 )
 
