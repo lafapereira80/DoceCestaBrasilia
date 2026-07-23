@@ -52,73 +52,129 @@ administrador_operador()
 
 usuario = st.session_state.usuario
 
-
-
 # =====================================================
-# CSS
+# CSS COMPACTO
 # =====================================================
 
 st.markdown(
 """
 <style>
 
+
+/* Área principal */
+
 .block-container{
 
-    padding-top:1rem;
+    padding-top:0.5rem !important;
 
-    max-width:950px;
+    padding-bottom:1rem !important;
+
+    max-width:1000px;
 
 }
 
 
+/* Títulos */
+
 h1{
 
-    font-size:26px !important;
+    font-size:24px !important;
+
+    margin-bottom:0.2rem !important;
 
 }
 
 
 h2{
 
-    font-size:19px !important;
+    font-size:18px !important;
+
+    margin-top:0.5rem !important;
+
+    margin-bottom:0.3rem !important;
 
 }
 
 
 h3{
 
-    font-size:16px !important;
+    font-size:15px !important;
+
+    margin-top:0.3rem !important;
+
+    margin-bottom:0.2rem !important;
 
 }
 
 
-p,div,span,label{
+/* Texto geral */
 
-    font-size:13px;
+p,
+div,
+span,
+label{
+
+    font-size:12px !important;
 
 }
 
 
+/* Reduz espaço entre elementos */
+
+.stMarkdown{
+
+    margin-bottom:0.2rem !important;
+
+}
+
+
+/* Botões */
 
 .stButton button{
 
-    font-size:13px;
+    font-size:12px !important;
 
-    padding:7px 12px;
+    padding:4px 10px !important;
 
-    border-radius:10px;
+    border-radius:8px !important;
+
+    min-height:32px !important;
 
 }
 
 
+
+/* Inputs */
+
+input,
+textarea{
+
+    font-size:12px !important;
+
+}
+
+
+
+/* caixas de mensagem */
+
+div[data-testid="stAlert"]{
+
+    padding:6px 10px !important;
+
+    margin:4px 0 !important;
+
+}
+
+
+/* Cards */
 
 .resumo-card{
 
     background:#fff8f2;
 
-    padding:18px;
+    padding:10px;
 
-    border-radius:15px;
+    border-radius:10px;
 
     border:1px solid #ead8c7;
 
@@ -130,22 +186,43 @@ p,div,span,label{
 
     background:#f7f7f7;
 
-    padding:15px;
+    padding:10px;
 
-    border-radius:15px;
+    border-radius:10px;
 
     border:1px solid #ddd;
 
 }
 
 
+/* Reduz espaçamento das colunas */
+
+div[data-testid="column"]{
+
+    padding-left:3px !important;
+
+    padding-right:3px !important;
+
+}
+
+
+
+/* Dividers menores */
+
+hr{
+
+    margin-top:8px !important;
+
+    margin-bottom:8px !important;
+
+}
+
+
+
 </style>
 """,
 unsafe_allow_html=True
 )
-
-
-
 # =====================================================
 # VALIDA PEDIDO ABERTO
 # =====================================================
@@ -1390,7 +1467,7 @@ with col1:
 
         disabled=True,
 
-        height=90,
+        height=60,
 
         key="mensagem_cliente"
 
@@ -1507,7 +1584,7 @@ try:
 
 
 
-        colunas = st.columns(4)
+        colunas = st.columns(5)
 
 
 
@@ -1605,7 +1682,7 @@ anotacao = st.text_area(
 
     value=anotacao_atual,
 
-    height=120,
+    height=80,
 
     placeholder="""
 
