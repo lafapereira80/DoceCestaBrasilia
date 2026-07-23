@@ -690,12 +690,6 @@ st.caption(
 # BOTÕES PRINCIPAIS
 # =====================================================
 
-col1 = st.columns(1)
-
-
-
-with col1:
-
 
     if st.button(
 
@@ -713,15 +707,6 @@ with col1:
         )
 
 
-
-
-with col2:
-
-
- st.info(
-             "📲 WhatsApp será liberado após salvar o atendimento."
-
-    )
 
 
 
