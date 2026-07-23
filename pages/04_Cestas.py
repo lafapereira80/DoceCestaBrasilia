@@ -35,7 +35,7 @@ usuario = st.session_state.usuario
 
 
 # =====================================================
-# CSS COMPACTO, RESPONSIVO E CORREÇÃO DE BOTÕES
+# CSS COMPACTO, RESPONSIVO E AJUSTE DE CABEÇALHO
 # =====================================================
 
 st.markdown(
@@ -202,10 +202,11 @@ div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > bu
 }
 
 /* =========================================
-   AJUSTES DE RESPONSIVIDADE (MOBILE)
+   OCULTA CABEÇALHO NO MOBILE (MEDIAS QUERIES)
 ========================================== */
 @media (max-width: 768px) {
-    .cabecalho-tabela-container {
+    /* Oculta os títulos do cabeçalho da tabela no celular */
+    div.element-container:has(.cabecalho-tabela) {
         display: none !important;
     }
     
@@ -294,8 +295,7 @@ st.subheader("📋 Cestas Cadastradas")
 if not cestas:
     st.info("Nenhuma cesta cadastrada.")
 else:
-    # Cabeçalho visível em telas maiores
-    st.markdown('<div class="cabecalho-tabela-container">', unsafe_allow_html=True)
+    # Cabeçalho da Tabela (Apenas Desktop)
     col_h1, col_h2, col_h3, col_h4 = st.columns([4.5, 1.8, 1.4, 2.3])
     with col_h1:
         st.markdown('<div class="cabecalho-tabela">Cesta</div>', unsafe_allow_html=True)
@@ -305,7 +305,6 @@ else:
         st.markdown('<div class="cabecalho-tabela">Status</div>', unsafe_allow_html=True)
     with col_h4:
         st.markdown('<div class="cabecalho-tabela">Ações</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 
     for cesta in cestas:
         ativa = cesta.get("ativa", True)
