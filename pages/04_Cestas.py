@@ -195,7 +195,6 @@ if usuario["perfil"] == "Administrador":
     )
 
 
-
     with st.form(
 
         "nova_cesta"
@@ -280,6 +279,8 @@ if usuario["perfil"] == "Administrador":
 
         )
 
+
+
     if salvar:
 
 
@@ -299,10 +300,6 @@ if usuario["perfil"] == "Administrador":
             try:
 
 
-                # =====================================
-                # ENVIA FOTO PARA O STORAGE
-                # =====================================
-
                 imagem_url = None
 
 
@@ -317,10 +314,6 @@ if usuario["perfil"] == "Administrador":
                     )
 
 
-
-                # =====================================
-                # CADASTRA CESTA
-                # =====================================
 
                 cadastrar_cesta(
 
@@ -371,8 +364,6 @@ else:
         "Modo consulta. Apenas Administradores podem cadastrar novas cestas."
 
     )
-
-
 
 # =====================================================
 # CARREGA CESTAS
@@ -456,7 +447,7 @@ else:
 
 
             # ===========================
-            # DADOS
+            # DADOS DA CESTA
             # ===========================
 
 
@@ -493,8 +484,6 @@ else:
 
 
 
-                # FOTO PEQUENA DA CESTA
-
                 if cesta.get("imagem"):
 
 
@@ -508,15 +497,51 @@ else:
 
 
 
+            # ===========================
+            # PREÇO
+            # ===========================
+
+
             with col2:
 
 
-                st.write(
+                try:
 
-                    f"R$ {float(cesta['preco']):.2f}"
 
-                )
+                    valor = float(
 
+                        cesta.get(
+
+                            "preco",
+
+                            0
+
+                        )
+
+                    )
+
+
+                    st.write(
+
+                        f"R$ {valor:.2f}"
+
+                    )
+
+
+                except:
+
+
+                    st.write(
+
+                        "Sem preço"
+
+                    )
+
+
+
+            # ===========================
+            # STATUS
+            # ===========================
 
 
             with col3:
@@ -541,8 +566,10 @@ else:
 
                     )
 
+
+
             # ===========================
-            # AÇÕES
+            # EDITAR
             # ===========================
 
 
@@ -574,6 +601,11 @@ else:
 
 
 
+            # ===========================
+            # PRODUTOS DA CESTA
+            # ===========================
+
+
             with col5:
 
 
@@ -602,6 +634,15 @@ else:
 
 
 
+            # ===========================
+            # CONFIGURAR CESTA
+            #
+            # ALTERAÇÃO:
+            # envia a cesta escolhida
+            # para 14_Configurar_Cesta.py
+            # ===========================
+
+
             with col6:
 
 
@@ -616,7 +657,7 @@ else:
 
                     st.session_state[
 
-                        "cesta_produtos"
+                        "cesta_configurar"
 
                     ] = cesta["id"]
 
@@ -628,6 +669,11 @@ else:
 
                     )
 
+
+
+            # ===========================
+            # EXCLUIR
+            # ===========================
 
 
             with col7:
@@ -678,8 +724,6 @@ else:
 
 
         st.write("")
-
-
 
 # =====================================================
 # RODAPÉ
