@@ -120,3 +120,42 @@ def calcular_total_adicionais(
 
 
     return total
+# ==========================================================
+# ATUALIZAR VALOR DO ADICIONAL
+# ==========================================================
+
+def atualizar_valor_adicional(
+    adicional_id,
+    novo_valor
+):
+
+    resposta = (
+
+        supabase
+
+        .table("pedido_adicionais")
+
+        .update(
+
+            {
+                "valor_unitario": novo_valor
+            }
+
+        )
+
+        .eq(
+            "id",
+            adicional_id
+        )
+
+        .execute()
+
+    )
+
+
+    if resposta.data:
+
+        return True, "Valor atualizado com sucesso."
+
+
+    return False, "Não foi possível atualizar o valor."
