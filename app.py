@@ -69,15 +69,39 @@ div[data-testid="stVerticalBlock"] {
 }
 
 /* =========================================
-   TYPOGRAPHY
+   ESTILIZAÇÃO DO CABEÇALHO (LOGO + TÍTULO)
 ========================================== */
-h1 {
+.header-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 12px;
+}
+
+.header-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.header-title {
     font-size: 26px !important;
     font-weight: 800 !important;
     color: #5a3b28 !important;
-    margin-bottom: 2px !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
 }
 
+.header-subtitle {
+    font-size: 13px !important;
+    color: #775a46 !important;
+    margin-top: 4px !important;
+    margin-bottom: 0 !important;
+}
+
+/* =========================================
+   TYPOGRAPHY
+========================================== */
 h2, h3 {
     font-size: 16px !important;
     font-weight: 700 !important;
@@ -177,8 +201,12 @@ div[data-testid="stFileUploader"] section button::after {
         padding-top: 0.5rem !important;
     }
     
-    h1 {
-        font-size: 22px !important;
+    .header-title {
+        font-size: 20px !important;
+    }
+
+    .header-subtitle {
+        font-size: 12px !important;
     }
     
     div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -192,18 +220,29 @@ unsafe_allow_html=True
 
 
 # ==========================================================
-# LOGO E CABEÇALHO
+# LOGO E CABEÇALHO LADO A LADO
 # ==========================================================
 
 logo = Path("assets/logo.webp")
 
-if logo.exists():
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        st.image(str(logo), width=120)
+col_logo, col_titulo = st.columns([1, 3.5])
 
-st.markdown("<h1 style='text-align:center;'>Doce Cesta Brasília</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#775a46; margin-bottom:12px;'>Cestas personalizadas para momentos especiais 💝</p>", unsafe_allow_html=True)
+with col_logo:
+    if logo.exists():
+        st.image(str(logo), use_container_width=True)
+
+with col_titulo:
+    st.markdown(
+        """
+        <div class="header-text">
+            <h1 class="header-title">Doce Cesta Brasília</h1>
+            <p class="header-subtitle">Cestas personalizadas para momentos especiais 💝</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+st.write("")
 
 
 # ==========================================================
