@@ -1,9 +1,14 @@
-import streamlit as st
+import io
 import json
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import cm, mm
+from reportlab.lib.pagesizes import A4
 
 from services.pedido_adicional_service import (
     listar_adicionais_pedido
 )
+
 
 
 # =====================================================
@@ -16,18 +21,49 @@ def normalizar_itens_consulta(valor):
         return {}
 
     if isinstance(valor, dict):
+
         return valor
+
 
     if isinstance(valor, str):
 
         try:
+
             return json.loads(valor)
 
         except:
 
             return {}
 
+
     return {}
+
+
+
+
+
+# =====================================================
+# FORMATA VALORES
+# =====================================================
+
+def formatar_valor(valor):
+
+    try:
+
+        valor = float(valor)
+
+        return (
+            f"R$ {valor:,.2f}"
+            .replace(",", "X")
+            .replace(".", ",")
+            .replace("X", ".")
+        )
+
+    except:
+
+        return "R$ 0,00"
+
+
 
 
 
@@ -38,15 +74,21 @@ def normalizar_itens_consulta(valor):
 def formatar_data(data):
 
     if not data:
+
         return "-"
+
 
     try:
 
-        return data.strftime("%d/%m/%Y")
+        return data.strftime(
+            "%d/%m/%Y"
+        )
 
     except:
 
         return str(data)
+
+
 
 
 
@@ -57,14 +99,39 @@ def formatar_data(data):
 def formatar_horario(horario):
 
     if not horario:
+
         return ""
+
 
     return str(horario)[:5]
 
 
 
+
+
 # =====================================================
-# BUSCA ITENS DO PEDIDO
+# LIMPA TEXTO
+# =====================================================
+
+def limpar_texto(texto):
+
+    if not texto:
+
+        return "-"
+
+
+    return (
+        str(texto)
+        .replace("\n", " ")
+        .strip()
+    )
+
+
+
+
+
+# =====================================================
+# BUSCA ITENS PARA MONTAGEM
 # =====================================================
 
 def buscar_itens_montagem(pedido):
@@ -72,9 +139,10 @@ def buscar_itens_montagem(pedido):
     itens = []
 
 
-    # ---------------------------------------------
+
+    # -----------------------------
     # Produtos da cesta
-    # ---------------------------------------------
+    # -----------------------------
 
     produtos = pedido.get(
         "produtos",
@@ -97,11 +165,14 @@ def buscar_itens_montagem(pedido):
 
 
 
-    # ---------------------------------------------
-    # Adicionais
-    # ---------------------------------------------
+
+
+    # -----------------------------
+    # Adicionais cadastrados
+    # -----------------------------
 
     try:
+
 
         adicionais = listar_adicionais_pedido(
             pedido["id"]
@@ -130,9 +201,11 @@ def buscar_itens_montagem(pedido):
 
 
 
-    # ---------------------------------------------
-    # Itens preço sob consulta
-    # ---------------------------------------------
+
+
+    # -----------------------------
+    # Itens sob consulta
+    # -----------------------------
 
     consulta = normalizar_itens_consulta(
 
@@ -152,330 +225,486 @@ def buscar_itens_montagem(pedido):
 
 
 
+
     return itens
 
 
 
 
-# =====================================================
-# MONTA ITENS EM COLUNAS
-# =====================================================
-
-def montar_lista_compacta(itens):
-
-    if not itens:
-
-        return "Nenhum item"
-
-
-
-    html = ""
-
-
-    for i, item in enumerate(itens):
-
-
-        html += f"""
-
-        <span class="item">
-
-        ☐ {item}
-
-        </span>
-
-        """
-
-
-
-        if (i + 1) % 3 == 0:
-
-            html += "<br>"
-
-
-
-    return html
-
-
-
 
 # =====================================================
-# GERA HTML DE IMPRESSÃO
+# DESENHA TEXTO LIMITADO
 # =====================================================
 
-def gerar_impressao_pedidos(
+def desenhar_linha(
+    pdf,
+    texto,
+    x,
+    y,
+    tamanho=7
+):
+
+    pdf.setFont(
+        "Helvetica",
+        tamanho
+    )
+
+
+    pdf.drawString(
+        x,
+        y,
+        limpar_texto(texto)[:45]
+    )
+
+# =====================================================
+# DESENHA CAIXA DE PEDIDO
+# =====================================================
+
+def desenhar_caixa_pedido(
+    pdf,
+    pedido,
+    x,
+    y,
+    largura,
+    altura
+):
+
+
+    # borda da caixa
+
+    pdf.rect(
+        x,
+        y,
+        largura,
+        altura
+    )
+
+
+    margem = 4 * mm
+
+
+    pos_y = y + altura - margem
+
+
+
+    # -----------------------------
+    # CABEÇALHO
+    # -----------------------------
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        9
+    )
+
+
+    pdf.drawString(
+        x + margem,
+        pos_y,
+        "DOCE CESTA"
+    )
+
+
+    pos_y -= 12
+
+
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        8
+    )
+
+
+    pdf.drawString(
+        x + margem,
+        pos_y,
+        limpar_texto(
+            pedido.get(
+                "cliente_nome",
+                "-"
+            )
+        )[:32]
+    )
+
+
+    pos_y -= 11
+
+
+
+    pdf.setFont(
+        "Helvetica",
+        7
+    )
+
+
+    pdf.drawString(
+        x + margem,
+        pos_y,
+        f"Tel: {pedido.get('cliente_telefone','-')}"
+    )
+
+
+    pos_y -= 11
+
+
+
+    # -----------------------------
+    # DADOS PEDIDO
+    # -----------------------------
+
+    pdf.drawString(
+        x + margem,
+        pos_y,
+        f"Cesta: {limpar_texto(pedido.get('cesta_nome'))[:25]}"
+    )
+
+
+    pos_y -= 11
+
+
+
+    entrega = formatar_data(
+        pedido.get(
+            "data_entrega"
+        )
+    )
+
+
+    horario = formatar_horario(
+        pedido.get(
+            "horario_entrega"
+        )
+    )
+
+
+    if horario:
+
+        entrega += f" {horario}"
+
+
+
+    pdf.drawString(
+        x + margem,
+        pos_y,
+        f"Entrega: {entrega}"
+    )
+
+
+    pos_y -= 14
+
+
+
+
+    # -----------------------------
+    # MONTAGEM
+    # -----------------------------
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        7
+    )
+
+
+    pdf.drawString(
+        x + margem,
+        pos_y,
+        "MONTAGEM:"
+    )
+
+
+    pos_y -= 10
+
+
+
+    pdf.setFont(
+        "Helvetica",
+        6.5
+    )
+
+
+    itens = buscar_itens_montagem(
+        pedido
+    )
+
+
+    for item in itens:
+
+
+        if pos_y < y + 25:
+
+            break
+
+
+        texto = (
+            "☐ "
+            +
+            limpar_texto(item)
+        )
+
+
+        pdf.drawString(
+            x + margem,
+            pos_y,
+            texto[:38]
+        )
+
+
+        pos_y -= 9
+
+
+
+
+    # -----------------------------
+    # MENSAGEM
+    # -----------------------------
+
+    if pos_y > y + 15:
+
+
+        pdf.setFont(
+            "Helvetica-Bold",
+            6
+        )
+
+
+        pdf.drawString(
+            x + margem,
+            pos_y,
+            "MSG:"
+        )
+
+
+        pos_y -= 8
+
+
+        pdf.setFont(
+            "Helvetica",
+            6
+        )
+
+
+        pdf.drawString(
+            x + margem,
+            pos_y,
+            limpar_texto(
+                pedido.get(
+                    "mensagem",
+                    "-"
+                )
+            )[:38]
+        )
+
+
+
+
+
+# =====================================================
+# GERA PDF A4 PRODUÇÃO
+# =====================================================
+
+def gerar_pdf_producao_a4(
     pedidos
 ):
 
 
-    blocos = ""
+    arquivo = io.BytesIO()
+
+
+
+    pdf = canvas.Canvas(
+        arquivo,
+        pagesize=A4
+    )
+
+
+
+    largura_pagina, altura_pagina = A4
+
+
+
+    largura_caixa = 7 * cm
+
+    altura_caixa = 10 * cm
+
+
+
+    margem_x = (
+        largura_pagina
+        -
+        (3 * largura_caixa)
+    ) / 2
+
+
+
+    margem_y = (
+        altura_pagina
+        -
+        (4 * altura_caixa)
+    ) / 2
+
+
+
+
+
+    coluna = 0
+
+    linha = 0
 
 
 
     for pedido in pedidos:
 
 
-        itens = buscar_itens_montagem(
-            pedido
+
+        x = (
+            margem_x
+            +
+            coluna * largura_caixa
         )
 
 
-        lista_itens = montar_lista_compacta(
-            itens
-        )
-
-
-
-        data_entrega = formatar_data(
-
-            pedido.get(
-                "data_entrega"
-            )
-
-        )
-
-
-        horario = formatar_horario(
-
-            pedido.get(
-                "horario_entrega"
-            )
-
+        y = (
+            altura_pagina
+            -
+            margem_y
+            -
+            (linha + 1)
+            *
+            altura_caixa
         )
 
 
 
-        entrega = data_entrega
+        desenhar_caixa_pedido(
 
+            pdf,
 
-        if horario:
+            pedido,
 
-            entrega += f" {horario}"
+            x,
 
+            y,
 
+            largura_caixa,
 
-        blocos += f"""
+            altura_caixa
 
-        <div class="pedido">
+        )
 
 
-            <div class="linha">
 
-                <b>CLIENTE:</b>
-                {pedido.get('cliente_nome','-')}
+        coluna += 1
 
-                |
 
-                ☎ {pedido.get('cliente_telefone','-')}
 
-            </div>
+        if coluna == 3:
 
 
-            <div class="linha">
+            coluna = 0
 
-                <b>CESTA:</b>
-                {pedido.get('cesta_nome','-')}
+            linha += 1
 
-                |
 
-                <b>ENTREGA:</b>
-                {entrega}
 
-            </div>
 
+        if linha == 4:
 
 
-            <div class="titulo">
+            pdf.showPage()
 
-                MONTAGEM:
+            coluna = 0
 
-            </div>
+            linha = 0
 
 
-            <div class="itens">
 
-                {lista_itens}
 
-            </div>
+    pdf.save()
 
 
 
-            <div class="linha">
+    arquivo.seek(0)
 
-                <b>END:</b>
 
-                {pedido.get('endereco','-')}
 
-            </div>
+    return arquivo.getvalue()
 
-
-
-            <div class="linha">
-
-                <b>MSG:</b>
-
-                {pedido.get('mensagem','-')}
-
-            </div>
-
-
-        </div>
-
-
-        """
-
-
-
-
-    html = f"""
-
-    <html>
-
-    <head>
-
-
-    <style>
-
-
-    @page {{
-
-        size: A4;
-
-        margin: 5mm;
-
-    }}
-
-
-
-    body {{
-
-
-        font-family: Arial, sans-serif;
-
-        font-size: 9px;
-
-
-    }}
-
-
-
-    .titulo-principal {{
-
-
-        text-align:center;
-
-        font-size:12px;
-
-        font-weight:bold;
-
-        margin-bottom:5px;
-
-
-    }}
-
-
-
-    .pedido {{
-
-
-        border-bottom:1px solid #000;
-
-        padding:4px 0;
-
-        margin-bottom:4px;
-
-
-    }}
-
-
-
-    .linha {{
-
-
-        line-height:12px;
-
-
-    }}
-
-
-
-    .titulo {{
-
-
-        font-weight:bold;
-
-        margin-top:3px;
-
-
-    }}
-
-
-
-    .item {{
-
-
-        display:inline-block;
-
-        width:32%;
-
-        line-height:14px;
-
-
-    }}
-
-
-    </style>
-
-
-    </head>
-
-
-    <body>
-
-
-    <div class="titulo-principal">
-
-        PEDIDOS PARA PRODUÇÃO
-
-    </div>
-
-
-    {blocos}
-
-
-    </body>
-
-
-    </html>
-
-
-    """
-
-
-    return html
 
 
 
 
 # =====================================================
-# ABRIR IMPRESSÃO
+# GERA PDF INDIVIDUAL 7x10
+# =====================================================
+
+def gerar_pdf_individual_7x10(
+    pedido
+):
+
+
+    arquivo = io.BytesIO()
+
+
+
+    tamanho = (
+        70 * mm,
+        100 * mm
+    )
+
+
+
+    pdf = canvas.Canvas(
+
+        arquivo,
+
+        pagesize=tamanho
+
+    )
+
+
+
+    desenhar_caixa_pedido(
+
+        pdf,
+
+        pedido,
+
+        0,
+
+        0,
+
+        70 * mm,
+
+        100 * mm
+
+    )
+
+
+
+    pdf.save()
+
+
+
+    arquivo.seek(0)
+
+
+
+    return arquivo.getvalue()
+
+
+
+
+
+# =====================================================
+# COMPATIBILIDADE ATUAL
 # =====================================================
 
 def abrir_impressao(
     pedidos
 ):
 
-    html = gerar_impressao_pedidos(
+    pdf = gerar_pdf_producao_a4(
         pedidos
     )
 
 
-    st.components.v1.html(
-
-        html,
-
-        height=800,
-
-        scrolling=True
-
-    )
-  
+    return pdf
