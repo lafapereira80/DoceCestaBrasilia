@@ -27,6 +27,11 @@ st.set_page_config(
     layout="wide"
 )
 
+
+# =====================================================
+# CONTROLE DE ACESSO
+# =====================================================
+
 configurar_pagina()
 menu_lateral()
 administrador_operador()
@@ -35,118 +40,56 @@ usuario = st.session_state.usuario
 
 
 # =====================================================
-# CSS COMPACTO E ESTILIZADO
+# CSS COMPACTO
 # =====================================================
 
 st.markdown(
 """
 <style>
-/* =========================================
-   CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
-========================================== */
-.block-container {
-    padding-top: 1rem !important;
-    padding-bottom: 2rem !important;
-    max-width: 1100px;
-}
 
 h1 {
-    font-size: 24px !important;
-    font-weight: 700 !important;
-    color: #5a3b28;
-    margin-bottom: 2px !important;
+    font-size:24px !important;
+    margin-bottom:5px;
 }
 
-h2, h3 {
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    color: #5a3b28;
-    margin-top: 10px !important;
-    margin-bottom: 8px !important;
+h2 {
+    font-size:18px !important;
+    margin-top:8px;
+    margin-bottom:8px;
 }
 
-p, div, span, label {
-    font-family: Arial, sans-serif !important;
-    font-size: 13px !important;
+h3 {
+    font-size:15px !important;
 }
 
-/* =========================================
-   CONTAINERS DAS CESTAS (CARDS LINHA)
-========================================== */
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #ffffff;
-    border: 1px solid #e8ddd3 !important;
-    border-radius: 12px !important;
-    padding: 8px 12px !important;
-    margin-bottom: 8px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+p, div, span {
+    font-size:13px;
 }
 
-div[data-testid="stVerticalBlockBorderWrapper"]:hover {
-    border-color: #dfcdbb !important;
+.stCaption {
+    font-size:11px !important;
 }
 
-/* =========================================
-   ELEMENTOS DE TEXTO & BADGES
-========================================== */
-.cesta-nome {
-    font-weight: 700;
-    color: #333;
-    font-size: 15px !important;
+input, textarea {
+    font-size:13px !important;
 }
 
-.cesta-preco {
-    font-weight: 700;
-    color: #2e7d32;
-    font-size: 14px !important;
+[data-testid="stVerticalBlockBorderWrapper"] {
+    padding-top:8px;
+    padding-bottom:8px;
+    margin-bottom:6px;
 }
 
-.badge-ativa {
-    display: inline-block;
-    background-color: #e6f4ea;
-    color: #137333;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px !important;
+.block-container {
+    padding-top:1rem;
+    padding-bottom:1rem;
 }
 
-.badge-inativa {
-    display: inline-block;
-    background-color: #fce8e6;
-    color: #c5221f;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px !important;
+hr {
+    margin-top:8px;
+    margin-bottom:8px;
 }
 
-.cabecalho-tabela {
-    font-weight: 700;
-    color: #775a46;
-    font-size: 12px !important;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-}
-
-/* Ajustes direcionados exclusivamente aos botões normais */
-div[data-testid="stButton"] > button {
-    font-size: 13px !important;
-    padding: 2px 6px !important;
-    border-radius: 8px !important;
-    min-height: 32px !important;
-}
-
-/* Correção visual do componente de upload */
-div[data-testid="stFileUploader"] {
-    width: 100% !important;
-}
-
-.stImage img {
-    border-radius: 8px;
-    object-fit: cover;
-}
 </style>
 """,
 unsafe_allow_html=True
@@ -154,11 +97,10 @@ unsafe_allow_html=True
 
 
 # =====================================================
-# TÍTULO E CABEÇALHO
+# TÍTULO
 # =====================================================
 
-st.title("🎁 Gestão de Cestas")
-st.caption("Cadastre e gerencie os modelos de cestas disponíveis.")
+st.title("🎁 Cestas")
 st.divider()
 
 
@@ -166,43 +108,78 @@ st.divider()
 # NOVA CESTA
 # =====================================================
 
-if usuario.get("perfil") == "Administrador":
-    st.subheader("➕ Cadastrar Nova Cesta")
-    
-    with st.container(border=True):
-        with st.form("nova_cesta_form"):
-            col_f1, col_f2 = st.columns([1.2, 1])
+if usuario["perfil"] == "Administrador":
 
-            with col_f1:
-                nome = st.text_input("Nome da Cesta")
-                descricao = st.text_area("Descrição", height=95)
+    st.subheader("➕ Nova Cesta")
 
-            with col_f2:
-                preco = st.number_input("Preço (R$)", min_value=0.0, value=0.0, step=1.0, format="%.2f")
-                imagem_arquivo = st.file_uploader("📷 Foto da Cesta", type=["jpg", "jpeg", "png", "webp"])
+    with st.form("nova_cesta"):
+
+        nome = st.text_input("Nome da Cesta")
+
+        descricao = st.text_area(
+            "Descrição",
+            height=70
+        )
+
+        preco = st.number_input(
+            "Preço (R$)",
+            min_value=0.0,
+            value=0.0,
+            step=1.0,
+            format="%.2f"
+        )
+
+        imagem_arquivo = st.file_uploader(
+            "📷 Foto da Cesta",
+            type=[
+                "jpg",
+                "jpeg",
+                "png",
+                "webp"
+            ]
+        )
+
+        if imagem_arquivo:
+            st.image(
+                imagem_arquivo,
+                width=220
+            )
+
+        salvar = st.form_submit_button(
+            "💾 Cadastrar Cesta",
+            use_container_width=True
+        )
+
+    if salvar:
+
+        if nome.strip() == "":
+            st.error("Informe o nome da cesta.")
+
+        else:
+
+            try:
+                imagem_url = None
 
                 if imagem_arquivo:
-                    st.image(imagem_arquivo, width=80)
+                    imagem_url = upload_imagem_cesta(
+                        imagem_arquivo
+                    )
 
-            salvar = st.form_submit_button("💾 Cadastrar Cesta", use_container_width=True, type="primary")
+                cadastrar_cesta(
+                    nome.strip(),
+                    descricao.strip(),
+                    preco,
+                    imagem_url
+                )
 
-        if salvar:
-            if not nome.strip():
-                st.error("Informe o nome da cesta.")
-            else:
-                try:
-                    imagem_url = None
-                    if imagem_arquivo:
-                        imagem_url = upload_imagem_cesta(imagem_arquivo)
+                st.success("Cesta cadastrada com sucesso!")
+                st.rerun()
 
-                    cadastrar_cesta(nome.strip(), descricao.strip(), preco, imagem_url)
-                    st.success("Cesta cadastrada com sucesso!")
-                    st.rerun()
+            except Exception as erro:
+                st.error(f"Erro ao cadastrar cesta: {erro}")
 
-                except Exception as erro:
-                    st.error(f"Erro ao cadastrar cesta: {erro}")
-                    
     st.divider()
+
 else:
     st.info("Modo consulta. Apenas Administradores podem cadastrar novas cestas.")
 
@@ -213,102 +190,144 @@ else:
 
 try:
     cestas = listar_cestas()
+
 except Exception as erro:
     st.error(f"Erro ao carregar cestas: {erro}")
     st.stop()
+
+
+st.subheader("📋 Cestas Cadastradas")
 
 
 # =====================================================
 # LISTAGEM
 # =====================================================
 
-st.subheader("📋 Cestas Cadastradas")
-
 if not cestas:
-    st.info("Nenhuma cesta cadastrada.")
-else:
-    # Cabeçalho
-    col_h1, col_h2, col_h3, col_h4 = st.columns([5.0, 1.8, 1.4, 1.8])
-    with col_h1:
-        st.markdown('<div class="cabecalho-tabela">Cesta</div>', unsafe_allow_html=True)
-    with col_h2:
-        st.markdown('<div class="cabecalho-tabela">Preço</div>', unsafe_allow_html=True)
-    with col_h3:
-        st.markdown('<div class="cabecalho-tabela">Status</div>', unsafe_allow_html=True)
-    with col_h4:
-        st.markdown('<div class="cabecalho-tabela">Ações</div>', unsafe_allow_html=True)
 
-    # Cards da Lista
+    st.info("Nenhuma cesta cadastrada.")
+
+else:
+
     for cesta in cestas:
-        ativa = cesta.get("ativa", True)
+
+        ativa = cesta.get(
+            "ativa",
+            True
+        )
 
         with st.container(border=True):
-            col1, col2, col3, col4 = st.columns([5.0, 1.8, 1.4, 1.8])
 
-            # Coluna 1: Imagem + Nome + Descrição
+            col1, col2, col3, col4, col5, col6, col7 = st.columns(
+                [5, 2, 1, 1, 1, 1, 1]
+            )
+
+            # ===========================
+            # DADOS DA CESTA
+            # ===========================
+
             with col1:
+
+                st.write(f"**{cesta['nome']}**")
+
+                if cesta.get("descricao"):
+
+                    descricao = cesta["descricao"]
+
+                    if len(descricao) > 90:
+                        descricao = descricao[:90] + "..."
+
+                    st.caption(descricao)
+
                 if cesta.get("imagem"):
-                    img_col, txt_col = st.columns([1, 5])
-                    with img_col:
-                        st.image(cesta["imagem"], width=60)
-                    with txt_col:
-                        st.markdown(f'<div class="cesta-nome">{cesta["nome"]}</div>', unsafe_allow_html=True)
-                        if cesta.get("descricao"):
-                            desc = cesta["descricao"]
-                            if len(desc) > 85:
-                                desc = desc[:85] + "..."
-                            st.caption(desc)
-                else:
-                    st.markdown(f'<div class="cesta-nome">{cesta["nome"]}</div>', unsafe_allow_html=True)
-                    if cesta.get("descricao"):
-                        desc = cesta["descricao"]
-                        if len(desc) > 85:
-                            desc = desc[:85] + "..."
-                        st.caption(desc)
 
-            # Coluna 2: Preço
+                    st.image(
+                        cesta["imagem"],
+                        width=120
+                    )
+
+            # ===========================
+            # PREÇO
+            # ===========================
+
             with col2:
+
                 try:
-                    valor = float(cesta.get("preco", 0))
-                    valor_fmt = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
-                    st.markdown(f'<div class="cesta-preco">{valor_fmt}</div>', unsafe_allow_html=True)
+                    valor = float(
+                        cesta.get(
+                            "preco",
+                            0
+                        )
+                    )
+
+                    st.write(f"R$ {valor:.2f}")
+
                 except:
-                    st.caption("Sem preço")
+                    st.write("Sem preço")
 
-            # Coluna 3: Status
+            # ===========================
+            # STATUS
+            # ===========================
+
             with col3:
+
                 if ativa:
-                    st.markdown('<span class="badge-ativa">✓ Ativa</span>', unsafe_allow_html=True)
+                    st.success("✓ Ativa")
                 else:
-                    st.markdown('<span class="badge-inativa">✕ Inativa</span>', unsafe_allow_html=True)
+                    st.error("✕ Inativa")
 
-            # Coluna 4: Botões de Ação
+            # ===========================
+            # EDITAR
+            # ===========================
+
             with col4:
-                b1, b2, b3, b4 = st.columns(4)
 
-                with b1:
-                    if st.button("✏️", key=f"editar_{cesta['id']}", help="Editar Cesta", use_container_width=True):
-                        st.session_state["cesta_editar"] = cesta["id"]
-                        st.switch_page("pages/11_Editar_Cesta.py")
+                if st.button("✏️", key=f"editar_{cesta['id']}", help="Editar Cesta"):
 
-                with b2:
-                    if st.button("📦", key=f"produtos_{cesta['id']}", help="Produtos da Cesta", use_container_width=True):
-                        st.session_state["cesta_produtos"] = cesta["id"]
-                        st.switch_page("pages/12_Produtos_da_Cesta.py")
+                    st.session_state["cesta_editar"] = cesta["id"]
 
-                with b3:
-                    if st.button("⚙️", key=f"config_{cesta['id']}", help="Configurar Cesta", use_container_width=True):
-                        st.session_state["cesta_configurar"] = cesta["id"]
-                        st.switch_page("pages/14_Configurar_Cesta.py")
+                    st.switch_page("pages/11_Editar_Cesta.py")
 
-                with b4:
-                    if st.button("🗑️", key=f"excluir_{cesta['id']}", help="Excluir Cesta", use_container_width=True):
-                        try:
-                            excluir_cesta(cesta["id"])
-                            st.success("Cesta excluída.")
-                            st.rerun()
-                        except Exception as erro:
-                            st.error(f"Erro: {erro}")
+            # ===========================
+            # PRODUTOS DA CESTA
+            # ===========================
+
+            with col5:
+
+                if st.button("📦", key=f"produtos_{cesta['id']}", help="Produtos da Cesta"):
+
+                    st.session_state["cesta_produtos"] = cesta["id"]
+
+                    st.switch_page("pages/12_Produtos_da_Cesta.py")
+
+            # ===========================
+            # CONFIGURAR CESTA
+            # ===========================
+
+            with col6:
+
+                if st.button("⚙️", key=f"config_{cesta['id']}", help="Configurar Cesta"):
+
+                    st.session_state["cesta_configurar"] = cesta["id"]
+
+                    st.switch_page("pages/14_Configurar_Cesta.py")
+
+            # ===========================
+            # EXCLUIR
+            # ===========================
+
+            with col7:
+
+                if st.button("🗑️", key=f"excluir_{cesta['id']}", help="Excluir Cesta"):
+
+                    try:
+                        excluir_cesta(cesta["id"])
+
+                        st.success("Cesta excluída.")
+                        st.rerun()
+
+                    except Exception as erro:
+                        st.error(f"Erro ao excluir cesta: {erro}")
 
 
 # =====================================================
