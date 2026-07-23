@@ -2338,82 +2338,29 @@ unsafe_allow_html=True
 
 
 st.divider()
+st.divider()
 
+st.markdown("### 📲 Atendimento WhatsApp")
 
+if valor_total_calculado > 0:
 
+    link_whatsapp = gerar_whatsapp(
+        pedido,
+        adicionais_pedido,
+        valor_total_calculado
+    )
 
+    st.link_button(
+        "📲 Enviar resumo pelo WhatsApp",
+        link_whatsapp,
+        use_container_width=True
+    )
 
-st.markdown(
+else:
 
-    "### 📲 Atendimento WhatsApp"
-
-)
-
-
-
-
-
-link_whatsapp = gerar_whatsapp(
-
-    pedido,
-
-    adicionais_pedido,
-
-    valor_total_calculado
-
-)
-
-
-
-
-
-st.markdown(
-
-f"""
-
-<a href="{link_whatsapp}" target="_blank">
-
-
-<button style="
-
-width:100%;
-
-height:45px;
-
-background:#25D366;
-
-color:white;
-
-border:none;
-
-border-radius:12px;
-
-font-weight:bold;
-
-font-size:15px;
-
-">
-
-
-📲 Enviar resumo pelo WhatsApp
-
-
-</button>
-
-
-</a>
-
-""",
-
-unsafe_allow_html=True
-
-)
-
-
-
-
-
-
+    st.info(
+        "Salve o atendimento para liberar o envio pelo WhatsApp."
+    )
 
 
 # =====================================================
