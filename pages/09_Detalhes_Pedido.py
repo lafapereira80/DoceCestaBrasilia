@@ -1,6 +1,7 @@
 import streamlit as st
-from datetime import datetime
 import urllib.parse
+
+from datetime import datetime
 
 
 from services.pedido_service import (
@@ -61,7 +62,7 @@ administrador_operador()
 
 
 # =====================================================
-# CSS ORGANIZADO
+# CSS
 # =====================================================
 
 st.markdown(
@@ -71,53 +72,40 @@ st.markdown(
 
 
 h1{
-
-    font-size:26px !important;
-
-    margin-bottom:10px;
-
+    font-size:24px !important;
+    margin-bottom:5px;
 }
 
 
 h2{
-
-    font-size:19px !important;
-
+    font-size:18px !important;
 }
 
 
 h3{
-
-    font-size:16px !important;
-
+    font-size:15px !important;
 }
 
 
-p, div, span{
-
+p,div,span,label{
     font-size:13px;
-
 }
-
-
-[data-testid="stVerticalBlockBorderWrapper"]{
-
-    padding:12px;
-
-    border-radius:10px;
-
-}
-
 
 
 .stButton button{
 
     border-radius:8px;
 
-    padding:5px 14px;
+    height:35px;
 
 }
 
+
+[data-testid="stVerticalBlockBorderWrapper"]{
+
+    padding:10px;
+
+}
 
 
 textarea{
@@ -128,14 +116,11 @@ textarea{
 
 
 </style>
-
 """,
 
 unsafe_allow_html=True
 
 )
-
-
 
 
 
@@ -149,7 +134,6 @@ unsafe_allow_html=True
 
 def formatar_data_br(data):
 
-
     if not data:
 
         return "-"
@@ -158,21 +142,15 @@ def formatar_data_br(data):
 
     try:
 
-
         if isinstance(data,str):
-
-
-            data = data[:10]
-
 
             data = datetime.strptime(
 
-                data,
+                data[:10],
 
                 "%Y-%m-%d"
 
             )
-
 
 
         return data.strftime(
@@ -199,7 +177,6 @@ def formatar_valor(valor):
 
     try:
 
-
         return (
 
             f"R$ {float(valor):,.2f}"
@@ -224,8 +201,62 @@ def formatar_valor(valor):
 
 
 
+
+def limpar_telefone(numero):
+
+
+    if not numero:
+
+        return ""
+
+
+
+    return (
+
+        str(numero)
+
+        .replace(
+
+            "(",
+
+            ""
+
+        )
+
+        .replace(
+
+            ")",
+
+            ""
+
+        )
+
+        .replace(
+
+            "-",
+
+            ""
+
+        )
+
+        .replace(
+
+            " ",
+
+            ""
+
+        )
+
+    )
+
+
+
+
+
+
+
 # =====================================================
-# CARREGA PEDIDO
+# BUSCA PEDIDO
 # =====================================================
 
 
@@ -238,17 +269,16 @@ if "pedido_aberto" not in st.session_state:
 
     )
 
+
     st.stop()
 
 
 
 
 
-pedido_id = st.session_state[
 
-    "pedido_aberto"
+pedido_id = st.session_state["pedido_aberto"]
 
-]
 
 
 
@@ -272,6 +302,7 @@ if not pedido:
 
     )
 
+
     st.stop()
 
 
@@ -279,7 +310,7 @@ if not pedido:
 
 
 # =====================================================
-# CABEÇALHO
+# TÍTULO
 # =====================================================
 
 
@@ -296,45 +327,60 @@ st.caption(
     f"Pedido #{pedido.get('id','-')}"
 
 )
+
+
+
+st.divider()
 # =====================================================
-# CLIENTE
+# DADOS DO CLIENTE
 # =====================================================
 
 with st.container(border=True):
 
 
     st.subheader(
-        "👤 Cliente"
-    )
 
+        "👤 Cliente"
+
+    )
 
 
     col1, col2, col3 = st.columns(
-        [3,2,2]
-    )
 
+        [3,2,2]
+
+    )
 
 
     with col1:
 
+
         st.write(
+
             f"**{pedido.get('cliente_nome','-')}**"
+
         )
 
 
 
     with col2:
 
+
         st.write(
+
             f"CPF: {pedido.get('cliente_cpf','-')}"
+
         )
 
 
 
     with col3:
 
+
         st.write(
+
             f"☎ {pedido.get('cliente_telefone','-')}"
+
         )
 
 
@@ -346,27 +392,33 @@ with st.container(border=True):
 
 
 # =====================================================
-# ENTREGA
+# DADOS DA ENTREGA
 # =====================================================
 
 with st.container(border=True):
 
 
     st.subheader(
+
         "🚚 Dados da Entrega"
+
     )
 
 
 
     col1, col2, col3 = st.columns(
+
         [2,2,2]
+
     )
 
 
 
-    # -----------------------------
+
+
+    # -------------------------------
     # DATA
-    # -----------------------------
+    # -------------------------------
 
     with col1:
 
@@ -381,38 +433,33 @@ with st.container(border=True):
 
 
 
-        if isinstance(data_atual,str):
-
-            data_atual = data_atual[:10]
-
-
-
-
         try:
 
 
-            valor_data = datetime.strptime(
+            data_input = datetime.strptime(
 
-                data_atual,
+                str(data_atual)[:10],
 
                 "%Y-%m-%d"
 
             ).date()
 
 
+
         except:
 
 
-            valor_data = datetime.today().date()
+            data_input = datetime.today().date()
+
 
 
 
 
         nova_data = st.date_input(
 
-            "📅 Data entrega",
+            "Data de entrega",
 
-            value=valor_data
+            value=data_input
 
         )
 
@@ -420,14 +467,16 @@ with st.container(border=True):
 
 
 
-    # -----------------------------
+
+
+    # -------------------------------
     # PERÍODO
-    # -----------------------------
+    # -------------------------------
 
     with col2:
 
 
-        opcoes_periodo = [
+        periodos = [
 
             "Manhã",
 
@@ -449,21 +498,21 @@ with st.container(border=True):
 
 
 
-        if periodo_atual not in opcoes_periodo:
-
+        if periodo_atual not in periodos:
 
             periodo_atual = "Tarde"
 
 
 
 
+
         novo_periodo = st.selectbox(
 
-            "🕒 Período",
+            "Período",
 
-            opcoes_periodo,
+            periodos,
 
-            index=opcoes_periodo.index(
+            index=periodos.index(
 
                 periodo_atual
 
@@ -476,16 +525,17 @@ with st.container(border=True):
 
 
 
-    # -----------------------------
+
+    # -------------------------------
     # HORÁRIO COMBINADO
-    # -----------------------------
+    # -------------------------------
 
     with col3:
 
 
         novo_horario = st.text_input(
 
-            "⏰ Horário combinado",
+            "Horário combinado",
 
             value=pedido.get(
 
@@ -499,15 +549,6 @@ with st.container(border=True):
 
         )
 
-
-
-
-
-    st.caption(
-
-        "Este horário será enviado ao cliente pelo WhatsApp e aparecerá na impressão."
-
-    )
 
 
 
@@ -529,22 +570,28 @@ with st.container(border=True):
         dados = {
 
 
-            "data_entrega": nova_data.strftime(
+            "data_entrega":
 
-                "%Y-%m-%d"
+                nova_data.strftime(
 
-            ),
+                    "%Y-%m-%d"
+
+                ),
 
 
-            "periodo_entrega": novo_periodo,
+
+            "periodo_entrega":
+
+                novo_periodo,
 
 
-            "horario_combinado": novo_horario
+
+            "horario_combinado":
+
+                novo_horario
 
 
         }
-
-
 
 
 
@@ -558,14 +605,12 @@ with st.container(border=True):
 
 
 
-
-
         if sucesso:
 
 
             st.success(
 
-                "Dados da entrega atualizados."
+                "Entrega atualizada."
 
             )
 
@@ -582,7 +627,11 @@ with st.container(border=True):
                 mensagem
 
             )
-            # =====================================================
+
+
+
+st.divider()
+# =====================================================
 # MONTAGEM DO PEDIDO
 # =====================================================
 
@@ -616,7 +665,7 @@ with st.container(border=True):
 
         st.markdown(
 
-            "**Produtos da cesta**"
+            "**🎁 Produtos da cesta**"
 
         )
 
@@ -636,7 +685,7 @@ with st.container(border=True):
 
             st.text_area(
 
-                "Produtos",
+                "",
 
                 value=produtos,
 
@@ -644,7 +693,7 @@ with st.container(border=True):
 
                 disabled=True,
 
-                label_visibility="collapsed"
+                key="produtos_cesta"
 
             )
 
@@ -664,6 +713,7 @@ with st.container(border=True):
 
 
 
+
     # =================================================
     # ADICIONAIS
     # =================================================
@@ -673,7 +723,7 @@ with st.container(border=True):
 
         st.markdown(
 
-            "**Adicionais**"
+            "**➕ Adicionais**"
 
         )
 
@@ -689,7 +739,7 @@ with st.container(border=True):
             )
 
 
-        except Exception:
+        except:
 
 
             adicionais = []
@@ -701,7 +751,9 @@ with st.container(border=True):
         if adicionais:
 
 
+
             for adicional in adicionais:
+
 
 
                 nome = adicional.get(
@@ -725,7 +777,7 @@ with st.container(border=True):
 
                 st.write(
 
-                    f"☐ {nome}"
+                    f"• {nome}"
 
                 )
 
@@ -754,36 +806,18 @@ with st.container(border=True):
 
 
 
+
 # =====================================================
-# DADOS DE ENTREGA
+# ENDEREÇO E MENSAGEM
 # =====================================================
+
 
 with st.container(border=True):
 
 
-    st.subheader(
+    col1, col2 = st.columns(
 
-        "📍 Informações da Entrega"
-
-    )
-
-
-
-    st.text_area(
-
-        "Endereço",
-
-        value=pedido.get(
-
-            "endereco",
-
-            "-"
-
-        ),
-
-        height=90,
-
-        disabled=True
+        [1,1]
 
     )
 
@@ -791,41 +825,71 @@ with st.container(border=True):
 
 
 
+    with col1:
+
+
+        st.subheader(
+
+            "📍 Endereço"
+
+        )
 
 
 
-# =====================================================
-# MENSAGEM CLIENTE
-# =====================================================
+        st.text_area(
 
-with st.container(border=True):
+            "",
+
+            value=pedido.get(
+
+                "endereco",
+
+                "-"
+
+            ),
+
+            height=110,
+
+            disabled=True,
+
+            key="endereco"
+
+        )
 
 
-    st.subheader(
-
-        "💌 Mensagem da Cesta"
-
-    )
 
 
-    st.text_area(
 
-        "Mensagem",
 
-        value=pedido.get(
+    with col2:
 
-            "mensagem",
 
-            "-"
+        st.subheader(
 
-        ),
+            "💌 Mensagem da Cesta"
 
-        height=90,
+        )
 
-        disabled=True
 
-    )
+        st.text_area(
 
+            "",
+
+            value=pedido.get(
+
+                "mensagem",
+
+                "-"
+
+            ),
+
+            height=110,
+
+            disabled=True,
+
+            key="mensagem"
+
+        )
 
 
 
@@ -838,6 +902,7 @@ with st.container(border=True):
 # OBSERVAÇÃO ADMINISTRATIVA
 # =====================================================
 
+
 with st.container(border=True):
 
 
@@ -849,37 +914,31 @@ with st.container(border=True):
 
 
 
-    st.caption(
+    observacao_atual = pedido.get(
 
-        "Informação interna da equipe. Não enviada ao cliente."
+        "observacao_admin",
+
+        ""
 
     )
 
 
 
-    observacao = st.text_area(
+    nova_observacao = st.text_area(
 
-        "Observação",
+        "Uso interno (não enviado ao cliente)",
 
-        value=pedido.get(
+        value=observacao_atual,
 
-            "observacao_admin",
-
-            ""
-
-        ),
-
-        height=120,
+        height=100,
 
         placeholder=(
 
-            "Ex: Entregar após 15h, "
+            "Ex: Cliente pediu entrega após 15h, "
 
-            "cliente pediu para avisar antes..."
+            "tocar campainha, ligar antes..."
 
-        ),
-
-        label_visibility="collapsed"
+        )
 
     )
 
@@ -890,8 +949,6 @@ with st.container(border=True):
     if st.button(
 
         "💾 Salvar observação",
-
-        key="btn_salvar_observacao",
 
         use_container_width=True
 
@@ -905,12 +962,13 @@ with st.container(border=True):
 
             {
 
-                "observacao_admin": observacao
+                "observacao_admin":
+
+                    nova_observacao
 
             }
 
         )
-
 
 
 
@@ -936,7 +994,13 @@ with st.container(border=True):
                 mensagem
 
             )
-            # =====================================================
+
+
+
+
+
+st.divider()
+# =====================================================
 # RESUMO FINANCEIRO
 # =====================================================
 
@@ -945,7 +1009,7 @@ with st.container(border=True):
 
     st.subheader(
 
-        "💰 Resumo do Pedido"
+        "💰 Resumo Financeiro"
 
     )
 
@@ -953,7 +1017,7 @@ with st.container(border=True):
 
     col1, col2, col3 = st.columns(
 
-        [2,2,2]
+        [1,1,1]
 
     )
 
@@ -982,6 +1046,8 @@ with st.container(border=True):
 
 
 
+
+
     with col2:
 
 
@@ -1002,6 +1068,8 @@ with st.container(border=True):
             )
 
         )
+
+
 
 
 
@@ -1031,7 +1099,7 @@ with st.container(border=True):
 
 
 # =====================================================
-# WHATSAPP
+# FECHAMENTO DO PEDIDO
 # =====================================================
 
 with st.container(border=True):
@@ -1039,10 +1107,113 @@ with st.container(border=True):
 
     st.subheader(
 
-        "📲 Mensagem WhatsApp"
+        "✅ Fechamento do Pedido"
 
     )
 
+
+
+    col1, col2 = st.columns(
+
+        [1,2]
+
+    )
+
+
+
+    with col1:
+
+
+        st.write(
+
+            "**Status atual:**"
+
+        )
+
+
+        st.success(
+
+            pedido.get(
+
+                "status",
+
+                "-"
+
+            )
+
+        )
+
+
+
+
+
+    with col2:
+
+
+        st.write(
+
+            "**Entrega combinada:**"
+
+        )
+
+
+
+        texto_entrega = (
+
+            f"{formatar_data_br(pedido.get('data_entrega'))}"
+
+            f" - "
+
+            f"{pedido.get('periodo_entrega','-')}"
+
+        )
+
+
+
+        if pedido.get(
+
+            "horario_combinado"
+
+        ):
+
+
+            texto_entrega += (
+
+                f" às "
+
+                f"{pedido.get('horario_combinado')}"
+
+            )
+
+
+
+        st.info(
+
+            texto_entrega
+
+        )
+
+
+
+
+
+
+
+
+
+# =====================================================
+# WHATSAPP
+# =====================================================
+
+
+with st.container(border=True):
+
+
+    st.subheader(
+
+        "📲 WhatsApp Cliente"
+
+    )
 
 
 
@@ -1088,17 +1259,21 @@ Olá {pedido.get('cliente_nome','')}! 😊
 Seu pedido está confirmado. ❤️
 
 
+
 🎁 Cesta:
+
 {pedido.get('cesta_nome','-')}
 
 
 
 📅 Data de entrega:
+
 {data_entrega}
 
 
 
 🕒 Período:
+
 {periodo}
 
 """
@@ -1111,6 +1286,7 @@ Seu pedido está confirmado. ❤️
         mensagem_whatsapp += f"""
 
 ⏰ Horário combinado:
+
 {horario}
 
 """
@@ -1119,10 +1295,13 @@ Seu pedido está confirmado. ❤️
 
     mensagem_whatsapp += f"""
 
+
+
 💰 Valor total:
+
 {formatar_valor(
     pedido.get(
-        'valor_total',
+        "valor_total",
         0
     )
 )}
@@ -1139,9 +1318,9 @@ Obrigado pela preferência! ❤️
 
     st.text_area(
 
-        "Mensagem para cliente",
+        "Mensagem",
 
-        value=mensagem_whatsapp,
+        mensagem_whatsapp,
 
         height=220
 
@@ -1151,26 +1330,27 @@ Obrigado pela preferência! ❤️
 
 
 
+    telefone = limpar_telefone(
+
+        pedido.get(
+
+            "cliente_telefone",
+
+            ""
+
+        )
+
+    )
+
 
 
     link_whatsapp = (
-
 
         "https://wa.me/55"
 
         +
 
-        str(
-
-            pedido.get(
-
-                "cliente_telefone",
-
-                ""
-
-            )
-
-        )
+        telefone
 
         +
 
@@ -1190,37 +1370,13 @@ Obrigado pela preferência! ❤️
 
 
 
-    st.markdown(
+    st.link_button(
 
-        f"""
+        "📲 Abrir WhatsApp",
 
-<a href="{link_whatsapp}" target="_blank">
+        link_whatsapp,
 
-<button style="
-
-background:#25D366;
-
-color:white;
-
-border:none;
-
-padding:10px 25px;
-
-border-radius:10px;
-
-font-size:15px;
-
-">
-
-📲 Abrir WhatsApp
-
-</button>
-
-</a>
-
-""",
-
-        unsafe_allow_html=True
+        use_container_width=True
 
     )
 
