@@ -22,23 +22,42 @@ def configurar_pagina():
         }
 
         /* =========================================
-           CORREÇÃO DEFINITIVA DOS ÍCONES DA SIDEBAR
+           SOLUÇÃO DEFINITIVA PARA O BOTÃO DA SIDEBAR
         ========================================== */
-        /* Força a fonte correta de ícones do Streamlit para evitar vazamento de texto */
-        [data-testid="stSidebarCollapseButton"] i,
-        [data-testid="collapsedControl"] i,
-        [data-testid="stSidebarCollapseButton"] span,
-        [data-testid="collapsedControl"] span {
-            font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        /* Esconde o texto/ícone nativo que está vazando */
+        [data-testid="stSidebarCollapseButton"] *,
+        [data-testid="collapsedControl"] * {
+            font-size: 0 !important;
+            color: transparent !important;
         }
 
-        /* Garante que os botões de abrir/fechar fiquem visíveis e bem posicionados */
+        /* Substitui o ícone quebrado por uma seta limpa (para fechar) */
+        [data-testid="stSidebarCollapseButton"] button::after {
+            content: "«" !important;
+            font-size: 20px !important;
+            font-weight: bold !important;
+            color: #5a3b28 !important;
+            display: block !important;
+        }
+
+        /* Substitui o ícone quebrado por uma seta limpa (para abrir) */
+        [data-testid="collapsedControl"] button::after,
+        div[data-testid="collapsedControl"]::after {
+            content: "»" !important;
+            font-size: 20px !important;
+            font-weight: bold !important;
+            color: #5a3b28 !important;
+            display: block !important;
+        }
+
+        /* Ajusta o estilo do container do botão de abrir/fechar */
         [data-testid="stSidebarCollapseButton"],
         [data-testid="collapsedControl"] {
             display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
             visibility: visible !important;
             opacity: 1 !important;
-            color: #5a3b28 !important;
         }
 
         /* =========================================
