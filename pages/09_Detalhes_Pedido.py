@@ -1328,9 +1328,9 @@ with col2:
                 valor_adicionais += valor
 
 
-                st.success(
+                st.write(
 
-                    f"✅ {nome} - {formatar_valor(valor)}"
+                    f"• {nome} - {formatar_valor(valor)}"
 
                 )
 
@@ -1339,9 +1339,9 @@ with col2:
             else:
 
 
-                st.warning(
+                st.write(
 
-                    f"⚠️ {nome}"
+                    f"• {nome}"
 
                 )
 
