@@ -1,5 +1,8 @@
 from config.supabase import supabase
-from services.pedido_adicional_service import salvar_adicionais_pedido
+
+from services.pedido_adicional_service import (
+    salvar_adicionais_pedido
+)
 
 
 
@@ -10,7 +13,6 @@ from services.pedido_adicional_service import salvar_adicionais_pedido
 def salvar_pedido(dados):
 
     try:
-
 
         adicionais = dados.pop(
             "adicionais_detalhados",
@@ -98,7 +100,7 @@ def listar_pedidos():
 # =====================================================
 # LISTAR PEDIDOS ATIVOS
 #
-# Não retorna Entregues
+# Não retorna Entregue
 # =====================================================
 
 def listar_pedidos_ativos():
@@ -134,12 +136,7 @@ def listar_pedidos_ativos():
 
 
     return resposta.data or []
-
-
-
-
-
-# =====================================================
+    # =====================================================
 # BUSCAR PEDIDO PELO ID
 #
 # Retorna:
@@ -197,6 +194,7 @@ def buscar_pedido(pedido_id):
 
 
 
+
 # =====================================================
 # BUSCAR PREÇO DA CESTA
 #
@@ -208,7 +206,6 @@ def buscar_preco_cesta(cesta_id):
 
 
     if not cesta_id:
-
 
         return 0
 
@@ -244,7 +241,6 @@ def buscar_preco_cesta(cesta_id):
 
     if not resposta.data:
 
-
         return 0
 
 
@@ -267,74 +263,136 @@ def buscar_preco_cesta(cesta_id):
 
 
 
+
 # =====================================================
 # ATUALIZAR PEDIDO
 #
-# Atualiza:
-# - Status
-# - Frete
-# - Valor total
-# - Desconto
+# Novo padrão:
+#
+# atualizar_pedido(
+#     id,
+#     {
+#       "status":"Pago",
+#       "valor_frete":10,
+#       "valor_total":100
+#     }
+# )
+#
+# Mantém compatibilidade antiga
 # =====================================================
 
 def atualizar_pedido(
 
     pedido_id,
 
-    status,
+    dados,
 
-    valor_frete,
+    valor_frete=None,
 
-    valor_total,
+    valor_total=None,
 
     desconto=0
 
 ):
 
 
-    resposta = (
-
-        supabase
-
-        .table("pedidos")
-
-        .update({
-
-            "status":
-
-                status,
+    try:
 
 
-            "valor_frete":
 
-                valor_frete,
+        # ---------------------------------------------
+        # NOVO PADRÃO
+        # Recebe dicionário
+        # ---------------------------------------------
+
+        if isinstance(
+
+            dados,
+
+            dict
+
+        ):
 
 
-            "valor_total":
-
-                valor_total,
+            campos = dados
 
 
-            "desconto":
 
-                desconto
 
-        })
 
-        .eq(
+        # ---------------------------------------------
+        # PADRÃO ANTIGO
+        # Recebia status separado
+        # ---------------------------------------------
 
-            "id",
+        else:
 
-            pedido_id
+
+            campos = {
+
+
+                "status":
+
+                    dados,
+
+
+                "valor_frete":
+
+                    valor_frete,
+
+
+                "valor_total":
+
+                    valor_total,
+
+
+                "desconto":
+
+                    desconto
+
+
+            }
+
+
+
+
+
+
+        resposta = (
+
+            supabase
+
+            .table("pedidos")
+
+            .update(
+
+                campos
+
+            )
+
+            .eq(
+
+                "id",
+
+                pedido_id
+
+            )
+
+            .execute()
 
         )
 
-        .execute()
-
-    )
 
 
-    return resposta.data
+        return True, "Pedido atualizado com sucesso"
+
+
+
+    except Exception as erro:
+
+
+        return False, str(erro)
+
 
 
 
@@ -342,8 +400,6 @@ def atualizar_pedido(
 
 # =====================================================
 # ATUALIZAR ANOTAÇÃO INTERNA
-#
-# Uso administrativo
 # =====================================================
 
 def atualizar_anotacao_pedido(
@@ -361,13 +417,17 @@ def atualizar_anotacao_pedido(
 
         .table("pedidos")
 
-        .update({
+        .update(
 
-            "anotacoes_internas":
+            {
 
-                anotacao
+                "anotacoes_internas":
 
-        })
+                    anotacao
+
+            }
+
+        )
 
         .eq(
 
@@ -388,10 +448,9 @@ def atualizar_anotacao_pedido(
 
 
 
+
 # =====================================================
 # ATUALIZAR ITENS SOB CONSULTA
-#
-# Salva valores informados pelo administrador
 # =====================================================
 
 def atualizar_itens_consulta(
@@ -409,13 +468,17 @@ def atualizar_itens_consulta(
 
         .table("pedidos")
 
-        .update({
+        .update(
 
-            "itens_consulta":
+            {
 
-                itens
+                "itens_consulta":
 
-        })
+                    itens
+
+            }
+
+        )
 
         .eq(
 
@@ -431,18 +494,14 @@ def atualizar_itens_consulta(
 
 
     return resposta.data
-
-
-
-
-
-# =====================================================
+    # =====================================================
 # EXCLUIR PEDIDO COMPLETO
 #
 # Remove:
 # 1 - Fotos Storage
 # 2 - Registros pedido_fotos
-# 3 - Pedido
+# 3 - Adicionais
+# 4 - Pedido
 # =====================================================
 
 def excluir_pedido_completo(pedido_id):
@@ -450,13 +509,21 @@ def excluir_pedido_completo(pedido_id):
     try:
 
 
+        # -----------------------------------------
+        # BUSCA FOTOS
+        # -----------------------------------------
+
         fotos = (
 
             supabase
 
             .table("pedido_fotos")
 
-            .select("arquivo")
+            .select(
+
+                "arquivo"
+
+            )
 
             .eq(
 
@@ -501,6 +568,12 @@ def excluir_pedido_completo(pedido_id):
 
 
 
+
+
+        # -----------------------------------------
+        # REMOVE ARQUIVOS DO STORAGE
+        # -----------------------------------------
+
         if arquivos:
 
 
@@ -528,6 +601,12 @@ def excluir_pedido_completo(pedido_id):
 
 
 
+
+
+        # -----------------------------------------
+        # REMOVE REGISTROS DE FOTOS
+        # -----------------------------------------
+
         (
 
             supabase
@@ -551,6 +630,12 @@ def excluir_pedido_completo(pedido_id):
 
 
 
+
+
+
+        # -----------------------------------------
+        # REMOVE ADICIONAIS
+        # -----------------------------------------
 
         (
 
@@ -576,6 +661,12 @@ def excluir_pedido_completo(pedido_id):
 
 
 
+
+
+        # -----------------------------------------
+        # REMOVE PEDIDO
+        # -----------------------------------------
+
         (
 
             supabase
@@ -598,7 +689,11 @@ def excluir_pedido_completo(pedido_id):
 
 
 
+
+
         return True, "Pedido excluído com sucesso"
+
+
 
 
 
