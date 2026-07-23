@@ -32,7 +32,7 @@ from utils.permissao import (
 
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA
+# CONFIGURAÇÃO
 # =====================================================
 
 st.set_page_config(
@@ -137,7 +137,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     align-items: center;
     font-size: 12px !important;
     color: #444;
-    padding: 2px 0;
+    padding: 3px 0;
     border-bottom: 1px dashed #f0e0d0;
 }
 
@@ -160,6 +160,15 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     font-size: 20px !important;
     font-weight: 800 !important;
     color: #2e7d32 !important;
+}
+
+.pgto-badge {
+    background: #f3ece6;
+    color: #5a3b28;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    border: 1px solid #dfcdbb;
 }
 
 /* ==========================================
@@ -459,7 +468,7 @@ with col_esquerda:
         with c1:
             st.markdown(f'<div class="info-label">Cesta</div><div class="info-value">{pedido.get("cesta_nome","-")}</div>', unsafe_allow_html=True)
         with c2:
-            st.markdown(f'<div class="info-label">Pagamento</div><div class="info-value">{pedido.get("pagamento","-")}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-label">Pagamento</div><div class="info-value"><span class="pgto-badge">{pedido.get("pagamento","-")}</span></div>', unsafe_allow_html=True)
         with c3:
             st.markdown(f'<div class="info-label">Entrega</div><div class="info-value">{formatar_data(pedido.get("data_entrega"))}</div>', unsafe_allow_html=True)
         with c4:
@@ -556,7 +565,7 @@ with col_direita:
 
         horario_combinado = st.text_input("🕒 Horário Combinado de Entrega", value=pedido.get("horario_combinado", ""), placeholder="Ex: 15:30")
 
-    # Resumo Final do Valor (Novo Container Responsivo Flexbox)
+    # Resumo Final do Valor (Com Pagamento Embutido Nativamente)
     valor_total_calculado = valor_cesta + valor_adicionais + valor_frete - desconto
     if valor_total_calculado < 0:
         valor_total_calculado = 0
@@ -588,6 +597,10 @@ with col_direita:
                     <span class="resumo-val">{formatar_valor(desconto)}</span>
                 </div>
                 <div class="resumo-row">
+                    <span class="resumo-label">💳 Pagamento</span>
+                    <span class="pgto-badge">{pedido.get('pagamento','-')}</span>
+                </div>
+                <div class="resumo-row">
                     <span class="resumo-label" style="font-size:14px; font-weight:700;">💰 TOTAL</span>
                     <span class="resumo-total-val">{formatar_valor(valor_total_calculado)}</span>
                 </div>
@@ -595,8 +608,6 @@ with col_direita:
             """,
             unsafe_allow_html=True
         )
-        st.write("")
-        st.caption(f"💳 Forma de Pagamento: **{pedido.get('pagamento','-')}**")
 
     # WhatsApp Link
     with st.container(border=True):
