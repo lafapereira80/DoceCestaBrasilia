@@ -691,6 +691,13 @@ st.caption(
 # =====================================================
 
 
+  col1, col2 = st.columns(2)
+
+
+
+with col1:
+
+
     if st.button(
 
         "✏️ Alterar Pedido",
@@ -705,6 +712,20 @@ st.caption(
             not st.session_state.editar_pedido
 
         )
+
+
+
+
+with col2:
+
+
+    st.info(
+
+        "📲"
+
+    )
+
+
 
 
 
