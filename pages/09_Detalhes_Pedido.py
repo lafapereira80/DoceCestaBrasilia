@@ -49,15 +49,12 @@ menu_lateral()
 administrador_operador()
 
 
-
 usuario = st.session_state.usuario
 
 
 
-
-
 # =====================================================
-# CSS - PADRÃO VISUAL ADMINISTRATIVO
+# CSS PADRÃO VISUAL COM CARDS
 # =====================================================
 
 st.markdown(
@@ -65,9 +62,9 @@ st.markdown(
 <style>
 
 
-/* =========================================
-   CONTAINER PRINCIPAL
-========================================= */
+/* ==========================================
+   CONFIGURAÇÃO GERAL
+========================================== */
 
 .block-container{
 
@@ -75,15 +72,10 @@ st.markdown(
 
     padding-bottom:1rem !important;
 
-    max-width:1100px !important;
+    max-width:1100px;
 
 }
 
-
-
-/* =========================================
-   FONTES PADRÃO
-========================================= */
 
 
 html,
@@ -95,58 +87,56 @@ div{
 
     font-family: Arial, sans-serif !important;
 
-    font-size:14px !important;
+    font-size:12px !important;
 
 }
 
 
+
+/* ==========================================
+   TÍTULOS
+========================================== */
 
 h1{
 
-    font-size:25px !important;
+    font-size:24px !important;
 
     font-weight:700 !important;
 
-    margin-bottom:5px !important;
+    margin-bottom:4px !important;
 
 }
-
 
 
 h2{
 
-    font-size:19px !important;
+    font-size:18px !important;
+
+    font-weight:700 !important;
 
 }
-
 
 
 h3{
 
-    font-size:17px !important;
+    font-size:16px !important;
 
     font-weight:700 !important;
-
-    color:#5b4033 !important;
-
-    margin-top:0 !important;
-
-    margin-bottom:12px !important;
 
 }
 
 
 
-/* =========================================
-   ESPAÇAMENTO GERAL
-========================================= */
-
+/* ==========================================
+   ESPAÇAMENTO
+========================================== */
 
 div[data-testid="stVerticalBlock"]{
 
     gap:0.35rem !important;
 
 }
+
 
 
 .element-container{
@@ -157,29 +147,23 @@ div[data-testid="stVerticalBlock"]{
 
 
 
-
-
-/* =========================================
+/* ==========================================
    COLUNAS
-========================================= */
-
+========================================== */
 
 div[data-testid="column"]{
 
-    padding-left:0.3rem !important;
+    padding-left:0.25rem !important;
 
-    padding-right:0.3rem !important;
+    padding-right:0.25rem !important;
 
 }
 
 
 
-
-
-/* =========================================
+/* ==========================================
    BOTÕES
-========================================= */
-
+========================================== */
 
 .stButton button{
 
@@ -187,20 +171,17 @@ div[data-testid="column"]{
 
     font-weight:600 !important;
 
-    border-radius:10px !important;
-
     padding:8px 14px !important;
+
+    border-radius:10px !important;
 
 }
 
 
 
-
-
-/* =========================================
+/* ==========================================
    INPUTS
-========================================= */
-
+========================================== */
 
 input,
 textarea,
@@ -212,105 +193,67 @@ select{
 
 
 
-
-
-textarea{
-
-    border-radius:10px !important;
-
-}
-
-
-
-
-
-/* =========================================
+/* ==========================================
    CARDS PADRÃO
-========================================= */
-
+========================================== */
 
 .card{
 
-
     background:#ffffff;
 
+    border:1px solid #dfcdbb;
 
-    border:1px solid #e3d5c8;
+    border-radius:16px;
 
-
-    border-radius:15px;
-
-
-    padding:15px;
-
+    padding:14px 16px;
 
     margin-bottom:12px;
 
+}
+
+
+
+.card-title{
+
+    font-size:16px;
+
+    font-weight:700;
+
+    margin-bottom:10px;
+
+    color:#5a3b28;
 
 }
 
 
 
-
-.card h3{
-
-
-    border-bottom:1px solid #ead8c7;
-
-
-    padding-bottom:8px;
-
-
-}
-
-
-
-
-/* =========================================
-   CARD EDIÇÃO
-========================================= */
-
+/* CARD EDIÇÃO */
 
 .edit-card{
 
-
     background:#faf7f3;
-
 
     border:1px solid #dcc8b7;
 
+    border-radius:16px;
 
-    border-radius:15px;
-
-
-    padding:15px;
-
+    padding:16px;
 
 }
 
 
 
-
-
-/* =========================================
-   CARD RESUMO
-========================================= */
-
+/* CARD RESUMO */
 
 .resumo-card{
 
-
     background:#fff8ef;
-
 
     border:1px solid #e6d1bb;
 
+    border-radius:16px;
 
-    border-radius:15px;
-
-
-    padding:15px;
-
+    padding:16px;
 
 }
 
@@ -318,9 +261,7 @@ textarea{
 
 .resumo-card table{
 
-
     width:100%;
-
 
 }
 
@@ -328,52 +269,43 @@ textarea{
 
 .resumo-card td{
 
-
-    padding:5px 0 !important;
-
-
-    font-size:14px !important;
-
+    padding:5px 0;
 
 }
 
 
 
+/* ==========================================
+   TEXTOS INTERNOS
+========================================== */
 
+.info-label{
 
-/* =========================================
-   ALERTAS
-========================================= */
+    font-weight:700;
 
-
-div[data-testid="stAlert"]{
-
-
-    border-radius:10px !important;
-
-
-    font-size:14px !important;
-
+    color:#555;
 
 }
 
 
 
+.info-value{
+
+    margin-bottom:6px;
+
+}
 
 
-/* =========================================
-   DIVISORES
-========================================= */
 
+/* ==========================================
+   DIVISOR
+========================================== */
 
 hr{
 
+    margin-top:8px !important;
 
-    margin-top:12px !important;
-
-
-    margin-bottom:12px !important;
-
+    margin-bottom:8px !important;
 
 }
 
@@ -383,7 +315,6 @@ hr{
 """,
 unsafe_allow_html=True
 )
-
 
 
 
@@ -401,9 +332,7 @@ if "pedido_aberto" not in st.session_state:
     )
 
 
-    if st.button(
-        "⬅ Voltar"
-    ):
+    if st.button("⬅ Voltar"):
 
 
         st.switch_page(
@@ -415,11 +344,7 @@ if "pedido_aberto" not in st.session_state:
 
 
 
-
-
 pedido_id = st.session_state["pedido_aberto"]
-
-
 
 
 
@@ -427,41 +352,30 @@ pedido_id = st.session_state["pedido_aberto"]
 # BUSCA PEDIDO
 # =====================================================
 
-
 try:
-
 
     pedido = buscar_pedido(
         pedido_id
     )
 
 
-
 except Exception as erro:
-
 
     st.error(
         f"Erro ao carregar pedido: {erro}"
     )
 
-
     st.stop()
-
-
 
 
 
 if not pedido:
 
-
     st.error(
         "Pedido não encontrado."
     )
 
-
     st.stop()
-
-
 
 
 
@@ -469,22 +383,16 @@ if not pedido:
 # BUSCA ADICIONAIS
 # =====================================================
 
-
 try:
-
 
     adicionais_pedido = listar_adicionais_pedido(
         pedido["id"]
     )
 
 
-
 except:
 
-
     adicionais_pedido = []
-
-
 
 
 
@@ -492,20 +400,15 @@ except:
 # CONTROLE DE EDIÇÃO
 # =====================================================
 
-
 if "editar_pedido" not in st.session_state:
 
-
     st.session_state.editar_pedido = False
-
-
 
 
 
 # =====================================================
 # VALORES SOB CONSULTA
 # =====================================================
-
 
 itens_consulta_salvos = pedido.get(
     "itens_consulta",
@@ -519,21 +422,15 @@ if isinstance(
     str
 ):
 
-
     try:
-
 
         itens_consulta_salvos = json.loads(
             itens_consulta_salvos
         )
 
-
     except:
 
-
         itens_consulta_salvos = {}
-
-
 
 
 
@@ -542,9 +439,11 @@ if not isinstance(
     dict
 ):
 
-
     itens_consulta_salvos = {}
-    # =====================================================
+
+
+
+# =====================================================
 # FUNÇÕES AUXILIARES
 # =====================================================
 
@@ -566,8 +465,6 @@ def formatar_valor(valor):
 
 
 
-
-
 def limpar_telefone(numero):
 
     return (
@@ -577,8 +474,6 @@ def limpar_telefone(numero):
         .replace("-","")
         .replace(" ","")
     )
-
-
 
 
 
@@ -599,13 +494,7 @@ def formatar_data(data):
     except:
 
         return str(data)
-
-
-
-
-
-
-# =====================================================
+        # =====================================================
 # GERA WHATSAPP
 # =====================================================
 
@@ -630,30 +519,30 @@ def gerar_whatsapp(
 
         try:
 
-            itens_consulta=json.loads(
+            itens_consulta = json.loads(
                 itens_consulta
             )
 
         except:
 
-            itens_consulta={}
+            itens_consulta = {}
 
 
 
-    lista_adicionais=[]
+    lista_adicionais = []
 
 
 
     for item in adicionais:
 
 
-        nome=item.get(
+        nome = item.get(
             "nome_produto",
             "-"
         )
 
 
-        valor=item.get(
+        valor = item.get(
             "valor_unitario"
         )
 
@@ -663,16 +552,14 @@ def gerar_whatsapp(
 
 
             lista_adicionais.append(
-
                 f"• {nome} - {formatar_valor(valor)}"
-
             )
 
 
         else:
 
 
-            valor_manual=itens_consulta.get(
+            valor_manual = itens_consulta.get(
                 nome,
                 0
             )
@@ -682,9 +569,7 @@ def gerar_whatsapp(
 
 
                 lista_adicionais.append(
-
                     f"• {nome} - {formatar_valor(valor_manual)}"
-
                 )
 
 
@@ -692,16 +577,12 @@ def gerar_whatsapp(
 
 
                 lista_adicionais.append(
-
                     f"• {nome} (sob consulta)"
-
                 )
 
 
 
-
-
-    texto=(
+    texto = (
 
         f"🎁 *Doce Cesta Brasília*\n\n"
 
@@ -734,8 +615,7 @@ def gerar_whatsapp(
     )
 
 
-
-    telefone=limpar_telefone(
+    telefone = limpar_telefone(
 
         pedido.get(
             "cliente_telefone",
@@ -753,10 +633,6 @@ def gerar_whatsapp(
 
 
 
-
-
-
-
 # =====================================================
 # CABEÇALHO
 # =====================================================
@@ -767,6 +643,7 @@ st.title(
 )
 
 
+
 st.caption(
 
     f"Pedido #{pedido.get('id')} | Status: {pedido.get('status','-')}"
@@ -775,12 +652,8 @@ st.caption(
 
 
 
-
-
-
-
 # =====================================================
-# BOTÃO PRINCIPAL
+# BOTÃO ALTERAR PEDIDO
 # =====================================================
 
 
@@ -801,33 +674,24 @@ if st.button(
 
 
 
-
-
-
-
-
 # =====================================================
-# MODO EDIÇÃO
+# CARD - EDIÇÃO DO PEDIDO
 # =====================================================
 
 
 if st.session_state.editar_pedido:
 
 
-
     st.markdown(
-
-    """
-    <div class="edit-card">
-
-    <h3>✏️ Editando Pedido</h3>
-
-    """,
-
-    unsafe_allow_html=True
-
+        '<div class="edit-card">',
+        unsafe_allow_html=True
     )
 
+
+    st.markdown(
+        '<div class="card-title">✏️ Editando Pedido</div>',
+        unsafe_allow_html=True
+    )
 
 
 
@@ -844,8 +708,6 @@ if st.session_state.editar_pedido:
 
 
 
-
-
     novo_telefone = st.text_input(
 
         "📱 Telefone",
@@ -859,11 +721,7 @@ if st.session_state.editar_pedido:
 
 
 
-
-
-
     try:
-
 
         cestas = listar_cestas()
 
@@ -880,13 +738,10 @@ if st.session_state.editar_pedido:
         ]
 
 
-
     except:
 
 
-        nomes_cestas=[]
-
-
+        nomes_cestas = []
 
 
 
@@ -897,23 +752,18 @@ if st.session_state.editar_pedido:
 
 
 
-
     if nomes_cestas:
 
 
         if cesta_atual in nomes_cestas:
 
-
             indice_cesta = nomes_cestas.index(
                 cesta_atual
             )
 
-
         else:
 
-
-            indice_cesta=0
-
+            indice_cesta = 0
 
 
 
@@ -930,12 +780,7 @@ if st.session_state.editar_pedido:
 
     else:
 
-
-        nova_cesta=cesta_atual
-
-
-
-
+        nova_cesta = cesta_atual
 
 
 
@@ -954,8 +799,6 @@ if st.session_state.editar_pedido:
 
 
 
-
-
     novo_especial = st.text_area(
 
         "✨ Pedido Especial",
@@ -968,8 +811,6 @@ if st.session_state.editar_pedido:
         height=80
 
     )
-
-
 
 
 
@@ -988,13 +829,7 @@ if st.session_state.editar_pedido:
 
 
 
-
-
-
-
-    col_salvar,col_cancelar = st.columns(2)
-
-
+    col_salvar, col_cancelar = st.columns(2)
 
 
 
@@ -1012,36 +847,27 @@ if st.session_state.editar_pedido:
         ):
 
 
-
-            dados={
-
+            dados = {
 
                 "cliente_nome":
                     novo_nome,
 
-
                 "cliente_telefone":
                     novo_telefone,
-
 
                 "cesta_nome":
                     nova_cesta,
 
-
                 "mensagem":
                     nova_mensagem,
-
 
                 "pedido_especial":
                     novo_especial,
 
-
                 "endereco":
                     novo_endereco
 
-
             }
-
 
 
 
@@ -1054,22 +880,15 @@ if st.session_state.editar_pedido:
             )
 
 
-
             st.success(
-
                 "Pedido alterado com sucesso!"
-
             )
 
 
-            st.session_state.editar_pedido=False
+            st.session_state.editar_pedido = False
 
 
             st.rerun()
-
-
-
-
 
 
 
@@ -1085,195 +904,185 @@ if st.session_state.editar_pedido:
         ):
 
 
-            st.session_state.editar_pedido=False
+            st.session_state.editar_pedido = False
 
 
             st.rerun()
 
 
 
+    st.markdown(
+        "</div>",
+        unsafe_allow_html=True
+    )
 
 
+
+
+# =====================================================
+# CARD - CLIENTE
+# =====================================================
+
+
+st.markdown(
+'<div class="card">',
+unsafe_allow_html=True
+)
+
+
+st.markdown(
+'<div class="card-title">👤 Cliente</div>',
+unsafe_allow_html=True
+)
+
+
+
+col1, col2, col3 = st.columns(3)
+
+
+
+with col1:
 
     st.markdown(
-
-    "</div>",
-
-    unsafe_allow_html=True
-
-    )
-    # =====================================================
-# CLIENTE
-# =====================================================
-
-
-st.markdown(
-"""
-<div class="card">
-
-<h3>👤 Cliente</h3>
-
-""",
-unsafe_allow_html=True
-)
-
-
-
-col1,col2,col3 = st.columns(3)
-
-
-
-with col1:
-
-    st.write("**Nome**")
-
-    st.write(
-        pedido.get(
-            "cliente_nome",
-            "-"
-        )
+        f"""
+        <div class="info-label">Nome</div>
+        <div class="info-value">
+        {pedido.get('cliente_nome','-')}
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
 
 with col2:
 
-    st.write("**CPF**")
-
-    st.write(
-        pedido.get(
-            "cliente_cpf",
-            "-"
-        )
+    st.markdown(
+        f"""
+        <div class="info-label">CPF</div>
+        <div class="info-value">
+        {pedido.get('cliente_cpf','-')}
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
 
 with col3:
 
-    st.write("**Telefone**")
-
-    st.write(
-        pedido.get(
-            "cliente_telefone",
-            "-"
-        )
+    st.markdown(
+        f"""
+        <div class="info-label">Telefone</div>
+        <div class="info-value">
+        {pedido.get('cliente_telefone','-')}
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
 
 st.markdown(
-"""
-</div>
-""",
+"</div>",
 unsafe_allow_html=True
 )
 
 
 
-
-
 # =====================================================
-# INFORMAÇÕES PRINCIPAIS DO PEDIDO
+# CARD - INFORMAÇÕES DO PEDIDO
 # =====================================================
 
 
 st.markdown(
-"""
-<div class="card">
+'<div class="card">',
+unsafe_allow_html=True
+)
 
-<h3>🎁 Pedido</h3>
 
-""",
+st.markdown(
+'<div class="card-title">🎁 Pedido</div>',
 unsafe_allow_html=True
 )
 
 
 
-col1,col2,col3,col4 = st.columns(4)
+col1, col2, col3, col4 = st.columns(4)
 
 
 
 with col1:
 
-    st.write("**Cesta**")
-
-    st.write(
-        pedido.get(
-            "cesta_nome",
-            "-"
-        )
+    st.markdown(
+        f"""
+        <div class="info-label">Cesta</div>
+        <div class="info-value">
+        {pedido.get('cesta_nome','-')}
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
 
 with col2:
 
-    st.write("**Pagamento**")
-
-    st.write(
-        pedido.get(
-            "pagamento",
-            "-"
-        )
+    st.markdown(
+        f"""
+        <div class="info-label">Pagamento</div>
+        <div class="info-value">
+        {pedido.get('pagamento','-')}
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
 
 with col3:
 
-    st.write("**Entrega**")
-
-    st.write(
-        formatar_data(
-            pedido.get(
-                "data_entrega"
-            )
-        )
+    st.markdown(
+        f"""
+        <div class="info-label">Entrega</div>
+        <div class="info-value">
+        {formatar_data(pedido.get('data_entrega'))}
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
 
 with col4:
 
-    st.write("**Período**")
-
-    st.write(
-        pedido.get(
-            "periodo_entrega",
-            "-"
-        )
+    st.markdown(
+        f"""
+        <div class="info-label">Período</div>
+        <div class="info-value">
+        {pedido.get('periodo_entrega','-')}
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
 
 st.markdown(
-"""
-</div>
-""",
+"</div>",
 unsafe_allow_html=True
 )
+# =====================================================
+# CARD - PRODUTOS E ADICIONAIS
+# =====================================================
 
 
-
-
-
+col1, col2 = st.columns(2)
 
 
 
 # =====================================================
-# PRODUTOS E ADICIONAIS
-# =====================================================
-
-
-col1,col2 = st.columns(2)
-
-
-
-
-
-# =====================================================
-# PRODUTOS
+# CARD PRODUTOS
 # =====================================================
 
 
@@ -1281,15 +1090,15 @@ with col1:
 
 
     st.markdown(
-    """
-    <div class="card">
-
-    <h3>🛒 Produtos da Cesta</h3>
-
-    """,
-    unsafe_allow_html=True
+        '<div class="card">',
+        unsafe_allow_html=True
     )
 
+
+    st.markdown(
+        '<div class="card-title">🛒 Produtos da Cesta</div>',
+        unsafe_allow_html=True
+    )
 
 
     produtos = pedido.get(
@@ -1320,20 +1129,15 @@ with col1:
 
 
     st.markdown(
-    """
-    </div>
-    """,
-    unsafe_allow_html=True
+        '</div>',
+        unsafe_allow_html=True
     )
 
 
 
 
-
-
-
 # =====================================================
-# ADICIONAIS
+# CARD ADICIONAIS
 # =====================================================
 
 
@@ -1341,23 +1145,24 @@ with col2:
 
 
     st.markdown(
-    """
-    <div class="card">
+        '<div class="card">',
+        unsafe_allow_html=True
+    )
 
-    <h3>🎀 Adicionais</h3>
 
-    """,
-    unsafe_allow_html=True
+    st.markdown(
+        '<div class="card-title">🎀 Adicionais</div>',
+        unsafe_allow_html=True
     )
 
 
 
-    valor_adicionais=0.0
+    valor_adicionais = 0.0
 
-    valor_consulta=0.0
+    valor_consulta = 0.0
 
 
-    itens_consulta={}
+    itens_consulta = {}
 
 
 
@@ -1376,32 +1181,24 @@ with col2:
             )
 
 
-
             valor = adicional.get(
                 "valor_unitario"
             )
 
 
 
-
-
             if valor is not None:
 
 
-                valor=float(valor)
+                valor = float(valor)
 
 
                 valor_adicionais += valor
 
 
-
                 st.write(
-
                     f"• {nome} - {formatar_valor(valor)}"
-
                 )
-
-
 
 
 
@@ -1409,16 +1206,12 @@ with col2:
 
 
                 st.write(
-
                     f"• {nome}"
-
                 )
 
 
 
-
-
-                valor_salvo=float(
+                valor_salvo = float(
 
                     itens_consulta_salvos.get(
 
@@ -1431,8 +1224,6 @@ with col2:
                     or 0
 
                 )
-
-
 
 
 
@@ -1452,11 +1243,7 @@ with col2:
 
 
 
-
-
-                itens_consulta[nome]=valor_digitado
-
-
+                itens_consulta[nome] = valor_digitado
 
 
 
@@ -1471,37 +1258,30 @@ with col2:
 
 
 
-
     else:
 
 
         st.info(
-
             "Nenhum adicional selecionado."
-
         )
 
 
 
     st.markdown(
-    """
-    </div>
-    """,
-    unsafe_allow_html=True
+        '</div>',
+        unsafe_allow_html=True
     )
 
 
 
 
 
-
-
 # =====================================================
-# RESUMO DOS ADICIONAIS
+# CARD TOTAIS ADICIONAIS
 # =====================================================
 
 
-col1,col2 = st.columns(2)
+col1, col2 = st.columns(2)
 
 
 
@@ -1509,30 +1289,30 @@ with col1:
 
 
     st.markdown(
-    """
-    <div class="card">
-
-    <h3>🎀 Total Adicionais</h3>
-
-    """,
-    unsafe_allow_html=True
-    )
-
-
-    st.success(
-        formatar_valor(
-            valor_adicionais
-        )
+        '<div class="card">',
+        unsafe_allow_html=True
     )
 
 
     st.markdown(
-    """
-    </div>
-    """,
-    unsafe_allow_html=True
+        '<div class="card-title">🎀 Total Adicionais</div>',
+        unsafe_allow_html=True
     )
 
+
+    st.success(
+
+        formatar_valor(
+            valor_adicionais
+        )
+
+    )
+
+
+    st.markdown(
+        '</div>',
+        unsafe_allow_html=True
+    )
 
 
 
@@ -1541,43 +1321,41 @@ with col2:
 
 
     st.markdown(
-    """
-    <div class="card">
-
-    <h3>⚠️ Valores Sob Consulta</h3>
-
-    """,
-    unsafe_allow_html=True
-    )
-
-
-    st.info(
-        formatar_valor(
-            valor_consulta
-        )
+        '<div class="card">',
+        unsafe_allow_html=True
     )
 
 
     st.markdown(
-    """
-    </div>
-    """,
-    unsafe_allow_html=True
+        '<div class="card-title">⚠️ Valores Sob Consulta</div>',
+        unsafe_allow_html=True
+    )
+
+
+    st.info(
+
+        formatar_valor(
+            valor_consulta
+        )
+
+    )
+
+
+    st.markdown(
+        '</div>',
+        unsafe_allow_html=True
     )
 
 
 
 
 
-
-
 # =====================================================
-# MENSAGEM E PEDIDO ESPECIAL
+# CARD MENSAGEM E PEDIDO ESPECIAL
 # =====================================================
 
 
-col1,col2 = st.columns(2)
-
+col1, col2 = st.columns(2)
 
 
 
@@ -1586,13 +1364,14 @@ with col1:
 
 
     st.markdown(
-    """
-    <div class="card">
+        '<div class="card">',
+        unsafe_allow_html=True
+    )
 
-    <h3>💌 Mensagem da Cesta</h3>
 
-    """,
-    unsafe_allow_html=True
+    st.markdown(
+        '<div class="card-title">💌 Mensagem da Cesta</div>',
+        unsafe_allow_html=True
     )
 
 
@@ -1617,13 +1396,9 @@ with col1:
 
 
     st.markdown(
-    """
-    </div>
-    """,
-    unsafe_allow_html=True
+        '</div>',
+        unsafe_allow_html=True
     )
-
-
 
 
 
@@ -1632,13 +1407,14 @@ with col2:
 
 
     st.markdown(
-    """
-    <div class="card">
+        '<div class="card">',
+        unsafe_allow_html=True
+    )
 
-    <h3>✨ Pedido Especial</h3>
 
-    """,
-    unsafe_allow_html=True
+    st.markdown(
+        '<div class="card-title">✨ Pedido Especial</div>',
+        unsafe_allow_html=True
     )
 
 
@@ -1654,7 +1430,7 @@ with col2:
 
         disabled=True,
 
-        height=70,
+        height=80,
 
         key="pedido_especial"
 
@@ -1663,30 +1439,27 @@ with col2:
 
 
     st.markdown(
-    """
-    </div>
-    """,
-    unsafe_allow_html=True
+        '</div>',
+        unsafe_allow_html=True
     )
 
 
 
 
 
-
-
 # =====================================================
-# ENDEREÇO
+# CARD ENDEREÇO
 # =====================================================
 
 
 st.markdown(
-"""
-<div class="card">
+'<div class="card">',
+unsafe_allow_html=True
+)
 
-<h3>📍 Endereço de Entrega</h3>
 
-""",
+st.markdown(
+'<div class="card-title">📍 Endereço de Entrega</div>',
 unsafe_allow_html=True
 )
 
@@ -1712,23 +1485,27 @@ st.text_area(
 
 
 st.markdown(
-"""
-</div>
-""",
+'</div>',
 unsafe_allow_html=True
 )
+
+
+
+
+
 # =====================================================
-# FOTOS POLAROID
+# CARD FOTOS POLAROID
 # =====================================================
 
 
 st.markdown(
-"""
-<div class="card">
+'<div class="card">',
+unsafe_allow_html=True
+)
 
-<h3>📷 Fotos da Polaroid</h3>
 
-""",
+st.markdown(
+'<div class="card-title">📷 Fotos da Polaroid</div>',
 unsafe_allow_html=True
 )
 
@@ -1742,13 +1519,15 @@ try:
     )
 
 
+
     if fotos:
 
 
         colunas = st.columns(5)
 
 
-        for i,foto in enumerate(fotos):
+
+        for i, foto in enumerate(fotos):
 
 
             with colunas[i % 5]:
@@ -1768,12 +1547,14 @@ try:
                 )
 
 
+
     else:
 
 
         st.info(
             "Nenhuma foto enviada."
         )
+
 
 
 except Exception as erro:
@@ -1786,34 +1567,24 @@ except Exception as erro:
 
 
 st.markdown(
-"""
-</div>
-""",
+'</div>',
 unsafe_allow_html=True
 )
-
-
-
-
-
-
-
-
 # =====================================================
-# ANOTAÇÕES INTERNAS
+# CARD ANOTAÇÕES INTERNAS
 # =====================================================
 
 
 st.markdown(
-"""
-<div class="card">
-
-<h3>📝 Anotações Internas</h3>
-
-""",
+'<div class="card">',
 unsafe_allow_html=True
 )
 
+
+st.markdown(
+'<div class="card-title">📝 Anotações Internas</div>',
+unsafe_allow_html=True
+)
 
 
 st.caption(
@@ -1836,7 +1607,6 @@ anotacao = st.text_area(
     key="campo_anotacao"
 
 )
-
 
 
 
@@ -1867,12 +1637,8 @@ if st.button(
 
 
 
-
-
 st.markdown(
-"""
-</div>
-""",
+'</div>',
 unsafe_allow_html=True
 )
 
@@ -1880,24 +1646,21 @@ unsafe_allow_html=True
 
 
 
-
-
-
 # =====================================================
-# FECHAMENTO FINANCEIRO
+# CARD FECHAMENTO FINANCEIRO
 # =====================================================
 
 
 st.markdown(
-"""
-<div class="card">
-
-<h3>💰 Fechamento Financeiro</h3>
-
-""",
+'<div class="card">',
 unsafe_allow_html=True
 )
 
+
+st.markdown(
+'<div class="card-title">💰 Fechamento Financeiro</div>',
+unsafe_allow_html=True
+)
 
 
 st.caption(
@@ -1906,11 +1669,7 @@ st.caption(
 
 
 
-
-
 valor_cesta = 0.0
-
-
 
 
 
@@ -1921,16 +1680,14 @@ try:
 
 
         cesta = buscar_cesta(
-
             pedido["cesta_id"]
-
         )
 
 
         if cesta:
 
 
-            valor_cesta=float(
+            valor_cesta = float(
 
                 cesta.get(
                     "preco",
@@ -1942,19 +1699,16 @@ try:
             )
 
 
-
 except:
 
 
-    valor_cesta=0.0
+    valor_cesta = 0.0
 
 
 
 
 
-
-
-col1,col2,col3 = st.columns(3)
+col1, col2, col3 = st.columns(3)
 
 
 
@@ -1983,7 +1737,6 @@ with col1:
         key="frete"
 
     )
-
 
 
 
@@ -2017,11 +1770,10 @@ with col2:
 
 
 
-
 with col3:
 
 
-    status_opcoes=[
+    status_opcoes = [
 
         "Recebido",
 
@@ -2035,7 +1787,7 @@ with col3:
 
 
 
-    status_atual=pedido.get(
+    status_atual = pedido.get(
 
         "status",
 
@@ -2047,21 +1799,18 @@ with col3:
 
     if status_atual not in status_opcoes:
 
-        status_atual="Recebido"
+        status_atual = "Recebido"
 
 
 
-
-    status=st.selectbox(
+    status = st.selectbox(
 
         "Status",
 
         status_opcoes,
 
         index=status_opcoes.index(
-
             status_atual
-
         )
 
     )
@@ -2070,33 +1819,8 @@ with col3:
 
 
 
-
-
 st.markdown(
-"""
-</div>
-""",
-unsafe_allow_html=True
-)
-
-
-
-
-
-
-
-# =====================================================
-# HORÁRIO ENTREGA
-# =====================================================
-
-
-st.markdown(
-"""
-<div class="card">
-
-<h3>🕒 Horário da Entrega</h3>
-
-""",
+'<div class="card-title">🕒 Horário da Entrega</div>',
 unsafe_allow_html=True
 )
 
@@ -2121,9 +1845,7 @@ horario_combinado = st.text_input(
 
 
 st.markdown(
-"""
-</div>
-""",
+'</div>',
 unsafe_allow_html=True
 )
 
@@ -2131,15 +1853,12 @@ unsafe_allow_html=True
 
 
 
-
-
-
 # =====================================================
-# RESUMO FINAL
+# CARD RESUMO FINAL
 # =====================================================
 
 
-valor_total_calculado=(
+valor_total_calculado = (
 
     valor_cesta
 
@@ -2161,29 +1880,29 @@ valor_total_calculado=(
 
 if valor_total_calculado < 0:
 
-    valor_total_calculado=0
-
+    valor_total_calculado = 0
 
 
 
 
 st.markdown(
-"""
-<div class="resumo-card">
-
-<h3>🧮 Resumo do Pedido</h3>
-
-""",
+'<div class="card">',
 unsafe_allow_html=True
 )
 
 
+st.markdown(
+'<div class="card-title">🧮 Resumo do Pedido</div>',
+unsafe_allow_html=True
+)
 
 
 
 st.markdown(
 
 f"""
+
+<div class="resumo-card">
 
 <table>
 
@@ -2192,35 +1911,41 @@ f"""
 <td align="right"><b>{formatar_valor(valor_cesta)}</b></td>
 </tr>
 
+
 <tr>
 <td>🎀 Adicionais</td>
 <td align="right"><b>{formatar_valor(valor_adicionais)}</b></td>
 </tr>
+
 
 <tr>
 <td>⚠️ Sob consulta</td>
 <td align="right"><b>{formatar_valor(valor_consulta)}</b></td>
 </tr>
 
+
 <tr>
 <td>🚚 Frete</td>
 <td align="right"><b>{formatar_valor(valor_frete)}</b></td>
 </tr>
+
 
 <tr>
 <td>🏷️ Desconto</td>
 <td align="right"><b>{formatar_valor(desconto)}</b></td>
 </tr>
 
+
 <tr>
-<td><b>💰 TOTAL</b></td>
+
+<td>
+<b>💰 TOTAL</b>
+</td>
 
 <td align="right">
 
 <h3>
-
 {formatar_valor(valor_total_calculado)}
-
 </h3>
 
 </td>
@@ -2229,6 +1954,9 @@ f"""
 
 
 </table>
+
+
+</div>
 
 """,
 
@@ -2247,9 +1975,7 @@ f"💳 Pagamento: **{pedido.get('pagamento','-')}**"
 
 
 st.markdown(
-"""
-</div>
-""",
+'</div>',
 unsafe_allow_html=True
 )
 
@@ -2257,21 +1983,19 @@ unsafe_allow_html=True
 
 
 
-
-
-
 # =====================================================
-# WHATSAPP
+# CARD WHATSAPP
 # =====================================================
 
 
 st.markdown(
-"""
-<div class="card">
+'<div class="card">',
+unsafe_allow_html=True
+)
 
-<h3>📲 Atendimento WhatsApp</h3>
 
-""",
+st.markdown(
+'<div class="card-title">📲 Atendimento WhatsApp</div>',
 unsafe_allow_html=True
 )
 
@@ -2302,26 +2026,20 @@ if valor_total_calculado > 0:
     )
 
 
+
 else:
 
 
     st.info(
-
         "Defina os valores para liberar o WhatsApp."
-
     )
 
 
 
 st.markdown(
-"""
-</div>
-""",
+'</div>',
 unsafe_allow_html=True
 )
-
-
-
 
 
 
@@ -2343,19 +2061,19 @@ if st.button(
 ):
 
 
-    dados={
+    dados = {
 
-        "status":status,
+        "status": status,
 
-        "valor_frete":valor_frete,
+        "valor_frete": valor_frete,
 
-        "desconto":desconto,
+        "desconto": desconto,
 
-        "valor_total":valor_total_calculado,
+        "valor_total": valor_total_calculado,
 
-        "horario_combinado":horario_combinado,
+        "horario_combinado": horario_combinado,
 
-        "itens_consulta":itens_consulta
+        "itens_consulta": itens_consulta
 
     }
 
@@ -2371,16 +2089,11 @@ if st.button(
 
 
     st.success(
-
         "✅ Atendimento salvo com sucesso!"
-
     )
 
 
     st.rerun()
-
-
-
 
 
 
