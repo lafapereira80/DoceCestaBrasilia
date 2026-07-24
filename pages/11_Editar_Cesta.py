@@ -196,7 +196,6 @@ with st.container(border=True):
         with col_p1:
             preco = st.number_input("Preço (R$)", min_value=0.0, value=float(cesta.get("preco", 0)), step=1.0, format="%.2f")
         with col_p2:
-            # Proteção contra valores nulos ou menores que 1 vindos do banco
             ordem_banco = cesta.get("ordem")
             ordem_atual = int(ordem_banco) if ordem_banco is not None and int(ordem_banco) >= 1 else 1
             nova_ordem = st.number_input("Ordem / Posição", min_value=1, value=ordem_atual, step=1)
@@ -274,14 +273,14 @@ if salvar:
             st.stop()
 
     try:
-        # A chamada volta a enviar o argumento ordem para o backend reordenar
+        # Tenta atualizar chamando com o argumento ordem
         atualizar_cesta(
-            cesta_id,
-            nome.strip(),
-            descricao.strip(),
-            preco,
-            imagem,
-            ativa,
+            cesta_id=cesta_id,
+            nome=nome.strip(),
+            descricao=descricao.strip(),
+            preco=preco,
+            imagem=imagem,
+            ativa=ativa,
             ordem=int(nova_ordem)
         )
 
@@ -289,6 +288,13 @@ if salvar:
         st.session_state.pop("cesta_editar", None)
         st.switch_page("pages/04_Cestas.py")
 
+    except TypeError as erro_tipo:
+        # Se cair aqui, é porque o cache do Streamlit travou a versão antiga da função.
+        if "ordem" in str(erro_tipo):
+            st.error("⚠️ **O cache do sistema travou.** O servidor ainda está usando a versão antiga do banco de dados na memória. \n\n**Solução:** Vá no terminal, aperte `Ctrl+C` para parar a aplicação e inicie novamente com `streamlit run app.py`.")
+        else:
+            st.error(f"Erro ao atualizar cesta: {erro_tipo}")
+            
     except Exception as erro:
         st.error(f"Erro ao atualizar cesta: {erro}")
 
