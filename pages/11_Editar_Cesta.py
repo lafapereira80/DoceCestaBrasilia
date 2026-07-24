@@ -196,8 +196,9 @@ with st.container(border=True):
         with col_p1:
             preco = st.number_input("Preço (R$)", min_value=0.0, value=float(cesta.get("preco", 0)), step=1.0, format="%.2f")
         with col_p2:
-            # Campo para editar a ordem/posição da cesta atual
-            ordem_atual = int(cesta.get("ordem", 1))
+            # Proteção contra valores nulos ou menores que 1 vindos do banco
+            ordem_banco = cesta.get("ordem")
+            ordem_atual = int(ordem_banco) if ordem_banco is not None and int(ordem_banco) >= 1 else 1
             nova_ordem = st.number_input("Ordem / Posição", min_value=1, value=ordem_atual, step=1)
 
         descricao = st.text_area("Descrição", value=cesta.get("descricao", "") or "", height=95, placeholder="Descreva os itens principais...")
