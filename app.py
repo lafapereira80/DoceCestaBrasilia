@@ -504,7 +504,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (DENTRO DA CAIXA - 2 POR FILA NO MOBILE)
+# APRESENTAÇÃO DOS ADICIONAIS (2 POR FILA NO MOBILE DENTRO DA CAIXA)
 # ==========================================================
 
 produtos_adicionais = []
@@ -517,7 +517,7 @@ except:
     produtos_adicionais = []
 
 if produtos_adicionais:
-    # Caixa contenedora principal para os Adicionais
+    # Abre a caixa contenedora principal
     with st.container(border=True):
         st.markdown(
             """
@@ -531,18 +531,15 @@ if produtos_adicionais:
             unsafe_allow_html=True
         )
 
-        # CSS direcionado estritamente para quebrar de 2 em 2 colunas apenas dentro da caixa de adicionais no mobile
+        # CSS customizado para forçar layout de 2 colunas restrito especificamente aos adicionais dentro desta caixa no mobile
         st.markdown(
             """
             <style>
             @media (max-width: 640px) {
-                /* Seleciona colunas internas da caixa dos adicionais */
-                div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"],
-                div.element-container:has(.adicionais-hero-title) ~ div[data-testid="stVerticalBlock"] div[data-testid="stHorizontalBlock"] {
+                div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
                     flex-wrap: wrap !important;
                 }
-                div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"],
-                div.element-container:has(.adicionais-hero-title) ~ div[data-testid="stVerticalBlock"] div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
+                div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
                     flex: 1 1 calc(50% - 8px) !important;
                     min-width: calc(50% - 8px) !important;
                     max-width: calc(50% - 8px) !important;
@@ -553,7 +550,7 @@ if produtos_adicionais:
             unsafe_allow_html=True
         )
 
-        tamanho_linha = 2
+        tamanho_linha = 5
         for i in range(0, len(produtos_adicionais), tamanho_linha):
             lote = produtos_adicionais[i:i + tamanho_linha]
             cols = st.columns(tamanho_linha)
