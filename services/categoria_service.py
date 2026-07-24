@@ -23,19 +23,16 @@ def upload_imagem_cesta(arquivo):
         return None
 
     try:
-        # cria nome único
         extensao = arquivo.name.split(".")[-1]
         nome_arquivo = f"{uuid.uuid4()}.{extensao}"
         caminho = f"cestas/{nome_arquivo}"
 
-        # upload para storage
         supabase.storage.from_("cestas").upload(
             caminho,
             arquivo.getvalue(),
             {"content-type": arquivo.type}
         )
 
-        # URL pública
         url = (
             supabase.storage
             .from_("cestas")
@@ -50,7 +47,7 @@ def upload_imagem_cesta(arquivo):
 # =====================================================
 # CADASTRAR CESTA COM REORDENAÇÃO EM CASCATA
 # =====================================================
-def cadastrar_cesta(nome, descricao, preco, imagem=None, ordem=1):
+def cadastrar_cesta(nome, descricao, preco, imagem=None, ordem=1, **kwargs):
     cestas_existentes = listar_cestas()
     
     for c in cestas_existentes:
@@ -114,9 +111,9 @@ def buscar_cesta(cesta_id):
     return resposta.data
 
 # =====================================================
-# ATUALIZAR CESTA COM REORDENAÇÃO (INCLUÍDO O PARÂMETRO ORDEM)
+# ATUALIZAR CESTA COM REORDENAÇÃO (BLINDADO COM **kwargs)
 # =====================================================
-def atualizar_cesta(cesta_id, nome, descricao, preco, imagem, ativa, ordem=1):
+def atualizar_cesta(cesta_id, nome, descricao, preco, imagem, ativa, ordem=1, **kwargs):
     cestas_existentes = listar_cestas()
     for c in cestas_existentes:
         if c["id"] != cesta_id and c.get("ordem", 0) >= ordem:
