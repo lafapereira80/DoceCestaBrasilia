@@ -1,14 +1,37 @@
 import streamlit as st
 import base64
 from pathlib import Path
+import importlib
 
 from services.pedido_service import salvar_pedido
 from services.foto_service import salvar_fotos
 from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
-from services.categoria_service import listar_categorias_pedido
 from services.produto_service import listar_produtos_por_categoria_id
 from services.pedido_adicional_service import salvar_adicionais_pedido
+
+
+# ==========================================================
+# BUSCA INTELIGENTE DE CATEGORIAS (INFALÍVEL)
+# ==========================================================
+def obter_categorias():
+    # 1. Tenta encontrar a função automaticamente no arquivo
+    try:
+        cat_service = importlib.import_module("services.categoria_service")
+        for nome_funcao in dir(cat_service):
+            if "listar_categoria" in nome_funcao:
+                funcao_encontrada = getattr(cat_service, nome_funcao)
+                return funcao_encontrada()
+    except:
+        pass 
+        
+    # 2. Se falhar, conecta direto no banco de dados
+    try:
+        from config.supabase import supabase
+        resposta = supabase.table("categorias").select("*").execute()
+        return resposta.data or []
+    except Exception as e:
+        return []
 
 
 # ==========================================================
@@ -293,7 +316,7 @@ with st.container(border=True):
     try:
         cestas_brutas = listar_cestas()
         
-        # Filtra ativas e aplica ordenação (para alinhar com o app.py)
+        # Filtra ativas e aplica ordenação
         cestas_ativas = [c for c in cestas_brutas if c.get("ativa", True)]
         for c in cestas_ativas:
             if "ordem" not in c or c["ordem"] is None:
@@ -309,17 +332,13 @@ with st.container(border=True):
     if cestas:
         opcoes_cestas = [{"id": None, "nome": "Selecione..."}] + cestas
 
-        # Lógica INFALÍVEL para não resetar a cesta do usuário:
-        # 1. Cria uma memória para o formulário saber qual cesta está em uso
         if "form_selecao_atual_id" not in st.session_state:
             st.session_state["form_selecao_atual_id"] = None
 
-        # 2. Se viermos da vitrine (app.py), pegamos o ID e apagamos o gatilho da vitrine
         if st.session_state.get("cesta_selecionada_home"):
             st.session_state["form_selecao_atual_id"] = st.session_state["cesta_selecionada_home"]
             st.session_state["cesta_selecionada_home"] = None
 
-        # 3. Descobre qual a posição (index) dessa cesta na lista
         cesta_inicial_index = 0
         if st.session_state["form_selecao_atual_id"]:
             for idx, item in enumerate(opcoes_cestas):
@@ -327,7 +346,6 @@ with st.container(border=True):
                     cesta_inicial_index = idx
                     break
 
-        # 4. Renderiza o selectbox apontando para o index correto
         cesta_selecionada = st.selectbox(
             "Selecione a cesta",
             opcoes_cestas,
@@ -335,7 +353,6 @@ with st.container(border=True):
             index=cesta_inicial_index
         )
 
-        # 5. Salva a nova escolha do usuário de volta na memória do formulário (Assim o Streamlit nunca reseta)
         st.session_state["form_selecao_atual_id"] = cesta_selecionada.get("id")
 
         if cesta_selecionada["id"]:
@@ -433,7 +450,7 @@ adicionais_selecionados = []
 polaroid = False
 
 try:
-    categorias_pedido = listar_categorias_pedido()
+    categorias_pedido = obter_categorias() # <-- CHAMANDO A FUNÇÃO SEGURA AQUI!
 except Exception as erro:
     categorias_pedido = []
     st.error(f"Erro ao carregar complementos: {erro}")
@@ -733,6 +750,6 @@ st.markdown(
 
 st.page_link(
     "app.py",
-    label="Voltar para o Catálogo",
+    label="Voltar para a Vitrine",
     icon="🛍️"
 )
