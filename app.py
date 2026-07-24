@@ -314,7 +314,7 @@ div[data-testid="stButton"] button:hover {
     overflow-x: auto;
     padding: 10px 4px 20px 4px;
     scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch; /* Suavidade no celular */
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Estilização da barra de rolagem do carrossel */
@@ -335,7 +335,7 @@ div[data-testid="stButton"] button:hover {
 
 /* Card Individual do Adicional */
 .adicional-card {
-    flex: 0 0 auto; /* Impede que o card encolha */
+    flex: 0 0 auto; 
     width: 140px;
     background: #ffffff;
     border: 1px solid #e8ddd3;
@@ -496,9 +496,7 @@ st.markdown(
 # ==========================================================
 
 st.markdown(
-    """
-    <div class="info-grid"><div class="info-card"><div class="info-title">Bem-vindo(a)</div><div class="info-text"><div style="text-align: center; margin-bottom: 12px;">É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.</div>Nossas cestas são cuidadosamente montadas no estilo <strong>grazing</strong> e proporcionam não apenas sabores únicos e envolventes, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br><div style="text-align: center;">Desfrute o melhor da vida com um bom café e uma excelente companhia!</div></div></div><div class="info-card"><div class="info-title">Como fazer o pedido</div><ul class="como-pedir-list"><li>✨ Defina através do nosso catálogo abaixo a opção desejada e clique em <b>"Monte sua Cesta"</b>.</li><li>⏳ Peça sua Doce Cesta com no mínimo <b>24h de antecedência</b> (ou <b>72h</b> caso possua mini bolo).</li><li>🕒 <b>Atendimento:</b> Segunda a sexta de 7h às 19h | Sábado de 8h às 12h.</li><li>🚗 A entrega poderá ser realizada via <b>Uber Flash / 99 Entrega</b> ou retirada em mãos.</li><li>💌 Todas as cestas contêm um pequeno <b>cartão personalizável</b>.</li><li>💳 <b>Pagamento:</b> PIX ou link de Cartão de Crédito.</li></ul></div></div>
-    """,
+    """<div class="info-grid"><div class="info-card"><div class="info-title">Bem-vindo(a)</div><div class="info-text"><div style="text-align: center; margin-bottom: 12px;">É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.</div>Nossas cestas são cuidadosamente montadas no estilo <strong>grazing</strong> e proporcionam não apenas sabores únicos e envolventes, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br><div style="text-align: center;">Desfrute o melhor da vida com um bom café e uma excelente companhia!</div></div></div><div class="info-card"><div class="info-title">Como fazer o pedido</div><ul class="como-pedir-list"><li>✨ Defina através do nosso catálogo abaixo a opção desejada e clique em <b>"Monte sua Cesta"</b>.</li><li>⏳ Peça sua Doce Cesta com no mínimo <b>24h de antecedência</b> (ou <b>72h</b> caso possua mini bolo).</li><li>🕒 <b>Atendimento:</b> Segunda a sexta de 7h às 19h | Sábado de 8h às 12h.</li><li>🚗 A entrega poderá ser realizada via <b>Uber Flash / 99 Entrega</b> ou retirada em mãos.</li><li>💌 Todas as cestas contêm um pequeno <b>cartão personalizável</b>.</li><li>💳 <b>Pagamento:</b> PIX ou link de Cartão de Crédito.</li></ul></div></div>""",
     unsafe_allow_html=True
 )
 
@@ -596,7 +594,6 @@ if produtos_adicionais:
         preco_p = prod.get("preco")
         imagem_p = prod.get("imagem")
 
-        # 1. Tratamento do Preço
         if preco_p is not None and str(preco_p).strip() != "":
             try:
                 val_f = float(preco_p)
@@ -607,40 +604,17 @@ if produtos_adicionais:
         else:
             span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
 
-        # 2. Tratamento da Imagem (Mostra foto ou Placeholder de laço se não tiver)
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
             img_html = f'<img src="{img_src}" class="adicional-img" alt="{nome_p}">'
         else:
             img_html = f'<div class="adicional-img-placeholder">🎀</div>'
 
-        # 3. Montagem do Card
-        cards_html += f"""
-        <div class="adicional-card">
-            {img_html}
-            <div class="adicional-details">
-                <div class="adicional-nome">{nome_p}</div>
-                <div>{span_preco}</div>
-            </div>
-        </div>
-        """
+        # Código HTML compactado sem quebras de linha para evitar o bug do </div> solto
+        cards_html += f'<div class="adicional-card">{img_html}<div class="adicional-details"><div class="adicional-nome">{nome_p}</div><div>{span_preco}</div></div></div>'
 
-    st.markdown(
-        f"""
-        <div class="adicionais-hero-card">
-            <div class="adicionais-hero-title">
-                🎀 Incremente seu presente com nossos Adicionais Especiais:
-                <span style="font-size: 12px; font-weight: normal; color: #888; display: block; margin-top: 4px;">
-                    👉 Deslize para os lados para ver mais opções
-                </span>
-            </div>
-            <div class="adicionais-scroll-container">
-                {cards_html}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    # Container renderizado em uma linha única contínua para proteger contra formatações markdown do Streamlit
+    st.markdown(f'<div class="adicionais-hero-card"><div class="adicionais-hero-title">🎀 Incremente seu presente com nossos Adicionais Especiais:<span style="font-size: 12px; font-weight: normal; color: #888; display: block; margin-top: 4px;">👉 Deslize para os lados para ver mais opções</span></div><div class="adicionais-scroll-container">{cards_html}</div></div>', unsafe_allow_html=True)
 
 
 # ==========================================================
