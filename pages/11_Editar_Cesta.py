@@ -4,7 +4,7 @@ from services.cesta_service import (
     buscar_cesta,
     atualizar_cesta,
     upload_imagem_cesta,
-    remover_imagem_cesta  # <-- NOVA IMPORTAÇÃO ADICIONADA
+    remover_imagem_cesta
 )
 
 from utils.menu import (
@@ -176,7 +176,7 @@ except Exception as erro:
 # =====================================================
 
 st.title("✏️ Editar Cesta")
-st.caption("Atualize os dados e a imagem da cesta.")
+st.caption("Atualize os dados, a posição e a imagem da cesta.")
 st.divider()
 
 
@@ -191,8 +191,16 @@ with st.container(border=True):
     with col_dados:
         st.subheader("📝 Dados Principais")
         nome = st.text_input("Nome da Cesta", value=cesta.get("nome", ""), placeholder="Ex: Cesta Café Especial")
-        preco = st.number_input("Preço (R$)", min_value=0.0, value=float(cesta.get("preco", 0)), step=1.0, format="%.2f")
-        descricao = st.text_area("Descrição", value=cesta.get("descricao", "") or "", height=110, placeholder="Descreva os itens principais...")
+        
+        col_p1, col_p2 = st.columns(2)
+        with col_p1:
+            preco = st.number_input("Preço (R$)", min_value=0.0, value=float(cesta.get("preco", 0)), step=1.0, format="%.2f")
+        with col_p2:
+            # Campo para editar a ordem/posição da cesta atual
+            ordem_atual = int(cesta.get("ordem", 1))
+            nova_ordem = st.number_input("Ordem / Posição", min_value=1, value=ordem_atual, step=1)
+
+        descricao = st.text_area("Descrição", value=cesta.get("descricao", "") or "", height=95, placeholder="Descreva os itens principais...")
         ativa = st.checkbox("Cesta ativa", value=cesta.get("ativa", True))
 
     # Coluna 2: Gestão de Imagem
@@ -208,11 +216,10 @@ with st.container(border=True):
                 st.caption("Imagem Atual")
                 st.image(imagem_atual, width=130)
                 
-                # NOVO: Botão de remover imagem embutido com a imagem atual
                 if st.button("🗑️ Remover Foto", key="rm_foto_editar", use_container_width=True):
                     try:
                         remover_imagem_cesta(cesta_id)
-                        st.rerun()  # Recarrega a página para sumir com a foto imediatamente
+                        st.rerun()
                     except Exception as erro:
                         st.error(f"Erro ao remover: {erro}")
             else:
@@ -268,15 +275,16 @@ if salvar:
 
     try:
         atualizar_cesta(
-            cesta_id,
-            nome.strip(),
-            descricao.strip(),
-            preco,
-            imagem,
-            ativa
+            cesta_id=cesta_id,
+            nome=nome.strip(),
+            descricao=descricao.strip(),
+            preco=preco,
+            imagem=imagem,
+            ativa=ativa,
+            ordem=int(nova_ordem)
         )
 
-        st.success("Cesta atualizada com sucesso!")
+        st.success("Cesta atualizada e reordenada com sucesso!")
         st.session_state.pop("cesta_editar", None)
         st.switch_page("pages/04_Cestas.py")
 
