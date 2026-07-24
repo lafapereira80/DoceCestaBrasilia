@@ -91,6 +91,13 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     box-shadow: 0 2px 6px rgba(90, 59, 40, 0.08);
 }
 
+/* Centralização vertical automática no Desktop (Foto e Texto alinhados no meio) */
+@media (min-width: 641px) {
+    div[data-testid="stHorizontalBlock"] {
+        align-items: center !important;
+    }
+}
+
 /* =========================================
    CUSTOMIZAÇÃO DO UPLOADER DE ARQUIVO
 ========================================== */
@@ -279,7 +286,7 @@ def exibir_produto(produto, categoria):
         
         nome_cat_formatado = str(categoria.get("nome", "")).strip().lower()
 
-        # Coluna 1: Imagem (se houver e for Adicionais) + Nome / Descrição (Sem botão de excluir aqui)
+        # Coluna 1: Imagem (se houver e for Adicionais) + Nome / Descrição
         with col1:
             imagem_url = produto.get("imagem", None)
             
