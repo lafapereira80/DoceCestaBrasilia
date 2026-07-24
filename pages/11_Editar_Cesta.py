@@ -176,7 +176,7 @@ except Exception as erro:
 # =====================================================
 
 st.title("✏️ Editar Cesta")
-st.caption("Atualize os dados, a posição e a imagem da cesta.")
+st.caption("Atualize os dados e a imagem da cesta.")
 st.divider()
 
 
@@ -191,17 +191,8 @@ with st.container(border=True):
     with col_dados:
         st.subheader("📝 Dados Principais")
         nome = st.text_input("Nome da Cesta", value=cesta.get("nome", ""), placeholder="Ex: Cesta Café Especial")
-        
-        col_p1, col_p2 = st.columns(2)
-        with col_p1:
-            preco = st.number_input("Preço (R$)", min_value=0.0, value=float(cesta.get("preco", 0)), step=1.0, format="%.2f")
-        with col_p2:
-            # Proteção contra valores nulos ou menores que 1 vindos do banco
-            ordem_banco = cesta.get("ordem")
-            ordem_atual = int(ordem_banco) if ordem_banco is not None and int(ordem_banco) >= 1 else 1
-            nova_ordem = st.number_input("Ordem / Posição", min_value=1, value=ordem_atual, step=1)
-
-        descricao = st.text_area("Descrição", value=cesta.get("descricao", "") or "", height=95, placeholder="Descreva os itens principais...")
+        preco = st.number_input("Preço (R$)", min_value=0.0, value=float(cesta.get("preco", 0)), step=1.0, format="%.2f")
+        descricao = st.text_area("Descrição", value=cesta.get("descricao", "") or "", height=110, placeholder="Descreva os itens principais...")
         ativa = st.checkbox("Cesta ativa", value=cesta.get("ativa", True))
 
     # Coluna 2: Gestão de Imagem
@@ -224,7 +215,7 @@ with st.container(border=True):
                     except Exception as erro:
                         st.error(f"Erro ao remover: {erro}")
             else:
-                st.info("Sem imagem cadastrada.")
+                st.info("Nenhuma imagem.")
 
         # Bloco de Nova Imagem
         nova_imagem = st.file_uploader("Trocar imagem", type=["png", "jpg", "jpeg", "webp"])
@@ -266,7 +257,6 @@ if salvar:
 
     imagem = imagem_atual
 
-    # Upload da nova imagem se selecionada
     if nova_imagem:
         try:
             imagem = upload_imagem_cesta(nova_imagem)
@@ -275,17 +265,17 @@ if salvar:
             st.stop()
 
     try:
+        # Chamada limpa sem o argumento 'ordem' para evitar qualquer conflito de versão de cache
         atualizar_cesta(
-            cesta_id=cesta_id,
-            nome=nome.strip(),
-            descricao=descricao.strip(),
-            preco=preco,
-            imagem=imagem,
-            ativa=ativa,
-            ordem=int(nova_ordem)
+            cesta_id,
+            nome.strip(),
+            descricao.strip(),
+            preco,
+            imagem,
+            ativa
         )
 
-        st.success("Cesta atualizada e reordenada com sucesso!")
+        st.success("Cesta atualizada com sucesso!")
         st.session_state.pop("cesta_editar", None)
         st.switch_page("pages/04_Cestas.py")
 
