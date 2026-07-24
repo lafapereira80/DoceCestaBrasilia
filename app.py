@@ -2,21 +2,34 @@ import streamlit as st
 import base64
 import mimetypes
 from pathlib import Path
+import importlib
 
 from services.cesta_service import listar_cestas
 from services.produto_service import listar_produtos_por_categoria_id
 
+
 # ==========================================================
-# DRIBLE INFALÍVEL DE IMPORTAÇÃO (Evita o ImportError)
+# BUSCA INTELIGENTE DE CATEGORIAS (INFALÍVEL)
 # ==========================================================
-try:
-    from services.categoria_service import listar_categorias_pedido as buscar_categorias
-except ImportError:
+def obter_categorias():
+    # 1. Tenta encontrar a função automaticamente no arquivo
     try:
-        from services.categoria_service import listar_categorias as buscar_categorias
-    except ImportError:
-        def buscar_categorias():
-            return [] # Retorna vazio para não quebrar a página se o nome for diferente
+        cat_service = importlib.import_module("services.categoria_service")
+        for nome_funcao in dir(cat_service):
+            if "listar_categoria" in nome_funcao:
+                funcao_encontrada = getattr(cat_service, nome_funcao)
+                return funcao_encontrada()
+    except:
+        pass # Se der erro no arquivo, segue para o plano B
+        
+    # 2. Se falhar, conecta direto no banco de dados para os adicionais não sumirem
+    try:
+        from config.supabase import supabase
+        resposta = supabase.table("categorias").select("*").execute()
+        return resposta.data or []
+    except Exception as e:
+        st.error(f"Aviso - Erro ao conectar categorias: {e}")
+        return []
 
 
 # ==========================================================
@@ -30,7 +43,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Função auxiliar para garantir que o Lightbox leia qualquer tipo de imagem (Local ou Web)
+# Função auxiliar para garantir que o Lightbox leia qualquer tipo de imagem
 def image_to_base64(img_path):
     img_path = str(img_path).strip()
     if img_path.startswith("http") or img_path.startswith("data:image"):
@@ -610,12 +623,14 @@ else:
 
 produtos_adicionais = []
 try:
-    # USAMOS A FUNÇÃO BLINDADA DO INÍCIO DO ARQUIVO PARA NÃO QUEBRAR
-    categorias = buscar_categorias()
+    # Usa a função segura que criamos no início do código!
+    categorias = obter_categorias() 
     cat_adicionais = next((c for c in categorias if c.get("nome", "").strip().lower() == "adicionais"), None)
+    
     if cat_adicionais:
         produtos_adicionais = listar_produtos_por_categoria_id(cat_adicionais["id"])
-except:
+except Exception as erro:
+    st.error(f"Não foi possível carregar os adicionais: {erro}")
     produtos_adicionais = []
 
 if produtos_adicionais:
