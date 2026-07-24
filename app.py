@@ -19,7 +19,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Função auxiliar para garantir que o Lightbox CSS leia qualquer tipo de imagem (Local ou Web)
+# Função auxiliar para garantir que o Lightbox CSS/JS leia qualquer tipo de imagem (Local ou Web)
 def image_to_base64(img_path):
     img_path = str(img_path).strip()
     if img_path.startswith("http") or img_path.startswith("data:image"):
@@ -36,7 +36,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS MODERNO, GOOGLE FONTS E LAYOUT HARMONIOSO
+# CSS MODERNO, GOOGLE FONTS E LIGHTBOX INTELIGENTE VIA JS
 # ==========================================================
 
 st.markdown(
@@ -222,7 +222,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     margin-bottom: 16px !important;
 }
 
-/* NOVO BOTÃO MONTE SUA CESTA */
+/* BOTÃO MONTE SUA CESTA */
 div[data-testid="stButton"] button {
     background: linear-gradient(135deg, #c5721f 0%, #a65d14 100%) !important;
     color: white !important;
@@ -243,7 +243,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX FOTO CESTA & ADICIONAIS
+   LIGHTBOX GLOBAL ESTÁVEL (SEM PISCAR)
 ========================================= */
 .lightbox-wrapper {
     text-align: center;
@@ -254,7 +254,6 @@ div[data-testid="stButton"] button:hover {
     justify-content: center;
     align-items: center; 
 }
-.lightbox-toggle { display: none; }
 .lightbox-image {
     width: 60%; 
     border-radius: 12px;
@@ -275,30 +274,39 @@ div[data-testid="stButton"] button:hover {
     margin-bottom: 8px;
     font-style: italic;
 }
-.lightbox-modal {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background-color: rgba(0, 0, 0, 0.85); z-index: 999999;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; visibility: hidden; transition: opacity 0.3s ease; cursor: zoom-out;
-}
-.lightbox-modal img {
-    max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-}
-.lightbox-toggle:checked ~ .lightbox-modal { opacity: 1; visibility: visible; }
 
-/* Lightbox específico para os cards de Adicionais (ocupa 100% da largura do card) */
+/* Imagem do Adicional com Zoom */
 .adicional-lightbox-image {
     width: 100%;
     height: 110px;
     border-top-left-radius: 14px;
     border-top-right-radius: 14px;
     cursor: zoom-in;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease;
     object-fit: cover;
     display: block;
 }
 .adicional-lightbox-image:hover {
     transform: scale(1.03);
+}
+
+/* Modal Global Flutuante */
+#custom-lightbox-modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85);
+    z-index: 999999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+}
+#custom-lightbox-modal img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
 
 /* =========================================
@@ -322,7 +330,6 @@ div[data-testid="stButton"] button:hover {
     margin-bottom: 16px;
 }
 
-/* Área de Rolagem Horizontal */
 .adicionais-scroll-container {
     display: flex;
     gap: 16px;
@@ -337,7 +344,6 @@ div[data-testid="stButton"] button:hover {
 .adicionais-scroll-container::-webkit-scrollbar-thumb { background: #cbab92; border-radius: 10px; }
 .adicionais-scroll-container::-webkit-scrollbar-thumb:hover { background: #a65d14; }
 
-/* Card Individual do Adicional */
 .adicional-card {
     flex: 0 0 auto; 
     width: 140px;
@@ -357,7 +363,6 @@ div[data-testid="stButton"] button:hover {
     border-color: #c5721f;
 }
 
-/* Placeholder se não tiver foto */
 .adicional-img-placeholder {
     width: 100%;
     height: 110px;
@@ -369,7 +374,6 @@ div[data-testid="stButton"] button:hover {
     border-bottom: 1px solid #f0e6dc;
 }
 
-/* Área de Texto do Adicional */
 .adicional-details {
     padding: 10px 8px;
     text-align: center;
@@ -455,6 +459,19 @@ div[data-testid="stButton"] button:hover {
     .lightbox-image { width: 80%; }
 }
 </style>
+
+<!-- Script JS global anti-piscar para abrir qualquer foto em tela cheia suavemente -->
+<div id="custom-lightbox-modal" onclick="this.style.display='none'">
+    <img id="custom-lightbox-img" src="">
+</div>
+<script>
+function abrirZoom(url) {
+    const modal = document.getElementById('custom-lightbox-modal');
+    const modalImg = document.getElementById('custom-lightbox-img');
+    modalImg.src = url;
+    modal.style.display = 'flex';
+}
+</script>
 """,
 unsafe_allow_html=True
 )
@@ -529,13 +546,7 @@ else:
                     st.markdown(
                         f"""
                         <div class="lightbox-wrapper">
-                            <label>
-                                <input type="checkbox" class="lightbox-toggle">
-                                <img src="{img_src}" class="lightbox-image" title="Clique para ampliar">
-                                <div class="lightbox-modal">
-                                    <img src="{img_src}">
-                                </div>
-                            </label>
+                            <img src="{img_src}" class="lightbox-image" title="Clique para ampliar" onclick="abrirZoom('{img_src}')">
                             <div class="imagem-legenda">👆 Toque na foto para ampliar</div>
                         </div>
                         """,
@@ -570,7 +581,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (CARROSSEL COM LIGHTBOX NAS FOTOS)
+# APRESENTAÇÃO DOS ADICIONAIS (CARROSSEL COM ZOOM ESTÁVEL)
 # ==========================================================
 
 produtos_adicionais = []
@@ -599,14 +610,12 @@ if produtos_adicionais:
         else:
             span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
 
-        # Se houver foto, aplica o esquema de lightbox (clicar para ampliar)
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            img_html = f'<label style="cursor: zoom-in;"><input type="checkbox" class="lightbox-toggle"><img src="{img_src}" class="adicional-lightbox-image" alt="{nome_p}" title="Toque para ampliar"><div class="lightbox-modal"><img src="{img_src}"></div></label>'
+            img_html = f'<img src="{img_src}" class="adicional-lightbox-image" alt="{nome_p}" title="Toque para ampliar" onclick="abrirZoom(\'{img_src}\')">'
         else:
             img_html = f'<div class="adicional-img-placeholder">🎀</div>'
 
-        # Código HTML compactado em linha única contínua para evitar quebras do Streamlit
         cards_html += f'<div class="adicional-card">{img_html}<div class="adicional-details"><div class="adicional-nome">{nome_p}</div><div>{span_preco}</div></div></div>'
 
     st.markdown(f'<div class="adicionais-hero-card"><div class="adicionais-hero-title">🎀 Incremente seu presente com nossos Adicionais Especiais:<span style="font-size: 12px; font-weight: normal; color: #888; display: block; margin-top: 4px;">👉 Deslize para os lados para ver mais opções e toque na foto para ampliar</span></div><div class="adicionais-scroll-container">{cards_html}</div></div>', unsafe_allow_html=True)
