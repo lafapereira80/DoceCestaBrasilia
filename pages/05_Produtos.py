@@ -185,53 +185,53 @@ except Exception as erro:
 
 
 # =====================================================
-# CADASTRO DE PRODUTO
+# CADASTRO DE PRODUTO (REMOVIDO O st.form PARA FICAR DINÂMICO)
 # =====================================================
 
 if usuario.get("perfil") == "Administrador":
     st.subheader("➕ Novo Produto")
 
     with st.container(border=True):
-        with st.form("form_novo_produto", clear_on_submit=False):
-            col_f1, col_f2 = st.columns([1.5, 1])
+        col_f1, col_f2 = st.columns([1.5, 1])
 
-            with col_f1:
-                nome = st.text_input("Nome do Produto", placeholder="Ex: Nutella 350g")
-                descricao = st.text_area("Descrição", height=70, placeholder="Descrição opcional do produto...")
-                ativo = st.checkbox("Produto ativo", value=True)
+        with col_f1:
+            nome = st.text_input("Nome do Produto", placeholder="Ex: Nutella 350g")
+            descricao = st.text_area("Descrição", height=70, placeholder="Descrição opcional do produto...")
+            ativo = st.checkbox("Produto ativo", value=True)
 
-            with col_f2:
-                if categorias:
-                    categoria = st.selectbox("Categoria", categorias, format_func=lambda x: x["nome"])
-                else:
-                    categoria = None
-                    st.warning("Nenhuma categoria cadastrada.")
+        with col_f2:
+            if categorias:
+                categoria = st.selectbox("Categoria", categorias, format_func=lambda x: x["nome"])
+            else:
+                categoria = None
+                st.warning("Nenhuma categoria cadastrada.")
 
-                # Variáveis auxiliares de formulário
-                imagem_arquivo = None
-                tipo_preco = "Incluso na cesta"
-                preco = None
+            # Variáveis auxiliares de formulário
+            imagem_arquivo = None
+            tipo_preco = "Incluso na cesta"
+            preco = None
 
-                if categoria:
-                    categoria_possui_preco = categoria.get("possui_preco", False)
-                    nome_categoria_atual = str(categoria.get("nome", "")).strip().lower()
+            if categoria:
+                categoria_possui_preco = categoria.get("possui_preco", False)
+                nome_categoria_atual = str(categoria.get("nome", "")).strip().lower()
 
-                    if categoria_possui_preco:
-                        tipo_preco = st.radio("Tipo de preço", ["Preço definido", "Preço sob consulta"], horizontal=True)
-                        if tipo_preco == "Preço sob consulta":
-                            st.info("O valor será definido no fechamento.")
-                        else:
-                            preco = st.number_input("Preço (R$)", min_value=0.0, value=0.0, step=0.50, format="%.2f")
+                if categoria_possui_preco:
+                    tipo_preco = st.radio("Tipo de preço", ["Preço definido", "Preço sob consulta"], horizontal=True)
+                    if tipo_preco == "Preço sob consulta":
+                        st.info("O valor será definido no fechamento.")
                     else:
-                        st.info("Incluso automaticamente na cesta.")
+                        preco = st.number_input("Preço (R$)", min_value=0.0, value=0.0, step=0.50, format="%.2f")
+                else:
+                    st.info("Incluso automaticamente na cesta.")
 
-                    # REGRA EXATA: SÓ APARECE A FOTO SE A CATEGORIA FOR "ADICIONAIS"
-                    if nome_categoria_atual == "adicionais":
-                        imagem_arquivo = st.file_uploader("📷 Foto do Adicional (Opcional)", type=["jpg", "jpeg", "png", "webp"])
-                        if imagem_arquivo:
-                            st.image(imagem_arquivo, width=60, caption="Pré-visualização")
+                # REGRA EXATA: SÓ APARECE A FOTO SE A CATEGORIA FOR "ADICIONAIS"
+                if nome_categoria_atual == "adicionais":
+                    imagem_arquivo = st.file_uploader("📷 Foto do Adicional (Opcional)", type=["jpg", "jpeg", "png", "webp"])
+                    if imagem_arquivo:
+                        st.image(imagem_arquivo, width=60, caption="Pré-visualização")
 
-            salvar = st.form_submit_button("💾 Cadastrar Produto", use_container_width=True, type="primary")
+        # Botão comum, sem depender de formulário congelado
+        salvar = st.button("💾 Cadastrar Produto", use_container_width=True, type="primary")
 
 else:
     salvar = False
@@ -249,7 +249,7 @@ if salvar:
     if not categoria:
         st.error("Selecione uma categoria.")
         st.stop()
-    if categoria.get("possui_preco") and tipo_preco == "Preço definido" and preco <= 0:
+    if categoria.get("possui_preco") and tipo_preco == "Preço definido" and (preco is None or preco <= 0):
         st.error("Informe o valor do produto.")
         st.stop()
 
