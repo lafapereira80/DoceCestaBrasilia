@@ -165,8 +165,8 @@ html, body, [class*="css"]  {
 }
 
 .adicionais-hero-title {
-    font-family: 'Dancing Script', cursive !important; /* Fonte alterada conforme pedido */
-    font-size: 15px; /* Tamanho mantido */
+    font-family: 'Montserrat', sans-serif !important; /* Voltando para a fonte padrão de leitura */
+    font-size: 15px;
     font-weight: 700;
     color: #5a3b28;
     margin-bottom: 10px;
@@ -185,7 +185,6 @@ html, body, [class*="css"]  {
     font-size: 12.5px;
     color: #4a3222;
     box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-    font-family: 'Montserrat', sans-serif !important; /* Mantém itens legíveis */
 }
 
 .adicional-preco-fixo {
@@ -218,12 +217,15 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
 }
 
+/* NOME DA CESTA COM A FONTE DO BEM-VINDO */
 .card-cesta-titulo {
-    font-size: 19px !important;
-    font-weight: 800 !important;
-    color: #5a3b28 !important;
+    font-family: 'Dancing Script', cursive !important;
+    font-size: 32px !important; /* Aumentado para melhor leitura cursiva */
+    font-weight: 700 !important;
+    color: #c5721f !important; /* Mesma cor do Bem-vindo */
     margin-top: 4px !important;
-    margin-bottom: 6px !important;
+    margin-bottom: 8px !important;
+    line-height: 1.1 !important;
 }
 
 /* Texto de Descrição Justificado */
@@ -338,10 +340,10 @@ div[data-testid="stButton"] button:hover {
     }
     .header-logo { width: 110px !important; }
     .header-text { align-items: center; text-align: center; }
-    .header-title { font-size: 36px !important; }
+    .header-title { font-size: 38px !important; } /* Ajustado para celular */
     .header-subtitle { font-size: 13px !important; }
     .info-title { font-size: 32px !important; }
-    .card-cesta-titulo { font-size: 17px !important; }
+    .card-cesta-titulo { font-size: 26px !important; } /* Ajustado para celular */
     .card-cesta-preco { font-size: 18px !important; }
 }
 </style>
@@ -367,8 +369,8 @@ st.markdown(
     <div class="header-banner">
         {logo_html}
         <div class="header-text">
-            <h1 class="header-title">Doce Cesta</h1>
-            <p class="header-subtitle">BRASÍLIA</p>
+            <h1 class="header-title">Doce Cesta Brasília</h1>
+            <p class="header-subtitle">Cestas personalizadas para momentos inesquecíveis 💝</p>
         </div>
     </div>
     """,
@@ -377,7 +379,7 @@ st.markdown(
 
 
 # ==========================================================
-# SEÇÃO: BEM-VINDO & COMO PEDIR (CORRIGIDO SEM QUEBRAS)
+# SEÇÃO: BEM-VINDO & COMO PEDIR 
 # ==========================================================
 
 st.markdown(
@@ -391,10 +393,10 @@ st.write("---")
 
 
 # ==========================================================
-# TÍTULO PRINCIPAL DO CATÁLOGO (FONTE DANCING SCRIPT)
+# TÍTULO PRINCIPAL DO CATÁLOGO (FONTE PADRÃO REVERTIDA)
 # ==========================================================
 
-st.markdown("<h3 style='font-family: \"Dancing Script\", cursive; color:#5a3b28; margin-top:0; margin-bottom:4px; font-weight:800; font-size: 22px;'>🎁 Catálogo de Cestas</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='font-family: \"Montserrat\", sans-serif; color:#5a3b28; margin-top:0; margin-bottom:4px; font-weight:800; font-size: 22px;'>🎁 Catálogo de Cestas</h3>", unsafe_allow_html=True)
 st.caption("Escolha a cesta perfeita, confira os itens detalhados e personalize do seu jeito.")
 
 
@@ -435,7 +437,7 @@ else:
                             with cols_extras[f_idx % 4]:
                                 st.image(str(f_url).strip(), use_container_width=True)
 
-                # 3. TÍTULO DA CESTA
+                # 3. TÍTULO DA CESTA COM A FONTE DO BEM-VINDO
                 st.markdown(f'<div class="card-cesta-titulo">{cesta["nome"]}</div>', unsafe_allow_html=True)
 
                 # 4. DESCRIÇÃO COMPLETA E JUSTIFICADA
