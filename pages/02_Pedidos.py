@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime
 
 from services.pedido_service import (
     listar_pedidos_ativos,
@@ -61,6 +62,23 @@ def atualizar_selecao_impressao(pedido_id):
     else:
         if pedido_id in st.session_state["pedidos_impressao"]:
             st.session_state["pedidos_impressao"].remove(pedido_id)
+
+
+# =====================================================
+# FORMATADOR DE DATA BRASILEIRO (DD/MM/AAAA)
+# =====================================================
+
+def formatar_data(data_str):
+    if not data_str:
+        return "-"
+    try:
+        # Tenta converter se vier no formato ISO ou com hora (ex: 2026-06-12 ou 2026-06-12 00:00:00)
+        dt = pd.to_datetime(data_str)
+        if pd.isna(dt):
+            return str(data_str)
+        return dt.strftime("%d/%m/%Y")
+    except Exception:
+        return str(data_str)
 
 
 # =====================================================
@@ -292,10 +310,11 @@ def mostrar_lista(
                 st.markdown(f'<div class="cliente-nome">{nome_cliente}</div>', unsafe_allow_html=True)
                 st.caption(f"📱 {pedido.get('cliente_telefone', '-')}")
 
-            # Coluna Cesta & Data de Entrega
+            # Coluna Cesta & Data de Entrega Formatada
             with col_info2:
                 st.write(f"🎁 **{pedido.get('cesta_nome','-')}**")
-                st.caption(f"🗓️ Entrega: {pedido.get('data_entrega','-')}")
+                data_formatada = formatar_data(pedido.get('data_entrega'))
+                st.caption(f"🗓️ Entrega: {data_formatada}")
 
             # Coluna Status
             with col_status:
