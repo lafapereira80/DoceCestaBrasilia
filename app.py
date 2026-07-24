@@ -20,7 +20,7 @@ st.set_page_config(
 
 
 # ==========================================================
-# CSS MODERNO, RESPONSIVO E ELEGANTE (MOBILE FIRST)
+# CSS MODERNO, HARMONIOSO E RESPONSIVO (MOBILE FIRST)
 # ==========================================================
 
 st.markdown(
@@ -35,8 +35,8 @@ footer { visibility: hidden !important; }
 
 /* Container Principal */
 .block-container {
-    max-width: 1050px !important;
-    padding-top: 1.2rem !important;
+    max-width: 1080px !important;
+    padding-top: 1rem !important;
     padding-bottom: 3rem !important;
     padding-left: 1rem !important;
     padding-right: 1rem !important;
@@ -51,10 +51,10 @@ footer { visibility: hidden !important; }
     margin-bottom: 1.2rem;
     width: 100%;
     background: #ffffff;
-    padding: 16px;
-    border-radius: 16px;
+    padding: 16px 20px;
+    border-radius: 18px;
     border: 1px solid #e8ddd3;
-    box-shadow: 0 2px 8px rgba(90, 59, 40, 0.03);
+    box-shadow: 0 4px 12px rgba(90, 59, 40, 0.04);
 }
 
 .header-logo {
@@ -80,31 +80,80 @@ footer { visibility: hidden !important; }
 }
 
 .header-subtitle {
-    font-size: 13px !important;
+    font-size: 13.5px !important;
     color: #775a46 !important;
     margin-top: 3px !important;
     margin-bottom: 0 !important;
 }
 
-/* Cards das Cestas no Catálogo */
+/* Section Destaque dos Adicionais */
+.adicionais-hero-card {
+    background: linear-gradient(135deg, #ffffff 0%, #faf5f0 100%);
+    border: 1px solid #e2d2c3;
+    border-radius: 16px;
+    padding: 14px 18px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 3px 10px rgba(90, 59, 40, 0.03);
+}
+
+.adicionais-hero-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #5a3b28;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.adicional-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #ffffff;
+    border: 1px solid #dfcdbb;
+    border-radius: 20px;
+    padding: 5px 12px;
+    margin-right: 6px;
+    margin-bottom: 8px;
+    font-size: 12.5px;
+    color: #4a3222;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.adicional-preco-fixo {
+    color: #2e7d32;
+    font-weight: 700;
+}
+
+.adicional-preco-consulta {
+    color: #c5721f;
+    font-weight: 700;
+    background: #fff8ef;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+}
+
+/* Cards das Cestas */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff;
     border: 1px solid #e8ddd3 !important;
-    border-radius: 16px !important;
+    border-radius: 18px !important;
     padding: 16px !important;
     margin-bottom: 16px !important;
-    box-shadow: 0 4px 12px rgba(90, 59, 40, 0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 12px rgba(90, 59, 40, 0.04);
+    transition: all 0.25s ease !important;
 }
 
 div[data-testid="stVerticalBlockBorderWrapper"]:hover {
-    border-color: #dfcdbb !important;
-    box-shadow: 0 6px 18px rgba(90, 59, 40, 0.1);
+    border-color: #cbab92 !important;
+    box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
 }
 
 .card-cesta-titulo {
     font-size: 19px !important;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
     color: #5a3b28 !important;
     margin-top: 4px !important;
     margin-bottom: 6px !important;
@@ -112,48 +161,17 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
 
 .card-cesta-desc {
     font-size: 13px !important;
-    color: #555 !important;
+    color: #4d3e35 !important;
     line-height: 1.5 !important;
-    margin-bottom: 10px !important;
-    background: #faf7f3;
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid #f2eae1;
-}
-
-/* Box de Adicionais na Vitrine */
-.card-adicionais-box {
-    background: #ffffff;
-    border: 1px dashed #dfcdbb;
-    border-radius: 10px;
-    padding: 8px 10px;
-    margin-bottom: 12px;
-}
-
-.card-adicionais-titulo {
-    font-size: 12px;
-    font-weight: 700;
-    color: #775a46;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-}
-
-.badge-adicional {
-    display: inline-block;
-    background: #f5eee6;
-    color: #5a3b28;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
+    margin-bottom: 12px !important;
+    background: #fcf9f5;
+    padding: 12px;
     border-radius: 12px;
-    margin-right: 4px;
-    margin-bottom: 4px;
-    border: 1px solid #e8ddd3;
+    border: 1px solid #f0e6dc;
 }
 
 .card-cesta-preco {
-    font-size: 19px !important;
+    font-size: 20px !important;
     font-weight: 800 !important;
     color: #2e7d32 !important;
     margin-bottom: 12px !important;
@@ -181,10 +199,10 @@ div[data-testid="stButton"] button:hover {
 .footer-container {
     background: #ffffff;
     border: 1px solid #e8ddd3;
-    border-radius: 16px;
-    padding: 20px;
+    border-radius: 18px;
+    padding: 22px;
     text-align: center;
-    margin-top: 2rem;
+    margin-top: 2.5rem;
     box-shadow: 0 2px 8px rgba(90, 59, 40, 0.03);
 }
 
@@ -198,20 +216,20 @@ div[data-testid="stButton"] button:hover {
 .footer-text {
     font-size: 13px;
     color: #666;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 
 .whatsapp-btn-box a {
     display: inline-block;
     background: #25d366 !important;
     color: white !important;
-    padding: 10px 20px;
-    border-radius: 10px;
+    padding: 11px 22px;
+    border-radius: 12px;
     font-weight: 700;
     text-decoration: none;
     font-size: 14px;
-    box-shadow: 0 3px 8px rgba(37, 211, 102, 0.2);
-    margin-top: 6px;
+    box-shadow: 0 3px 8px rgba(37, 211, 102, 0.22);
+    transition: all 0.2s ease;
 }
 
 /* Ajustes Responsivos Exclusivos para Celulares */
@@ -236,7 +254,7 @@ div[data-testid="stButton"] button:hover {
         font-size: 17px !important;
     }
     .card-cesta-preco {
-        font-size: 17px !important;
+        font-size: 18px !important;
     }
 }
 </style>
@@ -263,37 +281,70 @@ st.markdown(
         {logo_html}
         <div class="header-text">
             <h1 class="header-title">Doce Cesta Brasília</h1>
-            <p class="header-subtitle">Cestas personalizadas para momentos especiais 💝</p>
+            <p class="header-subtitle">Cestas personalizadas para momentos inesquecíveis 💝</p>
         </div>
     </div>
     """,
     unsafe_allow_html=True
 )
 
-st.write("")
-
 
 # ==========================================================
-# CARREGA ADICIONAIS / COMPLEMENTOS PARA A VITRINE
+# CARREGA E APRESENTA OS ADICIONAIS DE FORMA HARMONIOSA
 # ==========================================================
 
-adicionais_nomes = []
+produtos_adicionais = []
 try:
     categorias = listar_categorias_pedido()
     cat_adicionais = next((c for c in categorias if c.get("nome", "").strip().lower() == "adicionais"), None)
     if cat_adicionais:
-        prods_adicionais = listar_produtos_por_categoria_id(cat_adicionais["id"])
-        adicionais_nomes = [p["nome"] for p in prods_adicionais if p.get("nome")]
+        produtos_adicionais = listar_produtos_por_categoria_id(cat_adicionais["id"])
 except:
-    adicionais_nomes = []
+    produtos_adicionais = []
+
+if produtos_adicionais:
+    pills_html = ""
+    for prod in produtos_adicionais:
+        nome_p = prod.get("nome", "")
+        preco_p = prod.get("preco")
+
+        if preco_p is not None and str(preco_p).strip() != "":
+            try:
+                val_f = float(preco_p)
+                texto_preco = f'<span class="adicional-preco-fixo">R$ {val_f:,.2f}</span>'.replace(",", "X").replace(".", ",").replace("X",".")
+            except:
+                texto_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
+        else:
+            texto_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
+
+        pills_html += f"""
+        <div class="adicional-pill">
+            <span>✨ {nome_p}</span>
+            {texto_preco}
+        </div>
+        """
+
+    st.markdown(
+        f"""
+        <div class="adicionais-hero-card">
+            <div class="adicionais-hero-title">
+                <span>🎀 Personalize qualquer cesta com nossos Adicionais Especialmente Escolhidos:</span>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; align-items: center;">
+                {pills_html}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 # ==========================================================
 # CATÁLOGO DE CESTAS DINÂMICO
 # ==========================================================
 
-st.markdown("### 🎁 Nossos Modelos de Cestas")
-st.caption("Explore nossos modelos exclusivos, confira todos os itens detalhados e monte sua cesta.")
+st.markdown("<h3 style='color:#5a3b28; margin-top:0;'>🎁 Nossos Modelos de Cestas</h3>", unsafe_allow_html=True)
+st.caption("Escolha a cesta perfeita, confira os itens detalhados e personalize do seu jeito.")
 
 try:
     cestas = listar_cestas()
@@ -312,46 +363,30 @@ else:
 
         with coluna:
             with st.container(border=True):
-                
-                # TRATAMENTO DE IMAGEM: Só exibe a imagem se ela existir e for válida
+
+                # 1. TRATAMENTO DE FOTO PRINCIPAL: Só aparece se houver URL válida
                 imagem_url = cesta.get("imagem")
                 if imagem_url and str(imagem_url).strip():
                     st.image(str(imagem_url).strip(), use_container_width=True)
 
-                # TRATAMENTO DE FOTOS EXTRAS (Se houver)
+                # 2. TRATAMENTO DE FOTOS EXTRAS
                 fotos_extras = cesta.get("fotos_adicionais", [])
                 if isinstance(fotos_extras, list) and len(fotos_extras) > 0:
-                    st.caption("📸 Outros ângulos da cesta:")
-                    cols_extras = st.columns(len(fotos_extras))
+                    st.caption("📸 Outros ângulos desta cesta:")
+                    cols_extras = st.columns(min(len(fotos_extras), 4))
                     for f_idx, f_url in enumerate(fotos_extras):
                         if f_url and str(f_url).strip():
-                            with cols_extras[f_idx]:
+                            with cols_extras[f_idx % 4]:
                                 st.image(str(f_url).strip(), use_container_width=True)
 
-                # Título da Cesta
+                # 3. TÍTULO DA CESTA
                 st.markdown(f'<div class="card-cesta-titulo">{cesta["nome"]}</div>', unsafe_allow_html=True)
 
-                # Descrição COMPLETA (Sem cortes)
+                # 4. DESCRIÇÃO COMPLETA (SEM CORTES)
                 if cesta.get("descricao") and str(cesta["descricao"]).strip():
                     st.markdown(f'<div class="card-cesta-desc">{cesta["descricao"]}</div>', unsafe_allow_html=True)
 
-                # SEÇÃO DE ADICIONAIS / COMPLEMENTOS DISPONÍVEIS
-                if adicionais_nomes:
-                    badges_html = "".join([f'<span class="badge-ativa">✨ {nome}</span> ' for nome in adicionais_nomes[:4]])
-                    if len(adicionais_nomes) > 4:
-                        badges_html += f'<span class="badge-ativa">+ {len(adicionais_nomes) - 4} opções</span>'
-                    
-                    st.markdown(
-                        f"""
-                        <div class="card-adicionais-box">
-                            <div class="card-adicionais-titulo">🎀 Complementos Disponíveis no Pedido:</div>
-                            <div>{badges_html}</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
-                # Preço Formatado
+                # 5. PREÇO FORMATADO
                 try:
                     valor = float(cesta.get("preco", 0))
                     valor_fmt = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
@@ -359,7 +394,7 @@ else:
                 except:
                     st.markdown('<div class="card-cesta-preco">Preço sob consulta</div>', unsafe_allow_html=True)
 
-                # Botão de Ação -> Direciona para o formcompra.py em pages/
+                # 6. BOTÃO DE AÇÃO -> Direciona para o formcompra.py em pages/
                 if st.button("✨ Monte sua Cesta", key=f"cesta_btn_{cesta['id']}", use_container_width=True):
                     st.session_state["cesta_selecionada_home"] = cesta["id"]
                     st.switch_page("pages/formcompra.py")
