@@ -20,7 +20,7 @@ st.set_page_config(
 
 
 # ==========================================================
-# CSS MODERNO, GOOGLE FONTS E 100% RESPONSIVO
+# CSS MODERNO, GOOGLE FONTS E LAYOUT HARMONIOSO
 # ==========================================================
 
 st.markdown(
@@ -55,18 +55,18 @@ html, body, [class*="css"]  {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 20px;
-    margin-bottom: 1.2rem;
+    gap: 24px;
+    margin-bottom: 1.5rem;
     width: 100%;
     background: #ffffff;
-    padding: 20px;
+    padding: 20px 24px;
     border-radius: 18px;
     border: 1px solid #e8ddd3;
     box-shadow: 0 4px 12px rgba(90, 59, 40, 0.04);
 }
 
 .header-logo {
-    width: 130px;
+    width: 140px;
     height: auto;
     object-fit: contain;
     flex-shrink: 0;
@@ -98,21 +98,20 @@ html, body, [class*="css"]  {
 }
 
 /* =========================================
-   GRID INTELIGENTE (RESPONSIVO NATIVO)
+   GRID PARA OS CARDS INSTITUCIONAIS
 ========================================= */
 .info-grid {
     display: grid;
-    /* Adapta automaticamente: lado a lado no PC, empilhado no Celular */
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    margin-bottom: 1rem; /* Reduzido para aproximar do catálogo */
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 2rem;
 }
 
 .info-card {
     background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%);
     border: 1px solid #e2d2c3;
     border-radius: 16px;
-    padding: 24px;
+    padding: 28px 24px;
     box-shadow: 0 3px 10px rgba(90, 59, 40, 0.03);
     display: flex;
     flex-direction: column;
@@ -121,15 +120,15 @@ html, body, [class*="css"]  {
 
 .info-title {
     font-family: 'Dancing Script', cursive !important;
-    font-size: 34px !important;
+    font-size: 38px !important;
     font-weight: 700 !important;
     color: #c5721f !important;
-    margin-bottom: 14px !important;
+    margin-bottom: 16px !important;
     text-align: center;
 }
 
 .info-text {
-    font-size: 14px !important;
+    font-size: 14.5px !important;
     color: #5a3b28 !important;
     line-height: 1.6 !important;
     font-weight: 400 !important;
@@ -140,17 +139,18 @@ html, body, [class*="css"]  {
     color: #2e7d32 !important;
 }
 
+/* Lista de Como Pedir */
 .como-pedir-list {
     text-align: left;
-    font-size: 13.5px;
+    font-size: 14px;
     color: #5a3b28;
     line-height: 1.6;
     margin: 0;
-    padding-left: 18px;
+    padding-left: 20px;
 }
 
 .como-pedir-list li {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 /* Section Destaque dos Adicionais */
@@ -159,13 +159,14 @@ html, body, [class*="css"]  {
     border: 1px solid #e2d2c3;
     border-radius: 16px;
     padding: 16px 20px;
-    margin-top: 1rem;
+    margin-top: 1.5rem;
     margin-bottom: 1.5rem;
     box-shadow: 0 3px 10px rgba(90, 59, 40, 0.03);
 }
 
 .adicionais-hero-title {
-    font-size: 15px;
+    font-family: 'Dancing Script', cursive !important; /* Fonte alterada conforme pedido */
+    font-size: 15px; /* Tamanho mantido */
     font-weight: 700;
     color: #5a3b28;
     margin-bottom: 10px;
@@ -184,6 +185,7 @@ html, body, [class*="css"]  {
     font-size: 12.5px;
     color: #4a3222;
     box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    font-family: 'Montserrat', sans-serif !important; /* Mantém itens legíveis */
 }
 
 .adicional-preco-fixo {
@@ -275,7 +277,7 @@ div[data-testid="stButton"] button:hover {
 
 .footer-title {
     font-family: 'Dancing Script', cursive !important;
-    font-size: 30px !important;
+    font-size: 32px !important;
     font-weight: 700 !important;
     color: #c5721f;
     margin-bottom: 8px;
@@ -318,34 +320,29 @@ div[data-testid="stButton"] button:hover {
     box-shadow: 0 3px 8px rgba(220, 39, 67, 0.25);
 }
 
-/* =========================================
-   REGRAS EXCLUSIVAS PARA CELULARES
-========================================= */
-@media (max-width: 640px) {
-    .block-container { 
-        padding-top: 0.5rem !important; 
-        padding-left: 0.6rem !important;
-        padding-right: 0.6rem !important;
+/* Ajustes Responsivos Exclusivos para Celulares */
+@media (max-width: 768px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
     }
+}
+
+@media (max-width: 640px) {
+    .block-container { padding-top: 0.5rem !important; }
     .header-banner {
         flex-direction: column;
         text-align: center;
-        padding: 16px;
-        gap: 8px;
+        padding: 20px 16px;
+        gap: 12px;
     }
-    .header-logo { width: 100px !important; }
+    .header-logo { width: 110px !important; }
     .header-text { align-items: center; text-align: center; }
-    .header-title { font-size: 34px !important; }
-    .header-subtitle { font-size: 12.5px !important; }
-    
-    .info-card { padding: 18px 16px; }
-    .info-title { font-size: 30px !important; margin-bottom: 10px !important; }
-    
+    .header-title { font-size: 36px !important; }
+    .header-subtitle { font-size: 13px !important; }
+    .info-title { font-size: 32px !important; }
     .card-cesta-titulo { font-size: 17px !important; }
     .card-cesta-preco { font-size: 18px !important; }
-    
-    .social-btn-box { flex-direction: column; width: 100%; }
-    .social-btn-box a { justify-content: center; width: 100%; }
 }
 </style>
 """,
@@ -380,7 +377,7 @@ st.markdown(
 
 
 # ==========================================================
-# SEÇÃO: BEM-VINDO & COMO PEDIR 
+# SEÇÃO: BEM-VINDO & COMO PEDIR (CORRIGIDO SEM QUEBRAS)
 # ==========================================================
 
 st.markdown(
@@ -390,12 +387,14 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+st.write("---")
+
 
 # ==========================================================
-# TÍTULO PRINCIPAL DO CATÁLOGO (Agora mais próximo)
+# TÍTULO PRINCIPAL DO CATÁLOGO (FONTE DANCING SCRIPT)
 # ==========================================================
 
-st.markdown("<h3 style='color:#5a3b28; margin-top:0; margin-bottom:4px; font-weight:800; font-size: 22px;'>🎁 Catálogo de Cestas</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='font-family: \"Dancing Script\", cursive; color:#5a3b28; margin-top:0; margin-bottom:4px; font-weight:800; font-size: 22px;'>🎁 Catálogo de Cestas</h3>", unsafe_allow_html=True)
 st.caption("Escolha a cesta perfeita, confira os itens detalhados e personalize do seu jeito.")
 
 
