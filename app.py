@@ -192,6 +192,13 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
 }
 
+/* Centralização vertical automática no Desktop (Foto e Texto alinhados no meio) */
+@media (min-width: 641px) {
+    div[data-testid="stHorizontalBlock"] {
+        align-items: center !important;
+    }
+}
+
 /* NOME DA CESTA */
 .card-cesta-titulo {
     font-family: 'Dancing Script', cursive !important;
@@ -247,7 +254,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX FOTO CESTA (AJUSTE DE 50%)
+   LIGHTBOX FOTO CESTA (AJUSTE DE 60%)
 ========================================= */
 .lightbox-wrapper {
     text-align: center;
@@ -256,13 +263,13 @@ div[data-testid="stButton"] button:hover {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center; /* Centraliza a foto reduzida */
+    align-items: center; /* Centraliza a foto horizontalmente */
 }
 .lightbox-toggle {
     display: none; 
 }
 .lightbox-image {
-    width: 50%; /* REDUZIDO PARA 50% */
+    width: 60%; /* TAMANHO DA FOTO AJUSTADO PARA 60% */
     border-radius: 12px;
     cursor: zoom-in;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -282,7 +289,7 @@ div[data-testid="stButton"] button:hover {
     font-style: italic;
 }
 
-/* Modal Invisível */
+/* Modal Invisível (Ampliado) */
 .lightbox-modal {
     position: fixed;
     top: 0; left: 0;
@@ -423,8 +430,8 @@ div[data-testid="stButton"] button:hover {
     .card-cesta-titulo { font-size: 30px !important; text-align: center; }
     .card-cesta-preco { font-size: 22px !important; text-align: center; }
     
-    /* No celular a foto ocupa 50% também */
-    .lightbox-image { width: 50%; }
+    /* No celular a foto ocupa 60% e continua centralizada */
+    .lightbox-image { width: 60%; }
 }
 </style>
 """,
@@ -500,7 +507,7 @@ else:
             col_img, col_text = st.columns([1.2, 2], gap="medium")
             
             with col_img:
-                # TRATAMENTO DE FOTO PRINCIPAL (LIGHTBOX CSS - Reduzida em 50%)
+                # TRATAMENTO DE FOTO PRINCIPAL (LIGHTBOX CSS - 60% e Centralizada Verticalmente)
                 imagem_url = cesta.get("imagem")
                 if imagem_url and str(imagem_url).strip():
                     img_src = image_to_base64(imagem_url)
