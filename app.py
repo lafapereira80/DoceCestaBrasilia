@@ -102,9 +102,9 @@ html, body, [class*="css"]  {
 ========================================= */
 .info-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 24px;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem; /* Espaçamento reduzido para aproximar o catálogo */
 }
 
 .info-card {
@@ -165,8 +165,8 @@ html, body, [class*="css"]  {
 }
 
 .adicionais-hero-title {
-    font-family: 'Montserrat', sans-serif !important; /* Voltando para a fonte padrão de leitura */
-    font-size: 15px;
+    font-family: 'Dancing Script', cursive !important;
+    font-size: 20px;
     font-weight: 700;
     color: #5a3b28;
     margin-bottom: 10px;
@@ -185,6 +185,7 @@ html, body, [class*="css"]  {
     font-size: 12.5px;
     color: #4a3222;
     box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    font-family: 'Montserrat', sans-serif !important;
 }
 
 .adicional-preco-fixo {
@@ -220,9 +221,9 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
 /* NOME DA CESTA COM A FONTE DO BEM-VINDO */
 .card-cesta-titulo {
     font-family: 'Dancing Script', cursive !important;
-    font-size: 32px !important; /* Aumentado para melhor leitura cursiva */
+    font-size: 32px !important;
     font-weight: 700 !important;
-    color: #c5721f !important; /* Mesma cor do Bem-vindo */
+    color: #c5721f !important;
     margin-top: 4px !important;
     margin-bottom: 8px !important;
     line-height: 1.1 !important;
@@ -323,15 +324,12 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* Ajustes Responsivos Exclusivos para Celulares */
-@media (max-width: 768px) {
-    .info-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-}
-
 @media (max-width: 640px) {
-    .block-container { padding-top: 0.5rem !important; }
+    .block-container { 
+        padding-top: 0.5rem !important; 
+        padding-left: 0.6rem !important;
+        padding-right: 0.6rem !important;
+    }
     .header-banner {
         flex-direction: column;
         text-align: center;
@@ -340,10 +338,10 @@ div[data-testid="stButton"] button:hover {
     }
     .header-logo { width: 110px !important; }
     .header-text { align-items: center; text-align: center; }
-    .header-title { font-size: 38px !important; } /* Ajustado para celular */
+    .header-title { font-size: 38px !important; }
     .header-subtitle { font-size: 13px !important; }
     .info-title { font-size: 32px !important; }
-    .card-cesta-titulo { font-size: 26px !important; } /* Ajustado para celular */
+    .card-cesta-titulo { font-size: 26px !important; }
     .card-cesta-preco { font-size: 18px !important; }
 }
 </style>
@@ -379,7 +377,7 @@ st.markdown(
 
 
 # ==========================================================
-# SEÇÃO: BEM-VINDO & COMO PEDIR 
+# SEÇÃO: BEM-VINDO & COMO PEDIR (CORRIGIDO SEM QUEBRAS)
 # ==========================================================
 
 st.markdown(
@@ -388,8 +386,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-st.write("---")
 
 
 # ==========================================================
