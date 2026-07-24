@@ -235,10 +235,10 @@ else:
                 except:
                     st.markdown('<div class="card-cesta-preco">Preço sob consulta</div>', unsafe_allow_html=True)
 
-                # Ação de Seleção -> Redireciona diretamente para formcompra.py na mesma pasta
+                # Ação de Seleção -> Direcionado para pages/formcompra.py
                 if st.button("✨ Monte sua Cesta", key=f"cesta_btn_{cesta['id']}", use_container_width=True):
                     st.session_state["cesta_selecionada_home"] = cesta["id"]
-                    st.switch_page("formcompra.py")
+                    st.switch_page("pages/formcompra.py")
 
 
 # ==========================================================
