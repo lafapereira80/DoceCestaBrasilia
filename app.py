@@ -4,7 +4,7 @@ import mimetypes
 from pathlib import Path
 
 from services.cesta_service import listar_cestas
-from services.categoria_service import listar_categorias_pedido
+from services.categoria_service import listar_categorias  # <-- CORRIGIDO AQUI
 from services.produto_service import listar_produtos_por_categoria_id
 
 
@@ -586,7 +586,7 @@ else:
 
 produtos_adicionais = []
 try:
-    categorias = listar_categorias_pedido()
+    categorias = listar_categorias()  # <-- CORRIGIDO PARA EVITAR ERRO DE IMPORTAÇÃO
     cat_adicionais = next((c for c in categorias if c.get("nome", "").strip().lower() == "adicionais"), None)
     if cat_adicionais:
         produtos_adicionais = listar_produtos_por_categoria_id(cat_adicionais["id"])
