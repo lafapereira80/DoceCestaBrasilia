@@ -507,7 +507,18 @@ st.caption("Escolha a cesta perfeita, confira os itens detalhados e personalize 
 
 try:
     cestas = listar_cestas()
+    # Filtra as cestas ativas
     cestas = [c for c in cestas if c.get("ativa", True)]
+    
+    # Tratamento para garantir a ordenação via Python 
+    # Define como ordem "999" (ou final da lista) aquelas cestas que não possuem ordem cadastrada
+    for cesta in cestas:
+        if "ordem" not in cesta or cesta["ordem"] is None:
+            cesta["ordem"] = 999 
+            
+    # Ordena explicitamente a lista baseada na chave "ordem"
+    cestas = sorted(cestas, key=lambda c: c["ordem"])
+    
 except Exception as erro:
     st.error(f"Erro ao carregar cestas: {erro}")
     cestas = []
