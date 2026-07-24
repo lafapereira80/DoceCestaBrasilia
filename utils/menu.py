@@ -20,6 +20,7 @@ def configurar_pagina():
         header[data-testid="stHeader"] {
             background: transparent !important;
             z-index: 99999 !important;
+            pointer-events: none !important; /* Evita que o header invisível bloqueie cliques */
         }
 
         /* =========================================
@@ -37,7 +38,7 @@ def configurar_pagina():
         [data-testid="stSidebarCollapseButton"] button::after,
         button[aria-label="Close sidebar"]::after {
             content: "✕" !important;
-            font-size: 16px !important;
+            font-size: 18px !important;
             font-weight: 700 !important;
             color: #5a3b28 !important;
         }
@@ -46,17 +47,18 @@ def configurar_pagina():
         [data-testid="collapsedControl"] button::after,
         button[aria-label="Open sidebar"]::after {
             content: "☰" !important;
-            font-size: 20px !important;
+            font-size: 22px !important;
             font-weight: 700 !important;
             color: #5a3b28 !important;
         }
 
-        /* Ajusta área clicável */
+        /* Ajusta área clicável padrão (PC) */
         [data-testid="stSidebarCollapseButton"],
         [data-testid="collapsedControl"] {
             display: flex !important;
             visibility: visible !important;
             opacity: 1 !important;
+            pointer-events: auto !important; /* Reativa o clique que o header removeu */
         }
 
         /* =========================================
@@ -128,6 +130,45 @@ def configurar_pagina():
         div[data-testid="stSidebar"] button:hover {
             background-color: #fce8e6 !important;
             border-color: #f5c6cb !important;
+        }
+
+        /* =========================================
+           RESPONSIVIDADE EXCLUSIVA PARA MOBILE
+        ========================================== */
+        @media (max-width: 768px) {
+            /* Destaca o botão de abrir (Hambúrguer) para não sumir no conteúdo */
+            [data-testid="collapsedControl"] {
+                top: 8px !important;
+                left: 8px !important;
+                background-color: rgba(255, 255, 255, 0.9) !important;
+                border-radius: 8px !important;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+                padding: 4px 8px !important;
+                z-index: 100000 !important;
+            }
+
+            /* Aumenta o tamanho dos textos e botões na lateral para facilitar o toque */
+            .sidebar-brand {
+                font-size: 22px !important;
+                margin-top: 15px !important;
+                margin-bottom: 20px !important;
+            }
+
+            .user-name {
+                font-size: 15px !important;
+            }
+
+            div[data-testid="stPageLink"] a {
+                padding: 12px 14px !important; /* Aumenta a área de toque */
+                font-size: 15px !important;
+                margin-bottom: 6px !important;
+            }
+
+            div[data-testid="stSidebar"] button {
+                height: 48px !important; /* Botão de sair mais alto */
+                font-size: 15px !important;
+                margin-top: 10px !important;
+            }
         }
         </style>
         """,
@@ -212,5 +253,5 @@ def menu_lateral():
             "🚪 Sair da Conta",
             use_container_width=True
         ):
-            st.session_state.usuario = None
-            st.rerun()
+            st.session_state.pop("usuario", None)
+            st.switch_page("app.py")
