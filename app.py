@@ -3,6 +3,8 @@ import base64
 from pathlib import Path
 
 from services.cesta_service import listar_cestas
+from services.categoria_service import listar_categorias_pedido
+from services.produto_service import listar_produtos_por_categoria_id
 
 
 # ==========================================================
@@ -104,7 +106,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     font-size: 19px !important;
     font-weight: 700 !important;
     color: #5a3b28 !important;
-    margin-top: 8px !important;
+    margin-top: 4px !important;
     margin-bottom: 6px !important;
 }
 
@@ -112,11 +114,42 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     font-size: 13px !important;
     color: #555 !important;
     line-height: 1.5 !important;
-    margin-bottom: 12px !important;
+    margin-bottom: 10px !important;
     background: #faf7f3;
     padding: 10px;
     border-radius: 10px;
     border: 1px solid #f2eae1;
+}
+
+/* Box de Adicionais na Vitrine */
+.card-adicionais-box {
+    background: #ffffff;
+    border: 1px dashed #dfcdbb;
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-bottom: 12px;
+}
+
+.card-adicionais-titulo {
+    font-size: 12px;
+    font-weight: 700;
+    color: #775a46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.badge-adicional {
+    display: inline-block;
+    background: #f5eee6;
+    color: #5a3b28;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-right: 4px;
+    margin-bottom: 4px;
+    border: 1px solid #e8ddd3;
 }
 
 .card-cesta-preco {
@@ -168,7 +201,6 @@ div[data-testid="stButton"] button:hover {
     margin-bottom: 12px;
 }
 
-/* Estilização para Links de Contato */
 .whatsapp-btn-box a {
     display: inline-block;
     background: #25d366 !important;
@@ -242,6 +274,21 @@ st.write("")
 
 
 # ==========================================================
+# CARREGA ADICIONAIS / COMPLEMENTOS PARA A VITRINE
+# ==========================================================
+
+adicionais_nomes = []
+try:
+    categorias = listar_categorias_pedido()
+    cat_adicionais = next((c for c in categorias if c.get("nome", "").strip().lower() == "adicionais"), None)
+    if cat_adicionais:
+        prods_adicionais = listar_produtos_por_categoria_id(cat_adicionais["id"])
+        adicionais_nomes = [p["nome"] for p in prods_adicionais if p.get("nome")]
+except:
+    adicionais_nomes = []
+
+
+# ==========================================================
 # CATÁLOGO DE CESTAS DINÂMICO
 # ==========================================================
 
@@ -265,29 +312,44 @@ else:
 
         with coluna:
             with st.container(border=True):
-                # Foto Principal da Cesta
-                if cesta.get("imagem"):
-                    st.image(cesta["imagem"], use_container_width=True)
-                else:
-                    st.image("https://via.placeholder.com/400x300?text=Doce+Cesta+Brasília", use_container_width=True)
+                
+                # TRATAMENTO DE IMAGEM: Só exibe a imagem se ela existir e for válida
+                imagem_url = cesta.get("imagem")
+                if imagem_url and str(imagem_url).strip():
+                    st.image(str(imagem_url).strip(), use_container_width=True)
 
-                # Se houver fotos adicionais salvas na cesta (ex: lista de fotos extras)
+                # TRATAMENTO DE FOTOS EXTRAS (Se houver)
                 fotos_extras = cesta.get("fotos_adicionais", [])
-                if fotos_extras and isinstance(fotos_extras, list):
+                if isinstance(fotos_extras, list) and len(fotos_extras) > 0:
                     st.caption("📸 Outros ângulos da cesta:")
                     cols_extras = st.columns(len(fotos_extras))
                     for f_idx, f_url in enumerate(fotos_extras):
-                        with cols_extras[f_idx]:
-                            st.image(f_url, use_container_width=True)
+                        if f_url and str(f_url).strip():
+                            with cols_extras[f_idx]:
+                                st.image(str(f_url).strip(), use_container_width=True)
 
                 # Título da Cesta
                 st.markdown(f'<div class="card-cesta-titulo">{cesta["nome"]}</div>', unsafe_allow_html=True)
 
                 # Descrição COMPLETA (Sem cortes)
-                if cesta.get("descricao"):
+                if cesta.get("descricao") and str(cesta["descricao"]).strip():
                     st.markdown(f'<div class="card-cesta-desc">{cesta["descricao"]}</div>', unsafe_allow_html=True)
-                else:
-                    st.markdown('<div class="card-cesta-desc">Cesta completa montada com carinho e produtos selecionados.</div>', unsafe_allow_html=True)
+
+                # SEÇÃO DE ADICIONAIS / COMPLEMENTOS DISPONÍVEIS
+                if adicionais_nomes:
+                    badges_html = "".join([f'<span class="badge-ativa">✨ {nome}</span> ' for nome in adicionais_nomes[:4]])
+                    if len(adicionais_nomes) > 4:
+                        badges_html += f'<span class="badge-ativa">+ {len(adicionais_nomes) - 4} opções</span>'
+                    
+                    st.markdown(
+                        f"""
+                        <div class="card-adicionais-box">
+                            <div class="card-adicionais-titulo">🎀 Complementos Disponíveis no Pedido:</div>
+                            <div>{badges_html}</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
 
                 # Preço Formatado
                 try:
@@ -297,7 +359,7 @@ else:
                 except:
                     st.markdown('<div class="card-cesta-preco">Preço sob consulta</div>', unsafe_allow_html=True)
 
-                # Botão de Ação -> Direciona para o formcompra.py
+                # Botão de Ação -> Direciona para o formcompra.py em pages/
                 if st.button("✨ Monte sua Cesta", key=f"cesta_btn_{cesta['id']}", use_container_width=True):
                     st.session_state["cesta_selecionada_home"] = cesta["id"]
                     st.switch_page("pages/formcompra.py")
