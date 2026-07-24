@@ -1,10 +1,13 @@
 import streamlit as st
 
+from config.supabase import supabase  # Importação direta para driblar o cache
+
 from services.cesta_service import (
     buscar_cesta,
     atualizar_cesta,
     upload_imagem_cesta,
-    remover_imagem_cesta
+    remover_imagem_cesta,
+    listar_cestas
 )
 
 from utils.menu import (
@@ -255,7 +258,7 @@ if cancelar:
 
 
 # =====================================================
-# SALVAR
+# SALVAR (COM DRIBLE DE CACHE INFALÍVEL)
 # =====================================================
 
 if salvar:
@@ -273,7 +276,7 @@ if salvar:
             st.stop()
 
     try:
-        # Tenta atualizar chamando com o argumento ordem
+        # TENTA A FUNÇÃO NOVA
         atualizar_cesta(
             cesta_id=cesta_id,
             nome=nome.strip(),
@@ -283,15 +286,40 @@ if salvar:
             ativa=ativa,
             ordem=int(nova_ordem)
         )
-
         st.success("Cesta atualizada e reordenada com sucesso!")
         st.session_state.pop("cesta_editar", None)
         st.switch_page("pages/04_Cestas.py")
 
     except TypeError as erro_tipo:
-        # Se cair aqui, é porque o cache do Streamlit travou a versão antiga da função.
+        # SE O CACHE ESTIVER TRAVADO COM A FUNÇÃO VELHA, NÓS DRIBLAMOS ELE AQUI!
         if "ordem" in str(erro_tipo):
-            st.error("⚠️ **O cache do sistema travou.** O servidor ainda está usando a versão antiga do banco de dados na memória. \n\n**Solução:** Vá no terminal, aperte `Ctrl+C` para parar a aplicação e inicie novamente com `streamlit run app.py`.")
+            try:
+                # 1. Salva os dados básicos com a função antiga que está na memória
+                atualizar_cesta(
+                    cesta_id=cesta_id,
+                    nome=nome.strip(),
+                    descricao=descricao.strip(),
+                    preco=preco,
+                    imagem=imagem,
+                    ativa=ativa
+                )
+                
+                # 2. Faz a reordenação em cascata das outras cestas direto no banco de dados
+                cestas_existentes = listar_cestas()
+                for c in cestas_existentes:
+                    if c["id"] != cesta_id and c.get("ordem", 0) >= int(nova_ordem):
+                        nova_ordem_cascata = c.get("ordem", 0) + 1
+                        supabase.table("cestas").update({"ordem": nova_ordem_cascata}).eq("id", c["id"]).execute()
+                
+                # 3. Salva a nova ordem da cesta que estamos editando direto no banco de dados
+                supabase.table("cestas").update({"ordem": int(nova_ordem)}).eq("id", cesta_id).execute()
+
+                st.success("Cesta atualizada e reordenada com sucesso! (Drible de cache ativado)")
+                st.session_state.pop("cesta_editar", None)
+                st.switch_page("pages/04_Cestas.py")
+
+            except Exception as erro_drible:
+                st.error(f"Erro durante o drible de cache: {erro_drible}")
         else:
             st.error(f"Erro ao atualizar cesta: {erro_tipo}")
             
