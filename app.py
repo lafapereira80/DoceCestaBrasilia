@@ -375,33 +375,12 @@ st.markdown(
 
 
 # ==========================================================
-# SEÇÃO: BEM-VINDO & COMO PEDIR (LADO A LADO COM GRID)
+# SEÇÃO: BEM-VINDO & COMO PEDIR (CORRIGIDO SEM QUEBRAS)
 # ==========================================================
 
 st.markdown(
     """
-    <div class="info-grid">
-        <div class="info-card">
-            <div class="info-title">Bem-vindo(a)</div>
-            <div class="info-text">
-                <div style="text-align: center; margin-bottom: 12px;">É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.</div>
-                Nossas cestas são cuidadosamente montadas no estilo <strong>grazing</strong> e proporcionam não apenas sabores únicos e envolventes, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br>
-                <div style="text-align: center;">Desfrute o melhor da vida com um bom café e uma excelente companhia!</div>
-            </div>
-        </div>
-        
-        <div class="info-card">
-            <div class="info-title">Como fazer o pedido</div>
-            <ul class="como-pedir-list">
-                <li>✨ Defina através do nosso catálogo abaixo a opção desejada e clique em <b>"Monte sua Cesta"</b>.</li>
-                <li>⏳ Peça sua Doce Cesta com no mínimo <b>24h de antecedência</b> (ou <b>72h</b> caso possua mini bolo).</li>
-                <li>🕒 <b>Atendimento:</b> Segunda a sexta de 7h às 19h | Sábado de 8h às 12h.</li>
-                <li>🚗 A entrega poderá ser realizada via <b>Uber Flash / 99 Entrega</b> ou retirada em mãos.</li>
-                <li>💌 Todas as cestas contêm um pequeno <b>cartão personalizável</b>.</li>
-                <li>💳 <b>Pagamento:</b> PIX ou link de Cartão de Crédito.</li>
-            </ul>
-        </div>
-    </div>
+    <div class="info-grid"><div class="info-card"><div class="info-title">Bem-vindo(a)</div><div class="info-text"><div style="text-align: center; margin-bottom: 12px;">É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.</div>Nossas cestas são cuidadosamente montadas no estilo <strong>grazing</strong> e proporcionam não apenas sabores únicos e envolventes, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br><div style="text-align: center;">Desfrute o melhor da vida com um bom café e uma excelente companhia!</div></div></div><div class="info-card"><div class="info-title">Como fazer o pedido</div><ul class="como-pedir-list"><li>✨ Defina através do nosso catálogo abaixo a opção desejada e clique em <b>"Monte sua Cesta"</b>.</li><li>⏳ Peça sua Doce Cesta com no mínimo <b>24h de antecedência</b> (ou <b>72h</b> caso possua mini bolo).</li><li>🕒 <b>Atendimento:</b> Segunda a sexta de 7h às 19h | Sábado de 8h às 12h.</li><li>🚗 A entrega poderá ser realizada via <b>Uber Flash / 99 Entrega</b> ou retirada em mãos.</li><li>💌 Todas as cestas contêm um pequeno <b>cartão personalizável</b>.</li><li>💳 <b>Pagamento:</b> PIX ou link de Cartão de Crédito.</li></ul></div></div>
     """,
     unsafe_allow_html=True
 )
