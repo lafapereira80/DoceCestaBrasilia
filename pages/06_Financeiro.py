@@ -193,6 +193,13 @@ df["valor_total"] = pd.to_numeric(df.get("valor_total", 0), errors="coerce").fil
 df["valor_frete"] = pd.to_numeric(df.get("valor_frete", 0), errors="coerce").fillna(0)
 df["desconto"] = pd.to_numeric(df.get("desconto", 0), errors="coerce").fillna(0)
 
+# Padroniza o status para capitalizado (Ex: "Pago", "Entregue", "Recebido", etc.)
+if "status" in df.columns:
+    df["status"] = df["status"].fillna("Desconhecido").astype(str).str.strip().str.capitalize()
+else:
+    df["status"] = "Desconhecido"
+
+# Considera para o financeiro os status de faturamento (Pago, Entregue, etc.)
 status_financeiro = ["Pago", "Entregue"]
 df = df[df["status"].isin(status_financeiro)]
 
