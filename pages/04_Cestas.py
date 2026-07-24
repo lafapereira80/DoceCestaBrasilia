@@ -234,6 +234,16 @@ st.divider()
 
 try:
     cestas = listar_cestas()
+    
+    # Tratamento para garantir a ordenação via Python (caso a query do banco falhe nisso)
+    # Define como ordem "999" (ou final da lista) aquelas cestas que não possuem ordem cadastrada
+    for cesta in cestas:
+        if "ordem" not in cesta or cesta["ordem"] is None:
+            cesta["ordem"] = 999 
+            
+    # Ordena explicitamente a lista baseada na chave "ordem"
+    cestas = sorted(cestas, key=lambda c: c["ordem"])
+    
 except Exception as erro:
     st.error(f"Erro ao carregar cestas: {erro}")
     cestas = []
@@ -292,6 +302,11 @@ if usuario.get("perfil") == "Administrador":
                     st.success("Cesta cadastrada e reordenada com sucesso!")
                     st.rerun()
 
+                except TypeError as erro_tipo:
+                    if "ordem" in str(erro_tipo):
+                        st.error("⚠️ Erro de Cache: A função 'cadastrar_cesta' não está recebendo a 'ordem'. Apague o __pycache__ e reinicie o app.")
+                    else:
+                        st.error(f"Erro ao cadastrar: {erro_tipo}")
                 except Exception as erro:
                     st.error(f"Erro ao cadastrar cesta: {erro}")
 
@@ -322,7 +337,10 @@ else:
 
     for cesta in cestas:
         ativa = cesta.get("ativa", True)
-        posicao_atual = cesta.get("ordem", 1)
+        
+        # Mostra "-" em vez de "999" se a cesta ainda não tiver ordem definida no banco
+        posicao_atual_num = cesta.get("ordem", 999)
+        posicao_display = str(posicao_atual_num) if posicao_atual_num != 999 else "-"
 
         with st.container(border=True):
             col1, col2, col3, col4 = st.columns([4.5, 1.8, 1.4, 2.3])
@@ -334,14 +352,14 @@ else:
                     with img_col:
                         st.image(cesta["imagem"], width=60)
                     with txt_col:
-                        st.markdown(f'<div class="cesta-nome">#{posicao_atual} - {cesta["nome"]}</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div class="cesta-nome">#{posicao_display} - {cesta["nome"]}</div>', unsafe_allow_html=True)
                         if cesta.get("descricao"):
                             desc = cesta["descricao"]
                             if len(desc) > 85:
                                 desc = desc[:85] + "..."
                             st.caption(desc)
                 else:
-                    st.markdown(f'<div class="cesta-nome">#{posicao_atual} - {cesta["nome"]}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="cesta-nome">#{posicao_display} - {cesta["nome"]}</div>', unsafe_allow_html=True)
                     if cesta.get("descricao"):
                         desc = cesta["descricao"]
                         if len(desc) > 85:
