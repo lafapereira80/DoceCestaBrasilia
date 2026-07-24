@@ -664,7 +664,7 @@ if produtos_adicionais:
             <div class="adicionais-hero-title">
                 🎀 Incremente seu presente com nossos Adicionais Especiais:
                 <span style="font-size: 12px; font-weight: normal; color: #888; display: block; margin-top: 4px;">
-                    👉 Toque em qualquer foto para ampliar (Exibe 5 por linha no PC e 2 no celular)
+                    👉 Toque em qualquer foto para ampliar
                 </span>
             </div>
             <div class="adicionais-grid-css">
