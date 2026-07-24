@@ -36,7 +36,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS MODERNO E LIGHTBOX CSS PADRÃO (O MESMO DAS CESTAS)
+# CSS MODERNO E LIGHTBOX CSS PADRÃO (CESTAS)
 # ==========================================================
 
 st.markdown(
@@ -243,7 +243,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX CSS PADRÃO (ESTÁVEL E TESTADO)
+   LIGHTBOX CSS PADRÃO (CESTAS)
 ========================================= */
 .lightbox-wrapper {
     text-align: center;
@@ -304,7 +304,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   GRID DE ADICIONAIS COM LIGHTBOX INTEGRADO
+   ESTILO DOS CARDS DE ADICIONAIS
 ========================================= */
 .adicionais-hero-card {
     background: linear-gradient(135deg, #ffffff 0%, #faf5f0 100%);
@@ -324,79 +324,25 @@ div[data-testid="stButton"] button:hover {
     margin-bottom: 16px;
 }
 
-.adicionais-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 14px;
-}
-
-.adicional-card {
+.adicional-card-box {
     background: #ffffff;
     border: 1px solid #e8ddd3;
     border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 4px 10px rgba(90, 59, 40, 0.04);
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-    display: flex;
-    flex-direction: column;
-}
-
-.adicional-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 18px rgba(197, 114, 31, 0.15);
-    border-color: #c5721f;
-}
-
-/* Imagem do Adicional com Lightbox embutido */
-.adicional-lightbox-wrapper {
-    position: relative;
-    width: 100%;
-    height: 105px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: #fdfbf8;
-    border-bottom: 1px solid #f0e6dc;
-}
-
-.adicional-lightbox-image {
-    width: 100%;
-    height: 105px;
-    border-top-left-radius: 14px;
-    border-top-right-radius: 14px;
-    cursor: zoom-in;
-    transition: transform 0.2s ease;
-    object-fit: cover;
-    display: block;
-}
-.adicional-lightbox-image:hover {
-    transform: scale(1.03);
-}
-
-.adicional-img-placeholder {
-    width: 100%;
-    height: 105px;
-    background: linear-gradient(135deg, #fdfbf8 0%, #f5eee6 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    border-bottom: 1px solid #f0e6dc;
-}
-
-.adicional-details {
-    padding: 10px 8px;
+    padding: 10px;
     text-align: center;
+    box-shadow: 0 4px 10px rgba(90, 59, 40, 0.04);
+    margin-bottom: 10px;
+    height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    flex-grow: 1;
 }
 
 .adicional-nome {
     font-size: 11.5px;
     font-weight: 700;
     color: #4d3e35;
+    margin-top: 6px;
     margin-bottom: 4px;
     line-height: 1.25;
 }
@@ -404,7 +350,7 @@ div[data-testid="stButton"] button:hover {
 .adicional-preco-fixo {
     color: #2e7d32;
     font-weight: 800;
-    font-size: 12.5px;
+    font-size: 12px;
 }
 
 .adicional-preco-consulta {
@@ -413,8 +359,20 @@ div[data-testid="stButton"] button:hover {
     background: #fff8ef;
     padding: 2px 6px;
     border-radius: 10px;
-    font-size: 10px;
+    font-size: 9.5px;
     display: inline-block;
+}
+
+.adicional-img-placeholder {
+    width: 100%;
+    height: 90px;
+    background: linear-gradient(135deg, #fdfbf8 0%, #f5eee6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    border-radius: 8px;
+    border: 1px solid #f0e6dc;
 }
 
 /* =========================================
@@ -454,10 +412,6 @@ div[data-testid="stButton"] button:hover {
 /* =========================================
    RESPONSIVO EXCLUSIVO MOBILE
 ========================================= */
-@media (max-width: 900px) {
-    .adicionais-grid { grid-template-columns: repeat(3, 1fr) !important; }
-}
-
 @media (max-width: 640px) {
     .block-container { 
         padding-top: 0.5rem !important; 
@@ -471,8 +425,6 @@ div[data-testid="stButton"] button:hover {
     .card-cesta-titulo { font-size: 30px !important; text-align: center; }
     .card-cesta-preco { font-size: 22px !important; text-align: center; }
     .lightbox-image { width: 80%; }
-    
-    .adicionais-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
 </style>
 """,
@@ -590,7 +542,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (GRID DE 5 COM LIGHTBOX ESTÁVEL)
+# APRESENTAÇÃO DOS ADICIONAIS (GRID DE 5 USANDO O MESMO LIGHTBOX DAS CESTAS)
 # ==========================================================
 
 produtos_adicionais = []
@@ -603,33 +555,8 @@ except:
     produtos_adicionais = []
 
 if produtos_adicionais:
-    cards_html = ""
-    for prod in produtos_adicionais:
-        nome_p = prod.get("nome", "")
-        preco_p = prod.get("preco")
-        imagem_p = prod.get("imagem")
-
-        if preco_p is not None and str(preco_p).strip() != "":
-            try:
-                val_f = float(preco_p)
-                texto_preco = f'R$ {val_f:,.2f}'.replace(",", "X").replace(".", ",").replace("X",".")
-                span_preco = f'<span class="adicional-preco-fixo">{texto_preco}</span>'
-            except:
-                span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
-        else:
-            span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
-
-        if imagem_p and str(imagem_p).strip():
-            img_src = image_to_base64(imagem_p)
-            # Utilizando a exata mesma estrutura de label + checkbox das cestas para garantir 100% de funcionamento
-            img_html = f'<label style="cursor: zoom-in; width: 100%; height: 105px; display: block; position: relative;"><input type="checkbox" class="lightbox-toggle"><img src="{img_src}" class="adicional-lightbox-image" alt="{nome_p}" title="Toque para ampliar"><div class="lightbox-modal"><img src="{img_src}"></div></label>'
-        else:
-            img_html = f'<div class="adicional-img-placeholder">🎀</div>'
-
-        cards_html += f'<div class="adicional-card">{img_html}<div class="adicional-details"><div class="adicional-nome">{nome_p}</div><div>{span_preco}</div></div></div>'
-
     st.markdown(
-        f"""
+        """
         <div class="adicionais-hero-card">
             <div class="adicionais-hero-title">
                 🎀 Incremente seu presente com nossos Adicionais Especiais:
@@ -637,13 +564,57 @@ if produtos_adicionais:
                     👉 Toque em qualquer foto para ampliar
                 </span>
             </div>
-            <div class="adicionais-grid">
-                {cards_html}
-            </div>
         </div>
         """,
         unsafe_allow_html=True
     )
+
+    # Divide os produtos em blocos de 5 por linha perfeitamente estruturados
+    tamanho_linha = 5
+    for i in range(0, len(produtos_adicionais), tamanho_linha):
+        lote = produtos_adicionais[i:i + tamanho_linha]
+        cols = st.columns(tamanho_linha)
+
+        for idx, prod in enumerate(lote):
+            with cols[idx]:
+                nome_p = prod.get("nome", "")
+                preco_p = prod.get("preco")
+                imagem_p = prod.get("imagem")
+
+                if preco_p is not None and str(preco_p).strip() != "":
+                    try:
+                        val_f = float(preco_p)
+                        texto_preco = f'R$ {val_f:,.2f}'.replace(",", "X").replace(".", ",").replace("X",".")
+                        span_preco = f'<span class="adicional-preco-fixo">{texto_preco}</span>'
+                    except:
+                        span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
+                else:
+                    span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
+
+                # Caixa visual do produto
+                with st.container(border=True):
+                    if imagem_p and str(imagem_p).strip():
+                        img_src = image_to_base64(imagem_p)
+                        # O exato mesmo mecanismo de Lightbox (label + checkbox) das cestas aplicado perfeitamente ao card
+                        st.markdown(
+                            f"""
+                            <div style="text-align: center;">
+                                <label style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                                    <input type="checkbox" class="lightbox-toggle">
+                                    <img src="{img_src}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px;" title="Clique para ampliar">
+                                    <div class="lightbox-modal">
+                                        <img src="{img_src}">
+                                    </div>
+                                </label>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                    else:
+                        st.markdown('<div class="adicional-img-placeholder">🎀</div>', unsafe_allow_html=True)
+
+                    st.markdown(f'<div style="font-size: 11.5px; font-weight: 700; color: #4d3e35; text-align: center; margin-top: 6px; margin-bottom: 4px; min-height: 28px;">{nome_p}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div style="text-align: center;">{span_preco}</div>', unsafe_allow_html=True)
 
 
 # ==========================================================
