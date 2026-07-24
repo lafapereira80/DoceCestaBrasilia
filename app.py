@@ -92,18 +92,16 @@ footer { visibility: hidden !important; }
     border: 1px solid #e2d2c3;
     border-radius: 16px;
     padding: 14px 18px;
+    margin-top: 10px;
     margin-bottom: 1.5rem;
     box-shadow: 0 3px 10px rgba(90, 59, 40, 0.03);
 }
 
 .adicionais-hero-title {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     color: #5a3b28;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    margin-bottom: 10px;
 }
 
 .adicional-pill {
@@ -159,10 +157,12 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     margin-bottom: 6px !important;
 }
 
+/* Texto de Descrição Justificado */
 .card-cesta-desc {
     font-size: 13px !important;
     color: #4d3e35 !important;
-    line-height: 1.5 !important;
+    line-height: 1.55 !important;
+    text-align: justify !important;
     margin-bottom: 12px !important;
     background: #fcf9f5;
     padding: 12px;
@@ -290,7 +290,15 @@ st.markdown(
 
 
 # ==========================================================
-# CARREGA E APRESENTA OS ADICIONAIS DE FORMA HARMONIOSA
+# TÍTULO PRINCIPAL DO CATÁLOGO
+# ==========================================================
+
+st.markdown("<h3 style='color:#5a3b28; margin-top:0; margin-bottom:4px;'>🎁 Nossos Modelos de Cestas</h3>", unsafe_allow_html=True)
+st.caption("Escolha a cesta perfeita, confira os itens detalhados e personalize do seu jeito.")
+
+
+# ==========================================================
+# APRESENTAÇÃO DOS ADICIONAIS (APÓS O TÍTULO)
 # ==========================================================
 
 produtos_adicionais = []
@@ -317,18 +325,13 @@ if produtos_adicionais:
         else:
             texto_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
 
-        pills_html += f"""
-        <div class="adicional-pill">
-            <span>✨ {nome_p}</span>
-            {texto_preco}
-        </div>
-        """
+        pills_html += f"""<div class="adicional-pill"><span>✨ {nome_p}</span>{texto_preco}</div>"""
 
     st.markdown(
         f"""
         <div class="adicionais-hero-card">
             <div class="adicionais-hero-title">
-                <span>🎀 Personalize qualquer cesta com nossos Adicionais Especialmente Escolhidos:</span>
+                🎀 Personalize qualquer cesta com nossos Adicionais Especialmente Escolhidos:
             </div>
             <div style="display: flex; flex-wrap: wrap; align-items: center;">
                 {pills_html}
@@ -342,9 +345,6 @@ if produtos_adicionais:
 # ==========================================================
 # CATÁLOGO DE CESTAS DINÂMICO
 # ==========================================================
-
-st.markdown("<h3 style='color:#5a3b28; margin-top:0;'>🎁 Nossos Modelos de Cestas</h3>", unsafe_allow_html=True)
-st.caption("Escolha a cesta perfeita, confira os itens detalhados e personalize do seu jeito.")
 
 try:
     cestas = listar_cestas()
@@ -364,7 +364,7 @@ else:
         with coluna:
             with st.container(border=True):
 
-                # 1. TRATAMENTO DE FOTO PRINCIPAL: Só aparece se houver URL válida
+                # 1. TRATAMENTO DE FOTO PRINCIPAL (Apenas se houver imagem válida)
                 imagem_url = cesta.get("imagem")
                 if imagem_url and str(imagem_url).strip():
                     st.image(str(imagem_url).strip(), use_container_width=True)
@@ -382,7 +382,7 @@ else:
                 # 3. TÍTULO DA CESTA
                 st.markdown(f'<div class="card-cesta-titulo">{cesta["nome"]}</div>', unsafe_allow_html=True)
 
-                # 4. DESCRIÇÃO COMPLETA (SEM CORTES)
+                # 4. DESCRIÇÃO COMPLETA E JUSTIFICADA
                 if cesta.get("descricao") and str(cesta["descricao"]).strip():
                     st.markdown(f'<div class="card-cesta-desc">{cesta["descricao"]}</div>', unsafe_allow_html=True)
 
