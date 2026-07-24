@@ -165,13 +165,8 @@ html, body, [class*="css"]  {
     margin: 0;
     padding-left: 20px;
 }
-
-.como-pedir-list li {
-    margin-bottom: 10px;
-}
-.como-pedir-list li:last-child {
-    margin-bottom: 0;
-}
+.como-pedir-list li { margin-bottom: 10px; }
+.como-pedir-list li:last-child { margin-bottom: 0; }
 
 
 /* =========================================
@@ -192,11 +187,8 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
 }
 
-/* Centralização vertical automática no Desktop (Foto e Texto alinhados no meio) */
 @media (min-width: 641px) {
-    div[data-testid="stHorizontalBlock"] {
-        align-items: center !important;
-    }
+    div[data-testid="stHorizontalBlock"] { align-items: center !important; }
 }
 
 /* NOME DA CESTA */
@@ -230,9 +222,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     margin-bottom: 16px !important;
 }
 
-/* =========================================
-   NOVA PROPOSTA DE BOTÃO "MONTE SUA CESTA"
-========================================= */
+/* NOVO BOTÃO MONTE SUA CESTA */
 div[data-testid="stButton"] button {
     background: linear-gradient(135deg, #c5721f 0%, #a65d14 100%) !important;
     color: white !important;
@@ -246,7 +236,6 @@ div[data-testid="stButton"] button {
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
-
 div[data-testid="stButton"] button:hover {
     transform: translateY(-3px) !important;
     box-shadow: 0 6px 18px rgba(197, 114, 31, 0.45) !important;
@@ -254,7 +243,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX FOTO CESTA (AJUSTE DE 60%)
+   LIGHTBOX FOTO CESTA 
 ========================================= */
 .lightbox-wrapper {
     text-align: center;
@@ -263,13 +252,11 @@ div[data-testid="stButton"] button:hover {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center; /* Centraliza a foto horizontalmente */
+    align-items: center; 
 }
-.lightbox-toggle {
-    display: none; 
-}
+.lightbox-toggle { display: none; }
 .lightbox-image {
-    width: 60%; /* TAMANHO DA FOTO AJUSTADO PARA 60% */
+    width: 60%; 
     border-radius: 12px;
     cursor: zoom-in;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -288,78 +275,137 @@ div[data-testid="stButton"] button:hover {
     margin-bottom: 8px;
     font-style: italic;
 }
-
-/* Modal Invisível (Ampliado) */
 .lightbox-modal {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background-color: rgba(0, 0, 0, 0.85);
-    z-index: 999999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease;
-    cursor: zoom-out;
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85); z-index: 999999;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; transition: opacity 0.3s ease; cursor: zoom-out;
 }
 .lightbox-modal img {
-    max-width: 90vw;
-    max-height: 90vh;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
-.lightbox-toggle:checked ~ .lightbox-modal {
-    opacity: 1;
-    visibility: visible;
-}
+.lightbox-toggle:checked ~ .lightbox-modal { opacity: 1; visibility: visible; }
 
 /* =========================================
-   ADICIONAIS
+   NOVO DESIGN DE ADICIONAIS (CARROSSEL/GRID)
 ========================================= */
 .adicionais-hero-card {
     background: linear-gradient(135deg, #ffffff 0%, #faf5f0 100%);
     border: 1px solid #e2d2c3;
     border-radius: 16px;
-    padding: 16px 20px;
+    padding: 20px 24px;
     margin-top: 1.5rem;
     margin-bottom: 1.5rem;
     box-shadow: 0 3px 10px rgba(90, 59, 40, 0.03);
 }
+
 .adicionais-hero-title {
     font-family: 'Montserrat', sans-serif !important; 
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
     color: #5a3b28;
-    margin-bottom: 10px;
+    margin-bottom: 16px;
 }
-.adicional-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+
+/* Área de Rolagem Horizontal */
+.adicionais-scroll-container {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding: 10px 4px 20px 4px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; /* Suavidade no celular */
+}
+
+/* Estilização da barra de rolagem do carrossel */
+.adicionais-scroll-container::-webkit-scrollbar {
+    height: 6px;
+}
+.adicionais-scroll-container::-webkit-scrollbar-track {
+    background: #f1e9e2;
+    border-radius: 10px;
+}
+.adicionais-scroll-container::-webkit-scrollbar-thumb {
+    background: #cbab92;
+    border-radius: 10px;
+}
+.adicionais-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #a65d14;
+}
+
+/* Card Individual do Adicional */
+.adicional-card {
+    flex: 0 0 auto; /* Impede que o card encolha */
+    width: 140px;
     background: #ffffff;
-    border: 1px solid #dfcdbb;
-    border-radius: 20px;
-    padding: 6px 12px;
-    margin-right: 6px;
-    margin-bottom: 8px;
-    font-size: 12.5px;
-    color: #4a3222;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-    font-family: 'Montserrat', sans-serif !important;
+    border: 1px solid #e8ddd3;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(90, 59, 40, 0.04);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
 }
+
+.adicional-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 18px rgba(197, 114, 31, 0.15);
+    border-color: #c5721f;
+}
+
+/* Imagem do Adicional */
+.adicional-img {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    background: #fdfbf8;
+    border-bottom: 1px solid #f0e6dc;
+}
+
+/* Placeholder se não tiver foto */
+.adicional-img-placeholder {
+    width: 100%;
+    height: 110px;
+    background: linear-gradient(135deg, #fdfbf8 0%, #f5eee6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    border-bottom: 1px solid #f0e6dc;
+}
+
+/* Área de Texto do Adicional */
+.adicional-details {
+    padding: 12px 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-grow: 1;
+}
+
+.adicional-nome {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #4d3e35;
+    margin-bottom: 6px;
+    line-height: 1.25;
+}
+
 .adicional-preco-fixo {
     color: #2e7d32;
-    font-weight: 700;
+    font-weight: 800;
+    font-size: 13.5px;
 }
+
 .adicional-preco-consulta {
     color: #c5721f;
     font-weight: 700;
     background: #fff8ef;
-    padding: 1px 6px;
+    padding: 2px 6px;
     border-radius: 10px;
-    font-size: 11px;
+    font-size: 10.5px;
+    display: inline-block;
 }
 
 /* =========================================
@@ -387,22 +433,10 @@ div[data-testid="stButton"] button:hover {
     margin-bottom: 16px;
     line-height: 1.5;
 }
-.social-btn-box {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
+.social-btn-box { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
 .social-btn-box a {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: white !important;
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-weight: 600;
-    text-decoration: none;
-    font-size: 14px;
+    display: inline-flex; align-items: center; gap: 8px; color: white !important;
+    padding: 12px 24px; border-radius: 12px; font-weight: 600; text-decoration: none; font-size: 14px;
     transition: all 0.2s ease;
 }
 .btn-whatsapp { background: #25d366 !important; box-shadow: 0 3px 8px rgba(37, 211, 102, 0.25); }
@@ -414,24 +448,16 @@ div[data-testid="stButton"] button:hover {
 @media (max-width: 640px) {
     .block-container { 
         padding-top: 0.5rem !important; 
-        padding-left: 0.6rem !important;
-        padding-right: 0.6rem !important;
+        padding-left: 0.6rem !important; padding-right: 0.6rem !important;
     }
-    .header-banner {
-        flex-direction: column;
-        text-align: center;
-        padding: 20px 16px;
-        gap: 12px;
-    }
+    .header-banner { flex-direction: column; text-align: center; padding: 20px 16px; gap: 12px; }
     .header-logo { width: 110px !important; }
     .header-title { font-size: 38px !important; }
     .info-card { padding: 12px 16px 12px 16px !important; } 
     .info-title { font-size: 32px !important; }
     .card-cesta-titulo { font-size: 30px !important; text-align: center; }
     .card-cesta-preco { font-size: 22px !important; text-align: center; }
-    
-    /* No celular a foto ocupa 60% e continua centralizada */
-    .lightbox-image { width: 60%; }
+    .lightbox-image { width: 80%; }
 }
 </style>
 """,
@@ -486,7 +512,7 @@ st.caption("Escolha a cesta perfeita, confira os itens detalhados e personalize 
 
 
 # ==========================================================
-# CATÁLOGO DE CESTAS DINÂMICO (NOVO LAYOUT EM LINHA)
+# CATÁLOGO DE CESTAS DINÂMICO
 # ==========================================================
 
 try:
@@ -500,18 +526,13 @@ if not cestas:
     st.info("Nenhuma cesta cadastrada no momento.")
 else:
     for cesta in cestas:
-        # Contêiner geral da cesta
         with st.container(border=True):
-            
-            # Divide o espaço: Foto na esquerda (1.2) e Texto na direita (2)
             col_img, col_text = st.columns([1.2, 2], gap="medium")
             
             with col_img:
-                # TRATAMENTO DE FOTO PRINCIPAL (LIGHTBOX CSS - 60% e Centralizada Verticalmente)
                 imagem_url = cesta.get("imagem")
                 if imagem_url and str(imagem_url).strip():
                     img_src = image_to_base64(imagem_url)
-                    
                     st.markdown(
                         f"""
                         <div class="lightbox-wrapper">
@@ -528,7 +549,6 @@ else:
                         unsafe_allow_html=True
                     )
 
-                # TRATAMENTO DE FOTOS EXTRAS
                 fotos_extras = cesta.get("fotos_adicionais", [])
                 if isinstance(fotos_extras, list) and len(fotos_extras) > 0:
                     st.caption("📸 Outros ângulos:")
@@ -539,14 +559,11 @@ else:
                                 st.image(str(f_url).strip(), use_container_width=True)
 
             with col_text:
-                # TÍTULO DA CESTA 
                 st.markdown(f'<div class="card-cesta-titulo">{cesta["nome"]}</div>', unsafe_allow_html=True)
 
-                # DESCRIÇÃO COMPLETA E JUSTIFICADA
                 if cesta.get("descricao") and str(cesta["descricao"]).strip():
                     st.markdown(f'<div class="card-cesta-desc">{cesta["descricao"]}</div>', unsafe_allow_html=True)
 
-                # PREÇO FORMATADO
                 try:
                     valor = float(cesta.get("preco", 0))
                     valor_fmt = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
@@ -554,14 +571,13 @@ else:
                 except:
                     st.markdown('<div class="card-cesta-preco">Preço sob consulta</div>', unsafe_allow_html=True)
 
-                # NOVO BOTÃO DE AÇÃO -> Direciona para o formcompra.py em pages/
                 if st.button("🛒 Monte sua Cesta", key=f"cesta_btn_{cesta['id']}", use_container_width=True):
                     st.session_state["cesta_selecionada_home"] = cesta["id"]
                     st.switch_page("pages/formcompra.py")
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS
+# APRESENTAÇÃO DOS ADICIONAIS (CARROSSEL COM FOTOS)
 # ==========================================================
 
 produtos_adicionais = []
@@ -574,30 +590,52 @@ except:
     produtos_adicionais = []
 
 if produtos_adicionais:
-    pills_html = ""
+    cards_html = ""
     for prod in produtos_adicionais:
         nome_p = prod.get("nome", "")
         preco_p = prod.get("preco")
+        imagem_p = prod.get("imagem")
 
+        # 1. Tratamento do Preço
         if preco_p is not None and str(preco_p).strip() != "":
             try:
                 val_f = float(preco_p)
-                texto_preco = f'<span class="adicional-preco-fixo">R$ {val_f:,.2f}</span>'.replace(",", "X").replace(".", ",").replace("X",".")
+                texto_preco = f'R$ {val_f:,.2f}'.replace(",", "X").replace(".", ",").replace("X",".")
+                span_preco = f'<span class="adicional-preco-fixo">{texto_preco}</span>'
             except:
-                texto_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
+                span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
         else:
-            texto_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
+            span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
 
-        pills_html += f"""<div class="adicional-pill"><span>✨ {nome_p}</span>{texto_preco}</div>"""
+        # 2. Tratamento da Imagem (Mostra foto ou Placeholder de laço se não tiver)
+        if imagem_p and str(imagem_p).strip():
+            img_src = image_to_base64(imagem_p)
+            img_html = f'<img src="{img_src}" class="adicional-img" alt="{nome_p}">'
+        else:
+            img_html = f'<div class="adicional-img-placeholder">🎀</div>'
+
+        # 3. Montagem do Card
+        cards_html += f"""
+        <div class="adicional-card">
+            {img_html}
+            <div class="adicional-details">
+                <div class="adicional-nome">{nome_p}</div>
+                <div>{span_preco}</div>
+            </div>
+        </div>
+        """
 
     st.markdown(
         f"""
         <div class="adicionais-hero-card">
             <div class="adicionais-hero-title">
-                🎀 Personalize qualquer cesta com nossos Adicionais Especialmente Escolhidos:
+                🎀 Incremente seu presente com nossos Adicionais Especiais:
+                <span style="font-size: 12px; font-weight: normal; color: #888; display: block; margin-top: 4px;">
+                    👉 Deslize para os lados para ver mais opções
+                </span>
             </div>
-            <div style="display: flex; flex-wrap: wrap; align-items: center;">
-                {pills_html}
+            <div class="adicionais-scroll-container">
+                {cards_html}
             </div>
         </div>
         """,
