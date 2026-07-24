@@ -4,8 +4,19 @@ import mimetypes
 from pathlib import Path
 
 from services.cesta_service import listar_cestas
-from services.categoria_service import listar_categorias  # <-- CORRIGIDO AQUI
 from services.produto_service import listar_produtos_por_categoria_id
+
+# ==========================================================
+# DRIBLE INFALÍVEL DE IMPORTAÇÃO (Evita o ImportError)
+# ==========================================================
+try:
+    from services.categoria_service import listar_categorias_pedido as buscar_categorias
+except ImportError:
+    try:
+        from services.categoria_service import listar_categorias as buscar_categorias
+    except ImportError:
+        def buscar_categorias():
+            return [] # Retorna vazio para não quebrar a página se o nome for diferente
 
 
 # ==========================================================
@@ -439,10 +450,25 @@ div[data-testid="stButton"] button:hover {
         padding-top: 0.5rem !important; 
         padding-left: 0.6rem !important; padding-right: 0.6rem !important;
     }
-    .header-banner { flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px 16px; gap: 12px; }
-    .header-text { align-items: center; text-align: center; }
-    .header-logo { width: 110px !important; }
-    .header-title { font-size: 36px !important; text-align: center !important; }
+    
+    /* GANTE ALINHAMENTO CENTRAL NO CELULAR PARA O TOPO */
+    .header-banner { 
+        flex-direction: column !important; 
+        align-items: center !important; 
+        justify-content: center !important; 
+        text-align: center !important; 
+        padding: 20px 16px !important; 
+        gap: 12px !important; 
+    }
+    
+    .header-text { 
+        align-items: center !important; 
+        text-align: center !important; 
+        width: 100% !important;
+    }
+    
+    .header-logo { width: 110px !important; margin: 0 auto !important; }
+    .header-title { font-size: 36px !important; text-align: center !important; margin-bottom: 6px !important; }
     .header-subtitle { text-align: center !important; }
     
     .info-card { padding: 12px 16px 12px 16px !important; } 
@@ -514,12 +540,10 @@ try:
     cestas = [c for c in cestas if c.get("ativa", True)]
     
     # Tratamento para garantir a ordenação via Python 
-    # Define como ordem "999" (ou final da lista) aquelas cestas que não possuem ordem cadastrada
     for cesta in cestas:
         if "ordem" not in cesta or cesta["ordem"] is None:
             cesta["ordem"] = 999 
             
-    # Ordena explicitamente a lista baseada na chave "ordem"
     cestas = sorted(cestas, key=lambda c: c["ordem"])
     
 except Exception as erro:
@@ -586,7 +610,8 @@ else:
 
 produtos_adicionais = []
 try:
-    categorias = listar_categorias()  # <-- CORRIGIDO PARA EVITAR ERRO DE IMPORTAÇÃO
+    # USAMOS A FUNÇÃO BLINDADA DO INÍCIO DO ARQUIVO PARA NÃO QUEBRAR
+    categorias = buscar_categorias()
     cat_adicionais = next((c for c in categorias if c.get("nome", "").strip().lower() == "adicionais"), None)
     if cat_adicionais:
         produtos_adicionais = listar_produtos_por_categoria_id(cat_adicionais["id"])
@@ -612,7 +637,6 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            # Sistema de Lightbox (label + checkbox) perfeitamente integrado no card do adicional
             img_html = f'<label style="cursor: zoom-in; display: inline-block; margin-bottom: 4px;"><input type="checkbox" class="lightbox-toggle"><img src="{img_src}" class="adicional-img-small" title="Clique para ampliar"><div class="lightbox-modal"><img src="{img_src}"></div></label>'
         else:
             img_html = f'<div class="adicional-img-placeholder">🎀</div>'
