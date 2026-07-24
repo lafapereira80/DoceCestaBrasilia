@@ -91,14 +91,14 @@ footer { visibility: hidden !important; }
     background: linear-gradient(135deg, #ffffff 0%, #faf5f0 100%);
     border: 1px solid #e2d2c3;
     border-radius: 16px;
-    padding: 14px 18px;
-    margin-top: 10px;
+    padding: 16px 20px;
+    margin-top: 1.5rem;
     margin-bottom: 1.5rem;
     box-shadow: 0 3px 10px rgba(90, 59, 40, 0.03);
 }
 
 .adicionais-hero-title {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     color: #5a3b28;
     margin-bottom: 10px;
@@ -111,7 +111,7 @@ footer { visibility: hidden !important; }
     background: #ffffff;
     border: 1px solid #dfcdbb;
     border-radius: 20px;
-    padding: 5px 12px;
+    padding: 6px 12px;
     margin-right: 6px;
     margin-bottom: 8px;
     font-size: 12.5px;
@@ -202,7 +202,7 @@ div[data-testid="stButton"] button:hover {
     border-radius: 18px;
     padding: 22px;
     text-align: center;
-    margin-top: 2.5rem;
+    margin-top: 1.5rem;
     box-shadow: 0 2px 8px rgba(90, 59, 40, 0.03);
 }
 
@@ -298,7 +298,65 @@ st.caption("Escolha a cesta perfeita, confira os itens detalhados e personalize 
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (APÓS O TÍTULO)
+# CATÁLOGO DE CESTAS DINÂMICO
+# ==========================================================
+
+try:
+    cestas = listar_cestas()
+    cestas = [c for c in cestas if c.get("ativa", True)]
+except Exception as erro:
+    st.error(f"Erro ao carregar cestas: {erro}")
+    cestas = []
+
+if not cestas:
+    st.info("Nenhuma cesta cadastrada no momento.")
+else:
+    colunas = st.columns(2)
+
+    for idx, cesta in enumerate(cestas):
+        coluna = colunas[idx % 2]
+
+        with coluna:
+            with st.container(border=True):
+
+                # 1. TRATAMENTO DE FOTO PRINCIPAL
+                imagem_url = cesta.get("imagem")
+                if imagem_url and str(imagem_url).strip():
+                    st.image(str(imagem_url).strip(), use_container_width=True)
+
+                # 2. TRATAMENTO DE FOTOS EXTRAS
+                fotos_extras = cesta.get("fotos_adicionais", [])
+                if isinstance(fotos_extras, list) and len(fotos_extras) > 0:
+                    st.caption("📸 Outros ângulos desta cesta:")
+                    cols_extras = st.columns(min(len(fotos_extras), 4))
+                    for f_idx, f_url in enumerate(fotos_extras):
+                        if f_url and str(f_url).strip():
+                            with cols_extras[f_idx % 4]:
+                                st.image(str(f_url).strip(), use_container_width=True)
+
+                # 3. TÍTULO DA CESTA
+                st.markdown(f'<div class="card-cesta-titulo">{cesta["nome"]}</div>', unsafe_allow_html=True)
+
+                # 4. DESCRIÇÃO COMPLETA E JUSTIFICADA
+                if cesta.get("descricao") and str(cesta["descricao"]).strip():
+                    st.markdown(f'<div class="card-cesta-desc">{cesta["descricao"]}</div>', unsafe_allow_html=True)
+
+                # 5. PREÇO FORMATADO
+                try:
+                    valor = float(cesta.get("preco", 0))
+                    valor_fmt = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
+                    st.markdown(f'<div class="card-cesta-preco">{valor_fmt}</div>', unsafe_allow_html=True)
+                except:
+                    st.markdown('<div class="card-cesta-preco">Preço sob consulta</div>', unsafe_allow_html=True)
+
+                # 6. BOTÃO DE AÇÃO -> Direciona para o formcompra.py em pages/
+                if st.button("✨ Monte sua Cesta", key=f"cesta_btn_{cesta['id']}", use_container_width=True):
+                    st.session_state["cesta_selecionada_home"] = cesta["id"]
+                    st.switch_page("pages/formcompra.py")
+
+
+# ==========================================================
+# APRESENTAÇÃO DOS ADICIONAIS (APÓS AS CESTAS CADASTRADAS)
 # ==========================================================
 
 produtos_adicionais = []
@@ -340,64 +398,6 @@ if produtos_adicionais:
         """,
         unsafe_allow_html=True
     )
-
-
-# ==========================================================
-# CATÁLOGO DE CESTAS DINÂMICO
-# ==========================================================
-
-try:
-    cestas = listar_cestas()
-    cestas = [c for c in cestas if c.get("ativa", True)]
-except Exception as erro:
-    st.error(f"Erro ao carregar cestas: {erro}")
-    cestas = []
-
-if not cestas:
-    st.info("Nenhuma cesta cadastrada no momento.")
-else:
-    colunas = st.columns(2)
-
-    for idx, cesta in enumerate(cestas):
-        coluna = colunas[idx % 2]
-
-        with coluna:
-            with st.container(border=True):
-
-                # 1. TRATAMENTO DE FOTO PRINCIPAL (Apenas se houver imagem válida)
-                imagem_url = cesta.get("imagem")
-                if imagem_url and str(imagem_url).strip():
-                    st.image(str(imagem_url).strip(), use_container_width=True)
-
-                # 2. TRATAMENTO DE FOTOS EXTRAS
-                fotos_extras = cesta.get("fotos_adicionais", [])
-                if isinstance(fotos_extras, list) and len(fotos_extras) > 0:
-                    st.caption("📸 Outros ângulos desta cesta:")
-                    cols_extras = st.columns(min(len(fotos_extras), 4))
-                    for f_idx, f_url in enumerate(fotos_extras):
-                        if f_url and str(f_url).strip():
-                            with cols_extras[f_idx % 4]:
-                                st.image(str(f_url).strip(), use_container_width=True)
-
-                # 3. TÍTULO DA CESTA
-                st.markdown(f'<div class="card-cesta-titulo">{cesta["nome"]}</div>', unsafe_allow_html=True)
-
-                # 4. DESCRIÇÃO COMPLETA E JUSTIFICADA
-                if cesta.get("descricao") and str(cesta["descricao"]).strip():
-                    st.markdown(f'<div class="card-cesta-desc">{cesta["descricao"]}</div>', unsafe_allow_html=True)
-
-                # 5. PREÇO FORMATADO
-                try:
-                    valor = float(cesta.get("preco", 0))
-                    valor_fmt = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
-                    st.markdown(f'<div class="card-cesta-preco">{valor_fmt}</div>', unsafe_allow_html=True)
-                except:
-                    st.markdown('<div class="card-cesta-preco">Preço sob consulta</div>', unsafe_allow_html=True)
-
-                # 6. BOTÃO DE AÇÃO -> Direciona para o formcompra.py em pages/
-                if st.button("✨ Monte sua Cesta", key=f"cesta_btn_{cesta['id']}", use_container_width=True):
-                    st.session_state["cesta_selecionada_home"] = cesta["id"]
-                    st.switch_page("pages/formcompra.py")
 
 
 # ==========================================================
