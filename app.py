@@ -36,7 +36,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS MODERNO E LIGHTBOX GLOBAL UNIFICADO (100% ESTÁVEL)
+# CSS MODERNO E LIGHTBOX CSS PADRÃO (O MESMO DAS CESTAS)
 # ==========================================================
 
 st.markdown(
@@ -243,7 +243,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX GLOBAL ESTÁVEL (JS UNIFICADO)
+   LIGHTBOX CSS PADRÃO (ESTÁVEL E TESTADO)
 ========================================= */
 .lightbox-wrapper {
     text-align: center;
@@ -254,6 +254,7 @@ div[data-testid="stButton"] button:hover {
     justify-content: center;
     align-items: center; 
 }
+.lightbox-toggle { display: none !important; }
 
 .lightbox-image {
     width: 60%; 
@@ -277,27 +278,33 @@ div[data-testid="stButton"] button:hover {
     font-style: italic;
 }
 
-/* Modal Global Flutuante */
-#global-zoom-modal {
+.lightbox-modal {
     position: fixed;
     top: 0; left: 0;
     width: 100vw; height: 100vh;
     background-color: rgba(0, 0, 0, 0.85);
     z-index: 999999;
-    display: none;
+    display: flex;
     align-items: center;
     justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
     cursor: zoom-out;
 }
-#global-zoom-modal img {
+.lightbox-modal img {
     max-width: 90vw;
     max-height: 90vh;
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
+.lightbox-toggle:checked ~ .lightbox-modal {
+    opacity: 1;
+    visibility: visible;
+}
 
 /* =========================================
-   NOVA GRID DE ADICIONAIS (5 POR LINHA)
+   GRID DE ADICIONAIS COM LIGHTBOX INTEGRADO
 ========================================= */
 .adicionais-hero-card {
     background: linear-gradient(135deg, #ffffff 0%, #faf5f0 100%);
@@ -317,7 +324,6 @@ div[data-testid="stButton"] button:hover {
     margin-bottom: 16px;
 }
 
-/* Grid perfeitamente alinhada em colunas de 5 */
 .adicionais-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -341,17 +347,29 @@ div[data-testid="stButton"] button:hover {
     border-color: #c5721f;
 }
 
-.adicional-img {
+/* Imagem do Adicional com Lightbox embutido */
+.adicional-lightbox-wrapper {
+    position: relative;
     width: 100%;
     height: 105px;
-    object-fit: cover;
-    cursor: zoom-in;
-    transition: transform 0.2s ease;
-    display: block;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     background: #fdfbf8;
     border-bottom: 1px solid #f0e6dc;
 }
-.adicional-img:hover {
+
+.adicional-lightbox-image {
+    width: 100%;
+    height: 105px;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    cursor: zoom-in;
+    transition: transform 0.2s ease;
+    object-fit: cover;
+    display: block;
+}
+.adicional-lightbox-image:hover {
     transform: scale(1.03);
 }
 
@@ -454,23 +472,9 @@ div[data-testid="stButton"] button:hover {
     .card-cesta-preco { font-size: 22px !important; text-align: center; }
     .lightbox-image { width: 80%; }
     
-    /* No celular exibe 2 colunas para ficar excelente no toque */
     .adicionais-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
 </style>
-
-<!-- Modal Global JS unificado para ampliação de imagens -->
-<div id="global-zoom-modal" onclick="this.style.display='none'">
-    <img id="global-zoom-img" src="">
-</div>
-<script>
-function abrirZoomGlobal(url) {
-    const modal = document.getElementById('global-zoom-modal');
-    const modalImg = document.getElementById('global-zoom-img');
-    modalImg.src = url;
-    modal.style.display = 'flex';
-}
-</script>
 """,
 unsafe_allow_html=True
 )
@@ -545,7 +549,13 @@ else:
                     st.markdown(
                         f"""
                         <div class="lightbox-wrapper">
-                            <img src="{img_src}" class="lightbox-image" title="Clique para ampliar" onclick="abrirZoomGlobal('{img_src}')">
+                            <label style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                                <input type="checkbox" class="lightbox-toggle">
+                                <img src="{img_src}" class="lightbox-image" title="Clique para ampliar">
+                                <div class="lightbox-modal">
+                                    <img src="{img_src}">
+                                </div>
+                            </label>
                             <div class="imagem-legenda">👆 Toque na foto para ampliar</div>
                         </div>
                         """,
@@ -580,7 +590,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (GRID DE 5 PRODUTOS POR LINHA)
+# APRESENTAÇÃO DOS ADICIONAIS (GRID DE 5 COM LIGHTBOX ESTÁVEL)
 # ==========================================================
 
 produtos_adicionais = []
@@ -611,7 +621,8 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            img_html = f'<img src="{img_src}" class="adicional-img" alt="{nome_p}" title="Toque para ampliar" onclick="abrirZoomGlobal(\'{img_src}\')">'
+            # Utilizando a exata mesma estrutura de label + checkbox das cestas para garantir 100% de funcionamento
+            img_html = f'<label style="cursor: zoom-in; width: 100%; height: 105px; display: block; position: relative;"><input type="checkbox" class="lightbox-toggle"><img src="{img_src}" class="adicional-lightbox-image" alt="{nome_p}" title="Toque para ampliar"><div class="lightbox-modal"><img src="{img_src}"></div></label>'
         else:
             img_html = f'<div class="adicional-img-placeholder">🎀</div>'
 
