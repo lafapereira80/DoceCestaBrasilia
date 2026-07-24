@@ -1,360 +1,153 @@
 from config.supabase import supabase
-
-
+import uuid
 
 # =====================================================
-# LISTAR TODAS AS CATEGORIAS
-# USO ADMINISTRATIVO
+# LISTAR CESTAS
 # =====================================================
-
-def listar_categorias():
-
-
+def listar_cestas():
     resposta = (
-
         supabase
-
-        .table("categorias")
-
+        .table("cestas")
         .select("*")
-
-        .order("ordem")
-
+        .order("ordem", desc=False)
+        .order("nome", desc=False)
         .execute()
-
     )
-
-
     return resposta.data or []
 
+# =====================================================
+# UPLOAD IMAGEM DA CESTA
+# =====================================================
+def upload_imagem_cesta(arquivo):
+    if arquivo is None:
+        return None
 
+    try:
+        # cria nome único
+        extensao = arquivo.name.split(".")[-1]
+        nome_arquivo = f"{uuid.uuid4()}.{extensao}"
+        caminho = f"cestas/{nome_arquivo}"
 
+        # upload para storage
+        supabase.storage.from_("cestas").upload(
+            caminho,
+            arquivo.getvalue(),
+            {"content-type": arquivo.type}
+        )
 
+        # URL pública
+        url = (
+            supabase.storage
+            .from_("cestas")
+            .get_public_url(caminho)
+        )
+
+        return url
+
+    except Exception as erro:
+        raise Exception(f"Erro no upload da imagem: {erro}")
 
 # =====================================================
-# LISTAR CATEGORIAS ATIVAS
-# USO GERAL
+# CADASTRAR CESTA COM REORDENAÇÃO EM CASCATA
 # =====================================================
-
-def listar_categorias_ativas():
-
+def cadastrar_cesta(nome, descricao, preco, imagem=None, ordem=1):
+    cestas_existentes = listar_cestas()
+    
+    for c in cestas_existentes:
+        if c.get("ordem", 0) >= ordem:
+            nova_ordem = c.get("ordem", 0) + 1
+            supabase.table("cestas").update({"ordem": nova_ordem}).eq("id", c["id"]).execute()
 
     resposta = (
-
         supabase
-
-        .table("categorias")
-
-        .select("*")
-
-        .eq(
-            "ativo",
-            True
-        )
-
-        .order("ordem")
-
+        .table("cestas")
+        .insert({
+            "nome": nome,
+            "descricao": descricao,
+            "preco": preco,
+            "imagem": imagem,
+            "ativa": True,
+            "ordem": ordem
+        })
         .execute()
-
     )
-
-
-    return resposta.data or []
-
-
-
-
-
-# =====================================================
-# LISTAR CATEGORIAS PARA O PEDIDO
-# USADO NO APP.PY
-# =====================================================
-
-def listar_categorias_pedido():
-
-
-    resposta = (
-
-        supabase
-
-        .table("categorias")
-
-        .select("*")
-
-        .eq(
-            "ativo",
-            True
-        )
-
-        .eq(
-            "exibir_no_pedido",
-            True
-        )
-
-        .order("ordem")
-
-        .execute()
-
-    )
-
-
-    return resposta.data or []
-
-
-
-
-
-# =====================================================
-# BUSCAR CATEGORIA
-# =====================================================
-
-def buscar_categoria(categoria_id):
-
-
-    resposta = (
-
-        supabase
-
-        .table("categorias")
-
-        .select("*")
-
-        .eq(
-            "id",
-            categoria_id
-        )
-
-        .single()
-
-        .execute()
-
-    )
-
-
     return resposta.data
 
-
-
-
-
 # =====================================================
-# CADASTRAR CATEGORIA
+# EXCLUIR CESTA
 # =====================================================
-
-def cadastrar_categoria(
-
-    nome,
-
-    possui_preco,
-
-    exibir_no_pedido,
-
-    ativo=True,
-
-    ordem=0
-
-):
-
-
-    dados = {
-
-
-        "nome": nome,
-
-
-        "possui_preco": bool(possui_preco),
-
-
-        "exibir_no_pedido": bool(exibir_no_pedido),
-
-
-        "ativo": bool(ativo),
-
-
-        "ordem": ordem
-
-
-    }
-
-
-
-    resposta = (
-
+def excluir_cesta(cesta_id):
+    (
         supabase
-
-        .table("categorias")
-
-        .insert(dados)
-
-        .execute()
-
-    )
-
-
-    return resposta.data
-
-
-
-
-
-# =====================================================
-# ATUALIZAR CATEGORIA
-# =====================================================
-
-def atualizar_categoria(
-
-    categoria_id,
-
-    nome,
-
-    possui_preco,
-
-    exibir_no_pedido,
-
-    ativo,
-
-    ordem
-
-):
-
-
-    dados = {
-
-
-        "nome": nome,
-
-
-        "possui_preco": bool(possui_preco),
-
-
-        "exibir_no_pedido": bool(exibir_no_pedido),
-
-
-        "ativo": bool(ativo),
-
-
-        "ordem": ordem
-
-
-    }
-
-
-
-    resposta = (
-
-        supabase
-
-        .table("categorias")
-
-        .update(dados)
-
-        .eq(
-
-            "id",
-
-            categoria_id
-
-        )
-
-        .execute()
-
-    )
-
-
-    return resposta.data
-
-
-
-
-
-# =====================================================
-# ALTERAR STATUS DA CATEGORIA
-# ATIVO / INATIVO
-# =====================================================
-
-def alterar_status_categoria(
-
-    categoria_id,
-
-    ativo
-
-):
-
-
-    dados = {
-
-
-        "ativo": bool(ativo)
-
-    }
-
-
-
-    resposta = (
-
-        supabase
-
-        .table("categorias")
-
-        .update(dados)
-
-        .eq(
-
-            "id",
-
-            categoria_id
-
-        )
-
-        .execute()
-
-    )
-
-
-
-    if not resposta.data:
-
-
-        raise Exception(
-
-            "Nenhuma categoria foi atualizada. Verifique o ID da categoria."
-
-        )
-
-
-
-    return resposta.data
-
-
-
-
-
-# =====================================================
-# EXCLUIR CATEGORIA
-# =====================================================
-
-def excluir_categoria(categoria_id):
-
-
-    resposta = (
-
-        supabase
-
-        .table("categorias")
-
+        .table("cestas")
         .delete()
-
-        .eq(
-
-            "id",
-
-            categoria_id
-
-        )
-
+        .eq("id", cesta_id)
         .execute()
-
     )
 
+# =====================================================
+# ALTERAR STATUS
+# =====================================================
+def alterar_status_cesta(cesta_id, ativa):
+    (
+        supabase
+        .table("cestas")
+        .update({
+            "ativa": ativa
+        })
+        .eq("id", cesta_id)
+        .execute()
+    )
 
+# =====================================================
+# BUSCAR CESTA
+# =====================================================
+def buscar_cesta(cesta_id):
+    resposta = (
+        supabase
+        .table("cestas")
+        .select("*")
+        .eq("id", cesta_id)
+        .single()
+        .execute()
+    )
     return resposta.data
+
+# =====================================================
+# ATUALIZAR CESTA COM REORDENAÇÃO (INCLUÍDO O PARÂMETRO ORDEM)
+# =====================================================
+def atualizar_cesta(cesta_id, nome, descricao, preco, imagem, ativa, ordem=1):
+    cestas_existentes = listar_cestas()
+    for c in cestas_existentes:
+        if c["id"] != cesta_id and c.get("ordem", 0) >= ordem:
+            nova_ordem = c.get("ordem", 0) + 1
+            supabase.table("cestas").update({"ordem": nova_ordem}).eq("id", c["id"]).execute()
+
+    (
+        supabase
+        .table("cestas")
+        .update({
+            "nome": nome,
+            "descricao": descricao,
+            "preco": preco,
+            "imagem": imagem,
+            "ativa": ativa,
+            "ordem": ordem
+        })
+        .eq("id", cesta_id)
+        .execute()
+    )
+
+# =====================================================
+# REMOVER IMAGEM DA CESTA
+# =====================================================
+def remover_imagem_cesta(cesta_id):
+    (
+        supabase
+        .table("cestas")
+        .update({
+            "imagem": None
+        })
+        .eq("id", cesta_id)
+        .execute()
+    )
