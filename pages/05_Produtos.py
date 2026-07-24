@@ -6,8 +6,7 @@ from services.produto_service import (
     excluir_produto,
     listar_categorias,
     alterar_status_produto,
-    upload_imagem_produto,
-    remover_imagem_produto
+    upload_imagem_produto
 )
 
 from utils.menu import (
@@ -185,7 +184,7 @@ except Exception as erro:
 
 
 # =====================================================
-# CADASTRO DE PRODUTO (REMOVIDO O st.form PARA FICAR DINÂMICO)
+# CADASTRO DE PRODUTO
 # =====================================================
 
 if usuario.get("perfil") == "Administrador":
@@ -206,7 +205,6 @@ if usuario.get("perfil") == "Administrador":
                 categoria = None
                 st.warning("Nenhuma categoria cadastrada.")
 
-            # Variáveis auxiliares de formulário
             imagem_arquivo = None
             tipo_preco = "Incluso na cesta"
             preco = None
@@ -224,13 +222,11 @@ if usuario.get("perfil") == "Administrador":
                 else:
                     st.info("Incluso automaticamente na cesta.")
 
-                # REGRA EXATA: SÓ APARECE A FOTO SE A CATEGORIA FOR "ADICIONAIS"
                 if nome_categoria_atual == "adicionais":
                     imagem_arquivo = st.file_uploader("📷 Foto do Adicional (Opcional)", type=["jpg", "jpeg", "png", "webp"])
                     if imagem_arquivo:
                         st.image(imagem_arquivo, width=60, caption="Pré-visualização")
 
-        # Botão comum, sem depender de formulário congelado
         salvar = st.button("💾 Cadastrar Produto", use_container_width=True, type="primary")
 
 else:
@@ -283,21 +279,14 @@ def exibir_produto(produto, categoria):
         
         nome_cat_formatado = str(categoria.get("nome", "")).strip().lower()
 
-        # Coluna 1: Imagem (se houver e for Adicionais) + Nome / Descrição
+        # Coluna 1: Imagem (se houver e for Adicionais) + Nome / Descrição (Sem botão de excluir aqui)
         with col1:
             imagem_url = produto.get("imagem", None)
             
-            # Só mostra a imagem e botão de remover na listagem se for da categoria Adicionais
             if imagem_url and nome_cat_formatado == "adicionais":
                 col_img, col_txt = st.columns([1, 4])
                 with col_img:
                     st.image(imagem_url, width=45)
-                    if st.button("❌", key=f"rm_img_prod_{produto['id']}", help="Remover Foto"):
-                        try:
-                            remover_imagem_produto(produto["id"])
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Erro ao remover foto: {e}")
                 with col_txt:
                     st.markdown(f'<div class="produto-nome">{produto.get("nome","-")}</div>', unsafe_allow_html=True)
                     if produto.get("descricao"):
