@@ -104,14 +104,15 @@ html, body, [class*="css"]  {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 24px;
-    margin-bottom: 1rem; /* Espaçamento reduzido para aproximar o catálogo */
+    margin-bottom: 1rem; 
 }
 
 .info-card {
     background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%);
     border: 1px solid #e2d2c3;
     border-radius: 16px;
-    padding: 28px 24px;
+    /* Ajuste de padding: Top reduzido para 12px, laterais 24px, baixo 28px */
+    padding: 12px 24px 28px 24px; 
     box-shadow: 0 3px 10px rgba(90, 59, 40, 0.03);
     display: flex;
     flex-direction: column;
@@ -123,6 +124,7 @@ html, body, [class*="css"]  {
     font-size: 38px !important;
     font-weight: 700 !important;
     color: #c5721f !important;
+    margin-top: 0 !important; /* Força margem zero no topo */
     margin-bottom: 16px !important;
     text-align: center;
 }
@@ -165,8 +167,8 @@ html, body, [class*="css"]  {
 }
 
 .adicionais-hero-title {
-    font-family: 'Dancing Script', cursive !important;
-    font-size: 20px;
+    font-family: 'Montserrat', sans-serif !important; 
+    font-size: 15px;
     font-weight: 700;
     color: #5a3b28;
     margin-bottom: 10px;
@@ -185,7 +187,6 @@ html, body, [class*="css"]  {
     font-size: 12.5px;
     color: #4a3222;
     box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-    font-family: 'Montserrat', sans-serif !important;
 }
 
 .adicional-preco-fixo {
@@ -340,7 +341,10 @@ div[data-testid="stButton"] button:hover {
     .header-text { align-items: center; text-align: center; }
     .header-title { font-size: 38px !important; }
     .header-subtitle { font-size: 13px !important; }
+    
+    .info-card { padding: 12px 16px 20px 16px !important; } /* Topo ajustado também no mobile */
     .info-title { font-size: 32px !important; }
+    
     .card-cesta-titulo { font-size: 26px !important; }
     .card-cesta-preco { font-size: 18px !important; }
 }
@@ -377,7 +381,7 @@ st.markdown(
 
 
 # ==========================================================
-# SEÇÃO: BEM-VINDO & COMO PEDIR (CORRIGIDO SEM QUEBRAS)
+# SEÇÃO: BEM-VINDO & COMO PEDIR 
 # ==========================================================
 
 st.markdown(
@@ -389,7 +393,7 @@ st.markdown(
 
 
 # ==========================================================
-# TÍTULO PRINCIPAL DO CATÁLOGO (FONTE PADRÃO REVERTIDA)
+# TÍTULO PRINCIPAL DO CATÁLOGO
 # ==========================================================
 
 st.markdown("<h3 style='font-family: \"Montserrat\", sans-serif; color:#5a3b28; margin-top:0; margin-bottom:4px; font-weight:800; font-size: 22px;'>🎁 Catálogo de Cestas</h3>", unsafe_allow_html=True)
