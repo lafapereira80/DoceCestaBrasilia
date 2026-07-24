@@ -324,55 +324,17 @@ div[data-testid="stButton"] button:hover {
     margin-bottom: 16px;
 }
 
-.adicional-card-box {
-    background: #ffffff;
-    border: 1px solid #e8ddd3;
-    border-radius: 14px;
-    padding: 10px;
-    text-align: center;
-    box-shadow: 0 4px 10px rgba(90, 59, 40, 0.04);
-    margin-bottom: 10px;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.adicional-nome {
-    font-size: 11.5px;
-    font-weight: 700;
-    color: #4d3e35;
-    margin-top: 6px;
-    margin-bottom: 4px;
-    line-height: 1.25;
-}
-
-.adicional-preco-fixo {
-    color: #2e7d32;
-    font-weight: 800;
-    font-size: 12px;
-}
-
-.adicional-preco-consulta {
-    color: #c5721f;
-    font-weight: 700;
-    background: #fff8ef;
-    padding: 2px 6px;
-    border-radius: 10px;
-    font-size: 9.5px;
-    display: inline-block;
-}
-
 .adicional-img-placeholder {
-    width: 100%;
-    height: 90px;
+    width: 60px;
+    height: 60px;
     background: linear-gradient(135deg, #fdfbf8 0%, #f5eee6 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 26px;
+    font-size: 22px;
     border-radius: 8px;
     border: 1px solid #f0e6dc;
+    margin: 0 auto;
 }
 
 /* =========================================
@@ -542,7 +504,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (GRID DE 5 USANDO O MESMO LIGHTBOX DAS CESTAS)
+# APRESENTAÇÃO DOS ADICIONAIS (GRID DE 5 COM FOTO PEQUENA E LIGHTBOX)
 # ==========================================================
 
 produtos_adicionais = []
@@ -569,7 +531,6 @@ if produtos_adicionais:
         unsafe_allow_html=True
     )
 
-    # Divide os produtos em blocos de 5 por linha perfeitamente estruturados
     tamanho_linha = 5
     for i in range(0, len(produtos_adicionais), tamanho_linha):
         lote = produtos_adicionais[i:i + tamanho_linha]
@@ -591,17 +552,16 @@ if produtos_adicionais:
                 else:
                     span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
 
-                # Caixa visual do produto
                 with st.container(border=True):
                     if imagem_p and str(imagem_p).strip():
                         img_src = image_to_base64(imagem_p)
-                        # O exato mesmo mecanismo de Lightbox (label + checkbox) das cestas aplicado perfeitamente ao card
+                        # Miniatura delicada de 60px com o Lightbox perfeitamente integrado
                         st.markdown(
                             f"""
                             <div style="text-align: center;">
-                                <label style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                                <label style="cursor: zoom-in; display: inline-block;">
                                     <input type="checkbox" class="lightbox-toggle">
-                                    <img src="{img_src}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px;" title="Clique para ampliar">
+                                    <img src="{img_src}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.08);" title="Clique para ampliar">
                                     <div class="lightbox-modal">
                                         <img src="{img_src}">
                                     </div>
@@ -618,7 +578,7 @@ if produtos_adicionais:
 
 
 # ==========================================================
-# SEÇÃO DE CONTATOS E RODAPÉ
+# SEÇÃO DE CONTATOS AND RODAPÉ
 # ==========================================================
 
 st.markdown(
