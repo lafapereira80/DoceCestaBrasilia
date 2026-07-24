@@ -504,7 +504,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (GRID DE 5 COM FOTO PEQUENA E LIGHTBOX)
+# APRESENTAÇÃO DOS ADICIONAIS (GRID ADAPTÁVEL: 2 NO MOBILE, 5 NO DESKTOP)
 # ==========================================================
 
 produtos_adicionais = []
@@ -527,6 +527,26 @@ if produtos_adicionais:
                 </span>
             </div>
         </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Inserção de CSS dinâmico para forçar 2 itens por linha no mobile e manter o comportamento no desktop
+    st.markdown(
+        """
+        <style>
+        @media (max-width: 640px) {
+            /* Altera o layout dos blocos de colunas do Streamlit para agrupar 2 por linha no mobile */
+            div[data-testid="stHorizontalBlock"] {
+                flex-wrap: wrap !important;
+            }
+            div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
+                flex: 1 1 calc(50% - 8px) !important;
+                min-width: calc(50% - 8px) !important;
+                max-width: calc(50% - 8px) !important;
+            }
+        }
+        </style>
         """,
         unsafe_allow_html=True
     )
@@ -555,7 +575,6 @@ if produtos_adicionais:
                 with st.container(border=True):
                     if imagem_p and str(imagem_p).strip():
                         img_src = image_to_base64(imagem_p)
-                        # Miniatura delicada de 60px com o Lightbox perfeitamente integrado
                         st.markdown(
                             f"""
                             <div style="text-align: center;">
