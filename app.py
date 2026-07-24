@@ -42,23 +42,23 @@ footer { visibility: hidden !important; }
     padding-right: 1rem !important;
 }
 
-/* Banner / Cabeçalho Principal */
+/* Banner / Cabeçalho Principal (Otimizado) */
 .header-banner {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 16px;
+    gap: 24px;
     margin-bottom: 1.2rem;
     width: 100%;
     background: #ffffff;
-    padding: 16px 20px;
+    padding: 20px 24px;
     border-radius: 18px;
     border: 1px solid #e8ddd3;
     box-shadow: 0 4px 12px rgba(90, 59, 40, 0.04);
 }
 
 .header-logo {
-    width: 75px;
+    width: 140px; /* Logo aumentada para melhor legibilidade no Desktop */
     height: auto;
     object-fit: contain;
     flex-shrink: 0;
@@ -72,7 +72,7 @@ footer { visibility: hidden !important; }
 }
 
 .header-title {
-    font-size: 26px !important;
+    font-size: 28px !important;
     font-weight: 800 !important;
     color: #5a3b28 !important;
     margin: 0 !important;
@@ -80,9 +80,9 @@ footer { visibility: hidden !important; }
 }
 
 .header-subtitle {
-    font-size: 13.5px !important;
+    font-size: 14px !important;
     color: #775a46 !important;
-    margin-top: 3px !important;
+    margin-top: 4px !important;
     margin-bottom: 0 !important;
 }
 
@@ -238,17 +238,24 @@ div[data-testid="stButton"] button:hover {
         padding-top: 0.5rem !important;
     }
     .header-banner {
-        padding: 12px;
-        gap: 10px;
+        /* Empilha a logo e o texto no celular para não esmagar a logo */
+        flex-direction: column;
+        text-align: center;
+        padding: 20px 16px;
+        gap: 12px;
     }
     .header-logo {
-        width: 60px !important;
+        width: 110px !important; /* Logo em tamanho excelente para toque/visão no mobile */
+    }
+    .header-text {
+        align-items: center;
+        text-align: center;
     }
     .header-title {
-        font-size: 20px !important;
+        font-size: 24px !important;
     }
     .header-subtitle {
-        font-size: 11px !important;
+        font-size: 13px !important;
     }
     .card-cesta-titulo {
         font-size: 17px !important;
@@ -413,8 +420,8 @@ st.markdown(
             📍 <b>Brasília - DF</b> | 🕒 Atendimento de Segunda a Sábado
         </div>
         <div class="whatsapp-btn-box">
-            <a href="https://wa.me/5561999759079?text=Olá!%20Gostaria%20de%20tirar%20dúvidas%20sobre%20as%20cestas." target="_blank">
-                💬 Chamar no WhatsApp (61) 99975-9079
+            <a href="https://wa.me/5561999999999?text=Olá!%20Gostaria%20de%20tirar%20dúvidas%20sobre%20as%20cestas." target="_blank">
+                💬 Chamar no WhatsApp (61) 99999-9999
             </a>
         </div>
     </div>
