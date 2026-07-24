@@ -36,7 +36,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS MODERNO E LIGHTBOX CSS ROBUSTO (100% ESTÁVEL)
+# CSS MODERNO E LIGHTBOX ROBUSTO PARA CESTAS E ADICIONAIS
 # ==========================================================
 
 st.markdown(
@@ -243,7 +243,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX CSS GLOBAL (CESTAS E ADICIONAIS)
+   LIGHTBOX CSS PARA CESTAS
 ========================================= */
 .lightbox-wrapper {
     text-align: center;
@@ -267,20 +267,6 @@ div[data-testid="stButton"] button:hover {
 .lightbox-image:hover {
     transform: scale(1.02);
     box-shadow: 0 6px 15px rgba(90, 59, 40, 0.2);
-}
-
-.adicional-lightbox-image {
-    width: 100%;
-    height: 110px;
-    border-top-left-radius: 14px;
-    border-top-right-radius: 14px;
-    cursor: zoom-in;
-    transition: transform 0.2s ease;
-    object-fit: cover;
-    display: block;
-}
-.adicional-lightbox-image:hover {
-    transform: scale(1.03);
 }
 
 .imagem-legenda {
@@ -318,7 +304,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   DESIGN DE ADICIONAIS (CARROSSEL)
+   DESIGN DE ADICIONAIS (CARROSSEL COM ZOOM JS FLUIDO)
 ========================================= */
 .adicionais-hero-card {
     background: linear-gradient(135deg, #ffffff 0%, #faf5f0 100%);
@@ -371,6 +357,20 @@ div[data-testid="stButton"] button:hover {
     border-color: #c5721f;
 }
 
+.adicional-lightbox-image {
+    width: 100%;
+    height: 110px;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    cursor: zoom-in;
+    transition: transform 0.2s ease;
+    object-fit: cover;
+    display: block;
+}
+.adicional-lightbox-image:hover {
+    transform: scale(1.03);
+}
+
 .adicional-img-placeholder {
     width: 100%;
     height: 110px;
@@ -413,6 +413,25 @@ div[data-testid="stButton"] button:hover {
     border-radius: 10px;
     font-size: 10px;
     display: inline-block;
+}
+
+/* Modal flutuante exclusivo para o Zoom dos Adicionais */
+#adicional-zoom-modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85);
+    z-index: 999999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+}
+#adicional-zoom-modal img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
 
 /* =========================================
@@ -467,6 +486,19 @@ div[data-testid="stButton"] button:hover {
     .lightbox-image { width: 80%; }
 }
 </style>
+
+<!-- Modal JS exclusivo para os adicionais -->
+<div id="adicional-zoom-modal" onclick="this.style.display='none'">
+    <img id="adicional-zoom-img" src="">
+</div>
+<script>
+function abrirZoomAdicional(url) {
+    const modal = document.getElementById('adicional-zoom-modal');
+    const modalImg = document.getElementById('adicional-zoom-img');
+    modalImg.src = url;
+    modal.style.display = 'flex';
+}
+</script>
 """,
 unsafe_allow_html=True
 )
@@ -503,7 +535,7 @@ st.markdown(
 # ==========================================================
 
 st.markdown(
-    """<div class="info-grid"><div class="info-card"><div class="info-title">Bem-vindo(a)</div><div class="info-text"><div style="text-align: center; margin-bottom: 12px;">É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.</div>Nossas cestas são cuidadosamente montadas no estilo <strong>grazing</strong> e proporcionam não apenas sabores únicos e envolventes, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br><div style="text-align: center;">Desfrute o melhor da vida com um bom café e uma excelente companhia!</div></div></div><div class="info-card"><div class="info-title">Como fazer o pedido</div><ul class="como-pedir-list"><li>✨ Defina através do nosso catálogo abaixo a opção desejada e clique em <b>"Monte sua Cesta"</b>.</li><li>⏳ Peça sua Doce Cesta com no mínimo <b>24h de antecedência</b> (ou <b>72h</b> caso possua mini bolo).</li><li>🕒 <b>Atendimento:</b> Segunda a sexta de 7h às 19h | Sábado de 8h às 12h.</li><li>🚗 A entrega poderá ser realizada via <b>Uber Flash / 99 Entrega</b> ou retirada em mãos.</li><li>💌 Toutes as cestas contêm um pequeno <b>cartão personalizável</b>.</li><li>💳 <b>Pagamento:</b> PIX ou link de Cartão de Crédito.</li></ul></div></div>""",
+    """<div class="info-grid"><div class="info-card"><div class="info-title">Bem-vindo(a)</div><div class="info-text"><div style="text-align: center; margin-bottom: 12px;">É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.</div>Nossas cestas são cuidadosamente montadas no estilo <strong>grazing</strong> e proporcionam não apenas sabores únicos e envolventes, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br><div style="text-align: center;">Desfrute o melhor da vida com um bom café e uma excelente companhia!</div></div></div><div class="info-card"><div class="info-title">Como fazer o pedido</div><ul class="como-pedir-list"><li>✨ Defina através do nosso catálogo abaixo a opção desejada e clique em <b>"Monte sua Cesta"</b>.</li><li>⏳ Peça sua Doce Cesta com no mínimo <b>24h de antecedência</b> (ou <b>72h</b> caso possua mini bolo).</li><li>🕒 <b>Atendimento:</b> Segunda a sexta de 7h às 19h | Sábado de 8h às 12h.</li><li>🚗 A entrega poderá ser realizada via <b>Uber Flash / 99 Entrega</b> ou retirada em mãos.</li><li>💌 Todas as cestas contêm um pequeno <b>cartão personalizável</b>.</li><li>💳 <b>Pagamento:</b> PIX ou link de Cartão de Crédito.</li></ul></div></div>""",
     unsafe_allow_html=True
 )
 
@@ -538,7 +570,6 @@ else:
                 imagem_url = cesta.get("imagem")
                 if imagem_url and str(imagem_url).strip():
                     img_src = image_to_base64(imagem_url)
-                    # Lightbox CSS Estável com Label e Checkbox Único
                     st.markdown(
                         f"""
                         <div class="lightbox-wrapper">
@@ -583,7 +614,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (CARROSSEL COM LIGHTBOX ESTÁVEL)
+# APRESENTAÇÃO DOS ADICIONAIS (CARROSSEL COM ZOOM JS FLUIDO)
 # ==========================================================
 
 produtos_adicionais = []
@@ -614,8 +645,8 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            # Lightbox CSS idêntico para o adicional (clicar para ampliar em tela cheia)
-            img_html = f'<label style="cursor: zoom-in; display: block; width: 100%;"><input type="checkbox" class="lightbox-toggle"><img src="{img_src}" class="adicional-lightbox-image" alt="{nome_p}" title="Toque para ampliar"><div class="lightbox-modal"><img src="{img_src}"></div></label>'
+            # Aciona a função JavaScript isolada para abrir a foto perfeitamente
+            img_html = f'<img src="{img_src}" class="adicional-lightbox-image" alt="{nome_p}" title="Toque para ampliar" onclick="abrirZoomAdicional(\'{img_src}\')">'
         else:
             img_html = f'<div class="adicional-img-placeholder">🎀</div>'
 
