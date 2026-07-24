@@ -19,7 +19,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Função auxiliar para garantir que o Lightbox CSS/JS leia qualquer tipo de imagem (Local ou Web)
+# Função auxiliar para garantir que o Lightbox leia qualquer tipo de imagem (Local ou Web)
 def image_to_base64(img_path):
     img_path = str(img_path).strip()
     if img_path.startswith("http") or img_path.startswith("data:image"):
@@ -36,7 +36,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS MODERNO, GOOGLE FONTS E LIGHTBOX INTELIGENTE VIA JS
+# CSS MODERNO E LIGHTBOX CSS ROBUSTO (100% ESTÁVEL)
 # ==========================================================
 
 st.markdown(
@@ -243,7 +243,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX GLOBAL ESTÁVEL (SEM PISCAR)
+   LIGHTBOX CSS GLOBAL (CESTAS E ADICIONAIS)
 ========================================= */
 .lightbox-wrapper {
     text-align: center;
@@ -254,6 +254,8 @@ div[data-testid="stButton"] button:hover {
     justify-content: center;
     align-items: center; 
 }
+.lightbox-toggle { display: none !important; }
+
 .lightbox-image {
     width: 60%; 
     border-radius: 12px;
@@ -266,16 +268,7 @@ div[data-testid="stButton"] button:hover {
     transform: scale(1.02);
     box-shadow: 0 6px 15px rgba(90, 59, 40, 0.2);
 }
-.imagem-legenda {
-    text-align: center;
-    font-size: 11.5px;
-    color: #888;
-    margin-top: 8px;
-    margin-bottom: 8px;
-    font-style: italic;
-}
 
-/* Imagem do Adicional com Zoom */
 .adicional-lightbox-image {
     width: 100%;
     height: 110px;
@@ -290,23 +283,38 @@ div[data-testid="stButton"] button:hover {
     transform: scale(1.03);
 }
 
-/* Modal Global Flutuante */
-#custom-lightbox-modal {
+.imagem-legenda {
+    text-align: center;
+    font-size: 11.5px;
+    color: #888;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    font-style: italic;
+}
+
+.lightbox-modal {
     position: fixed;
     top: 0; left: 0;
     width: 100vw; height: 100vh;
     background-color: rgba(0, 0, 0, 0.85);
     z-index: 999999;
-    display: none;
+    display: flex;
     align-items: center;
     justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
     cursor: zoom-out;
 }
-#custom-lightbox-modal img {
+.lightbox-modal img {
     max-width: 90vw;
     max-height: 90vh;
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+.lightbox-toggle:checked ~ .lightbox-modal {
+    opacity: 1;
+    visibility: visible;
 }
 
 /* =========================================
@@ -459,19 +467,6 @@ div[data-testid="stButton"] button:hover {
     .lightbox-image { width: 80%; }
 }
 </style>
-
-<!-- Script JS global anti-piscar para abrir qualquer foto em tela cheia suavemente -->
-<div id="custom-lightbox-modal" onclick="this.style.display='none'">
-    <img id="custom-lightbox-img" src="">
-</div>
-<script>
-function abrirZoom(url) {
-    const modal = document.getElementById('custom-lightbox-modal');
-    const modalImg = document.getElementById('custom-lightbox-img');
-    modalImg.src = url;
-    modal.style.display = 'flex';
-}
-</script>
 """,
 unsafe_allow_html=True
 )
@@ -508,7 +503,7 @@ st.markdown(
 # ==========================================================
 
 st.markdown(
-    """<div class="info-grid"><div class="info-card"><div class="info-title">Bem-vindo(a)</div><div class="info-text"><div style="text-align: center; margin-bottom: 12px;">É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.</div>Nossas cestas são cuidadosamente montadas no estilo <strong>grazing</strong> e proporcionam não apenas sabores únicos e envolventes, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br><div style="text-align: center;">Desfrute o melhor da vida com um bom café e uma excelente companhia!</div></div></div><div class="info-card"><div class="info-title">Como fazer o pedido</div><ul class="como-pedir-list"><li>✨ Defina através do nosso catálogo abaixo a opção desejada e clique em <b>"Monte sua Cesta"</b>.</li><li>⏳ Peça sua Doce Cesta com no mínimo <b>24h de antecedência</b> (ou <b>72h</b> caso possua mini bolo).</li><li>🕒 <b>Atendimento:</b> Segunda a sexta de 7h às 19h | Sábado de 8h às 12h.</li><li>🚗 A entrega poderá ser realizada via <b>Uber Flash / 99 Entrega</b> ou retirada em mãos.</li><li>💌 Todas as cestas contêm um pequeno <b>cartão personalizável</b>.</li><li>💳 <b>Pagamento:</b> PIX ou link de Cartão de Crédito.</li></ul></div></div>""",
+    """<div class="info-grid"><div class="info-card"><div class="info-title">Bem-vindo(a)</div><div class="info-text"><div style="text-align: center; margin-bottom: 12px;">É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.</div>Nossas cestas são cuidadosamente montadas no estilo <strong>grazing</strong> e proporcionam não apenas sabores únicos e envolventes, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br><div style="text-align: center;">Desfrute o melhor da vida com um bom café e uma excelente companhia!</div></div></div><div class="info-card"><div class="info-title">Como fazer o pedido</div><ul class="como-pedir-list"><li>✨ Defina através do nosso catálogo abaixo a opção desejada e clique em <b>"Monte sua Cesta"</b>.</li><li>⏳ Peça sua Doce Cesta com no mínimo <b>24h de antecedência</b> (ou <b>72h</b> caso possua mini bolo).</li><li>🕒 <b>Atendimento:</b> Segunda a sexta de 7h às 19h | Sábado de 8h às 12h.</li><li>🚗 A entrega poderá ser realizada via <b>Uber Flash / 99 Entrega</b> ou retirada em mãos.</li><li>💌 Toutes as cestas contêm um pequeno <b>cartão personalizável</b>.</li><li>💳 <b>Pagamento:</b> PIX ou link de Cartão de Crédito.</li></ul></div></div>""",
     unsafe_allow_html=True
 )
 
@@ -543,10 +538,17 @@ else:
                 imagem_url = cesta.get("imagem")
                 if imagem_url and str(imagem_url).strip():
                     img_src = image_to_base64(imagem_url)
+                    # Lightbox CSS Estável com Label e Checkbox Único
                     st.markdown(
                         f"""
                         <div class="lightbox-wrapper">
-                            <img src="{img_src}" class="lightbox-image" title="Clique para ampliar" onclick="abrirZoom('{img_src}')">
+                            <label style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                                <input type="checkbox" class="lightbox-toggle">
+                                <img src="{img_src}" class="lightbox-image" title="Clique para ampliar">
+                                <div class="lightbox-modal">
+                                    <img src="{img_src}">
+                                </div>
+                            </label>
                             <div class="imagem-legenda">👆 Toque na foto para ampliar</div>
                         </div>
                         """,
@@ -581,7 +583,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (CARROSSEL COM ZOOM ESTÁVEL)
+# APRESENTAÇÃO DOS ADICIONAIS (CARROSSEL COM LIGHTBOX ESTÁVEL)
 # ==========================================================
 
 produtos_adicionais = []
@@ -612,7 +614,8 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            img_html = f'<img src="{img_src}" class="adicional-lightbox-image" alt="{nome_p}" title="Toque para ampliar" onclick="abrirZoom(\'{img_src}\')">'
+            # Lightbox CSS idêntico para o adicional (clicar para ampliar em tela cheia)
+            img_html = f'<label style="cursor: zoom-in; display: block; width: 100%;"><input type="checkbox" class="lightbox-toggle"><img src="{img_src}" class="adicional-lightbox-image" alt="{nome_p}" title="Toque para ampliar"><div class="lightbox-modal"><img src="{img_src}"></div></label>'
         else:
             img_html = f'<div class="adicional-img-placeholder">🎀</div>'
 
