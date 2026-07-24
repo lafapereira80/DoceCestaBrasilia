@@ -111,8 +111,8 @@ html, body, [class*="css"]  {
     background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%);
     border: 1px solid #e2d2c3;
     border-radius: 16px;
-    /* Ajuste de padding: Top reduzido para 12px, laterais 24px, baixo 28px */
-    padding: 12px 24px 28px 24px; 
+    /* Ajuste de padding: Top reduzido para 12px, laterais 24px, baixo reduzido para 12px para colar mais no texto */
+    padding: 12px 24px 12px 24px; 
     box-shadow: 0 3px 10px rgba(90, 59, 40, 0.03);
     display: flex;
     flex-direction: column;
@@ -124,7 +124,7 @@ html, body, [class*="css"]  {
     font-size: 38px !important;
     font-weight: 700 !important;
     color: #c5721f !important;
-    margin-top: 0 !important; /* Força margem zero no topo */
+    margin-top: 0 !important;
     margin-bottom: 16px !important;
     text-align: center;
 }
@@ -153,6 +153,11 @@ html, body, [class*="css"]  {
 
 .como-pedir-list li {
     margin-bottom: 10px;
+}
+
+/* Zera a margem do último item para não empurrar a caixa para baixo */
+.como-pedir-list li:last-child {
+    margin-bottom: 0;
 }
 
 /* Section Destaque dos Adicionais */
@@ -187,6 +192,7 @@ html, body, [class*="css"]  {
     font-size: 12.5px;
     color: #4a3222;
     box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    font-family: 'Montserrat', sans-serif !important;
 }
 
 .adicional-preco-fixo {
@@ -342,7 +348,7 @@ div[data-testid="stButton"] button:hover {
     .header-title { font-size: 38px !important; }
     .header-subtitle { font-size: 13px !important; }
     
-    .info-card { padding: 12px 16px 20px 16px !important; } /* Topo ajustado também no mobile */
+    .info-card { padding: 12px 16px 12px 16px !important; } /* Topo e baixo ajustados também no mobile */
     .info-title { font-size: 32px !important; }
     
     .card-cesta-titulo { font-size: 26px !important; }
@@ -393,7 +399,7 @@ st.markdown(
 
 
 # ==========================================================
-# TÍTULO PRINCIPAL DO CATÁLOGO
+# TÍTULO PRINCIPAL DO CATÁLOGO (FONTE PADRÃO REVERTIDA)
 # ==========================================================
 
 st.markdown("<h3 style='font-family: \"Montserrat\", sans-serif; color:#5a3b28; margin-top:0; margin-bottom:4px; font-weight:800; font-size: 22px;'>🎁 Catálogo de Cestas</h3>", unsafe_allow_html=True)
