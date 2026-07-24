@@ -387,6 +387,16 @@ div[data-testid="stButton"] button:hover {
     .card-cesta-titulo { font-size: 30px !important; text-align: center; }
     .card-cesta-preco { font-size: 22px !important; text-align: center; }
     .lightbox-image { width: 80%; }
+
+    /* Força os adicionais (dentro da caixa contenedora dedicada) a ficarem estritamente 2 por linha */
+    .adicionais-container-wrapper div[data-testid="stHorizontalBlock"] {
+        flex-wrap: wrap !important;
+    }
+    .adicionais-container-wrapper div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
+        flex: 1 1 calc(50% - 6px) !important;
+        min-width: calc(50% - 6px) !important;
+        max-width: calc(50% - 6px) !important;
+    }
 }
 </style>
 """,
@@ -504,7 +514,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (2 POR FILA NO MOBILE DENTRO DA CAIXA)
+# APRESENTAÇÃO DOS ADICIONAIS (DENTRO DA CAIXA - 2 POR FILA NO MOBILE)
 # ==========================================================
 
 produtos_adicionais = []
@@ -517,7 +527,8 @@ except:
     produtos_adicionais = []
 
 if produtos_adicionais:
-    # Abre a caixa contenedora principal
+    # Usamos uma div wrapper com classe para escopar o ajuste exclusivo dos adicionais via CSS mobile
+    st.markdown('<div class="adicionais-container-wrapper">', unsafe_allow_html=True)
     with st.container(border=True):
         st.markdown(
             """
@@ -527,25 +538,6 @@ if produtos_adicionais:
                     👉 Toque em qualquer foto para ampliar
                 </span>
             </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        # CSS customizado para forçar layout de 2 colunas restrito especificamente aos adicionais dentro desta caixa no mobile
-        st.markdown(
-            """
-            <style>
-            @media (max-width: 640px) {
-                div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
-                    flex-wrap: wrap !important;
-                }
-                div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
-                    flex: 1 1 calc(50% - 8px) !important;
-                    min-width: calc(50% - 8px) !important;
-                    max-width: calc(50% - 8px) !important;
-                }
-            }
-            </style>
             """,
             unsafe_allow_html=True
         )
@@ -593,6 +585,7 @@ if produtos_adicionais:
 
                         st.markdown(f'<div style="font-size: 11.5px; font-weight: 700; color: #4d3e35; text-align: center; margin-top: 6px; margin-bottom: 4px; min-height: 28px;">{nome_p}</div>', unsafe_allow_html=True)
                         st.markdown(f'<div style="text-align: center;">{span_preco}</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ==========================================================
