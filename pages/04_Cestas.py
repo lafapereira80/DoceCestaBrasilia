@@ -205,7 +205,6 @@ div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > bu
    OCULTA CABEÇALHO NO MOBILE (MEDIAS QUERIES)
 ========================================== */
 @media (max-width: 768px) {
-    /* Oculta os títulos do cabeçalho da tabela no celular */
     div.element-container:has(.cabecalho-tabela) {
         display: none !important;
     }
@@ -225,8 +224,22 @@ unsafe_allow_html=True
 # =====================================================
 
 st.title("🎁 Gestão de Cestas")
-st.caption("Cadastre e gerencie os modelos de cestas disponíveis.")
+st.caption("Cadastre e gerencie os modelos de cestas disponíveis e suas ordens de exibição.")
 st.divider()
+
+
+# =====================================================
+# CARREGA CESTAS ANTES DO CADASTRO (PARA SABER QUANTAS EXISTEM)
+# =====================================================
+
+try:
+    cestas = listar_cestas()
+except Exception as erro:
+    st.error(f"Erro ao carregar cestas: {erro}")
+    cestas = []
+
+total_cestas = len(cestas)
+proxima_ordem = total_cestas + 1
 
 
 # =====================================================
@@ -245,7 +258,12 @@ if usuario.get("perfil") == "Administrador":
                 descricao = st.text_area("Descrição", height=105, placeholder="Descreva os itens principais que acompanham a cesta...")
 
             with col_f2:
-                preco = st.number_input("Preço (R$)", min_value=0.0, value=0.0, step=1.0, format="%.2f")
+                col_p1, col_p2 = st.columns(2)
+                with col_p1:
+                    preco = st.number_input("Preço (R$)", min_value=0.0, value=0.0, step=1.0, format="%.2f")
+                with col_p2:
+                    # Campo para definir a ordem desejada da nova cesta
+                    ordem_escolhida = st.number_input("Ordem / Posição", min_value=1, value=proxima_ordem, step=1)
                 
                 imagem_arquivo = st.file_uploader("📷 Foto da Cesta", type=["jpg", "jpeg", "png", "webp"])
 
@@ -263,8 +281,15 @@ if usuario.get("perfil") == "Administrador":
                     if imagem_arquivo:
                         imagem_url = upload_imagem_cesta(imagem_arquivo)
 
-                    cadastrar_cesta(nome.strip(), descricao.strip(), preco, imagem_url)
-                    st.success("Cesta cadastrada com sucesso!")
+                    # Passamos a ordem escolhida para a service tratar a reordenação em cascata
+                    cadastrar_cesta(
+                        nome=nome.strip(), 
+                        descricao=descricao.strip(), 
+                        preco=preco, 
+                        imagem=imagem_url, 
+                        ordem=int(ordem_escolhida)
+                    )
+                    st.success("Cesta cadastrada e reordenada com sucesso!")
                     st.rerun()
 
                 except Exception as erro:
@@ -273,17 +298,6 @@ if usuario.get("perfil") == "Administrador":
     st.divider()
 else:
     st.info("Modo consulta. Apenas Administradores podem cadastrar novas cestas.")
-
-
-# =====================================================
-# CARREGA CESTAS
-# =====================================================
-
-try:
-    cestas = listar_cestas()
-except Exception as erro:
-    st.error(f"Erro ao carregar cestas: {erro}")
-    st.stop()
 
 
 # =====================================================
@@ -298,7 +312,7 @@ else:
     # Cabeçalho da Tabela (Apenas Desktop)
     col_h1, col_h2, col_h3, col_h4 = st.columns([4.5, 1.8, 1.4, 2.3])
     with col_h1:
-        st.markdown('<div class="cabecalho-tabela">Cesta</div>', unsafe_allow_html=True)
+        st.markdown('<div class="cabecalho-tabela">Cesta & Posição</div>', unsafe_allow_html=True)
     with col_h2:
         st.markdown('<div class="cabecalho-tabela">Preço</div>', unsafe_allow_html=True)
     with col_h3:
@@ -308,25 +322,26 @@ else:
 
     for cesta in cestas:
         ativa = cesta.get("ativa", True)
+        posicao_atual = cesta.get("ordem", 1)
 
         with st.container(border=True):
             col1, col2, col3, col4 = st.columns([4.5, 1.8, 1.4, 2.3])
 
-            # Coluna 1: Imagem e Nome
+            # Coluna 1: Imagem, Ordem e Nome
             with col1:
                 if cesta.get("imagem"):
                     img_col, txt_col = st.columns([1, 4])
                     with img_col:
                         st.image(cesta["imagem"], width=60)
                     with txt_col:
-                        st.markdown(f'<div class="cesta-nome">{cesta["nome"]}</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div class="cesta-nome">#{posicao_atual} - {cesta["nome"]}</div>', unsafe_allow_html=True)
                         if cesta.get("descricao"):
                             desc = cesta["descricao"]
                             if len(desc) > 85:
                                 desc = desc[:85] + "..."
                             st.caption(desc)
                 else:
-                    st.markdown(f'<div class="cesta-nome">{cesta["nome"]}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="cesta-nome">#{posicao_atual} - {cesta["nome"]}</div>', unsafe_allow_html=True)
                     if cesta.get("descricao"):
                         desc = cesta["descricao"]
                         if len(desc) > 85:
