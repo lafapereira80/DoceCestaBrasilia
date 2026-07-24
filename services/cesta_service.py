@@ -9,7 +9,8 @@ def listar_cestas():
         supabase
         .table("cestas")
         .select("*")
-        .order("nome")
+        .order("ordem", desc=False)
+        .order("nome", desc=False)
         .execute()
     )
     return resposta.data or []
@@ -47,9 +48,19 @@ def upload_imagem_cesta(arquivo):
         raise Exception(f"Erro no upload da imagem: {erro}")
 
 # =====================================================
-# CADASTRAR CESTA
+# CADASTRAR CESTA COM REORDENAÇÃO EM CASCATA
 # =====================================================
-def cadastrar_cesta(nome, descricao, preco, imagem=None):
+def cadastrar_cesta(nome, descricao, preco, imagem=None, ordem=1):
+    # 1. Busca todas as cestas existentes ordenadas
+    cestas_existentes = listar_cestas()
+    
+    # 2. Reordena em cascata: incrementa +1 nas ordens maiores ou iguais à escolhida
+    for c in cestas_existentes:
+        if c.get("ordem", 0) >= ordem:
+            nova_ordem = c.get("ordem", 0) + 1
+            supabase.table("cestas").update({"ordem": nova_ordem}).eq("id", c["id"]).execute()
+
+    # 3. Insere a nova cesta na posição especificada
     resposta = (
         supabase
         .table("cestas")
@@ -58,7 +69,8 @@ def cadastrar_cesta(nome, descricao, preco, imagem=None):
             "descricao": descricao,
             "preco": preco,
             "imagem": imagem,
-            "ativa": True
+            "ativa": True,
+            "ordem": ordem
         })
         .execute()
     )
@@ -105,9 +117,16 @@ def buscar_cesta(cesta_id):
     return resposta.data
 
 # =====================================================
-# ATUALIZAR CESTA
+# ATUALIZAR CESTA COM REORDENAÇÃO
 # =====================================================
-def atualizar_cesta(cesta_id, nome, descricao, preco, imagem, ativa):
+def atualizar_cesta(cesta_id, nome, descricao, preco, imagem, ativa, ordem=1):
+    # Reordena em cascata caso a ordem tenha mudado
+    cestas_existentes = listar_cestas()
+    for c in cestas_existentes:
+        if c["id"] != cesta_id and c.get("ordem", 0) >= ordem:
+            nova_ordem = c.get("ordem", 0) + 1
+            supabase.table("cestas").update({"ordem": nova_ordem}).eq("id", c["id"]).execute()
+
     (
         supabase
         .table("cestas")
@@ -116,14 +135,15 @@ def atualizar_cesta(cesta_id, nome, descricao, preco, imagem, ativa):
             "descricao": descricao,
             "preco": preco,
             "imagem": imagem,
-            "ativa": ativa
+            "ativa": ativa,
+            "ordem": ordem
         })
         .eq("id", cesta_id)
         .execute()
     )
 
 # =====================================================
-# REMOVER IMAGEM DA CESTA (NOVA FUNÇÃO)
+# REMOVER IMAGEM DA CESTA
 # =====================================================
 def remover_imagem_cesta(cesta_id):
     """
