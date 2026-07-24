@@ -1,5 +1,6 @@
 import streamlit as st
 import base64
+import mimetypes
 from pathlib import Path
 
 from services.cesta_service import listar_cestas
@@ -17,6 +18,21 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+# Função auxiliar para garantir que o Lightbox CSS leia qualquer tipo de imagem (Local ou Web)
+def image_to_base64(img_path):
+    img_path = str(img_path).strip()
+    if img_path.startswith("http") or img_path.startswith("data:image"):
+        return img_path
+    else:
+        try:
+            with open(img_path, "rb") as f:
+                data = f.read()
+                b64 = base64.b64encode(data).decode()
+                mime = mimetypes.guess_type(img_path)[0] or "image/jpeg"
+                return f"data:{mime};base64,{b64}"
+        except:
+            return img_path
 
 
 # ==========================================================
@@ -153,7 +169,6 @@ html, body, [class*="css"]  {
 .como-pedir-list li {
     margin-bottom: 10px;
 }
-
 .como-pedir-list li:last-child {
     margin-bottom: 0;
 }
@@ -197,7 +212,6 @@ html, body, [class*="css"]  {
     color: #2e7d32;
     font-weight: 700;
 }
-
 .adicional-preco-consulta {
     color: #c5721f;
     font-weight: 700;
@@ -223,17 +237,67 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
 }
 
-/* Ajuste para imagens */
+
+/* =========================================
+   LIGHTBOX (CLIQUE PARA AMPLIAR A FOTO)
+========================================= */
+.lightbox-wrapper {
+    text-align: center;
+    margin-bottom: 6px;
+}
+.lightbox-toggle {
+    display: none; /* Esconde a checkbox */
+}
+.lightbox-image {
+    width: 50%; /* Reduz a foto em 50% */
+    border-radius: 12px;
+    cursor: zoom-in; /* Cursor de lupa */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 10px rgba(90, 59, 40, 0.1);
+    object-fit: cover;
+}
+.lightbox-image:hover {
+    transform: scale(1.03);
+    box-shadow: 0 6px 15px rgba(90, 59, 40, 0.2);
+}
 .imagem-legenda {
     text-align: center;
-    font-size: 11px;
+    font-size: 11.5px;
     color: #888;
-    margin-top: -10px;
-    margin-bottom: 12px;
+    margin-top: 6px;
+    margin-bottom: 8px;
     font-style: italic;
 }
 
-/* NOME DA CESTA COM A FONTE DO BEM-VINDO */
+/* O Modal Invisível */
+.lightbox-modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+    cursor: zoom-out; /* Cursor de fechar */
+}
+.lightbox-modal img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+/* Efeito de expansão ao clicar */
+.lightbox-toggle:checked ~ .lightbox-modal {
+    opacity: 1;
+    visibility: visible;
+}
+
+
+/* NOME DA CESTA */
 .card-cesta-titulo {
     font-family: 'Dancing Script', cursive !important;
     font-size: 32px !important;
@@ -356,8 +420,11 @@ div[data-testid="stButton"] button:hover {
     .header-title { font-size: 38px !important; }
     .header-subtitle { font-size: 13px !important; }
     
-    .info-card { padding: 12px 16px 12px 16px !important; } 
+    .info-card { padding: 12px 16px 12px 16px !important; }
     .info-title { font-size: 32px !important; }
+    
+    /* Foto no celular um pouco maior para não sumir */
+    .lightbox-image { width: 75%; }
     
     .card-cesta-titulo { font-size: 26px !important; }
     .card-cesta-preco { font-size: 18px !important; }
@@ -436,17 +503,28 @@ else:
         with coluna:
             with st.container(border=True):
 
-                # 1. TRATAMENTO DE FOTO PRINCIPAL (Reduzida em 50% e com Lightbox Nativo)
+                # 1. TRATAMENTO DE FOTO PRINCIPAL (LIGHTBOX CSS - Reduzida 50% com Clique)
                 imagem_url = cesta.get("imagem")
                 if imagem_url and str(imagem_url).strip():
-                    # Cria 3 colunas para apertar a imagem no meio (25% - 50% - 25%)
-                    col_espaco1, col_img_centro, col_espaco2 = st.columns([1, 2, 1])
-                    with col_img_centro:
-                        st.image(str(imagem_url).strip(), use_container_width=True)
-                    # Legenda orientando o clique para ampliar
-                    st.markdown('<div class="imagem-legenda">🔍 Passe o mouse e clique no ícone para ampliar</div>', unsafe_allow_html=True)
+                    img_src = image_to_base64(imagem_url)
+                    
+                    st.markdown(
+                        f"""
+                        <div class="lightbox-wrapper">
+                            <label>
+                                <input type="checkbox" class="lightbox-toggle">
+                                <img src="{img_src}" class="lightbox-image" title="Clique para ampliar">
+                                <div class="lightbox-modal">
+                                    <img src="{img_src}">
+                                </div>
+                            </label>
+                            <div class="imagem-legenda">👆 Toque na foto para ampliar</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
 
-                # 2. TRATAMENTO DE FOTOS EXTRAS
+                # 2. TRATAMENTO DE FOTOS EXTRAS (Permanecem Pequenas)
                 fotos_extras = cesta.get("fotos_adicionais", [])
                 if isinstance(fotos_extras, list) and len(fotos_extras) > 0:
                     st.caption("📸 Outros ângulos desta cesta:")
@@ -456,7 +534,7 @@ else:
                             with cols_extras[f_idx % 4]:
                                 st.image(str(f_url).strip(), use_container_width=True)
 
-                # 3. TÍTULO DA CESTA 
+                # 3. TÍTULO DA CESTA
                 st.markdown(f'<div class="card-cesta-titulo">{cesta["nome"]}</div>', unsafe_allow_html=True)
 
                 # 4. DESCRIÇÃO COMPLETA E JUSTIFICADA
