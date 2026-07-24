@@ -6,8 +6,8 @@ from services.produto_service import (
     excluir_produto,
     listar_categorias,
     alterar_status_produto,
-    upload_imagem_produto,  # <--- NOVA IMPORTAÇÃO
-    remover_imagem_produto  # <--- NOVA IMPORTAÇÃO
+    upload_imagem_produto,
+    remover_imagem_produto
 )
 
 from utils.menu import (
@@ -225,8 +225,8 @@ if usuario.get("perfil") == "Administrador":
                     else:
                         st.info("Incluso automaticamente na cesta.")
 
-                    # SE A CATEGORIA FOR "ADICIONAIS", MOSTRA O CAMPO DE IMAGEM
-                    if "adicional" in nome_categoria_atual or "adicionais" in nome_categoria_atual:
+                    # REGRA EXATA: SÓ APARECE A FOTO SE A CATEGORIA FOR "ADICIONAIS"
+                    if nome_categoria_atual == "adicionais":
                         imagem_arquivo = st.file_uploader("📷 Foto do Adicional (Opcional)", type=["jpg", "jpeg", "png", "webp"])
                         if imagem_arquivo:
                             st.image(imagem_arquivo, width=60, caption="Pré-visualização")
@@ -265,7 +265,7 @@ if salvar:
             preco=preco,
             ativo=ativo,
             tipo_preco=tipo_preco,
-            imagem=imagem_url  # <-- Passando a imagem para o banco
+            imagem=imagem_url
         )
         st.success("Produto cadastrado com sucesso!")
         st.rerun()
@@ -274,21 +274,24 @@ if salvar:
 
 
 # =====================================================
-# FUNÇÃO EXIBIR PRODUTO (ATUALIZADA COM FOTO)
+# FUNÇÃO EXIBIR PRODUTO 
 # =====================================================
 
 def exibir_produto(produto, categoria):
     with st.container(border=True):
         col1, col2, col3, col4 = st.columns([5, 2, 1.2, 1.8])
+        
+        nome_cat_formatado = str(categoria.get("nome", "")).strip().lower()
 
-        # Coluna 1: Imagem (se houver) + Nome / Descrição
+        # Coluna 1: Imagem (se houver e for Adicionais) + Nome / Descrição
         with col1:
             imagem_url = produto.get("imagem", None)
-            if imagem_url:
+            
+            # Só mostra a imagem e botão de remover na listagem se for da categoria Adicionais
+            if imagem_url and nome_cat_formatado == "adicionais":
                 col_img, col_txt = st.columns([1, 4])
                 with col_img:
                     st.image(imagem_url, width=45)
-                    # Botão para remover a foto do adicional
                     if st.button("❌", key=f"rm_img_prod_{produto['id']}", help="Remover Foto"):
                         try:
                             remover_imagem_produto(produto["id"])
