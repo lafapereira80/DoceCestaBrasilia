@@ -36,7 +36,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS MODERNO E LIGHTBOX ROBUSTO PARA CESTAS E ADICIONAIS
+# CSS MODERNO E LIGHTBOX GLOBAL UNIFICADO (100% ESTÁVEL)
 # ==========================================================
 
 st.markdown(
@@ -243,7 +243,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX CSS PARA CESTAS
+   LIGHTBOX GLOBAL ESTÁVEL (JS UNIFICADO)
 ========================================= */
 .lightbox-wrapper {
     text-align: center;
@@ -254,7 +254,6 @@ div[data-testid="stButton"] button:hover {
     justify-content: center;
     align-items: center; 
 }
-.lightbox-toggle { display: none !important; }
 
 .lightbox-image {
     width: 60%; 
@@ -278,33 +277,27 @@ div[data-testid="stButton"] button:hover {
     font-style: italic;
 }
 
-.lightbox-modal {
+/* Modal Global Flutuante */
+#global-zoom-modal {
     position: fixed;
     top: 0; left: 0;
     width: 100vw; height: 100vh;
     background-color: rgba(0, 0, 0, 0.85);
     z-index: 999999;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease;
     cursor: zoom-out;
 }
-.lightbox-modal img {
+#global-zoom-modal img {
     max-width: 90vw;
     max-height: 90vh;
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
-.lightbox-toggle:checked ~ .lightbox-modal {
-    opacity: 1;
-    visibility: visible;
-}
 
 /* =========================================
-   DESIGN DE ADICIONAIS (CARROSSEL COM ZOOM JS FLUIDO)
+   NOVA GRID DE ADICIONAIS (5 POR LINHA)
 ========================================= */
 .adicionais-hero-card {
     background: linear-gradient(135deg, #ffffff 0%, #faf5f0 100%);
@@ -324,61 +317,52 @@ div[data-testid="stButton"] button:hover {
     margin-bottom: 16px;
 }
 
-.adicionais-scroll-container {
-    display: flex;
-    gap: 16px;
-    overflow-x: auto;
-    padding: 10px 4px 20px 4px;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
+/* Grid perfeitamente alinhada em colunas de 5 */
+.adicionais-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
 }
 
-.adicionais-scroll-container::-webkit-scrollbar { height: 6px; }
-.adicionais-scroll-container::-webkit-scrollbar-track { background: #f1e9e2; border-radius: 10px; }
-.adicionais-scroll-container::-webkit-scrollbar-thumb { background: #cbab92; border-radius: 10px; }
-.adicionais-scroll-container::-webkit-scrollbar-thumb:hover { background: #a65d14; }
-
 .adicional-card {
-    flex: 0 0 auto; 
-    width: 140px;
     background: #ffffff;
     border: 1px solid #e8ddd3;
     border-radius: 14px;
     overflow: hidden;
     box-shadow: 0 4px 10px rgba(90, 59, 40, 0.04);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
     display: flex;
     flex-direction: column;
 }
 
 .adicional-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-4px);
     box-shadow: 0 8px 18px rgba(197, 114, 31, 0.15);
     border-color: #c5721f;
 }
 
-.adicional-lightbox-image {
+.adicional-img {
     width: 100%;
-    height: 110px;
-    border-top-left-radius: 14px;
-    border-top-right-radius: 14px;
+    height: 105px;
+    object-fit: cover;
     cursor: zoom-in;
     transition: transform 0.2s ease;
-    object-fit: cover;
     display: block;
+    background: #fdfbf8;
+    border-bottom: 1px solid #f0e6dc;
 }
-.adicional-lightbox-image:hover {
+.adicional-img:hover {
     transform: scale(1.03);
 }
 
 .adicional-img-placeholder {
     width: 100%;
-    height: 110px;
+    height: 105px;
     background: linear-gradient(135deg, #fdfbf8 0%, #f5eee6 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 32px;
+    font-size: 28px;
     border-bottom: 1px solid #f0e6dc;
 }
 
@@ -392,7 +376,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 .adicional-nome {
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 700;
     color: #4d3e35;
     margin-bottom: 4px;
@@ -402,7 +386,7 @@ div[data-testid="stButton"] button:hover {
 .adicional-preco-fixo {
     color: #2e7d32;
     font-weight: 800;
-    font-size: 13px;
+    font-size: 12.5px;
 }
 
 .adicional-preco-consulta {
@@ -413,25 +397,6 @@ div[data-testid="stButton"] button:hover {
     border-radius: 10px;
     font-size: 10px;
     display: inline-block;
-}
-
-/* Modal flutuante exclusivo para o Zoom dos Adicionais */
-#adicional-zoom-modal {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background-color: rgba(0, 0, 0, 0.85);
-    z-index: 999999;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    cursor: zoom-out;
-}
-#adicional-zoom-modal img {
-    max-width: 90vw;
-    max-height: 90vh;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
 
 /* =========================================
@@ -471,6 +436,10 @@ div[data-testid="stButton"] button:hover {
 /* =========================================
    RESPONSIVO EXCLUSIVO MOBILE
 ========================================= */
+@media (max-width: 900px) {
+    .adicionais-grid { grid-template-columns: repeat(3, 1fr) !important; }
+}
+
 @media (max-width: 640px) {
     .block-container { 
         padding-top: 0.5rem !important; 
@@ -484,17 +453,20 @@ div[data-testid="stButton"] button:hover {
     .card-cesta-titulo { font-size: 30px !important; text-align: center; }
     .card-cesta-preco { font-size: 22px !important; text-align: center; }
     .lightbox-image { width: 80%; }
+    
+    /* No celular exibe 2 colunas para ficar excelente no toque */
+    .adicionais-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
 </style>
 
-<!-- Modal JS exclusivo para os adicionais -->
-<div id="adicional-zoom-modal" onclick="this.style.display='none'">
-    <img id="adicional-zoom-img" src="">
+<!-- Modal Global JS unificado para ampliação de imagens -->
+<div id="global-zoom-modal" onclick="this.style.display='none'">
+    <img id="global-zoom-img" src="">
 </div>
 <script>
-function abrirZoomAdicional(url) {
-    const modal = document.getElementById('adicional-zoom-modal');
-    const modalImg = document.getElementById('adicional-zoom-img');
+function abrirZoomGlobal(url) {
+    const modal = document.getElementById('global-zoom-modal');
+    const modalImg = document.getElementById('global-zoom-img');
     modalImg.src = url;
     modal.style.display = 'flex';
 }
@@ -573,13 +545,7 @@ else:
                     st.markdown(
                         f"""
                         <div class="lightbox-wrapper">
-                            <label style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
-                                <input type="checkbox" class="lightbox-toggle">
-                                <img src="{img_src}" class="lightbox-image" title="Clique para ampliar">
-                                <div class="lightbox-modal">
-                                    <img src="{img_src}">
-                                </div>
-                            </label>
+                            <img src="{img_src}" class="lightbox-image" title="Clique para ampliar" onclick="abrirZoomGlobal('{img_src}')">
                             <div class="imagem-legenda">👆 Toque na foto para ampliar</div>
                         </div>
                         """,
@@ -614,7 +580,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (CARROSSEL COM ZOOM JS FLUIDO)
+# APRESENTAÇÃO DOS ADICIONAIS (GRID DE 5 PRODUTOS POR LINHA)
 # ==========================================================
 
 produtos_adicionais = []
@@ -645,14 +611,28 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            # Aciona a função JavaScript isolada para abrir a foto perfeitamente
-            img_html = f'<img src="{img_src}" class="adicional-lightbox-image" alt="{nome_p}" title="Toque para ampliar" onclick="abrirZoomAdicional(\'{img_src}\')">'
+            img_html = f'<img src="{img_src}" class="adicional-img" alt="{nome_p}" title="Toque para ampliar" onclick="abrirZoomGlobal(\'{img_src}\')">'
         else:
             img_html = f'<div class="adicional-img-placeholder">🎀</div>'
 
         cards_html += f'<div class="adicional-card">{img_html}<div class="adicional-details"><div class="adicional-nome">{nome_p}</div><div>{span_preco}</div></div></div>'
 
-    st.markdown(f'<div class="adicionais-hero-card"><div class="adicionais-hero-title">🎀 Incremente seu presente com nossos Adicionais Especiais:<span style="font-size: 12px; font-weight: normal; color: #888; display: block; margin-top: 4px;">👉 Deslize para os lados para ver mais opções e toque na foto para ampliar</span></div><div class="adicionais-scroll-container">{cards_html}</div></div>', unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="adicionais-hero-card">
+            <div class="adicionais-hero-title">
+                🎀 Incremente seu presente com nossos Adicionais Especiais:
+                <span style="font-size: 12px; font-weight: normal; color: #888; display: block; margin-top: 4px;">
+                    👉 Toque em qualquer foto para ampliar
+                </span>
+            </div>
+            <div class="adicionais-grid">
+                {cards_html}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 # ==========================================================
