@@ -428,7 +428,7 @@ div[data-testid="stButton"] button:hover {
 .btn-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important; box-shadow: 0 3px 8px rgba(220, 39, 67, 0.25); }
 
 /* =========================================
-   RESPONSIVO EXCLUSIVO MOBILE (2 ITENS POR LINHA)
+   RESPONSIVO EXCLUSIVO MOBILE
 ========================================= */
 @media (max-width: 900px) {
     .adicionais-grid-css { grid-template-columns: repeat(3, 1fr) !important; }
@@ -439,9 +439,12 @@ div[data-testid="stButton"] button:hover {
         padding-top: 0.5rem !important; 
         padding-left: 0.6rem !important; padding-right: 0.6rem !important;
     }
-    .header-banner { flex-direction: column; text-align: center; padding: 20px 16px; gap: 12px; }
+    .header-banner { flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px 16px; gap: 12px; }
+    .header-text { align-items: center; text-align: center; }
     .header-logo { width: 110px !important; }
-    .header-title { font-size: 38px !important; }
+    .header-title { font-size: 36px !important; text-align: center !important; }
+    .header-subtitle { text-align: center !important; }
+    
     .info-card { padding: 12px 16px 12px 16px !important; } 
     .info-title { font-size: 32px !important; }
     .card-cesta-titulo { font-size: 30px !important; text-align: center; }
