@@ -196,18 +196,14 @@ except Exception as erro:
     st.error(f"Erro ao carregar pedidos: {erro}")
     pedidos = []
 
-if not pedidos:
-    st.info("Nenhum pedido cadastrado no momento.")
-    st.stop()
-
-df = pd.DataFrame(pedidos)
+df = pd.DataFrame(pedidos) if pedidos else pd.DataFrame(columns=["id", "cliente_nome", "status", "created_at"])
 
 
 # =====================================================
 # ORDENAÇÃO
 # =====================================================
 
-if "created_at" in df.columns:
+if not df.empty and "created_at" in df.columns:
     df["created_at"] = pd.to_datetime(df["created_at"])
     df = df.sort_values("created_at", ascending=False)
 
@@ -219,7 +215,7 @@ if "created_at" in df.columns:
 st.subheader("🔍 Pesquisar cliente")
 pesquisa = st.text_input("", placeholder="Digite o nome do cliente...")
 
-if pesquisa.strip():
+if pesquisa.strip() and not df.empty:
     df = df[
         df["cliente_nome"]
         .fillna("")
@@ -252,16 +248,17 @@ def mostrar_lista(
     permitir_exclusao=False,
     permitir_impressao=False
 ):
-    # Filtra de forma tolerante a acentuação/maiúsculas
-    if "status" in df.columns:
-        pedidos_status = df[df["status"].astype(str).str.strip().str.capitalize() == status_filtro.capitalize()]
-    else:
-        pedidos_status = pd.DataFrame()
+    st.subheader(titulo)
 
-    if pedidos_status.empty:
+    if df.empty or "status" not in df.columns:
+        st.info(f"Nenhum pedido registrado em '{titulo.replace('📥 ', '').replace('💰 ', '').replace('❌ ', '')}'.")
         return
 
-    st.subheader(titulo)
+    pedidos_status = df[df["status"].astype(str).str.strip().str.capitalize() == status_filtro.capitalize()]
+
+    if pedidos_status.empty:
+        st.info(f"Nenhum pedido nesta etapa no momento.")
+        return
 
     for _, pedido in pedidos_status.iterrows():
         try:
@@ -333,7 +330,7 @@ def mostrar_lista(
 
 
 # =====================================================
-# FLUXO COMPLETO DE PEDIDOS NA TELA
+# FLUXO COMPLETO DE PEDIDOS NA TELA (SEMPRE VISÍVEIS)
 # =====================================================
 
 # 1. Pedidos que acabaram de dar entrada (Recebidos)
