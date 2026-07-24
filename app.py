@@ -304,7 +304,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   ESTILO DOS ADICIONAIS (GRID RESPONSIVA 5/2)
+   GRID CSS DE ADICIONAIS (5 NO PC / 2 NO MOBILE)
 ========================================= */
 .adicionais-hero-card {
     background: linear-gradient(135deg, #ffffff 0%, #faf5f0 100%);
@@ -324,6 +324,36 @@ div[data-testid="stButton"] button:hover {
     margin-bottom: 16px;
 }
 
+.adicionais-grid-css {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+}
+
+.adicional-item-box {
+    background: #ffffff;
+    border: 1px solid #e8ddd3;
+    border-radius: 14px;
+    padding: 12px 8px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(90, 59, 40, 0.04);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.adicional-img-small {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    cursor: zoom-in;
+    display: block;
+    margin: 0 auto;
+}
+
 .adicional-img-placeholder {
     width: 60px;
     height: 60px;
@@ -335,6 +365,32 @@ div[data-testid="stButton"] button:hover {
     border-radius: 8px;
     border: 1px solid #f0e6dc;
     margin: 0 auto;
+}
+
+.adicional-nome {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #4d3e35;
+    margin-top: 6px;
+    margin-bottom: 4px;
+    min-height: 28px;
+    line-height: 1.25;
+}
+
+.adicional-preco-fixo {
+    color: #2e7d32;
+    font-weight: 800;
+    font-size: 12px;
+}
+
+.adicional-preco-consulta {
+    color: #c5721f;
+    font-weight: 700;
+    background: #fff8ef;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 9.5px;
+    display: inline-block;
 }
 
 /* =========================================
@@ -372,8 +428,12 @@ div[data-testid="stButton"] button:hover {
 .btn-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important; box-shadow: 0 3px 8px rgba(220, 39, 67, 0.25); }
 
 /* =========================================
-   RESPONSIVO EXCLUSIVO MOBILE
+   RESPONSIVO EXCLUSIVO MOBILE (2 ITENS POR LINHA)
 ========================================= */
+@media (max-width: 900px) {
+    .adicionais-grid-css { grid-template-columns: repeat(3, 1fr) !important; }
+}
+
 @media (max-width: 640px) {
     .block-container { 
         padding-top: 0.5rem !important; 
@@ -387,6 +447,9 @@ div[data-testid="stButton"] button:hover {
     .card-cesta-titulo { font-size: 30px !important; text-align: center; }
     .card-cesta-preco { font-size: 22px !important; text-align: center; }
     .lightbox-image { width: 80%; }
+    
+    /* Celular: Força exatamente 2 colunas lado a lado nos adicionais */
+    .adicionais-grid-css { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
 }
 </style>
 """,
@@ -504,7 +567,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (GRID RESPONSIVA COM ZOOM FUNCIONANDO)
+# APRESENTAÇÃO DOS ADICIONAIS (GRID CSS COM 5 NO PC E 2 NO MOBILE + ZOOM)
 # ==========================================================
 
 produtos_adicionais = []
@@ -517,8 +580,33 @@ except:
     produtos_adicionais = []
 
 if produtos_adicionais:
+    cards_html = ""
+    for prod in produtos_adicionais:
+        nome_p = prod.get("nome", "")
+        preco_p = prod.get("preco")
+        imagem_p = prod.get("imagem")
+
+        if preco_p is not None and str(preco_p).strip() != "":
+            try:
+                val_f = float(preco_p)
+                texto_preco = f'R$ {val_f:,.2f}'.replace(",", "X").replace(".", ",").replace("X",".")
+                span_preco = f'<span class="adicional-preco-fixo">{texto_preco}</span>'
+            except:
+                span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
+        else:
+            span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
+
+        if imagem_p and str(imagem_p).strip():
+            img_src = image_to_base64(imagem_p)
+            # Sistema de Lightbox (label + checkbox) perfeitamente integrado no card do adicional
+            img_html = f'<label style="cursor: zoom-in; display: inline-block; margin-bottom: 4px;"><input type="checkbox" class="lightbox-toggle"><img src="{img_src}" class="adicional-img-small" title="Clique para ampliar"><div class="lightbox-modal"><img src="{img_src}"></div></label>'
+        else:
+            img_html = f'<div class="adicional-img-placeholder">🎀</div>'
+
+        cards_html += f'<div class="adicional-item-box">{img_html}<div class="adicional-nome">{nome_p}</div><div>{span_preco}</div></div>'
+
     st.markdown(
-        """
+        f"""
         <div class="adicionais-hero-card">
             <div class="adicionais-hero-title">
                 🎀 Incremente seu presente com nossos Adicionais Especiais:
@@ -526,56 +614,13 @@ if produtos_adicionais:
                     👉 Toque em qualquer foto para ampliar (Exibe 5 por linha no PC e 2 no celular)
                 </span>
             </div>
+            <div class="adicionais-grid-css">
+                {cards_html}
+            </div>
         </div>
         """,
         unsafe_allow_html=True
     )
-
-    # No computador exibe 5 colunas por linha; no celular, graças à responsividade do layout do Streamlit, ajusta perfeitamente
-    tamanho_linha = 5
-    for i in range(0, len(produtos_adicionais), tamanho_linha):
-        lote = produtos_adicionais[i:i + tamanho_linha]
-        cols = st.columns(tamanho_linha)
-
-        for idx, prod in enumerate(lote):
-            with cols[idx]:
-                nome_p = prod.get("nome", "")
-                preco_p = prod.get("preco")
-                imagem_p = prod.get("imagem")
-
-                if preco_p is not None and str(preco_p).strip() != "":
-                    try:
-                        val_f = float(preco_p)
-                        texto_preco = f'R$ {val_f:,.2f}'.replace(",", "X").replace(".", ",").replace("X",".")
-                        span_preco = f'<span class="adicional-preco-fixo">{texto_preco}</span>'
-                    except:
-                        span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
-                else:
-                    span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
-
-                with st.container(border=True):
-                    if imagem_p and str(imagem_p).strip():
-                        img_src = image_to_base64(imagem_p)
-                        # Aplica o mesmo mecanismo infalível de label + checkbox com foto pequena e zoom integrado
-                        st.markdown(
-                            f"""
-                            <div style="text-align: center;">
-                                <label style="cursor: zoom-in; display: inline-block;">
-                                    <input type="checkbox" class="lightbox-toggle">
-                                    <img src="{img_src}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.08);" title="Clique para ampliar">
-                                    <div class="lightbox-modal">
-                                        <img src="{img_src}">
-                                    </div>
-                                </label>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                    else:
-                        st.markdown('<div class="adicional-img-placeholder">🎀</div>', unsafe_allow_html=True)
-
-                    st.markdown(f'<div style="font-size: 11.5px; font-weight: 700; color: #4d3e35; text-align: center; margin-top: 6px; margin-bottom: 4px; min-height: 28px;">{nome_p}</div>', unsafe_allow_html=True)
-                    st.markdown(f'<div style="text-align: center;">{span_preco}</div>', unsafe_allow_html=True)
 
 
 # ==========================================================
