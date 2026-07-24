@@ -97,15 +97,25 @@ html, body, [class*="css"]  {
     letter-spacing: 0.5px;
 }
 
-/* Cards Institucionais (Bem-vindo e Como Pedir) */
+/* =========================================
+   GRID PARA OS CARDS INSTITUCIONAIS
+========================================= */
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 2rem;
+}
+
 .info-card {
     background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%);
     border: 1px solid #e2d2c3;
     border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 1.5rem;
+    padding: 28px 24px;
     box-shadow: 0 3px 10px rgba(90, 59, 40, 0.03);
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .info-title {
@@ -113,7 +123,8 @@ html, body, [class*="css"]  {
     font-size: 38px !important;
     font-weight: 700 !important;
     color: #c5721f !important;
-    margin-bottom: 12px !important;
+    margin-bottom: 16px !important;
+    text-align: center;
 }
 
 .info-text {
@@ -121,6 +132,7 @@ html, body, [class*="css"]  {
     color: #5a3b28 !important;
     line-height: 1.6 !important;
     font-weight: 400 !important;
+    text-align: justify;
 }
 
 .info-text strong {
@@ -130,14 +142,15 @@ html, body, [class*="css"]  {
 /* Lista de Como Pedir */
 .como-pedir-list {
     text-align: left;
-    display: inline-block;
     font-size: 14px;
     color: #5a3b28;
     line-height: 1.6;
-    margin-top: 10px;
+    margin: 0;
+    padding-left: 20px;
 }
+
 .como-pedir-list li {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 /* Section Destaque dos Adicionais */
@@ -306,6 +319,13 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* Ajustes Responsivos Exclusivos para Celulares */
+@media (max-width: 768px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
 @media (max-width: 640px) {
     .block-container { padding-top: 0.5rem !important; }
     .header-banner {
@@ -355,35 +375,32 @@ st.markdown(
 
 
 # ==========================================================
-# SEÇÃO: BEM-VINDO & COMO PEDIR (EXTRAÍDOS DO CATÁLOGO)
+# SEÇÃO: BEM-VINDO & COMO PEDIR (LADO A LADO COM GRID)
 # ==========================================================
 
 st.markdown(
     """
-    <div class="info-card">
-        <div class="info-title">Bem-vindo(a)</div>
-        <div class="info-text">
-            É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.<br><br>
-            Nossas cestas são cuidadosamente montadas no estilo <strong>grazing</strong> e proporcionam não apenas sabores únicos e envolventes, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br>
-            Desfrute o melhor da vida com um bom café e uma excelente companhia!
+    <div class="info-grid">
+        <div class="info-card">
+            <div class="info-title">Bem-vindo(a)</div>
+            <div class="info-text">
+                <div style="text-align: center; margin-bottom: 12px;">É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.</div>
+                Nossas cestas são cuidadosamente montadas no estilo <strong>grazing</strong> e proporcionam não apenas sabores únicos e envolventes, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br>
+                <div style="text-align: center;">Desfrute o melhor da vida com um bom café e uma excelente companhia!</div>
+            </div>
         </div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    """
-    <div class="info-card">
-        <div class="info-title">Como fazer o pedido</div>
-        <ul class="como-pedir-list">
-            <li>✨ Defina através do nosso catálogo abaixo a opção desejada e clique em <b>"Monte sua Cesta"</b>.</li>
-            <li>⏳ De preferência peça sua Doce Cesta com no mínimo <b>24h de antecedência</b> (ou <b>72h</b> caso possua mini bolo).</li>
-            <li>🕒 <b>Horário de Atendimento:</b> Segunda a sexta de 7h às 19h | Sábado de 8h às 12h.</li>
-            <li>🚗 A entrega poderá ser realizada via <b>Uber Flash / 99 Entrega</b> (taxa calculada por endereço), ou você pode fazer a retirada em mãos.</li>
-            <li>💌 Todas as cestas contêm um pequeno <b>cartão que pode ser personalizado</b>.</li>
-            <li>💳 <b>Forma de pagamento:</b> No ato da reserva via PIX ou link de Cartão de Crédito.</li>
-        </ul>
+        
+        <div class="info-card">
+            <div class="info-title">Como fazer o pedido</div>
+            <ul class="como-pedir-list">
+                <li>✨ Defina através do nosso catálogo abaixo a opção desejada e clique em <b>"Monte sua Cesta"</b>.</li>
+                <li>⏳ Peça sua Doce Cesta com no mínimo <b>24h de antecedência</b> (ou <b>72h</b> caso possua mini bolo).</li>
+                <li>🕒 <b>Atendimento:</b> Segunda a sexta de 7h às 19h | Sábado de 8h às 12h.</li>
+                <li>🚗 A entrega poderá ser realizada via <b>Uber Flash / 99 Entrega</b> ou retirada em mãos.</li>
+                <li>💌 Todas as cestas contêm um pequeno <b>cartão personalizável</b>.</li>
+                <li>💳 <b>Pagamento:</b> PIX ou link de Cartão de Crédito.</li>
+            </ul>
+        </div>
     </div>
     """,
     unsafe_allow_html=True
