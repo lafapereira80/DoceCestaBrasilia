@@ -176,7 +176,7 @@ except Exception as erro:
 # =====================================================
 
 st.title("✏️ Editar Cesta")
-st.caption("Atualize os dados e a imagem da cesta.")
+st.caption("Atualize os dados, a posição e a imagem da cesta.")
 st.divider()
 
 
@@ -191,8 +191,17 @@ with st.container(border=True):
     with col_dados:
         st.subheader("📝 Dados Principais")
         nome = st.text_input("Nome da Cesta", value=cesta.get("nome", ""), placeholder="Ex: Cesta Café Especial")
-        preco = st.number_input("Preço (R$)", min_value=0.0, value=float(cesta.get("preco", 0)), step=1.0, format="%.2f")
-        descricao = st.text_area("Descrição", value=cesta.get("descricao", "") or "", height=110, placeholder="Descreva os itens principais...")
+        
+        col_p1, col_p2 = st.columns(2)
+        with col_p1:
+            preco = st.number_input("Preço (R$)", min_value=0.0, value=float(cesta.get("preco", 0)), step=1.0, format="%.2f")
+        with col_p2:
+            # Proteção contra valores nulos ou menores que 1 vindos do banco
+            ordem_banco = cesta.get("ordem")
+            ordem_atual = int(ordem_banco) if ordem_banco is not None and int(ordem_banco) >= 1 else 1
+            nova_ordem = st.number_input("Ordem / Posição", min_value=1, value=ordem_atual, step=1)
+
+        descricao = st.text_area("Descrição", value=cesta.get("descricao", "") or "", height=95, placeholder="Descreva os itens principais...")
         ativa = st.checkbox("Cesta ativa", value=cesta.get("ativa", True))
 
     # Coluna 2: Gestão de Imagem
@@ -265,17 +274,18 @@ if salvar:
             st.stop()
 
     try:
-        # Chamada limpa sem o argumento 'ordem' para evitar qualquer conflito de versão de cache
+        # A chamada volta a enviar o argumento ordem para o backend reordenar
         atualizar_cesta(
             cesta_id,
             nome.strip(),
             descricao.strip(),
             preco,
             imagem,
-            ativa
+            ativa,
+            ordem=int(nova_ordem)
         )
 
-        st.success("Cesta atualizada com sucesso!")
+        st.success("Cesta atualizada e reordenada com sucesso!")
         st.session_state.pop("cesta_editar", None)
         st.switch_page("pages/04_Cestas.py")
 
