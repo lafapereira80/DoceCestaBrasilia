@@ -182,7 +182,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     border: 1px solid #e8ddd3 !important;
     border-radius: 18px !important;
     padding: 18px !important;
-    margin-bottom: 12px !important; /* Espaço reduzido entre uma cesta e outra */
+    margin-bottom: 12px !important; 
     box-shadow: 0 4px 12px rgba(90, 59, 40, 0.04);
     transition: all 0.25s ease !important;
 }
@@ -227,9 +227,9 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
    NOVA PROPOSTA DE BOTÃO "MONTE SUA CESTA"
 ========================================= */
 div[data-testid="stButton"] button {
-    background: linear-gradient(135deg, #c5721f 0%, #a65d14 100%) !important; /* Gradiente elegante na cor da marca */
+    background: linear-gradient(135deg, #c5721f 0%, #a65d14 100%) !important;
     color: white !important;
-    border-radius: 30px !important; /* Formato pílula/arredondado */
+    border-radius: 30px !important; 
     height: 50px !important;
     font-size: 15px !important;
     font-weight: 700 !important;
@@ -241,13 +241,13 @@ div[data-testid="stButton"] button {
 }
 
 div[data-testid="stButton"] button:hover {
-    transform: translateY(-3px) !important; /* Efeito flutuante */
+    transform: translateY(-3px) !important;
     box-shadow: 0 6px 18px rgba(197, 114, 31, 0.45) !important;
     background: linear-gradient(135deg, #b56210 0%, #914f0f 100%) !important;
 }
 
 /* =========================================
-   LIGHTBOX FOTO CESTA
+   LIGHTBOX FOTO CESTA (AJUSTE DE 50%)
 ========================================= */
 .lightbox-wrapper {
     text-align: center;
@@ -256,13 +256,13 @@ div[data-testid="stButton"] button:hover {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center; /* Centraliza a foto reduzida */
 }
 .lightbox-toggle {
     display: none; 
 }
 .lightbox-image {
-    width: 100%; /* Agora ocupa 100% da própria coluna, que já é dividida */
-    max-width: 320px;
+    width: 50%; /* REDUZIDO PARA 50% */
     border-radius: 12px;
     cursor: zoom-in;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -422,7 +422,9 @@ div[data-testid="stButton"] button:hover {
     .info-title { font-size: 32px !important; }
     .card-cesta-titulo { font-size: 30px !important; text-align: center; }
     .card-cesta-preco { font-size: 22px !important; text-align: center; }
-    .lightbox-image { max-width: 100%; }
+    
+    /* No celular a foto ocupa 50% também */
+    .lightbox-image { width: 50%; }
 }
 </style>
 """,
@@ -494,11 +496,11 @@ else:
         # Contêiner geral da cesta
         with st.container(border=True):
             
-            # Divide o espaço: Foto na esquerda (1) e Texto na direita (2)
+            # Divide o espaço: Foto na esquerda (1.2) e Texto na direita (2)
             col_img, col_text = st.columns([1.2, 2], gap="medium")
             
             with col_img:
-                # TRATAMENTO DE FOTO PRINCIPAL (LIGHTBOX CSS)
+                # TRATAMENTO DE FOTO PRINCIPAL (LIGHTBOX CSS - Reduzida em 50%)
                 imagem_url = cesta.get("imagem")
                 if imagem_url and str(imagem_url).strip():
                     img_src = image_to_base64(imagem_url)
@@ -519,7 +521,7 @@ else:
                         unsafe_allow_html=True
                     )
 
-                # TRATAMENTO DE FOTOS EXTRAS (Opcional - ficam menores abaixo da foto principal)
+                # TRATAMENTO DE FOTOS EXTRAS
                 fotos_extras = cesta.get("fotos_adicionais", [])
                 if isinstance(fotos_extras, list) and len(fotos_extras) > 0:
                     st.caption("📸 Outros ângulos:")
