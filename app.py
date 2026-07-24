@@ -36,7 +36,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS MODERNO E LIGHTBOX CSS PADRÃO (CESTAS)
+# CSS MODERNO E LIGHTBOX GLOBAL (COM GRID RESPONSIVA DE 2 ITENS NO MOBILE)
 # ==========================================================
 
 st.markdown(
@@ -243,7 +243,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX CSS PADRÃO (CESTAS)
+   LIGHTBOX GLOBAL ESTÁVEL
 ========================================= */
 .lightbox-wrapper {
     text-align: center;
@@ -304,7 +304,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   ESTILO DOS CARDS DE ADICIONAIS
+   GRID DE ADICIONAIS (5 NO DESKTOP / 2 NO MOBILE)
 ========================================= */
 .adicionais-hero-card {
     background: linear-gradient(135deg, #ffffff 0%, #faf5f0 100%);
@@ -324,17 +324,104 @@ div[data-testid="stButton"] button:hover {
     margin-bottom: 16px;
 }
 
+.adicionais-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+}
+
+.adicional-card {
+    background: #ffffff;
+    border: 1px solid #e8ddd3;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(90, 59, 40, 0.04);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.adicional-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 18px rgba(197, 114, 31, 0.15);
+    border-color: #c5721f;
+}
+
+.adicional-img {
+    width: 100%;
+    height: 105px;
+    object-fit: cover;
+    cursor: zoom-in;
+    transition: transform 0.2s ease;
+    display: block;
+    background: #fdfbf8;
+    border-bottom: 1px solid #f0e6dc;
+}
+.adicional-img:hover {
+    transform: scale(1.03);
+}
+
 .adicional-img-placeholder {
-    width: 60px;
-    height: 60px;
+    width: 100%;
+    height: 105px;
     background: linear-gradient(135deg, #fdfbf8 0%, #f5eee6 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
-    border-radius: 8px;
-    border: 1px solid #f0e6dc;
-    margin: 0 auto;
+    font-size: 28px;
+    border-bottom: 1px solid #f0e6dc;
+}
+
+.adicional-details {
+    padding: 10px 8px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-grow: 1;
+}
+
+.adicional-nome {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #4d3e35;
+    margin-bottom: 4px;
+    line-height: 1.25;
+}
+
+.adicional-preco-fixo {
+    color: #2e7d32;
+    font-weight: 800;
+    font-size: 12.5px;
+}
+
+.adicional-preco-consulta {
+    color: #c5721f;
+    font-weight: 700;
+    background: #fff8ef;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    display: inline-block;
+}
+
+/* Modal Global Flutuante para os Adicionais */
+#global-zoom-modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85);
+    z-index: 999999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+}
+#global-zoom-modal img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
 
 /* =========================================
@@ -372,8 +459,12 @@ div[data-testid="stButton"] button:hover {
 .btn-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important; box-shadow: 0 3px 8px rgba(220, 39, 67, 0.25); }
 
 /* =========================================
-   RESPONSIVO EXCLUSIVO MOBILE
+   RESPONSIVO EXCLUSIVO MOBILE (2 ITENS POR FILA)
 ========================================= */
+@media (max-width: 900px) {
+    .adicionais-grid { grid-template-columns: repeat(3, 1fr) !important; }
+}
+
 @media (max-width: 640px) {
     .block-container { 
         padding-top: 0.5rem !important; 
@@ -387,18 +478,24 @@ div[data-testid="stButton"] button:hover {
     .card-cesta-titulo { font-size: 30px !important; text-align: center; }
     .card-cesta-preco { font-size: 22px !important; text-align: center; }
     .lightbox-image { width: 80%; }
-
-    /* Força os adicionais (dentro da caixa contenedora dedicada) a ficarem estritamente 2 por linha */
-    .adicionais-container-wrapper div[data-testid="stHorizontalBlock"] {
-        flex-wrap: wrap !important;
-    }
-    .adicionais-container-wrapper div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
-        flex: 1 1 calc(50% - 6px) !important;
-        min-width: calc(50% - 6px) !important;
-        max-width: calc(50% - 6px) !important;
-    }
+    
+    /* Celular: Força exatamente 2 colunas lado a lado */
+    .adicionais-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
 }
 </style>
+
+<!-- Modal Global JS unificado para ampliação de imagens -->
+<div id="global-zoom-modal" onclick="this.style.display='none'">
+    <img id="global-zoom-img" src="">
+</div>
+<script>
+function abrirZoomGlobal(url) {
+    const modal = document.getElementById('global-zoom-modal');
+    const modalImg = document.getElementById('global-zoom-img');
+    modalImg.src = url;
+    modal.style.display = 'flex';
+}
+</script>
 """,
 unsafe_allow_html=True
 )
@@ -473,13 +570,7 @@ else:
                     st.markdown(
                         f"""
                         <div class="lightbox-wrapper">
-                            <label style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
-                                <input type="checkbox" class="lightbox-toggle">
-                                <img src="{img_src}" class="lightbox-image" title="Clique para ampliar">
-                                <div class="lightbox-modal">
-                                    <img src="{img_src}">
-                                </div>
-                            </label>
+                            <img src="{img_src}" class="lightbox-image" title="Clique para ampliar" onclick="abrirZoomGlobal('{img_src}')">
                             <div class="imagem-legenda">👆 Toque na foto para ampliar</div>
                         </div>
                         """,
@@ -514,7 +605,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (DENTRO DA CAIXA - 2 POR FILA NO MOBILE)
+# APRESENTAÇÃO DOS ADICIONAIS (GRID RESPONSIVA)
 # ==========================================================
 
 produtos_adicionais = []
@@ -527,69 +618,50 @@ except:
     produtos_adicionais = []
 
 if produtos_adicionais:
-    # Usamos uma div wrapper com classe para escopar o ajuste exclusivo dos adicionais via CSS mobile
-    st.markdown('<div class="adicionais-container-wrapper">', unsafe_allow_html=True)
-    with st.container(border=True):
-        st.markdown(
-            """
-            <div class="adicionais-hero-title" style="margin-bottom: 20px;">
+    cards_html = ""
+    for prod in produtos_adicionais:
+        nome_p = prod.get("nome", "")
+        preco_p = prod.get("preco")
+        imagem_p = prod.get("imagem")
+
+        if preco_p is not None and str(preco_p).strip() != "":
+            try:
+                val_f = float(preco_p)
+                texto_preco = f'R$ {val_f:,.2f}'.replace(",", "X").replace(".", ",").replace("X",".")
+                span_preco = f'<span class="adicional-preco-fixo">{texto_preco}</span>'
+            except:
+                span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
+        else:
+            span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
+
+        if imagem_p and str(imagem_p).strip():
+            img_src = image_to_base64(imagem_p)
+            img_html = f'<img src="{img_src}" class="adicional-img" alt="{nome_p}" title="Toque para ampliar" onclick="abrirZoomGlobal(\'{img_src}\')">'
+        else:
+            img_html = f'<div class="adicional-img-placeholder">🎀</div>'
+
+        cards_html += f'<div class="adicional-card">{img_html}<div class="adicional-details"><div class="adicional-nome">{nome_p}</div><div>{span_preco}</div></div></div>'
+
+    st.markdown(
+        f"""
+        <div class="adicionais-hero-card">
+            <div class="adicionais-hero-title">
                 🎀 Incremente seu presente com nossos Adicionais Especiais:
                 <span style="font-size: 12px; font-weight: normal; color: #888; display: block; margin-top: 4px;">
                     👉 Toque em qualquer foto para ampliar
                 </span>
             </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        tamanho_linha = 5
-        for i in range(0, len(produtos_adicionais), tamanho_linha):
-            lote = produtos_adicionais[i:i + tamanho_linha]
-            cols = st.columns(tamanho_linha)
-
-            for idx, prod in enumerate(lote):
-                with cols[idx]:
-                    nome_p = prod.get("nome", "")
-                    preco_p = prod.get("preco")
-                    imagem_p = prod.get("imagem")
-
-                    if preco_p is not None and str(preco_p).strip() != "":
-                        try:
-                            val_f = float(preco_p)
-                            texto_preco = f'R$ {val_f:,.2f}'.replace(",", "X").replace(".", ",").replace("X",".")
-                            span_preco = f'<span class="adicional-preco-fixo">{texto_preco}</span>'
-                        except:
-                            span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
-                    else:
-                        span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
-
-                    with st.container(border=True):
-                        if imagem_p and str(imagem_p).strip():
-                            img_src = image_to_base64(imagem_p)
-                            st.markdown(
-                                f"""
-                                <div style="text-align: center;">
-                                    <label style="cursor: zoom-in; display: inline-block;">
-                                        <input type="checkbox" class="lightbox-toggle">
-                                        <img src="{img_src}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.08);" title="Clique para ampliar">
-                                        <div class="lightbox-modal">
-                                            <img src="{img_src}">
-                                        </div>
-                                    </label>
-                                </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
-                        else:
-                            st.markdown('<div class="adicional-img-placeholder">🎀</div>', unsafe_allow_html=True)
-
-                        st.markdown(f'<div style="font-size: 11.5px; font-weight: 700; color: #4d3e35; text-align: center; margin-top: 6px; margin-bottom: 4px; min-height: 28px;">{nome_p}</div>', unsafe_allow_html=True)
-                        st.markdown(f'<div style="text-align: center;">{span_preco}</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+            <div class="adicionais-grid">
+                {cards_html}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 # ==========================================================
-# SEÇÃO DE CONTATOS AND RODAPÉ
+# SEÇÃO DE CONTATOS E RODAPÉ
 # ==========================================================
 
 st.markdown(
