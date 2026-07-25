@@ -320,10 +320,10 @@ def formatar_data(data):
 
 
 # =====================================================
-# GERA WHATSAPP COM DADOS DO HOMENAGEADO
+# GERA WHATSAPP COM DADOS DO HOMENAGEADO E TAXAS
 # =====================================================
 
-def gerar_whatsapp(pedido, adicionais, valor_final):
+def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_atual, desconto_atual):
     itens_consulta = pedido.get("itens_consulta", {})
 
     if isinstance(itens_consulta, str):
@@ -362,6 +362,15 @@ def gerar_whatsapp(pedido, adicionais, valor_final):
         if motivo:
             texto_destinatario += f"Motivo: {motivo}\n"
         texto_destinatario += "\n"
+        
+    # DETALHAMENTO DE VALORES (Frete, Extras, Descontos)
+    texto_valores = ""
+    if float(frete_atual) > 0:
+        texto_valores += f"🚚 Frete: {formatar_valor(frete_atual)}\n"
+    if float(extras_atual) > 0:
+        texto_valores += f"➕ Extras/Acréscimos: {formatar_valor(extras_atual)}\n"
+    if float(desconto_atual) > 0:
+        texto_valores += f"🏷️ Desconto: - {formatar_valor(desconto_atual)}\n"
 
     texto = (
         f"🎁 *Doce Cesta Brasília*\n\n"
@@ -376,8 +385,10 @@ def gerar_whatsapp(pedido, adicionais, valor_final):
         f"Data: {formatar_data(pedido.get('data_entrega')) if pedido else '-'}\n"
         f"Período: {pedido.get('periodo_entrega','-') if pedido else '-'}\n"
         f"Horário: {pedido.get('horario_combinado','-') if pedido else '-'}\n\n"
-        f"💳 Pagamento: {pedido.get('pagamento','-') if pedido else '-'}\n"
-        f"💰 Valor Final: {formatar_valor(valor_final)}\n\n"
+        f"💳 Pagamento: {pedido.get('pagamento','-') if pedido else '-'}\n\n"
+        f"💰 *Resumo Financeiro*\n"
+        f"{texto_valores}"
+        f"✅ *Valor Final: {formatar_valor(valor_final)}*\n\n"
         f"Obrigado! ❤️"
     )
 
@@ -587,12 +598,14 @@ with col_direita:
     with st.container(border=True):
         st.markdown('<div class="card-title">💰 Fechamento Financeiro</div>', unsafe_allow_html=True)
 
-        cf1, cf2, cf3 = st.columns(3)
+        cf1, cf2, cf3, cf4 = st.columns(4)
         with cf1:
             valor_frete = st.number_input("🚚 Frete", min_value=0.0, value=float(pedido.get("valor_frete", 0) or 0), step=1.0, key="frete")
         with cf2:
-            desconto = st.number_input("🏷️ Desconto", min_value=0.0, value=float(pedido.get("desconto", 0) or 0), step=1.0, key="desconto")
+            valor_extras = st.number_input("➕ Extras", min_value=0.0, value=float(pedido.get("valor_extras", 0) or 0), step=1.0, key="extras")
         with cf3:
+            desconto = st.number_input("🏷️ Desconto", min_value=0.0, value=float(pedido.get("desconto", 0) or 0), step=1.0, key="desconto")
+        with cf4:
             status_opcoes = ["Recebido", "Pago", "Desistência", "Entregue"]
             status_atual = pedido.get("status", "Recebido")
             if status_atual not in status_opcoes:
@@ -601,8 +614,8 @@ with col_direita:
 
         horario_combinado = st.text_input("🕒 Horário Combinado de Entrega", value=pedido.get("horario_combinado") or "", placeholder="Ex: 15:30")
 
-    # Resumo Final do Valor (Com Pagamento Embutido Nativamente)
-    valor_total_calculado = valor_cesta + valor_adicionais + valor_frete - desconto
+    # Resumo Final do Valor (Cálculo atualizado com Extras)
+    valor_total_calculado = valor_cesta + valor_adicionais + valor_frete + valor_extras - desconto
     if valor_total_calculado < 0:
         valor_total_calculado = 0
 
@@ -629,8 +642,12 @@ with col_direita:
                     <span class="resumo-val">{formatar_valor(valor_frete)}</span>
                 </div>
                 <div class="resumo-row">
+                    <span class="resumo-label">➕ Extras</span>
+                    <span class="resumo-val">{formatar_valor(valor_extras)}</span>
+                </div>
+                <div class="resumo-row">
                     <span class="resumo-label">🏷️ Desconto</span>
-                    <span class="resumo-val">{formatar_valor(desconto)}</span>
+                    <span class="resumo-val" style="color: #c62828;">- {formatar_valor(desconto)}</span>
                 </div>
                 <div class="resumo-row">
                     <span class="resumo-label">💳 Pagamento</span>
@@ -649,7 +666,7 @@ with col_direita:
     with st.container(border=True):
         st.markdown('<div class="card-title">📲 Atendimento WhatsApp</div>', unsafe_allow_html=True)
         if valor_total_calculado > 0:
-            link_whatsapp = gerar_whatsapp(pedido, adicionais_pedido, valor_total_calculado)
+            link_whatsapp = gerar_whatsapp(pedido, adicionais_pedido, valor_total_calculado, valor_frete, valor_extras, desconto)
             st.link_button("📲 Enviar resumo pelo WhatsApp", link_whatsapp, use_container_width=True)
         else:
             st.info("Defina os valores para liberar o WhatsApp.")
@@ -690,6 +707,7 @@ with col_bot1:
         dados = {
             "status": status,
             "valor_frete": valor_frete,
+            "valor_extras": valor_extras,
             "desconto": desconto,
             "valor_total": valor_total_calculado,
             "horario_combinado": horario_combinado,
