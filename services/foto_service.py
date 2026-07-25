@@ -32,11 +32,11 @@ def listar_fotos(pedido_id):
         fotos = resposta.data or []
         
         fotos_validas = []
+        # Pega a URL do cofre para não depender do Supabase formatar a URL
         url_base = st.secrets["SUPABASE_URL"].rstrip("/")
         
         for foto in fotos:
             caminho = foto.get("arquivo")
-            # Só processa se o caminho existir (ignora fotos corrompidas)
             if caminho:
                 foto["url"] = f"{url_base}/storage/v1/object/public/pedido_fotos/{caminho}"
                 fotos_validas.append(foto)
