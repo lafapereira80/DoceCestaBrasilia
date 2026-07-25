@@ -320,7 +320,7 @@ def formatar_data(data):
 
 
 # =====================================================
-# GERA WHATSAPP
+# GERA WHATSAPP COM DADOS DO HOMENAGEADO
 # =====================================================
 
 def gerar_whatsapp(pedido, adicionais, valor_final):
@@ -347,8 +347,21 @@ def gerar_whatsapp(pedido, adicionais, valor_final):
             else:
                 lista_adicionais.append(f"• {nome} (sob consulta)")
 
-    dest_nome = pedido.get("destinatario_nome", "")
-    texto_destinatario = f"💝 Para: {dest_nome}\n" if dest_nome else ""
+    # DADOS DO HOMENAGEADO FORMATADOS
+    dest_nome = pedido.get("destinatario_nome", "").strip()
+    dest_tel = pedido.get("destinatario_telefone", "").strip()
+    motivo = pedido.get("motivo_homenagem", "").strip()
+    
+    texto_destinatario = ""
+    if dest_nome or dest_tel or motivo:
+        texto_destinatario = "💝 *Entrega Especial Para:*\n"
+        if dest_nome:
+            texto_destinatario += f"Nome: {dest_nome}\n"
+        if dest_tel:
+            texto_destinatario += f"Contato: {dest_tel}\n"
+        if motivo:
+            texto_destinatario += f"Motivo: {motivo}\n"
+        texto_destinatario += "\n"
 
     texto = (
         f"🎁 *Doce Cesta Brasília*\n\n"
