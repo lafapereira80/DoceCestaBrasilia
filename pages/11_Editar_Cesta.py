@@ -1,6 +1,6 @@
 import streamlit as st
 
-from config.supabase import supabase  # Importação direta para driblar o cache
+from config.supabase import supabase  # Importação direta para driblar o cache e apagar o arquivo
 
 from services.cesta_service import (
     buscar_cesta,
@@ -221,6 +221,20 @@ with st.container(border=True):
                 
                 if st.button("🗑️ Remover Foto", key="rm_foto_editar", use_container_width=True):
                     try:
+                        # 1. TENTA APAGAR O ARQUIVO FÍSICO DO SUPABASE BUCKET
+                        if "/public/" in str(imagem_atual):
+                            try:
+                                caminho_pos_public = str(imagem_atual).split("/public/")[1]
+                                partes = caminho_pos_public.split("/")
+                                
+                                nome_bucket = partes[0]
+                                caminho_arquivo = "/".join(partes[1:])
+                                
+                                supabase.storage.from_(nome_bucket).remove([caminho_arquivo])
+                            except Exception as erro_storage:
+                                print(f"Aviso: O arquivo físico já não existia ou houve erro: {erro_storage}")
+
+                        # 2. REMOVE A REFERÊNCIA NO BANCO DE DADOS
                         remover_imagem_cesta(cesta_id)
                         st.rerun()
                     except Exception as erro:
@@ -270,6 +284,15 @@ if salvar:
 
     if nova_imagem:
         try:
+            # Apaga a imagem velha do bucket caso o usuário esteja apenas enviando uma foto nova por cima
+            if imagem_atual and "/public/" in str(imagem_atual):
+                try:
+                    caminho_pos_public = str(imagem_atual).split("/public/")[1]
+                    partes = caminho_pos_public.split("/")
+                    supabase.storage.from_(partes[0]).remove(["/".join(partes[1:])])
+                except:
+                    pass
+                    
             imagem = upload_imagem_cesta(nova_imagem)
         except Exception as erro:
             st.error(f"Erro no upload: {erro}")
