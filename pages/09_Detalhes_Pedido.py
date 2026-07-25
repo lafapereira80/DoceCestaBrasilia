@@ -12,8 +12,9 @@ from services.pedido_adicional_service import (
     listar_adicionais_pedido
 )
 
-# Puxando o Supabase direto para a página
-from config.supabase import supabase
+from services.foto_service import (
+    listar_fotos
+)
 
 from services.cesta_service import (
     buscar_cesta,
@@ -380,33 +381,21 @@ with col_direita:
             st.rerun()
 
     # =====================================================
-    # NOVO MOTOR DE FOTOS 100% BLINDADO (DIRETO NA PÁGINA)
+    # MOTOR DE FOTOS (VIA SERVICE)
     # =====================================================
     with st.container(border=True):
         st.markdown('<div class="card-title">📷 Fotos da Polaroid</div>', unsafe_allow_html=True)
         try:
-            resposta_fotos = supabase.table("pedido_fotos").select("*").eq("pedido_id", pedido["id"]).order("created_at").execute()
-            fotos = resposta_fotos.data or []
-            
+            fotos = listar_fotos(pedido["id"])
             if fotos:
                 colunas = st.columns(2)
-                url_base = st.secrets["SUPABASE_URL"].rstrip("/")
-                
-                contador = 0
-                for foto in fotos:
-                    caminho = foto.get("arquivo")
-                    if caminho: # Se o caminho existir e não for nulo
-                        url_img = f"{url_base}/storage/v1/object/public/pedido_fotos/{caminho}"
-                        with colunas[contador % 2]:
-                            st.image(url_img, caption=foto.get("nome_original", "Foto"), use_container_width=True)
-                        contador += 1
-                
-                if contador == 0:
-                    st.caption("⚠️ As fotos salvas no banco estão corrompidas (sem nome de arquivo).")
+                for i, foto in enumerate(fotos):
+                    with colunas[i % 2]:
+                        st.image(foto["url"], caption=foto.get("nome_original", "Foto"), use_container_width=True)
             else:
-                st.caption("Nenhuma foto enviada.")
+                st.caption("Nenhuma foto enviada ou arquivos inválidos.")
         except Exception as erro:
-            st.error(f"Erro na renderização das fotos: {erro}")
+            st.error(f"Erro ao carregar fotos na tela: {erro}")
 
 
 col_bot1, col_bot2 = st.columns(2)
