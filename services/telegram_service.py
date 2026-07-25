@@ -1,24 +1,26 @@
 import requests
+import streamlit as st
 
 # =====================================================
-# CONFIGURAÇÕES DO TELEGRAM
+# CONFIGURAÇÕES DO TELEGRAM (PUXANDO DO COFRE SEGURO)
 # =====================================================
-# Substitua pelas suas chaves reais (entre as aspas)
-TELEGRAM_TOKEN = "8832158812:AAFYlXuZNKs7JAK8tVUvtEfUJ6g93MhgI5Q"
-TELEGRAM_CHAT_ID = "603346115"
+# Agora as chaves ficam escondidas no painel do Streamlit!
+TELEGRAM_TOKEN = st.secrets.get("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = st.secrets.get("TELEGRAM_CHAT_ID")
 
 def enviar_notificacao_telegram(mensagem):
     """Envia uma mensagem para o seu Telegram via Bot API"""
     
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        return # Se não tiver token, não faz nada
+        print("Aviso: Chaves do Telegram não configuradas no secrets.")
+        return 
         
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
         "text": mensagem,
-        "parse_mode": "HTML" # Permite usar negrito (<b>) e outros estilos
+        "parse_mode": "HTML"
     }
     
     try:
