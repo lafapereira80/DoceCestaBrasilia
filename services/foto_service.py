@@ -6,7 +6,6 @@ def salvar_fotos(pedido_id, arquivos):
     if not arquivos:
         return
 
-    # Garante que funciona tanto se for enviado um único arquivo quanto uma lista
     if not isinstance(arquivos, list):
         arquivos = [arquivos]
 
