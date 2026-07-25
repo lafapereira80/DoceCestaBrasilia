@@ -9,7 +9,9 @@ def obter_configuracao_vitrine():
     return {
         "cabecalho_titulo": "Doce Cesta Brasília",
         "cabecalho_subtitulo": "Cestas personalizadas para momentos inesquecíveis 💝",
-        "boas_vindas_texto": "É uma alegria receber você aqui!...",
+        "boas_vindas_titulo": "Bem-vindo(a)",
+        "boas_vindas_texto": '<div style="text-align: center; margin-bottom: 12px;">É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.</div>Nossas cestas são cuidadosamente montadas no estilo <strong>grazing</strong> e proporcionam não apenas sabores únicos e envolventes, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br><div style="text-align: center;">Desfrute o melhor da vida com um bom café e uma excelente companhia!</div>',
+        "como_pedir_titulo": "Como fazer o pedido",
         "como_pedir_itens": ["✨ Defina através do nosso catálogo..."],
         "catalogo_titulo": "🎁 Catálogo de Cestas",
         "catalogo_subtitulo": "Escolha a cesta perfeita, confira os itens detalhados e personalize do seu jeito.",
