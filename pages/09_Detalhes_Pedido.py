@@ -2,6 +2,7 @@ import streamlit as st
 import json
 import urllib.parse
 import pandas as pd
+from uuid import uuid4
 
 from services.pedido_service import (
     buscar_pedido,
@@ -11,12 +12,6 @@ from services.pedido_service import (
 
 from services.pedido_adicional_service import (
     listar_adicionais_pedido
-)
-
-from services.foto_service import (
-    listar_fotos,
-    salvar_fotos,
-    deletar_foto
 )
 
 from config.supabase import supabase
@@ -122,6 +117,53 @@ elif isinstance(itens_consulta_salvos, str):
     try: itens_consulta_salvos = json.loads(itens_consulta_salvos)
     except: itens_consulta_salvos = {}
 if not isinstance(itens_consulta_salvos, dict): itens_consulta_salvos = {}
+
+
+# =====================================================
+# FUNÇÕES DE FOTO LOCAIS (DIRETO NA PÁGINA)
+# =====================================================
+
+def salvar_fotos_local(pid, arquivos):
+    if not arquivos: return
+    if not isinstance(arquivos, list): arquivos = [arquivos]
+    for arquivo in arquivos:
+        try:
+            extensao = arquivo.name.split(".")[-1]
+            nome_arquivo = f"{pid}/{uuid4()}.{extensao}"
+            conteudo = arquivo.getvalue()
+            supabase.storage.from_("pedido_fotos").upload(
+                nome_arquivo, conteudo, {"content-type": arquivo.type}
+            )
+            supabase.table("pedido_fotos").insert({
+                "pedido_id": pid, "arquivo": nome_arquivo, "nome_original": arquivo.name
+            }).execute()
+        except Exception as e:
+            print(f"Erro ao salvar foto: {e}")
+
+def listar_fotos_local(pid):
+    try:
+        resposta = supabase.table("pedido_fotos").select("*").eq("pedido_id", pid).order("created_at").execute()
+        fotos = resposta.data or []
+        fotos_validas = []
+        url_base = st.secrets["SUPABASE_URL"].rstrip("/")
+        for foto in fotos:
+            caminho = foto.get("arquivo")
+            if caminho:
+                foto["url"] = f"{url_base}/storage/v1/object/public/pedido_fotos/{caminho}"
+                fotos_validas.append(foto)
+        return fotos_validas
+    except Exception as e:
+        print(f"Erro ao listar fotos: {e}")
+        return []
+
+def deletar_foto_local(foto_id, caminho_arquivo):
+    try:
+        supabase.storage.from_("pedido_fotos").remove([caminho_arquivo])
+        supabase.table("pedido_fotos").delete().eq("id", foto_id).execute()
+        return True
+    except Exception as e:
+        print(f"Erro ao deletar foto: {e}")
+        return False
 
 
 # =====================================================
@@ -519,12 +561,11 @@ with col_direita:
             st.rerun()
 
     # =====================================================
-    # MOTOR DE FOTOS: GESTÃO COMPLETA (MÚLTIPLAS FOTOS & DELETE)
+    # MOTOR DE FOTOS LOCAL: GESTÃO DE MÚLTIPLAS FOTOS & DELEÇÃO
     # =====================================================
     with st.container(border=True):
         st.markdown('<div class="card-title">📷 Gestão de Fotos Polaroid</div>', unsafe_allow_html=True)
         
-        # Uploader configurado para aceitar uma ou MAIS fotos simultaneamente
         novas_fotos = st.file_uploader(
             "Adicionar uma ou mais fotos", 
             type=["jpg", "jpeg", "png", "webp"], 
@@ -535,31 +576,26 @@ with col_direita:
         if novas_fotos:
             if st.button("📤 Salvar Novas Fotos", use_container_width=True):
                 with st.spinner("Enviando fotos..."):
-                    salvar_fotos(pedido["id"], novas_fotos)
+                    salvar_fotos_local(pedido["id"], novas_fotos)
                 st.success("✅ Fotos enviadas com sucesso!")
                 st.rerun()
 
         st.divider()
 
-        # Exibição e Exclusão Individual das Fotos Atuais
         try:
-            fotos = listar_fotos(pedido["id"])
+            fotos = listar_fotos_local(pedido["id"])
             if fotos:
                 colunas = st.columns(2)
                 for i, foto in enumerate(fotos):
                     with colunas[i % 2]:
-                        link_imagem = foto.get("url") or foto.get("url_publica")
+                        link_imagem = foto.get("url")
                         caminho_arquivo = foto.get("arquivo")
-                        
-                        if not link_imagem and caminho_arquivo:
-                            url_base = st.secrets["SUPABASE_URL"].rstrip("/")
-                            link_imagem = f"{url_base}/storage/v1/object/public/pedido_fotos/{caminho_arquivo}"
 
                         if link_imagem:
                             st.image(link_imagem, caption=foto.get("nome_original", "Foto"), use_container_width=True)
                             if st.button("🗑️ Deletar Foto", key=f"del_foto_{foto.get('id')}", use_container_width=True):
                                 if caminho_arquivo:
-                                    sucesso = deletar_foto(foto["id"], caminho_arquivo)
+                                    sucesso = deletar_foto_local(foto["id"], caminho_arquivo)
                                     if sucesso:
                                         st.rerun()
                                     else:
