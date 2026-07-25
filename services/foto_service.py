@@ -6,6 +6,10 @@ def salvar_fotos(pedido_id, arquivos):
     if not arquivos:
         return
 
+    # Garante que funciona tanto se for enviado um único arquivo quanto uma lista
+    if not isinstance(arquivos, list):
+        arquivos = [arquivos]
+
     for arquivo in arquivos:
         try:
             extensao = arquivo.name.split(".")[-1]
@@ -32,7 +36,6 @@ def listar_fotos(pedido_id):
         fotos = resposta.data or []
         
         fotos_validas = []
-        # Pega a URL do cofre para não depender do Supabase formatar a URL
         url_base = st.secrets["SUPABASE_URL"].rstrip("/")
         
         for foto in fotos:
@@ -45,3 +48,12 @@ def listar_fotos(pedido_id):
     except Exception as e:
         print(f"Erro ao listar fotos: {e}")
         return []
+
+def deletar_foto(foto_id, caminho_arquivo):
+    try:
+        supabase.storage.from_("pedido_fotos").remove([caminho_arquivo])
+        supabase.table("pedido_fotos").delete().eq("id", foto_id).execute()
+        return True
+    except Exception as e:
+        print(f"Erro ao deletar foto: {e}")
+        return False
