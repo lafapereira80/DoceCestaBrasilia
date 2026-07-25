@@ -271,9 +271,10 @@ if "editar_pedido" not in st.session_state:
 # VALORES SOB CONSULTA
 # =====================================================
 
-itens_consulta_salvos = pedido.get("itens_consulta", {})
-
-if isinstance(itens_consulta_salvos, str):
+itens_consulta_salvos = pedido.get("itens_consulta")
+if not itens_consulta_salvos:
+    itens_consulta_salvos = {}
+elif isinstance(itens_consulta_salvos, str):
     try:
         itens_consulta_salvos = json.loads(itens_consulta_salvos)
     except:
@@ -324,13 +325,18 @@ def formatar_data(data):
 # =====================================================
 
 def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_atual, desconto_atual):
-    itens_consulta = pedido.get("itens_consulta", {})
-
-    if isinstance(itens_consulta, str):
+    # Proteção 100% contra valores nulos
+    itens_consulta = pedido.get("itens_consulta")
+    if not itens_consulta:
+        itens_consulta = {}
+    elif isinstance(itens_consulta, str):
         try:
             itens_consulta = json.loads(itens_consulta)
         except:
             itens_consulta = {}
+            
+    if not isinstance(itens_consulta, dict):
+        itens_consulta = {}
 
     lista_adicionais = []
 
@@ -365,11 +371,11 @@ def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_atual, d
         
     # DETALHAMENTO DE VALORES (Frete, Extras, Descontos)
     texto_valores = ""
-    if float(frete_atual) > 0:
+    if float(frete_atual or 0) > 0:
         texto_valores += f"🚚 Frete: {formatar_valor(frete_atual)}\n"
-    if float(extras_atual) > 0:
+    if float(extras_atual or 0) > 0:
         texto_valores += f"➕ Extras/Acréscimos: {formatar_valor(extras_atual)}\n"
-    if float(desconto_atual) > 0:
+    if float(desconto_atual or 0) > 0:
         texto_valores += f"🏷️ Desconto: - {formatar_valor(desconto_atual)}\n"
 
     texto = (
@@ -600,11 +606,11 @@ with col_direita:
 
         cf1, cf2, cf3, cf4 = st.columns(4)
         with cf1:
-            valor_frete = st.number_input("🚚 Frete", min_value=0.0, value=float(pedido.get("valor_frete", 0) or 0), step=1.0, key="frete")
+            valor_frete = st.number_input("🚚 Frete", min_value=0.0, value=float(pedido.get("valor_frete") or 0), step=1.0, key="frete")
         with cf2:
-            valor_extras = st.number_input("➕ Extras", min_value=0.0, value=float(pedido.get("valor_extras", 0) or 0), step=1.0, key="extras")
+            valor_extras = st.number_input("➕ Extras", min_value=0.0, value=float(pedido.get("valor_extras") or 0), step=1.0, key="extras")
         with cf3:
-            desconto = st.number_input("🏷️ Desconto", min_value=0.0, value=float(pedido.get("desconto", 0) or 0), step=1.0, key="desconto")
+            desconto = st.number_input("🏷️ Desconto", min_value=0.0, value=float(pedido.get("desconto") or 0), step=1.0, key="desconto")
         with cf4:
             status_opcoes = ["Recebido", "Pago", "Desistência", "Entregue"]
             status_atual = pedido.get("status", "Recebido")
