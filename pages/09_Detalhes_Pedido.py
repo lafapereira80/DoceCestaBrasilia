@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 import urllib.parse
+import pandas as pd
 
 from services.pedido_service import (
     buscar_pedido,
@@ -15,6 +16,9 @@ from services.pedido_adicional_service import (
 from services.foto_service import (
     listar_fotos
 )
+
+# Puxando o Supabase direto para podermos salvar os adicionais dinâmicos
+from config.supabase import supabase
 
 from services.cesta_service import (
     buscar_cesta,
@@ -200,7 +204,7 @@ def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_atual, d
 
 
 # =====================================================
-# CABEÇALHO & EDIÇÃO DO PEDIDO
+# CABEÇALHO & EDIÇÃO DO PEDIDO (COM ABAS DINÂMICAS)
 # =====================================================
 
 col_t1, col_t2 = st.columns([3, 1])
@@ -213,32 +217,109 @@ with col_t2:
 
 if st.session_state.editar_pedido:
     with st.container(border=True):
-        st.markdown('<div class="card-title">✏️ Editando Pedido</div>', unsafe_allow_html=True)
-        col_e1, col_e2 = st.columns(2)
-        with col_e1:
-            novo_nome = st.text_input("👤 Nome Comprador", value=pedido.get("cliente_nome") or "")
-            novo_telefone = st.text_input("📱 Telefone Comprador", value=pedido.get("cliente_telefone") or "")
-            novo_dest_nome = st.text_input("💝 Nome Destinatário", value=pedido.get("destinatario_nome") or "")
-            novo_dest_tel = st.text_input("📱 Telefone Destinatário", value=pedido.get("destinatario_telefone") or "")
-            novo_motivo = st.text_input("🎉 Motivo da Homenagem", value=pedido.get("motivo_homenagem") or "")
-        with col_e2:
+        st.markdown('<div class="card-title">✏️ Painel de Edição Completa</div>', unsafe_allow_html=True)
+        
+        # Abas para organizar a edição
+        aba_dados, aba_cesta, aba_adicionais = st.tabs(["👤 Dados", "🎁 Cesta e Produtos", "🎀 Adicionais e Entrega"])
+
+        with aba_dados:
+            col_d1, col_d2 = st.columns(2)
+            with col_d1:
+                st.write("**Comprador**")
+                novo_nome = st.text_input("Nome", value=pedido.get("cliente_nome") or "")
+                novo_telefone = st.text_input("Telefone", value=pedido.get("cliente_telefone") or "")
+            with col_d2:
+                st.write("**Destinatário (Homenageado)**")
+                novo_dest_nome = st.text_input("Nome Destinatário", value=pedido.get("destinatario_nome") or "")
+                novo_dest_tel = st.text_input("Telefone Destinatário", value=pedido.get("destinatario_telefone") or "")
+                novo_motivo = st.text_input("Motivo", value=pedido.get("motivo_homenagem") or "")
+
+        with aba_cesta:
             try:
                 nomes_cestas = [c.get("nome", "") for c in listar_cestas()]
             except: nomes_cestas = []
+            
             cesta_atual = pedido.get("cesta_nome") or ""
-            nova_cesta = st.selectbox("🎁 Cesta", nomes_cestas, index=nomes_cestas.index(cesta_atual) if cesta_atual in nomes_cestas else 0) if nomes_cestas else cesta_atual
-            nova_mensagem = st.text_area("💌 Mensagem do Cartão", value=pedido.get("mensagem") or "", height=70)
-            novo_especial = st.text_area("✨ Pedido Especial", value=pedido.get("pedido_especial") or "", height=70)
+            nova_cesta = st.selectbox("🎁 Selecione a Cesta", nomes_cestas, index=nomes_cestas.index(cesta_atual) if cesta_atual in nomes_cestas else 0) if nomes_cestas else cesta_atual
+            
+            st.write("🛒 **Produtos da Cesta (Edição Livre)**")
+            st.caption("Se você trocou a cesta acima, ajuste os itens digitando ou apagando livremente na caixa abaixo.")
+            novo_produtos = st.text_area("Lista de Itens", value=pedido.get("produtos") or "", height=120)
+
+            col_m1, col_m2 = st.columns(2)
+            with col_m1:
+                nova_mensagem = st.text_area("💌 Mensagem do Cartão", value=pedido.get("mensagem") or "", height=80)
+            with col_m2:
+                novo_especial = st.text_area("✨ Pedido Especial", value=pedido.get("pedido_especial") or "", height=80)
+
+        with aba_adicionais:
+            st.write("🎀 **Gerenciar Adicionais**")
+            st.caption("Adicione novas linhas, altere valores ou selecione uma linha e aperte 'Delete' para remover.")
+            
+            # Prepara a planilha dinâmica com os dados atuais
+            df_ad = pd.DataFrame(adicionais_pedido) if adicionais_pedido else pd.DataFrame(columns=["nome_produto", "valor_unitario"])
+            if not df_ad.empty and "nome_produto" in df_ad.columns:
+                df_ad = df_ad[["nome_produto", "valor_unitario"]]
+            else:
+                df_ad = pd.DataFrame(columns=["nome_produto", "valor_unitario"])
+            
+            # Editor interativo do Streamlit
+            df_editado = st.data_editor(
+                df_ad,
+                column_config={
+                    "nome_produto": st.column_config.TextColumn("Nome do Adicional", required=True),
+                    "valor_unitario": st.column_config.NumberColumn("Valor (R$)", min_value=0.0, format="%.2f")
+                },
+                num_rows="dynamic",
+                use_container_width=True,
+                key="editor_adicionais"
+            )
+
             novo_endereco = st.text_area("📍 Endereço de Entrega", value=pedido.get("endereco") or "", height=70)
 
+        st.divider()
         col_salvar, col_cancelar = st.columns(2)
         with col_salvar:
-            if st.button("💾 Salvar Alterações", use_container_width=True, type="primary"):
-                dados = {"cliente_nome": novo_nome, "cliente_telefone": novo_telefone, "destinatario_nome": novo_dest_nome, "destinatario_telefone": novo_dest_tel, "motivo_homenagem": novo_motivo, "cesta_nome": nova_cesta, "mensagem": nova_mensagem, "pedido_especial": novo_especial, "endereco": novo_endereco}
+            if st.button("💾 Salvar Todas as Alterações", use_container_width=True, type="primary"):
+                # 1. Salva os dados do pedido (incluindo a nova lista de produtos)
+                dados = {
+                    "cliente_nome": novo_nome, 
+                    "cliente_telefone": novo_telefone, 
+                    "destinatario_nome": novo_dest_nome, 
+                    "destinatario_telefone": novo_dest_tel, 
+                    "motivo_homenagem": novo_motivo, 
+                    "cesta_nome": nova_cesta, 
+                    "produtos": novo_produtos,
+                    "mensagem": nova_mensagem, 
+                    "pedido_especial": novo_especial, 
+                    "endereco": novo_endereco
+                }
                 atualizar_pedido(pedido["id"], dados)
+
+                # 2. Atualiza os adicionais no banco de dados (Deleta os velhos, insere os novos)
+                try:
+                    supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido["id"]).execute()
+                    
+                    novos_adicionais = []
+                    for index, row in df_editado.iterrows():
+                        nome_ad = str(row["nome_produto"]).strip()
+                        if nome_ad and nome_ad != "nan":
+                            val = row["valor_unitario"]
+                            novos_adicionais.append({
+                                "pedido_id": pedido["id"],
+                                "nome_produto": nome_ad,
+                                "valor_unitario": float(val) if pd.notna(val) else None
+                            })
+                    
+                    if novos_adicionais:
+                        supabase.table("pedido_adicionais").insert(novos_adicionais).execute()
+                except Exception as e:
+                    print(f"Erro ao atualizar adicionais dinâmicos: {e}")
+
                 st.success("Pedido alterado com sucesso!")
                 st.session_state.editar_pedido = False
                 st.rerun()
+
         with col_cancelar:
             if st.button("❌ Cancelar", use_container_width=True):
                 st.session_state.editar_pedido = False
@@ -391,15 +472,12 @@ with col_direita:
                 colunas = st.columns(2)
                 for i, foto in enumerate(fotos):
                     with colunas[i % 2]:
-                        # A BLINDAGEM: Tenta pegar a URL de todas as formas possíveis.
-                        # Se vier vazia do banco (None), monta o link na hora.
                         link_imagem = foto.get("url") or foto.get("url_publica")
                         
                         if not link_imagem and foto.get("arquivo"):
                             url_base = st.secrets["SUPABASE_URL"].rstrip("/")
                             link_imagem = f"{url_base}/storage/v1/object/public/pedido_fotos/{foto.get('arquivo')}"
 
-                        # Só manda o Streamlit desenhar se o link não for Vazio (evita o erro format)
                         if link_imagem:
                             st.image(link_imagem, caption=foto.get("nome_original", "Foto"), use_container_width=True)
                         else:
