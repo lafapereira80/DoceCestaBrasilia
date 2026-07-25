@@ -24,6 +24,11 @@ from services.cesta_service import (
     listar_cestas
 )
 
+# Importando o mesmo serviço inteligente usado na vitrine
+from services.configuracao_cesta_service import (
+    carregar_configuracao_cesta
+)
+
 from utils.menu import (
     configurar_pagina,
     menu_lateral
@@ -62,8 +67,8 @@ st.markdown(
 div[data-testid="stVerticalBlock"] { gap: 0.35rem !important; }
 h1 { font-size: 22px !important; font-weight: 700 !important; color: #5a3b28; margin-bottom: 0px !important; }
 .block-container p, .block-container label { font-family: Arial, sans-serif !important; font-size: 12px !important; }
-div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1px solid #dfcdbb !important; border-radius: 12px !important; padding: 8px 12px !important; margin-bottom: 4px !important; box-shadow: 0 1px 3px rgba(90, 59, 40, 0.03); }
-.card-title { font-size: 14px !important; font-weight: 700 !important; color: #5a3b28 !important; margin-bottom: 6px !important; }
+div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1px solid #dfcdbb !important; border-radius: 12px !important; padding: 12px 16px !important; margin-bottom: 6px !important; box-shadow: 0 1px 3px rgba(90, 59, 40, 0.03); }
+.card-title { font-size: 15px !important; font-weight: 800 !important; color: #5a3b28 !important; margin-bottom: 8px !important; }
 .info-label { font-weight: 700; color: #775a46; font-size: 11px !important; text-transform: uppercase; letter-spacing: 0.5px; }
 .info-value { margin-bottom: 4px; color: #222; font-weight: 600; font-size: 13px !important; }
 .resumo-container { background: #fff8ef; border: 1px solid #e6d1bb; border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
@@ -83,7 +88,7 @@ unsafe_allow_html=True
 
 
 # =====================================================
-# VALIDA PEDIDO ABERTO
+# VALIDA PEDIDO ABERTO E BUSCA DADOS
 # =====================================================
 
 if "pedido_aberto" not in st.session_state:
@@ -94,20 +99,13 @@ if "pedido_aberto" not in st.session_state:
 
 pedido_id = st.session_state["pedido_aberto"]
 
-
-# =====================================================
-# BUSCA PEDIDO E ADICIONAIS
-# =====================================================
-
 try:
     pedido = buscar_pedido(pedido_id)
 except Exception as erro:
-    st.error(f"Erro ao carregar pedido: {erro}")
-    st.stop()
+    st.error(f"Erro ao carregar pedido: {erro}"); st.stop()
 
 if not pedido:
-    st.error("Pedido não encontrado.")
-    st.stop()
+    st.error("Pedido não encontrado."); st.stop()
 
 try:
     adicionais_pedido = listar_adicionais_pedido(pedido["id"])
@@ -117,7 +115,6 @@ except:
 if "editar_pedido" not in st.session_state:
     st.session_state.editar_pedido = False
 
-# Controle de estado para garantir que o texto de produtos não se perca
 if "produtos_edit_id" not in st.session_state or st.session_state["produtos_edit_id"] != pedido["id"]:
     st.session_state["produtos_edit"] = pedido.get("produtos") or ""
     st.session_state["produtos_edit_id"] = pedido["id"]
@@ -131,7 +128,7 @@ if not isinstance(itens_consulta_salvos, dict): itens_consulta_salvos = {}
 
 
 # =====================================================
-# FUNÇÕES AUXILIARES
+# FUNÇÕES AUXILIARES E WHATSAPP
 # =====================================================
 
 def formatar_valor(valor):
@@ -147,11 +144,6 @@ def formatar_data(data):
         ano, mes, dia = str(data)[:10].split("-")
         return f"{dia}/{mes}/{ano}"
     except: return str(data)
-
-
-# =====================================================
-# GERA WHATSAPP
-# =====================================================
 
 def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_atual, desconto_atual):
     itens_consulta = pedido.get("itens_consulta")
@@ -222,9 +214,7 @@ with col_t2:
 if st.session_state.editar_pedido:
     with st.container(border=True):
         st.markdown('<div class="card-title">✏️ Painel de Edição Avançada</div>', unsafe_allow_html=True)
-        
-        # Criação das 3 abas dinâmicas
-        aba_dados, aba_cesta, aba_adicionais = st.tabs(["👤 Dados Básicos", "🎁 Cesta e Produtos", "🎀 Adicionais e Entrega"])
+        aba_dados, aba_cesta, aba_adicionais = st.tabs(["👤 Dados", "🎁 Cesta e Produtos", "🎀 Adicionais e Extras"])
 
         # ------------------- ABA 1: DADOS -------------------
         with aba_dados:
@@ -239,7 +229,7 @@ if st.session_state.editar_pedido:
                 novo_dest_tel = st.text_input("Telefone Destinatário", value=pedido.get("destinatario_telefone") or "")
                 novo_motivo = st.text_input("Motivo", value=pedido.get("motivo_homenagem") or "")
 
-        # ------------------- ABA 2: CESTA E PRODUTOS -------------------
+        # ------------------- ABA 2: CESTA, PRODUTOS, ENDEREÇO E MSG -------------------
         with aba_cesta:
             try:
                 cestas = listar_cestas()
@@ -249,63 +239,75 @@ if st.session_state.editar_pedido:
                 nomes_cestas = []
             
             cesta_atual = pedido.get("cesta_nome") or ""
-            nova_cesta = st.selectbox("🎁 Selecione a Cesta", nomes_cestas, index=nomes_cestas.index(cesta_atual) if cesta_atual in nomes_cestas else 0) if nomes_cestas else cesta_atual
+            nova_cesta_nome = st.selectbox("🎁 Cesta Base", nomes_cestas, index=nomes_cestas.index(cesta_atual) if cesta_atual in nomes_cestas else 0) if nomes_cestas else cesta_atual
+            cesta_selecionada = next((c for c in cestas if c.get("nome") == nova_cesta_nome), None)
             
-            cesta_selecionada = next((c for c in cestas if c.get("nome") == nova_cesta), None)
-            
+            # Sincronização Inteligente com o Configurador
             if cesta_selecionada:
-                st.write("🛒 **Configuração dos Itens da Cesta**")
-                itens_fixos = cesta_selecionada.get("itens_fixos", "")
-                itens_selecionaveis = cesta_selecionada.get("itens_selecionaveis", [])
+                configuracao_cesta = carregar_configuracao_cesta(cesta_selecionada["id"])
                 
-                if isinstance(itens_selecionaveis, str):
-                    try: itens_selecionaveis = json.loads(itens_selecionaveis)
-                    except: itens_selecionaveis = []
-                
-                escolhas = []
-                # Renderiza selects baseados nos itens selecionaveis
-                if itens_selecionaveis:
-                    st.caption("Escolha as opções de bebidas, queijos, etc:")
-                    for idx_cat, cat in enumerate(itens_selecionaveis):
-                        nome_cat = cat.get("nome_categoria", f"Opção {idx_cat+1}")
-                        opcoes = cat.get("opcoes", [])
-                        if opcoes:
-                            # Tenta descobrir o que já estava marcado no texto original
-                            idx_opcao = 0
-                            texto_produtos_atuais = st.session_state.get("produtos_edit", "")
-                            for i, op in enumerate(opcoes):
-                                if op in texto_produtos_atuais:
-                                    idx_opcao = i
-                                    break
+                if configuracao_cesta:
+                    st.markdown("### 🍓 Personalização da Cesta")
+                    st.caption("Ajuste as escolhas. O sistema tentou pré-selecionar o que o cliente marcou originalmente.")
+                    
+                    selecoes_admin = {}
+                    texto_produtos_atuais = st.session_state.get("produtos_edit", "")
+
+                    for grupo in configuracao_cesta:
+                        categoria = grupo.get("categoria", "Sem categoria")
+                        produtos = grupo.get("produtos", [])
+                        minimo = grupo.get("min_escolhas", 0)
+                        maximo = grupo.get("max_escolhas", 1)
+
+                        if not produtos: continue
+
+                        with st.container(border=True):
+                            # Tenta descobrir o que já estava marcado no texto original para pré-selecionar
+                            defaults_encontrados = []
+                            for p in produtos:
+                                if p["nome"] in texto_produtos_atuais:
+                                    defaults_encontrados.append(p)
                             
-                            escolha = st.selectbox(nome_cat, opcoes, index=idx_opcao, key=f"sel_{idx_cat}")
-                            escolhas.append(escolha)
-                
-                # Monta a lista teórica sugerida
-                lista_final = [f"• {item.strip()}" for item in itens_fixos.split("\n") if item.strip()]
-                lista_final.extend([f"• {e}" for e in escolhas])
-                texto_gerado = "\n".join(lista_final)
-                
-                if itens_selecionaveis:
-                    st.info("💡 Clique no botão abaixo para formatar as escolhas selecionadas e atualizar a lista de itens.")
-                    if st.button("⏬ Atualizar texto com as opções acima", use_container_width=True):
-                        st.session_state["produtos_edit"] = texto_gerado
+                            st.markdown(f"**📦 {categoria}**")
+                            
+                            if maximo == 1:
+                                # Pre-select radio
+                                idx_default = 0
+                                if defaults_encontrados:
+                                    try: idx_default = produtos.index(defaults_encontrados[0])
+                                    except: pass
+                                    
+                                escolhido = st.radio(f"Escolha 1 ({categoria})", produtos, format_func=lambda p: p["nome"], index=idx_default, key=f"edit_rad_{categoria}")
+                                if escolhido: selecoes_admin[categoria] = [escolhido]
+                            else:
+                                # Pre-select multiselect
+                                escolhidos = st.multiselect(f"Escolha entre {minimo} e {maximo}", produtos, format_func=lambda p: p["nome"], default=defaults_encontrados, max_selections=maximo, key=f"edit_mult_{categoria}")
+                                selecoes_admin[categoria] = escolhidos
+
+                    if st.button("⏬ Atualizar Caixa de Texto com Opções Selecionadas", use_container_width=True):
+                        produtos_escolhidos_texto = [f"{cat_nome}: {item['nome']}" for cat_nome, itens in selecoes_admin.items() for item in itens]
+                        st.session_state["produtos_edit"] = "\n".join(produtos_escolhidos_texto)
                         st.rerun()
+                else:
+                    st.info("Essa cesta não possui configurações ativas de produtos.")
 
-            novo_produtos = st.text_area("Lista Final de Produtos (Edite livremente se desejar)", value=st.session_state["produtos_edit"], height=140)
+            novo_produtos = st.text_area("Lista Final de Itens na Cesta (Texto Livre)", value=st.session_state["produtos_edit"], height=100)
 
+            # Nova Área Unificada: Mensagem, Pedido Especial e Endereço
+            st.divider()
+            st.markdown('<div class="card-title">📍 Destino, Mensagem e Observações</div>', unsafe_allow_html=True)
             col_m1, col_m2 = st.columns(2)
             with col_m1:
-                nova_mensagem = st.text_area("💌 Mensagem do Cartão", value=pedido.get("mensagem") or "", height=80)
+                nova_mensagem = st.text_area("💌 Mensagem do Cartão", value=pedido.get("mensagem") or "", height=120)
             with col_m2:
-                novo_especial = st.text_area("✨ Pedido Especial", value=pedido.get("pedido_especial") or "", height=80)
+                novo_endereco = st.text_area("📍 Endereço de Entrega", value=pedido.get("endereco") or "", height=120)
+                
+            novo_especial = st.text_input("✨ Solicitação / Pedido Especial", value=pedido.get("pedido_especial") or "")
 
         # ------------------- ABA 3: ADICIONAIS E ENTREGA -------------------
         with aba_adicionais:
             st.write("🎀 **Catálogo de Adicionais**")
-            st.caption("Marque os adicionais que deseja incluir no pedido.")
             
-            # Busca dinâmica de produtos na categoria Adicionais direto no DB para evitar erros
             adicionais_catalogo = []
             try:
                 cat_res = supabase.table("categorias").select("id, nome").execute()
@@ -314,72 +316,53 @@ if st.session_state.editar_pedido:
                 if cat_adicionais_id:
                     prod_res = supabase.table("produtos").select("*").eq("categoria_id", cat_adicionais_id).execute()
                     adicionais_catalogo = prod_res.data or []
-            except Exception as e:
-                print(f"Erro ao buscar adicionais: {e}")
+            except: pass
             
             nomes_adicionais_atuais = [a.get("nome_produto") for a in adicionais_pedido]
             adicionais_selecionados = []
 
-            # Checkboxes renderizados dinamicamente do Catálogo
             if adicionais_catalogo:
                 cols = st.columns(3)
                 for i, prod in enumerate(adicionais_catalogo):
                     nome_prod = prod.get("nome", "")
                     preco_prod = prod.get("preco")
                     selecionado = nome_prod in nomes_adicionais_atuais
-                    
                     texto_cb = f"{nome_prod} - R$ {float(preco_prod):.2f}".replace(".",",") if preco_prod else f"{nome_prod} (Consulta)"
                     
                     with cols[i % 3]:
-                        if st.checkbox(texto_cb, value=selecionado, key=f"chk_{prod.get('id')}"):
-                            adicionais_selecionados.append({
-                                "nome_produto": nome_prod,
-                                "valor_unitario": float(preco_prod) if preco_prod else None
-                            })
+                        if st.checkbox(texto_cb, value=selecionado, key=f"chk_ad_{prod.get('id')}"):
+                            adicionais_selecionados.append({"nome_produto": nome_prod, "valor_unitario": float(preco_prod) if preco_prod else None})
             else:
-                st.caption("Nenhum adicional cadastrado no catálogo do sistema.")
+                st.caption("Nenhum adicional no catálogo.")
             
             st.divider()
-            st.write("➕ **Adicionais Personalizados / Avulsos**")
-            st.caption("Tem algum item especial que não está no catálogo? Adicione novas linhas na tabela abaixo.")
+            st.write("➕ **Adicionais Avulsos**")
             
-            # Filtra apenas os adicionais do pedido que não vieram do catálogo para exibir na planilha
             nomes_no_catalogo = [p.get("nome") for p in adicionais_catalogo]
             adicionais_avulsos = [a for a in adicionais_pedido if a.get("nome_produto") not in nomes_no_catalogo]
             
             df_ad = pd.DataFrame(adicionais_avulsos) if adicionais_avulsos else pd.DataFrame(columns=["nome_produto", "valor_unitario"])
-            if not df_ad.empty and "nome_produto" in df_ad.columns:
-                df_ad = df_ad[["nome_produto", "valor_unitario"]]
-            else:
-                df_ad = pd.DataFrame(columns=["nome_produto", "valor_unitario"])
+            if not df_ad.empty and "nome_produto" in df_ad.columns: df_ad = df_ad[["nome_produto", "valor_unitario"]]
+            else: df_ad = pd.DataFrame(columns=["nome_produto", "valor_unitario"])
             
             df_editado = st.data_editor(
                 df_ad,
-                column_config={
-                    "nome_produto": st.column_config.TextColumn("Nome do Adicional Especial", required=True),
-                    "valor_unitario": st.column_config.NumberColumn("Valor (R$)", min_value=0.0, format="%.2f")
-                },
-                num_rows="dynamic",
-                use_container_width=True,
-                key="editor_adicionais_avulsos"
+                column_config={"nome_produto": st.column_config.TextColumn("Nome Específico", required=True), "valor_unitario": st.column_config.NumberColumn("Valor (R$)", min_value=0.0, format="%.2f")},
+                num_rows="dynamic", use_container_width=True, key="editor_adicionais_avulsos"
             )
-
-            st.write("")
-            novo_endereco = st.text_area("📍 Endereço de Entrega", value=pedido.get("endereco") or "", height=70)
 
         # ------------------- BOTÕES DE SALVAMENTO -------------------
         st.divider()
         col_salvar, col_cancelar = st.columns(2)
         with col_salvar:
             if st.button("💾 Salvar Todas as Alterações", use_container_width=True, type="primary"):
-                # Salva o Pedido
                 dados = {
                     "cliente_nome": novo_nome, 
                     "cliente_telefone": novo_telefone, 
                     "destinatario_nome": novo_dest_nome, 
                     "destinatario_telefone": novo_dest_tel, 
                     "motivo_homenagem": novo_motivo, 
-                    "cesta_nome": nova_cesta, 
+                    "cesta_nome": nova_cesta_nome, 
                     "produtos": novo_produtos,
                     "mensagem": nova_mensagem, 
                     "pedido_especial": novo_especial, 
@@ -387,29 +370,18 @@ if st.session_state.editar_pedido:
                 }
                 atualizar_pedido(pedido["id"], dados)
 
-                # Salva os Adicionais (Deleta todos os antigos e insere a soma dos catalogados + avulsos)
                 try:
                     supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido["id"]).execute()
-                    
                     lista_salvar = list(adicionais_selecionados)
-                    
                     for index, row in df_editado.iterrows():
                         nome_ad = str(row["nome_produto"]).strip()
                         if nome_ad and nome_ad != "nan":
                             val = row["valor_unitario"]
-                            lista_salvar.append({
-                                "nome_produto": nome_ad,
-                                "valor_unitario": float(val) if pd.notna(val) else None
-                            })
+                            lista_salvar.append({"nome_produto": nome_ad, "valor_unitario": float(val) if pd.notna(val) else None})
                     
-                    # Injeta o ID do pedido
-                    for ad in lista_salvar:
-                        ad["pedido_id"] = pedido["id"]
-                        
-                    if lista_salvar:
-                        supabase.table("pedido_adicionais").insert(lista_salvar).execute()
-                except Exception as e:
-                    print(f"Erro ao salvar os adicionais dinâmicos: {e}")
+                    for ad in lista_salvar: ad["pedido_id"] = pedido["id"]
+                    if lista_salvar: supabase.table("pedido_adicionais").insert(lista_salvar).execute()
+                except: pass
 
                 st.success("Pedido alterado com sucesso!")
                 st.session_state.editar_pedido = False
@@ -422,7 +394,7 @@ if st.session_state.editar_pedido:
 
 
 # =====================================================
-# LAYOUT PRINCIPAL (2 COLUNAS LADO A LADO)
+# LAYOUT PRINCIPAL (VISUALIZAÇÃO DOS DADOS SALVOS)
 # =====================================================
 
 col_esquerda, col_direita = st.columns([1.2, 1])
@@ -497,7 +469,7 @@ with col_esquerda:
 
     with st.container(border=True):
         st.markdown('<div class="card-title">📍 Endereço de Entrega</div>', unsafe_allow_html=True)
-        st.text_area("", value=pedido.get("endereco") or "", disabled=True, height=60, key="endereco_entrega")
+        st.text_area("", value=pedido.get("endereco") or "", disabled=True, height=60, key="endereco_entrega_vis")
 
 
 with col_direita:
