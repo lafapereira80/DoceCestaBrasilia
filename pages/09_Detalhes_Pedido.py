@@ -14,7 +14,9 @@ from services.pedido_adicional_service import (
 )
 
 from services.foto_service import (
-    listar_fotos
+    listar_fotos,
+    salvar_fotos,
+    deletar_foto
 )
 
 from config.supabase import supabase
@@ -224,7 +226,7 @@ if st.session_state.editar_pedido:
                 novo_dest_tel = st.text_input("Telefone Destinatário", value=pedido.get("destinatario_telefone") or "")
                 novo_motivo = st.text_input("Motivo", value=pedido.get("motivo_homenagem") or "")
 
-        # ------------------- ABA 2: CESTA, PRODUTOS, ENDEREÇO E MSG -------------------
+        # ------------------- ABA 2: CESTA, PRODUTOS E MSG -------------------
         with aba_cesta:
             try:
                 cestas = listar_cestas()
@@ -239,7 +241,6 @@ if st.session_state.editar_pedido:
             
             novo_produtos = pedido.get("produtos") or ""
             
-            # Sincronização Inteligente com o Configurador
             if cesta_selecionada:
                 configuracao_cesta = carregar_configuracao_cesta(cesta_selecionada["id"])
                 
@@ -259,7 +260,6 @@ if st.session_state.editar_pedido:
                         if not produtos: continue
 
                         with st.container(border=True):
-                            # Descobre o que estava marcado para pré-selecionar
                             defaults_encontrados = []
                             for p in produtos:
                                 if p["nome"] in texto_produtos_atuais:
@@ -279,13 +279,11 @@ if st.session_state.editar_pedido:
                                 escolhidos = st.multiselect(f"Escolha entre {minimo} e {maximo}", produtos, format_func=lambda p: p["nome"], default=defaults_encontrados, max_selections=maximo, key=f"edit_mult_{categoria}")
                                 selecoes_admin[categoria] = escolhidos
 
-                    # A MÁGICA: O texto é gerado automaticamente em background!
                     produtos_escolhidos_texto = [f"{cat_nome}: {item['nome']}" for cat_nome, itens in selecoes_admin.items() for item in itens]
                     novo_produtos = "\n".join(produtos_escolhidos_texto)
                 else:
                     st.info("Essa cesta não possui configurações ativas de produtos.")
 
-            # Nova Área Unificada: Mensagem, Pedido Especial e Endereço
             st.divider()
             st.markdown('<div class="card-title">📍 Destino, Mensagem e Observações</div>', unsafe_allow_html=True)
             col_m1, col_m2 = st.columns(2)
@@ -521,10 +519,29 @@ with col_direita:
             st.rerun()
 
     # =====================================================
-    # MOTOR DE FOTOS (VIA SERVICE) - BLINDADO
+    # MOTOR DE FOTOS: GESTÃO COMPLETA (MÚLTIPLAS FOTOS & DELETE)
     # =====================================================
     with st.container(border=True):
-        st.markdown('<div class="card-title">📷 Fotos da Polaroid</div>', unsafe_allow_html=True)
+        st.markdown('<div class="card-title">📷 Gestão de Fotos Polaroid</div>', unsafe_allow_html=True)
+        
+        # Uploader configurado para aceitar uma ou MAIS fotos simultaneamente
+        novas_fotos = st.file_uploader(
+            "Adicionar uma ou mais fotos", 
+            type=["jpg", "jpeg", "png", "webp"], 
+            accept_multiple_files=True, 
+            key="up_fotos_multi"
+        )
+        
+        if novas_fotos:
+            if st.button("📤 Salvar Novas Fotos", use_container_width=True):
+                with st.spinner("Enviando fotos..."):
+                    salvar_fotos(pedido["id"], novas_fotos)
+                st.success("✅ Fotos enviadas com sucesso!")
+                st.rerun()
+
+        st.divider()
+
+        # Exibição e Exclusão Individual das Fotos Atuais
         try:
             fotos = listar_fotos(pedido["id"])
             if fotos:
@@ -532,17 +549,25 @@ with col_direita:
                 for i, foto in enumerate(fotos):
                     with colunas[i % 2]:
                         link_imagem = foto.get("url") or foto.get("url_publica")
+                        caminho_arquivo = foto.get("arquivo")
                         
-                        if not link_imagem and foto.get("arquivo"):
+                        if not link_imagem and caminho_arquivo:
                             url_base = st.secrets["SUPABASE_URL"].rstrip("/")
-                            link_imagem = f"{url_base}/storage/v1/object/public/pedido_fotos/{foto.get('arquivo')}"
+                            link_imagem = f"{url_base}/storage/v1/object/public/pedido_fotos/{caminho_arquivo}"
 
                         if link_imagem:
                             st.image(link_imagem, caption=foto.get("nome_original", "Foto"), use_container_width=True)
+                            if st.button("🗑️ Deletar Foto", key=f"del_foto_{foto.get('id')}", use_container_width=True):
+                                if caminho_arquivo:
+                                    sucesso = deletar_foto(foto["id"], caminho_arquivo)
+                                    if sucesso:
+                                        st.rerun()
+                                    else:
+                                        st.error("Erro ao deletar arquivo.")
                         else:
                             st.caption("⚠️ Link da foto indisponível.")
             else:
-                st.caption("Nenhuma foto enviada ou arquivos inválidos.")
+                st.caption("Nenhuma foto enviada.")
         except Exception as erro:
             st.error(f"Erro ao carregar fotos na tela: {erro}")
 
