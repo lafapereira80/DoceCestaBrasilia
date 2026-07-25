@@ -21,7 +21,6 @@ st.divider()
 
 config = obter_configuracao_vitrine()
 
-# Abas para organizar a edição
 aba1, aba2, aba3, aba4 = st.tabs(["1. Cabeçalho e Textos", "2. Catálogo e Adicionais", "3. Rodapé (Fale Conosco)", "4. Layout e Visibilidade"])
 
 with aba1:
@@ -29,9 +28,12 @@ with aba1:
     with col1:
         cabecalho_titulo = st.text_input("Título do Cabeçalho", value=config.get("cabecalho_titulo", ""))
         cabecalho_subtitulo = st.text_input("Subtítulo do Cabeçalho", value=config.get("cabecalho_subtitulo", ""))
-        boas_vindas_texto = st.text_area("Texto de Boas-Vindas", value=config.get("boas_vindas_texto", ""), height=150)
+        st.divider()
+        boas_vindas_titulo = st.text_input("Título de Boas-Vindas", value=config.get("boas_vindas_titulo", ""))
+        boas_vindas_texto = st.text_area("Texto de Boas-Vindas (HTML ativado)", value=config.get("boas_vindas_texto", ""), height=150)
     
     with col2:
+        como_pedir_titulo = st.text_input("Título das Regras", value=config.get("como_pedir_titulo", ""))
         st.write("**Tópicos: Como Fazer o Pedido**")
         itens_atuais = config.get("como_pedir_itens", [])
         if isinstance(itens_atuais, str):
@@ -49,8 +51,7 @@ with aba2:
 
 with aba3:
     rodape_titulo = st.text_input("Título do Rodapé", value=config.get("rodape_titulo", ""))
-    rodape_texto = st.text_area("Texto do Rodapé (aceita HTML básico)", value=config.get("rodape_texto", ""), height=80)
-    
+    rodape_texto = st.text_area("Texto do Rodapé (aceita HTML)", value=config.get("rodape_texto", ""), height=80)
     col_wpp, col_insta = st.columns(2)
     with col_wpp:
         rodape_whatsapp_numero = st.text_input("Número do WhatsApp (Ex: 556199999999)", value=config.get("rodape_whatsapp_numero", ""))
@@ -85,7 +86,9 @@ if st.button("💾 Salvar Configurações da Vitrine", type="primary", use_conta
     dados = {
         "cabecalho_titulo": cabecalho_titulo,
         "cabecalho_subtitulo": cabecalho_subtitulo,
+        "boas_vindas_titulo": boas_vindas_titulo,
         "boas_vindas_texto": boas_vindas_texto,
+        "como_pedir_titulo": como_pedir_titulo,
         "como_pedir_itens": nova_lista_itens,
         "catalogo_titulo": catalogo_titulo,
         "catalogo_subtitulo": catalogo_subtitulo,
