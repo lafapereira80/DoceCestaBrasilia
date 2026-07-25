@@ -39,7 +39,11 @@ config_vitrine = obter_configuracao_vitrine()
 cabecalho_titulo = config_vitrine.get("cabecalho_titulo", "Doce Cesta Brasília")
 cabecalho_subtitulo = config_vitrine.get("cabecalho_subtitulo", "Cestas personalizadas para momentos inesquecíveis 💝")
 
-texto_boas_vindas = config_vitrine.get("boas_vindas_texto", "").replace('\n', '<br>')
+boas_vindas_titulo = config_vitrine.get("boas_vindas_titulo", "Bem-vindo(a)")
+# Note que aqui ele NÃO faz replace, respeitando o HTML original
+texto_boas_vindas = config_vitrine.get("boas_vindas_texto", "") 
+
+como_pedir_titulo = config_vitrine.get("como_pedir_titulo", "Como fazer o pedido")
 itens_como_pedir = config_vitrine.get("como_pedir_itens", [])
 if isinstance(itens_como_pedir, str):
     try: itens_como_pedir = json.loads(itens_como_pedir)
@@ -48,7 +52,6 @@ html_lista_como_pedir = "".join([f"<li>{item}</li>" for item in itens_como_pedir
 
 catalogo_titulo = config_vitrine.get("catalogo_titulo", "🎁 Catálogo de Cestas")
 catalogo_subtitulo = config_vitrine.get("catalogo_subtitulo", "Escolha a cesta perfeita, confira os itens detalhados e personalize do seu jeito.")
-
 adicionais_titulo = config_vitrine.get("adicionais_titulo", "🎀 Incremente seu presente com nossos Adicionais Especiais:")
 
 rodape_titulo = config_vitrine.get("rodape_titulo", "Fale Conosco")
@@ -149,13 +152,10 @@ if logo_path.exists():
         encoded_logo = base64.b64encode(img_file.read()).decode()
     logo_html = f'<img src="data:image/webp;base64,{encoded_logo}" class="header-logo" alt="Logo">'
 
-st.markdown(
-    f"""<div class="header-banner">{logo_html}<div class="header-text"><h1 class="header-title">{cabecalho_titulo}</h1><p class="header-subtitle">{cabecalho_subtitulo}</p></div></div>""",
-    unsafe_allow_html=True
-)
+st.markdown(f"""<div class="header-banner">{logo_html}<div class="header-text"><h1 class="header-title">{cabecalho_titulo}</h1><p class="header-subtitle">{cabecalho_subtitulo}</p></div></div>""", unsafe_allow_html=True)
 
 def renderizar_textos():
-    st.markdown(f"""<div class="info-grid"><div class="info-card"><div class="info-title">Bem-vindo(a)</div><div class="info-text">{texto_boas_vindas}</div></div><div class="info-card"><div class="info-title">Como fazer o pedido</div><ul class="como-pedir-list">{html_lista_como_pedir}</ul></div></div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div class="info-grid"><div class="info-card"><div class="info-title">{boas_vindas_titulo}</div><div class="info-text">{texto_boas_vindas}</div></div><div class="info-card"><div class="info-title">{como_pedir_titulo}</div><ul class="como-pedir-list">{html_lista_como_pedir}</ul></div></div>""", unsafe_allow_html=True)
 
 def renderizar_catalogo():
     st.markdown(f"<h3 style='font-family: \"Montserrat\", sans-serif; color:#5a3b28; margin-top:0; margin-bottom:4px; font-weight:800; font-size: 22px;'>{catalogo_titulo}</h3>", unsafe_allow_html=True)
