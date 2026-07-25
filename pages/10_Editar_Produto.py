@@ -1,11 +1,13 @@
 import streamlit as st
 
+from config.supabase import supabase  # <-- IMPORTAÇÃO PARA APAGAR O ARQUIVO FÍSICO
+
 from services.produto_service import (
     listar_categorias,
     buscar_produto,
     atualizar_produto,
-    upload_imagem_produto,   # <-- NOVA IMPORTAÇÃO
-    remover_imagem_produto   # <-- NOVA IMPORTAÇÃO
+    upload_imagem_produto,
+    remover_imagem_produto
 )
 
 from utils.menu import (
@@ -265,6 +267,22 @@ with st.container(border=True):
                     st.image(imagem_atual, width=80)
                     if st.button("❌ Remover", key="rm_foto_prod", use_container_width=True):
                         try:
+                            # 1. TENTA APAGAR O ARQUIVO FÍSICO DO SUPABASE BUCKET
+                            if "/public/" in str(imagem_atual):
+                                try:
+                                    # Extrai o caminho depois de '/public/' (Ex: produtos/arquivo.jpg)
+                                    caminho_pos_public = str(imagem_atual).split("/public/")[1]
+                                    partes = caminho_pos_public.split("/")
+                                    
+                                    nome_bucket = partes[0] # Ex: 'produtos' ou 'adicionais'
+                                    caminho_arquivo = "/".join(partes[1:]) # Ex: 'uuid_da_foto.jpg'
+                                    
+                                    # Comando que realmente deleta o arquivo físico do storage
+                                    supabase.storage.from_(nome_bucket).remove([caminho_arquivo])
+                                except Exception as erro_storage:
+                                    print(f"Aviso: O arquivo físico já não existia ou houve erro: {erro_storage}")
+
+                            # 2. REMOVE A REFERÊNCIA NO BANCO DE DADOS
                             remover_imagem_produto(produto_id)
                             st.rerun()
                         except Exception as erro:
@@ -320,6 +338,16 @@ if salvar:
     
     if nova_imagem:
         try:
+            # Apaga a imagem velha do bucket caso o usuário esteja apenas enviando uma foto nova por cima
+            if imagem_atual and "/public/" in str(imagem_atual):
+                try:
+                    caminho_pos_public = str(imagem_atual).split("/public/")[1]
+                    partes = caminho_pos_public.split("/")
+                    supabase.storage.from_(partes[0]).remove(["/".join(partes[1:])])
+                except:
+                    pass
+            
+            # Faz o upload da nova imagem
             imagem_final = upload_imagem_produto(nova_imagem)
         except Exception as erro:
             st.error(f"Erro no upload da imagem: {erro}")
@@ -334,7 +362,7 @@ if salvar:
             preco,
             ativo,
             tipo_preco,
-            imagem_final  # <-- Passando a imagem para atualizar no banco
+            imagem_final  
         )
 
         st.success("Produto atualizado com sucesso!")
