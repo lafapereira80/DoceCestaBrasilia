@@ -347,10 +347,10 @@ def gerar_whatsapp(pedido, adicionais, valor_final):
             else:
                 lista_adicionais.append(f"• {nome} (sob consulta)")
 
-    # DADOS DO HOMENAGEADO FORMATADOS
-    dest_nome = pedido.get("destinatario_nome", "").strip()
-    dest_tel = pedido.get("destinatario_telefone", "").strip()
-    motivo = pedido.get("motivo_homenagem", "").strip()
+    # DADOS DO HOMENAGEADO FORMATADOS (Com proteção anti-None)
+    dest_nome = (pedido.get("destinatario_nome") or "").strip()
+    dest_tel = (pedido.get("destinatario_telefone") or "").strip()
+    motivo = (pedido.get("motivo_homenagem") or "").strip()
     
     texto_destinatario = ""
     if dest_nome or dest_tel or motivo:
@@ -411,12 +411,13 @@ if st.session_state.editar_pedido:
 
         col_e1, col_e2 = st.columns(2)
         with col_e1:
-            novo_nome = st.text_input("👤 Nome Comprador", value=pedido.get("cliente_nome", ""))
-            novo_telefone = st.text_input("📱 Telefone Comprador", value=pedido.get("cliente_telefone", ""))
+            # Proteção anti-None nos valores dos inputs
+            novo_nome = st.text_input("👤 Nome Comprador", value=pedido.get("cliente_nome") or "")
+            novo_telefone = st.text_input("📱 Telefone Comprador", value=pedido.get("cliente_telefone") or "")
             
-            novo_dest_nome = st.text_input("💝 Nome Destinatário", value=pedido.get("destinatario_nome", ""))
-            novo_dest_tel = st.text_input("📱 Telefone Destinatário", value=pedido.get("destinatario_telefone", ""))
-            novo_motivo = st.text_input("🎉 Motivo da Homenagem", value=pedido.get("motivo_homenagem", ""))
+            novo_dest_nome = st.text_input("💝 Nome Destinatário", value=pedido.get("destinatario_nome") or "")
+            novo_dest_tel = st.text_input("📱 Telefone Destinatário", value=pedido.get("destinatario_telefone") or "")
+            novo_motivo = st.text_input("🎉 Motivo da Homenagem", value=pedido.get("motivo_homenagem") or "")
 
         with col_e2:
             try:
@@ -425,7 +426,7 @@ if st.session_state.editar_pedido:
             except:
                 nomes_cestas = []
 
-            cesta_atual = pedido.get("cesta_nome", "")
+            cesta_atual = pedido.get("cesta_nome") or ""
 
             if nomes_cestas:
                 indice_cesta = nomes_cestas.index(cesta_atual) if cesta_atual in nomes_cestas else 0
@@ -433,9 +434,9 @@ if st.session_state.editar_pedido:
             else:
                 nova_cesta = cesta_atual
                 
-            nova_mensagem = st.text_area("💌 Mensagem do Cartão", value=pedido.get("mensagem", ""), height=70)
-            novo_especial = st.text_area("✨ Pedido Especial", value=pedido.get("pedido_especial", ""), height=70)
-            novo_endereco = st.text_area("📍 Endereço de Entrega", value=pedido.get("endereco", ""), height=70)
+            nova_mensagem = st.text_area("💌 Mensagem do Cartão", value=pedido.get("mensagem") or "", height=70)
+            novo_especial = st.text_area("✨ Pedido Especial", value=pedido.get("pedido_especial") or "", height=70)
+            novo_endereco = st.text_area("📍 Endereço de Entrega", value=pedido.get("endereco") or "", height=70)
 
         col_salvar, col_cancelar = st.columns(2)
 
@@ -479,22 +480,22 @@ with col_esquerda:
         st.markdown('<div class="card-title">👤 Cliente (Comprador)</div>', unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3)
         with c1:
-            st.markdown(f'<div class="info-label">Nome</div><div class="info-value">{pedido.get("cliente_nome","-")}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-label">Nome</div><div class="info-value">{pedido.get("cliente_nome") or "-"}</div>', unsafe_allow_html=True)
         with c2:
-            st.markdown(f'<div class="info-label">CPF</div><div class="info-value">{pedido.get("cliente_cpf","-")}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-label">CPF</div><div class="info-value">{pedido.get("cliente_cpf") or "-"}</div>', unsafe_allow_html=True)
         with c3:
-            st.markdown(f'<div class="info-label">Telefone</div><div class="info-value">{pedido.get("cliente_telefone","-")}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-label">Telefone</div><div class="info-value">{pedido.get("cliente_telefone") or "-"}</div>', unsafe_allow_html=True)
 
     # Card Homenageado (Destinatário)
     with st.container(border=True):
         st.markdown('<div class="card-title">💝 Homenageado (Destinatário)</div>', unsafe_allow_html=True)
         h1, h2, h3 = st.columns(3)
         with h1:
-            st.markdown(f'<div class="info-label">Nome</div><div class="info-value">{pedido.get("destinatario_nome", "-") or "-"}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-label">Nome</div><div class="info-value">{pedido.get("destinatario_nome") or "-"}</div>', unsafe_allow_html=True)
         with h2:
-            st.markdown(f'<div class="info-label">Telefone</div><div class="info-value">{pedido.get("destinatario_telefone", "-") or "-"}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-label">Telefone</div><div class="info-value">{pedido.get("destinatario_telefone") or "-"}</div>', unsafe_allow_html=True)
         with h3:
-            st.markdown(f'<div class="info-label">Motivo</div><div class="info-value">{pedido.get("motivo_homenagem", "-") or "-"}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-label">Motivo</div><div class="info-value">{pedido.get("motivo_homenagem") or "-"}</div>', unsafe_allow_html=True)
 
     # Card Informações do Pedido
     with st.container(border=True):
@@ -554,17 +555,17 @@ with col_esquerda:
     with c_m1:
         with st.container(border=True):
             st.markdown('<div class="card-title">💌 Mensagem da Cesta</div>', unsafe_allow_html=True)
-            st.text_area("", value=pedido.get("mensagem", ""), disabled=True, height=60, key="mensagem_cliente")
+            st.text_area("", value=pedido.get("mensagem") or "", disabled=True, height=60, key="mensagem_cliente")
 
     with c_m2:
         with st.container(border=True):
             st.markdown('<div class="card-title">✨ Pedido Especial</div>', unsafe_allow_html=True)
-            st.text_area("", value=pedido.get("pedido_especial", ""), disabled=True, height=60, key="pedido_especial")
+            st.text_area("", value=pedido.get("pedido_especial") or "", disabled=True, height=60, key="pedido_especial")
 
     # Endereço
     with st.container(border=True):
         st.markdown('<div class="card-title">📍 Endereço de Entrega</div>', unsafe_allow_html=True)
-        st.text_area("", value=pedido.get("endereco", ""), disabled=True, height=60, key="endereco_entrega")
+        st.text_area("", value=pedido.get("endereco") or "", disabled=True, height=60, key="endereco_entrega")
 
 
 # =====================================================
@@ -598,7 +599,7 @@ with col_direita:
                 status_atual = "Recebido"
             status = st.selectbox("Status", status_opcoes, index=status_opcoes.index(status_atual))
 
-        horario_combinado = st.text_input("🕒 Horário Combinado de Entrega", value=pedido.get("horario_combinado", ""), placeholder="Ex: 15:30")
+        horario_combinado = st.text_input("🕒 Horário Combinado de Entrega", value=pedido.get("horario_combinado") or "", placeholder="Ex: 15:30")
 
     # Resumo Final do Valor (Com Pagamento Embutido Nativamente)
     valor_total_calculado = valor_cesta + valor_adicionais + valor_frete - desconto
@@ -656,7 +657,7 @@ with col_direita:
     # Anotações Internas
     with st.container(border=True):
         st.markdown('<div class="card-title">📝 Anotações Internas</div>', unsafe_allow_html=True)
-        anotacao = st.text_area("Observações do atendimento", value=pedido.get("anotacoes_internas", "") or "", height=70, key="campo_anotacao")
+        anotacao = st.text_area("Observações do atendimento", value=pedido.get("anotacoes_internas") or "", height=70, key="campo_anotacao")
         if st.button("💾 Salvar Anotação", use_container_width=True):
             atualizar_anotacao_pedido(pedido["id"], anotacao)
             st.success("✅ Anotação salva!")
