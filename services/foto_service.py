@@ -3,15 +3,14 @@ from uuid import uuid4
 from config.supabase import supabase
 
 def montar_url_publica(caminho):
-    # BLINDAGEM 1: Se o caminho estiver vazio (foto fantasma), retorna vazio sem travar
     if not caminho:
         return ""
-        
-    # BLINDAGEM 2 e 3: Puxa a URL base direto do cliente Supabase já conectado.
-    # Isso evita totalmente o bug do .format() da função padrão do Supabase.
-    url_base = supabase.supabase_url.rstrip("/")
-    
-    return f"{url_base}/storage/v1/object/public/pedido_fotos/{caminho}"
+    try:
+        # Puxa a URL do cofre para não usar a função nativa bugada do Supabase
+        url_base = st.secrets["SUPABASE_URL"].rstrip("/")
+        return f"{url_base}/storage/v1/object/public/pedido_fotos/{caminho}"
+    except Exception:
+        return ""
 
 def salvar_fotos(pedido_id, arquivos):
     if not arquivos:
@@ -52,17 +51,12 @@ def listar_fotos(pedido_id):
         fotos_validas = []
 
         for foto in fotos:
-            # Ignora fotos corrompidas ou sem arquivo salvo no banco
-            if not foto.get("arquivo"):
-                continue
-                
-            # A página 09_Detalhes_Pedido precisa que a chave se chame "url"
-            foto["url"] = montar_url_publica(foto["arquivo"])
-            fotos_validas.append(foto)
+            if foto.get("arquivo"):
+                foto["url"] = montar_url_publica(foto["arquivo"])
+                fotos_validas.append(foto)
 
         return fotos_validas
         
     except Exception as e:
-        # Retorna lista vazia em caso de qualquer outro erro bizarro, para não congelar a página
-        print(f"Erro ao listar fotos: {e}")
-        return []
+        # NOSSO ALARME: Se o erro for aqui, ele vai gritar essa mensagem nova!
+        raise Exception(f"[ALERTA DE CÓDIGO NOVO] O erro agora é: {e}")
