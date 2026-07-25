@@ -381,7 +381,7 @@ with col_direita:
             st.rerun()
 
     # =====================================================
-    # MOTOR DE FOTOS (VIA SERVICE)
+    # MOTOR DE FOTOS (VIA SERVICE) - BLINDADO
     # =====================================================
     with st.container(border=True):
         st.markdown('<div class="card-title">📷 Fotos da Polaroid</div>', unsafe_allow_html=True)
@@ -391,7 +391,19 @@ with col_direita:
                 colunas = st.columns(2)
                 for i, foto in enumerate(fotos):
                     with colunas[i % 2]:
-                        st.image(foto["url"], caption=foto.get("nome_original", "Foto"), use_container_width=True)
+                        # A BLINDAGEM: Tenta pegar a URL de todas as formas possíveis.
+                        # Se vier vazia do banco (None), monta o link na hora.
+                        link_imagem = foto.get("url") or foto.get("url_publica")
+                        
+                        if not link_imagem and foto.get("arquivo"):
+                            url_base = st.secrets["SUPABASE_URL"].rstrip("/")
+                            link_imagem = f"{url_base}/storage/v1/object/public/pedido_fotos/{foto.get('arquivo')}"
+
+                        # Só manda o Streamlit desenhar se o link não for Vazio (evita o erro format)
+                        if link_imagem:
+                            st.image(link_imagem, caption=foto.get("nome_original", "Foto"), use_container_width=True)
+                        else:
+                            st.caption("⚠️ Link da foto indisponível.")
             else:
                 st.caption("Nenhuma foto enviada ou arquivos inválidos.")
         except Exception as erro:
