@@ -24,7 +24,6 @@ from services.cesta_service import (
     listar_cestas
 )
 
-# Importando o mesmo serviço inteligente usado na vitrine
 from services.configuracao_cesta_service import (
     carregar_configuracao_cesta
 )
@@ -114,10 +113,6 @@ except:
 
 if "editar_pedido" not in st.session_state:
     st.session_state.editar_pedido = False
-
-if "produtos_edit_id" not in st.session_state or st.session_state["produtos_edit_id"] != pedido["id"]:
-    st.session_state["produtos_edit"] = pedido.get("produtos") or ""
-    st.session_state["produtos_edit_id"] = pedido["id"]
 
 itens_consulta_salvos = pedido.get("itens_consulta")
 if not itens_consulta_salvos: itens_consulta_salvos = {}
@@ -242,16 +237,18 @@ if st.session_state.editar_pedido:
             nova_cesta_nome = st.selectbox("🎁 Cesta Base", nomes_cestas, index=nomes_cestas.index(cesta_atual) if cesta_atual in nomes_cestas else 0) if nomes_cestas else cesta_atual
             cesta_selecionada = next((c for c in cestas if c.get("nome") == nova_cesta_nome), None)
             
+            novo_produtos = pedido.get("produtos") or ""
+            
             # Sincronização Inteligente com o Configurador
             if cesta_selecionada:
                 configuracao_cesta = carregar_configuracao_cesta(cesta_selecionada["id"])
                 
                 if configuracao_cesta:
                     st.markdown("### 🍓 Personalização da Cesta")
-                    st.caption("Ajuste as escolhas. O sistema tentou pré-selecionar o que o cliente marcou originalmente.")
+                    st.caption("O sistema marcou as opções originais do cliente. Altere o que for necessário.")
                     
                     selecoes_admin = {}
-                    texto_produtos_atuais = st.session_state.get("produtos_edit", "")
+                    texto_produtos_atuais = pedido.get("produtos") or ""
 
                     for grupo in configuracao_cesta:
                         categoria = grupo.get("categoria", "Sem categoria")
@@ -262,7 +259,7 @@ if st.session_state.editar_pedido:
                         if not produtos: continue
 
                         with st.container(border=True):
-                            # Tenta descobrir o que já estava marcado no texto original para pré-selecionar
+                            # Descobre o que estava marcado para pré-selecionar
                             defaults_encontrados = []
                             for p in produtos:
                                 if p["nome"] in texto_produtos_atuais:
@@ -271,7 +268,6 @@ if st.session_state.editar_pedido:
                             st.markdown(f"**📦 {categoria}**")
                             
                             if maximo == 1:
-                                # Pre-select radio
                                 idx_default = 0
                                 if defaults_encontrados:
                                     try: idx_default = produtos.index(defaults_encontrados[0])
@@ -280,18 +276,14 @@ if st.session_state.editar_pedido:
                                 escolhido = st.radio(f"Escolha 1 ({categoria})", produtos, format_func=lambda p: p["nome"], index=idx_default, key=f"edit_rad_{categoria}")
                                 if escolhido: selecoes_admin[categoria] = [escolhido]
                             else:
-                                # Pre-select multiselect
                                 escolhidos = st.multiselect(f"Escolha entre {minimo} e {maximo}", produtos, format_func=lambda p: p["nome"], default=defaults_encontrados, max_selections=maximo, key=f"edit_mult_{categoria}")
                                 selecoes_admin[categoria] = escolhidos
 
-                    if st.button("⏬ Atualizar Caixa de Texto com Opções Selecionadas", use_container_width=True):
-                        produtos_escolhidos_texto = [f"{cat_nome}: {item['nome']}" for cat_nome, itens in selecoes_admin.items() for item in itens]
-                        st.session_state["produtos_edit"] = "\n".join(produtos_escolhidos_texto)
-                        st.rerun()
+                    # A MÁGICA: O texto é gerado automaticamente em background!
+                    produtos_escolhidos_texto = [f"{cat_nome}: {item['nome']}" for cat_nome, itens in selecoes_admin.items() for item in itens]
+                    novo_produtos = "\n".join(produtos_escolhidos_texto)
                 else:
                     st.info("Essa cesta não possui configurações ativas de produtos.")
-
-            novo_produtos = st.text_area("Lista Final de Itens na Cesta (Texto Livre)", value=st.session_state["produtos_edit"], height=100)
 
             # Nova Área Unificada: Mensagem, Pedido Especial e Endereço
             st.divider()
