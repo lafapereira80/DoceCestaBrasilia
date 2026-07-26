@@ -184,13 +184,16 @@ unsafe_allow_html=True
 
 
 # ==========================================================
-# CONTROLE DE ESTADO PARA TELA DE SUCESSO
+# CONTROLE DE ESTADO PARA TELA DE SUCESSO E CESTA
 # ==========================================================
 if "pedido_enviado_com_sucesso" not in st.session_state:
     st.session_state["pedido_enviado_com_sucesso"] = False
 
 if "resumo_pedido_sucesso" not in st.session_state:
     st.session_state["resumo_pedido_sucesso"] = {}
+
+if "cesta_selecionada_id" not in st.session_state:
+    st.session_state["cesta_selecionada_id"] = None
 
 
 # ==========================================================
@@ -251,6 +254,7 @@ if st.session_state["pedido_enviado_com_sucesso"]:
     if st.button("🎁 Fazer Novo Pedido", use_container_width=True, type="primary"):
         st.session_state["pedido_enviado_com_sucesso"] = False
         st.session_state["resumo_pedido_sucesso"] = {}
+        st.session_state["cesta_selecionada_id"] = None
         st.rerun()
 
     st.stop()
@@ -291,51 +295,59 @@ with st.container(border=True):
 
 
 # ==========================================================
-# CESTAS (USANDO FRAGMENT PARA ELIMINAR O "PISCA-PISCA")
+# CARREGA CESTAS DO BANCO
 # ==========================================================
-@st.fragment
-def renderizar_bloco_cestas():
-    try:
-        cestas_brutas = listar_cestas()
-        cestas_ativas = [c for c in cestas_brutas if c.get("ativa", True)]
-        for c in cestas_ativas:
-            if "ordem" not in c or c["ordem"] is None:
-                c["ordem"] = 999
-        cestas = sorted(cestas_ativas, key=lambda x: x["ordem"])
-    except:
-        cestas = []
+try:
+    cestas_brutas = listar_cestas()
+    cestas_ativas = [c for c in cestas_brutas if c.get("ativa", True)]
+    for c in cestas_ativas:
+        if "ordem" not in c or c["ordem"] is None:
+            c["ordem"] = 999
+    cestas = sorted(cestas_ativas, key=lambda x: x["ordem"])
+except:
+    cestas = []
 
-    cesta_obj = None
-    if cestas:
-        opcoes_cestas = [{"id": None, "nome": "Selecione..."}] + cestas
-        if "form_selecao_atual_id" not in st.session_state:
-            st.session_state["form_selecao_atual_id"] = None
+cesta = None
+if cestas:
+    opcoes_cestas = [{"id": None, "nome": "Selecione uma cesta..."}] + cestas
+    
+    # Sincroniza com a vitrine se houver registro anterior
+    if st.session_state.get("cesta_selecionada_home"):
+        st.session_state["cesta_selecionada_id"] = st.session_state["cesta_selecionada_home"]
+        st.session_state["cesta_selecionada_home"] = None
 
-        if st.session_state.get("cesta_selecionada_home"):
-            st.session_state["form_selecao_atual_id"] = st.session_state["cesta_selecionada_home"]
-            st.session_state["cesta_selecionada_home"] = None
+    cesta_inicial_index = 0
+    current_id = st.session_state.get("cesta_selecionada_id")
+    if current_id:
+        for idx, item in enumerate(opcoes_cestas):
+            if item.get("id") == current_id:
+                cesta_inicial_index = idx
+                break
 
-        cesta_inicial_index = 0
-        if st.session_state["form_selecao_atual_id"]:
-            for idx, item in enumerate(opcoes_cestas):
-                if item.get("id") == st.session_state["form_selecao_atual_id"]:
-                    cesta_inicial_index = idx
-                    break
+    with st.container(border=True):
+        st.markdown('<div class="secao-titulo">🎁 Escolha sua Cesta</div>', unsafe_allow_html=True)
+        
+        # Callback para atualizar o estado global da página sem perder a referência
+        def atualizar_cesta_selecionada():
+            sel = st.session_state.get("selectbox_cesta_escolhida")
+            if sel:
+                st.session_state["cesta_selecionada_id"] = sel.get("id")
 
-        with st.container(border=True):
-            st.markdown('<div class="secao-titulo">🎁 Escolha sua Cesta</div>', unsafe_allow_html=True)
-            cesta_selecionada = st.selectbox("Selecione a cesta", opcoes_cestas, format_func=lambda c: c["nome"], index=cesta_inicial_index)
-            st.session_state["form_selecao_atual_id"] = cesta_selecionada.get("id")
+        cesta_selecionada = st.selectbox(
+            "Selecione a cesta", 
+            opcoes_cestas, 
+            format_func=lambda c: c["nome"], 
+            index=cesta_inicial_index,
+            key="selectbox_cesta_escolhida",
+            on_change=atualizar_cesta_selecionada
+        )
 
-            if cesta_selecionada["id"]:
-                cesta_obj = cesta_selecionada
-    else:
-        with st.container(border=True):
-            st.warning("Nenhuma cesta cadastrada.")
-
-    return cesta_obj
-
-cesta = renderizar_bloco_cestas()
+        if cesta_selecionada and cesta_selecionada.get("id"):
+            cesta = cesta_selecionada
+            st.session_state["cesta_selecionada_id"] = cesta_selecionada.get("id")
+else:
+    with st.container(border=True):
+        st.warning("Nenhuma cesta cadastrada.")
 
 
 # ==========================================================
@@ -364,98 +376,85 @@ if cesta:
 
 
 # ==========================================================
-# PERSONALIZAÇÃO DA CESTA (FRAGMENT)
+# PERSONALIZAÇÃO DA CESTA (DINÂMICA)
 # ==========================================================
-@st.fragment
-def renderizar_personalizacao(cesta_atual):
-    st.markdown("### 🍓 Personalize sua cesta")
-    selecoes_cliente = {}
+st.markdown("### 🍓 Personalize sua cesta")
+selecoes_cliente = {}
 
-    if cesta_atual:
-        configuracao_cesta = carregar_configuracao_cesta(cesta_atual["id"])
-        if configuracao_cesta:
-            for grupo in configuracao_cesta:
-                categoria = grupo.get("categoria", "Sem categoria")
-                produtos = grupo.get("produtos", [])
-                minimo = grupo.get("min_escolhas", 0)
-                maximo = grupo.get("max_escolhas", 1)
+if cesta:
+    configuracao_cesta = carregar_configuracao_cesta(cesta["id"])
+    if configuracao_cesta:
+        for grupo in configuracao_cesta:
+            categoria = grupo.get("categoria", "Sem categoria")
+            produtos = grupo.get("produtos", [])
+            minimo = grupo.get("min_escolhas", 0)
+            maximo = grupo.get("max_escolhas", 1)
 
-                if not produtos: continue
+            if not produtos: continue
 
-                with st.container(border=True):
-                    st.markdown(f"**📦 {categoria}**")
-                    if maximo == 1:
-                        escolhido = st.radio("Escolha uma opção", produtos, format_func=lambda p: p["nome"], key=f"radio_{cesta_atual['id']}_{categoria}")
-                        if escolhido: selecoes_cliente[categoria] = [escolhido]
-                    else:
-                        escolhidos = st.multiselect(f"Escolha entre {minimo} e {maximo} opções", produtos, format_func=lambda p: p["nome"], max_selections=maximo, key=f"multi_{cesta_atual['id']}_{categoria}")
-                        selecoes_cliente[categoria] = escolhidos
-        else:
-            st.info("Esta cesta ainda não possui produtos configurados.")
+            with st.container(border=True):
+                st.markdown(f"**📦 {categoria}**")
+                if maximo == 1:
+                    escolhido = st.radio("Escolha uma opção", produtos, format_func=lambda p: p["nome"], key=f"radio_{cesta['id']}_{categoria}")
+                    if escolhido: selecoes_cliente[categoria] = [escolhido]
+                else:
+                    escolhidos = st.multiselect(f"Escolha entre {minimo} e {maximo} opções", produtos, format_func=lambda p: p["nome"], max_selections=maximo, key=f"multi_{cesta['id']}_{categoria}")
+                    selecoes_cliente[categoria] = escolhidos
     else:
-        st.info("Escolha uma cesta para visualizar os produtos disponíveis.")
-    
-    return selecoes_cliente
-
-selecoes_cliente = renderizar_personalizacao(cesta)
+        st.info("Esta cesta ainda não possui produtos configurados.")
+else:
+    st.info("Escolha uma cesta acima para visualizar os itens de personalização disponíveis.")
 
 
 # ==========================================================
-# COMPLEMENTOS (ADICIONAIS) E FOTOS POLAROID (FRAGMENT)
+# COMPLEMENTOS (ADICIONAIS) E FOTOS POLAROID
 # ==========================================================
-@st.fragment
-def renderizar_complementos_e_polaroid():
-    st.markdown("### 🎀 Complementos")
-    st.caption("Escolha itens adicionais para complementar sua cesta.")
-    adicionais_selecionados = []
-    polaroid = False
+st.markdown("### 🎀 Complementos")
+st.caption("Escolha itens adicionais para complementar sua cesta.")
+adicionais_selecionados = []
+polaroid = False
 
-    try:
-        categorias_pedido = obter_categorias()
-    except:
-        categorias_pedido = []
+try:
+    categorias_pedido = obter_categorias()
+except:
+    categorias_pedido = []
 
-    categoria_adicionais = None
-    for categoria_item in categorias_pedido:
-        if categoria_item.get("nome", "").strip().lower() == "adicionais":
-            categoria_adicionais = categoria_item
-            break
+categoria_adicionais = None
+for categoria_item in categorias_pedido:
+    if categoria_item.get("nome", "").strip().lower() == "adicionais":
+        categoria_adicionais = categoria_item
+        break
 
-    categorias_exibir = [categoria_adicionais] if categoria_adicionais else []
+categorias_exibir = [categoria_adicionais] if categoria_adicionais else []
 
-    for categoria_item in categorias_exibir:
-        nome_categoria = categoria_item.get("nome", "")
-        produtos_categoria = listar_produtos_por_categoria_id(categoria_item["id"])
+for categoria_item in categorias_exibir:
+    nome_categoria = categoria_item.get("nome", "")
+    produtos_categoria = listar_produtos_por_categoria_id(categoria_item["id"])
 
-        if not produtos_categoria: continue
+    if not produtos_categoria: continue
 
-        with st.container(border=True):
-            st.markdown(f"**{nome_categoria}**")
-            colunas = st.columns(2)
+    with st.container(border=True):
+        st.markdown(f"**{nome_categoria}**")
+        colunas = st.columns(2)
 
-            for indice, produto in enumerate(produtos_categoria):
-                coluna = colunas[indice % 2]
-                with coluna:
-                    preco = produto.get("preco")
-                    texto_valor = f"R$ {float(preco):,.2f}".replace(",", "X").replace(".", ",").replace("X",".") if preco is not None else "Consultar valor"
-                    marcado = st.checkbox(f"{produto['nome']} | {texto_valor}", key=f"complemento_{produto['id']}")
+        for indice, produto in enumerate(produtos_categoria):
+            coluna = colunas[indice % 2]
+            with coluna:
+                preco = produto.get("preco")
+                texto_valor = f"R$ {float(preco):,.2f}".replace(",", "X").replace(".", ",").replace("X",".") if preco is not None else "Consultar valor"
+                marcado = st.checkbox(f"{produto['nome']} | {texto_valor}", key=f"complemento_{produto['id']}")
 
-                    if marcado:
-                        adicionais_selecionados.append({"produto_id": produto["id"], "nome": produto["nome"], "preco": produto.get("preco"), "categoria": nome_categoria})
-                        if produto["nome"].lower().strip() == "polaroid":
-                            polaroid = True
+                if marcado:
+                    adicionais_selecionados.append({"produto_id": produto["id"], "nome": produto["nome"], "preco": produto.get("preco"), "categoria": nome_categoria})
+                    if produto["nome"].lower().strip() == "polaroid":
+                        polaroid = True
 
-    fotos_up = []
-    if polaroid:
-        with st.container(border=True):
-            st.markdown('<div class="secao-titulo">📷 Fotos da Polaroid</div>', unsafe_allow_html=True)
-            st.caption("Envie as fotos para revelação estilo Polaroid.")
-            # Chave fixa garantindo que a foto permaneça na memória durante o preenchimento
-            fotos_up = st.file_uploader("Selecione as imagens", type=["jpg", "jpeg", "png", "webp"], accept_multiple_files=True, key="upload_polaroid_cliente")
-
-    return adicionais_selecionados, polaroid, fotos_up
-
-adicionais_selecionados, polaroid, fotos = renderizar_complementos_e_polaroid()
+fotos = []
+if polaroid:
+    with st.container(border=True):
+        st.markdown('<div class="secao-titulo">📷 Fotos da Polaroid</div>', unsafe_allow_html=True)
+        st.caption("Envie as fotos para revelação estilo Polaroid.")
+        fotos = st.file_uploader("Selecione as imagens", type=["jpg", "jpeg", "png", "webp"], accept_multiple_files=True, key="upload_polaroid_cliente")
 
 
 # ==========================================================
@@ -586,7 +585,7 @@ if enviar:
         if adicionais_selecionados: 
             salvar_adicionais_pedido(pedido_id, adicionais_selecionados)
         
-        # SALVAMENTO BLINDADO DAS FOTOS POLAROID DIRETAMENTE NO STORAGE E BANCO
+        # SALVAMENTO BLINDADO DAS FOTOS POLAROID
         if polaroid and fotos:
             try:
                 salvar_fotos_local(pedido_id, fotos)
