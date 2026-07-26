@@ -3,4 +3,4 @@ pandas
 plotly
 supabase
 reportlab
-streamlit-cookies-controller
+streamlit-cookies-controller==0.1.3
