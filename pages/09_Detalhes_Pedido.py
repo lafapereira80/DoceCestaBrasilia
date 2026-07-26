@@ -42,6 +42,8 @@ div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1
 .pgto-badge { background: #f3ece6; color: #5a3b28; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid #dfcdbb; }
 div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button,
 div[data-testid="stColumn"] > div > div > div > div[data-testid="stLinkButton"] > a { font-size: 12px !important; padding: 2px 6px !important; border-radius: 8px !important; min-height: 34px !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+div[data-testid="stLinkButton"] > a { background-color: #25D366 !important; color: white !important; font-weight: 700 !important; border: none !important; }
+div[data-testid="stLinkButton"] > a:hover { background-color: #128C7E !important; color: white !important; }
 @media (max-width: 768px) { .block-container { padding-top: 0.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; } h1 { font-size: 18px !important; } div[data-testid="stVerticalBlockBorderWrapper"] { padding: 8px !important; } .info-value { font-size: 12px !important; } .resumo-total-val { font-size: 17px !important; } .resumo-container { padding: 8px 10px; } }
 </style>
 """,
@@ -532,13 +534,24 @@ if "msg_geral" in st.session_state:
     st.success(st.session_state['msg_geral'])
     del st.session_state['msg_geral']
 
-col_bot1, col_bot2 = st.columns(2)
+
+# =====================================================
+# RODAPÉ DE AÇÕES (COM BOTÃO DO WHATSAPP RESTAURADO)
+# =====================================================
+col_bot1, col_bot2, col_bot3 = st.columns(3)
+
 with col_bot1:
     if st.button("💾 Salvar Atendimento Completo", use_container_width=True, type="primary"):
         dados = {"status": status, "valor_frete": valor_frete, "valor_extras": valor_extras, "desconto": desconto, "valor_total": valor_total_calculado, "horario_combinado": horario_combinado, "itens_consulta": itens_consulta}
         atualizar_pedido(pedido["id"], dados)
         st.session_state['msg_geral'] = "✅ Atendimento financeiro salvo com sucesso!"
         st.rerun()
+
 with col_bot2:
+    # Gera o link usando a função que já estava no código e cria o botão
+    link_wpp = gerar_whatsapp(pedido, adicionais_pedido, valor_total_calculado, valor_frete, valor_extras, desconto)
+    st.link_button("💬 Enviar Resumo no WhatsApp", url=link_wpp, use_container_width=True)
+
+with col_bot3:
     if st.button("⬅ Voltar para Pedidos", use_container_width=True):
         st.switch_page("pages/02_Pedidos.py")
