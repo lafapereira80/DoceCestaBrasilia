@@ -1,4 +1,5 @@
 import streamlit as st
+import time
 
 # =====================================================
 # CONFIGURA VISUAL DO STREAMLIT (OTIMIZADO MOBILE)
@@ -196,13 +197,16 @@ def menu_lateral():
         st.divider()
 
         if st.button("🚪 Sair da Conta", use_container_width=True):
-            # Escudo de exclusão do cookie
+            # Remove a memória primeiro
+            st.session_state.pop("usuario", None)
+            
+            # Tenta apagar o cookie do navegador
             try:
                 from streamlit_cookies_controller import CookieController
-                controller = CookieController(key="menu_logout_cookie")
+                controller = CookieController(key="menu_remove")
                 controller.remove("doce_cesta_admin")
             except Exception:
                 pass
                 
-            st.session_state.pop("usuario", None)
+            time.sleep(0.5)
             st.switch_page("app.py")
