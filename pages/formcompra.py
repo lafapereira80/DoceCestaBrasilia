@@ -151,7 +151,7 @@ if logo_path.exists():
 
 
 # ==========================================================
-# TELA DE SUCESSO (COM HTML 100% RENDERIZADO VIA UNSAFE_ALLOW_HTML)
+# TELA DE SUCESSO
 # ==========================================================
 if st.session_state["pedido_enviado_com_sucesso"]:
     dados = st.session_state["resumo_pedido_sucesso"]
@@ -245,65 +245,56 @@ nome, telefone, cpf = renderizar_dados_comprador()
 
 
 # ==========================================================
-# SELEÇÃO DA CESTA (COM ITEM VAZIO PADRÃO SE NÃO VEIO DA VITRINE)
+# SELEÇÃO DA CESTA (SINCRONIZADA COM O ESTADO)
 # ==========================================================
-@st.fragment
-def renderizar_bloco_cestas():
-    try:
-        cestas_brutas = listar_cestas()
-        cestas_ativas = [c for c in cestas_brutas if c.get("ativa", True)]
-        for c in cestas_ativas:
-            if "ordem" not in c or c["ordem"] is None:
-                c["ordem"] = 999
-        cestas = sorted(cestas_ativas, key=lambda x: x["ordem"])
-    except:
-        cestas = []
+try:
+    cestas_brutas = listar_cestas()
+    cestas_ativas = [c for c in cestas_brutas if c.get("ativa", True)]
+    for c in cestas_ativas:
+        if "ordem" not in c or c["ordem"] is None:
+            c["ordem"] = 999
+    cestas = sorted(cestas_ativas, key=lambda x: x["ordem"])
+except:
+    cestas = []
 
-    cesta_obj = None
-    if cestas:
-        # Se veio da vitrine, define a cesta no session_state
-        if st.session_state.get("cesta_selecionada_home"):
-            st.session_state["cesta_selecionada_id"] = st.session_state["cesta_selecionada_home"]
-            st.session_state["cesta_selecionada_home"] = None
+cesta = None
+if cestas:
+    if st.session_state.get("cesta_selecionada_home"):
+        st.session_state["cesta_selecionada_id"] = st.session_state["cesta_selecionada_home"]
+        st.session_state["cesta_selecionada_home"] = None
 
-        # Cria a lista de opções com um item placeholder vazio no topo
-        opcoes_dropdown = [{"id": None, "nome": "Selecione uma cesta..."}] + cestas
-        mapa_opcoes = {item["id"]: item for item in opcoes_dropdown if item["id"] is not None}
+    opcoes_dropdown = [{"id": None, "nome": "Selecione uma cesta..."}] + cestas
+    mapa_opcoes = {item["id"]: item for item in opcoes_dropdown if item["id"] is not None}
 
-        id_atual = st.session_state.get("cesta_selecionada_id")
+    id_atual = st.session_state.get("cesta_selecionada_id")
+    cesta_atual = mapa_opcoes.get(id_atual) if id_atual else None
+    
+    indice_inicial = 0
+    if cesta_atual:
+        for idx, op in enumerate(opcoes_dropdown):
+            if op.get("id") == cesta_atual.get("id"):
+                indice_inicial = idx
+                break
+
+    with st.container(border=True):
+        st.markdown('<div class="secao-titulo">🎁 Escolha sua Cesta</div>', unsafe_allow_html=True)
         
-        # Se não há ID selecionado (acesso direto), força o índice para o placeholder (0)
-        cesta_atual = mapa_opcoes.get(id_atual) if id_atual else None
-        indice_inicial = 0
-        if cesta_atual:
-            for idx, op in enumerate(opcoes_dropdown):
-                if op.get("id") == cesta_atual.get("id"):
-                    indice_inicial = idx
-                    break
+        cesta_escolhida = st.selectbox(
+            "Selecione a cesta", 
+            opcoes_dropdown, 
+            format_func=lambda c: c["nome"], 
+            index=indice_inicial,
+            key="selectbox_cesta_escolhida"
+        )
 
-        with st.container(border=True):
-            st.markdown('<div class="secao-titulo">🎁 Escolha sua Cesta</div>', unsafe_allow_html=True)
-            
-            cesta_escolhida = st.selectbox(
-                "Selecione a cesta", 
-                opcoes_dropdown, 
-                format_func=lambda c: c["nome"], 
-                index=indice_inicial,
-                key="selectbox_cesta_escolhida"
-            )
-
-            if cesta_escolhida and cesta_escolhida.get("id") is not None:
-                cesta_obj = cesta_escolhida
-                st.session_state["cesta_selecionada_id"] = cesta_escolhida.get("id")
-            else:
-                st.session_state["cesta_selecionada_id"] = None
-    else:
-        with st.container(border=True):
-            st.warning("Nenhuma cesta cadastrada.")
-
-    return cesta_obj
-
-cesta = renderizar_bloco_cestas()
+        if cesta_escolhida and cesta_escolhida.get("id") is not None:
+            cesta = cesta_escolhida
+            st.session_state["cesta_selecionada_id"] = cesta_escolhida.get("id")
+        else:
+            st.session_state["cesta_selecionada_id"] = None
+else:
+    with st.container(border=True):
+        st.warning("Nenhuma cesta cadastrada.")
 
 
 # ==========================================================
@@ -332,40 +323,34 @@ if cesta:
 
 
 # ==========================================================
-# PERSONALIZAÇÃO DA CESTA (FRAGMENTO ISOLADO)
+# PERSONALIZAÇÃO DA CESTA (ITENS / GRUPOS DE ESCOLHA)
 # ==========================================================
-@st.fragment
-def renderizar_personalizacao(cesta_atual):
-    st.markdown("### 🍓 Personalize sua cesta")
-    selecoes_cliente = {}
+st.markdown("### 🍓 Personalize sua cesta")
+selecoes_cliente = {}
 
-    if cesta_atual:
-        configuracao_cesta = carregar_configuracao_cesta(cesta_atual["id"])
-        if configuracao_cesta:
-            for grupo in configuracao_cesta:
-                categoria = grupo.get("categoria", "Sem categoria")
-                produtos = grupo.get("produtos", [])
-                minimo = grupo.get("min_escolhas", 0)
-                maximo = grupo.get("max_escolhas", 1)
+if cesta:
+    configuracao_cesta = carregar_configuracao_cesta(cesta["id"])
+    if configuracao_cesta:
+        for grupo in configuracao_cesta:
+            categoria = grupo.get("categoria", "Sem categoria")
+            produtos = grupo.get("produtos", [])
+            minimo = grupo.get("min_escolhas", 0)
+            maximo = grupo.get("max_escolhas", 1)
 
-                if not produtos: continue
+            if not produtos: continue
 
-                with st.container(border=True):
-                    st.markdown(f"**📦 {categoria}**")
-                    if maximo == 1:
-                        escolhido = st.radio("Escolha uma opção", produtos, format_func=lambda p: p["nome"], key=f"radio_{cesta_atual['id']}_{categoria}")
-                        if escolhido: selecoes_cliente[categoria] = [escolhido]
-                    else:
-                        escolhidos = st.multiselect(f"Escolha entre {minimo} e {maximo} opções", produtos, format_func=lambda p: p["nome"], max_selections=maximo, key=f"multi_{cesta_atual['id']}_{categoria}")
-                        selecoes_cliente[categoria] = escolhidos
-        else:
-            st.info("Esta cesta ainda não possui produtos configurados.")
+            with st.container(border=True):
+                st.markdown(f"**📦 {categoria}**")
+                if maximo == 1:
+                    escolhido = st.radio("Escolha uma opção", produtos, format_func=lambda p: p["nome"], key=f"radio_{cesta['id']}_{categoria}")
+                    if escolhido: selecoes_cliente[categoria] = [escolhido]
+                else:
+                    escolhidos = st.multiselect(f"Escolha entre {minimo} e {maximo} opções", produtos, format_func=lambda p: p["nome"], max_selections=maximo, key=f"multi_{cesta['id']}_{categoria}")
+                    selecoes_cliente[categoria] = escolhidos
     else:
-        st.info("Escolha uma cesta acima para visualizar os itens de personalização disponíveis.")
-    
-    return selecoes_cliente
-
-selecoes_cliente = renderizar_personalizacao(cesta)
+        st.info("Esta cesta ainda não possui produtos configurados.")
+else:
+    st.info("Escolha uma cesta acima para visualizar os itens de personalização disponíveis.")
 
 
 # ==========================================================
