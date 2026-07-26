@@ -411,11 +411,9 @@ def renderizar_complementos_e_polaroid():
             st.markdown('<div class="secao-titulo">📷 Fotos da Polaroid (Até 2 fotos)</div>', unsafe_allow_html=True)
             st.caption("Envie até 2 imagens para revelação estilo Polaroid.")
             
-            # Callback para adicionar fotos sem perder a referência de pastas locais difíceis
             def processar_novo_upload():
                 novos = st.session_state.get("uploader_polaroid_input", [])
                 for arq in novos:
-                    # Verifica se já não foi adicionado e respeita o teto de 2 fotos
                     if arq not in st.session_state["fotos_polaroid_cliente"] and len(st.session_state["fotos_polaroid_cliente"]) < 2:
                         st.session_state["fotos_polaroid_cliente"].append(arq)
 
@@ -427,7 +425,6 @@ def renderizar_complementos_e_polaroid():
                 on_change=processar_novo_upload
             )
 
-            # Exibe pré-visualização e botões funcionais de remoção
             if st.session_state["fotos_polaroid_cliente"]:
                 st.markdown(f"**Fotos anexadas ({len(st.session_state['fotos_polaroid_cliente'])}/2):**")
                 cols_preview = st.columns(2)
@@ -436,7 +433,6 @@ def renderizar_complementos_e_polaroid():
                 for i, arquivo_foto in enumerate(st.session_state["fotos_polaroid_cliente"]):
                     with cols_preview[i % 2]:
                         try:
-                            # Converte e normaliza a imagem em Bytes para garantir renderização universal
                             img_bytes = arquivo_foto.getvalue()
                             img_pil = Image.open(BytesIO(img_bytes))
                             st.image(img_pil, caption=f"Foto {i+1}", use_container_width=True)
@@ -446,7 +442,6 @@ def renderizar_complementos_e_polaroid():
                         if st.button("🗑️ Remover Foto", key=f"btn_remover_idx_{i}", use_container_width=True):
                             remover_indice = i
 
-                # Executa a remoção imediata e recarrega o fragmento
                 if remover_indice is not None:
                     st.session_state["fotos_polaroid_cliente"].pop(remover_indice)
                     st.rerun()
