@@ -2,16 +2,13 @@ import streamlit as st
 import base64
 import time
 from pathlib import Path
-from streamlit_cookies_controller import CookieController
 
 from services.usuario_service import autenticar_usuario
 from utils.menu import configurar_pagina
 
-# Inicializa o controlador de cookies
-controller = CookieController()
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA
+# CONFIGURAÇÃO DA PÁGINA (SEMPRE A PRIMEIRA LINHA)
 # =====================================================
 
 st.set_page_config(
@@ -22,6 +19,13 @@ st.set_page_config(
 )
 
 configurar_pagina()
+
+# Instancia o controlador de cookies APÓS a página estar configurada
+try:
+    from streamlit_cookies_controller import CookieController
+    controller = CookieController(key="login_page_cookie")
+except Exception:
+    controller = None
 
 
 # =====================================================
@@ -77,16 +81,16 @@ st.markdown("<div class='subtitulo'>Doce Cesta Brasília</div>", unsafe_allow_ht
 if not st.session_state.get("usuario"):
     if not st.session_state.get("aguardou_cookie_login"):
         st.session_state["aguardou_cookie_login"] = True
-        time.sleep(0.5)
+        time.sleep(0.4)
         st.rerun()
         
     cookie_user = None
-    try:
-        # Tenta ler o cookie de forma segura
-        cookie_user = controller.get("doce_cesta_admin")
-    except Exception:
-        pass
-        
+    if controller:
+        try:
+            cookie_user = controller.get("doce_cesta_admin")
+        except Exception:
+            pass
+            
     if cookie_user:
         st.session_state["usuario"] = cookie_user
         st.session_state.pop("aguardou_cookie_login", None)
@@ -115,15 +119,14 @@ if not st.session_state.get("usuario"):
             if usuario:
                 st.session_state["usuario"] = usuario
                 
-                try:
-                    # Manda o navegador salvar o Cookie
-                    controller.set("doce_cesta_admin", usuario, max_age=2592000)
-                except Exception:
-                    pass
+                if controller:
+                    try:
+                        controller.set("doce_cesta_admin", usuario, max_age=2592000)
+                    except Exception:
+                        pass
                 
-                # O SEGREDO: Dá quase 1 segundo para garantir a gravação na web antes de recarregar
-                time.sleep(0.8)
-                
+                # Dá tempo para o navegador gravar a informação em segurança
+                time.sleep(0.6)
                 st.rerun()
             else:
                 st.error("Usuário ou senha inválidos.")
@@ -144,11 +147,12 @@ with st.container(border=True):
     with col_u2:
         if st.button("🚪 Sair", use_container_width=True):
             st.session_state["usuario"] = None
-            try:
-                controller.remove("doce_cesta_admin")
-            except Exception:
-                pass
-            time.sleep(0.5) # Dá tempo de apagar o cookie
+            if controller:
+                try:
+                    controller.remove("doce_cesta_admin")
+                except Exception:
+                    pass
+            time.sleep(0.4) 
             st.rerun()
 
 st.subheader("📂 Módulos do Sistema")
