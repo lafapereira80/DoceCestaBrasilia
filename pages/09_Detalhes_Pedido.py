@@ -123,7 +123,15 @@ def salvar_fotos_local(pid, arquivos):
 def listar_fotos_local(pid):
     try:
         resposta = supabase.table("pedido_fotos").select("*").eq("pedido_id", pid).order("created_at").execute()
-        return resposta.data or [], ""
+        fotos = resposta.data or []
+        
+        # SISTEMA DE RESGATE PARA FOTOS ANTIGAS
+        url_base = st.secrets.get("SUPABASE_URL", "").rstrip("/")
+        for foto in fotos:
+            if not foto.get("url") and foto.get("arquivo"):
+                foto["url"] = f"{url_base}/storage/v1/object/public/pedido_fotos/{foto['arquivo']}"
+                
+        return fotos, ""
     except Exception as e:
         return [], str(e)
 
@@ -463,8 +471,7 @@ with col_direita:
             colunas = st.columns(2)
             for i, foto in enumerate(fotos):
                 with colunas[i % 2]:
-                    # Agora puxa da coluna 'url' que criamos
-                    link_imagem = foto.get("url") 
+                    link_imagem = foto.get("url")
                     if link_imagem:
                         st.image(link_imagem, caption=foto.get("nome_original", "Foto"), use_container_width=True)
                         if st.button("🗑️ Deletar", key=f"del_foto_{foto['id']}", use_container_width=True):
