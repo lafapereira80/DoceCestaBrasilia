@@ -133,6 +133,9 @@ if "resumo_pedido_sucesso" not in st.session_state:
 if "cesta_selecionada_id" not in st.session_state:
     st.session_state["cesta_selecionada_id"] = None
 
+if "fotos_polaroid_cliente" not in st.session_state:
+    st.session_state["fotos_polaroid_cliente"] = []
+
 
 # ==========================================================
 # LOGO E CABEÇALHO UNIFICADO
@@ -194,6 +197,7 @@ if st.session_state["pedido_enviado_com_sucesso"]:
         st.session_state["pedido_enviado_com_sucesso"] = False
         st.session_state["resumo_pedido_sucesso"] = {}
         st.session_state["cesta_selecionada_id"] = None
+        st.session_state["fotos_polaroid_cliente"] = []
         st.rerun()
 
     st.stop()
@@ -234,7 +238,7 @@ with st.container(border=True):
 
 
 # ==========================================================
-# SELEÇÃO DA CESTA (BLINDADA CONTRA "PISCA-PISCA")
+# SELEÇÃO DA CESTA (BLINDADA)
 # ==========================================================
 @st.fragment
 def renderizar_bloco_cestas():
@@ -356,7 +360,7 @@ selecoes_cliente = renderizar_personalizacao(cesta)
 
 
 # ==========================================================
-# COMPLEMENTOS E FOTOS POLAROID (FRAGMENTO ISOLADO)
+# COMPLEMENTOS E FOTOS POLAROID (FRAGMENTO ISOLADO COM REMOÇÃO)
 # ==========================================================
 @st.fragment
 def renderizar_complementos_e_polaroid():
@@ -400,30 +404,49 @@ def renderizar_complementos_e_polaroid():
                         if produto["nome"].lower().strip() == "polaroid":
                             polaroid = True
 
-    fotos_up = []
     if polaroid:
         with st.container(border=True):
             st.markdown('<div class="secao-titulo">📷 Fotos da Polaroid (Até 2 fotos)</div>', unsafe_allow_html=True)
             st.caption("Envie até 2 imagens para revelação estilo Polaroid.")
             
-            fotos_up = st.file_uploader(
+            # Uploader padrão
+            novos_arquivos = st.file_uploader(
                 "Selecione as imagens", 
                 type=["jpg", "jpeg", "png", "webp"], 
                 accept_multiple_files=True, 
-                key="upload_polaroid_cliente"
+                key="upload_polaroid_temp"
             )
             
-            if fotos_up:
-                if len(fotos_up) > 2:
-                    st.error("⚠️ Você selecionou mais de 2 fotos. Por favor, mantenha no máximo 2 imagens.")
-                else:
-                    st.markdown(f"**Fotos anexadas ({len(fotos_up)}/2):**")
-                    cols_preview = st.columns(2)
-                    for i, arquivo_foto in enumerate(fotos_up):
-                        with cols_preview[i % 2]:
-                            st.image(arquivo_foto, caption=f"Foto {i+1}", use_container_width=True)
+            # Gerencia a persistência no session_state para permitir exclusão
+            if novos_arquivos:
+                for arq in novos_arquivos:
+                    # Evita duplicatas se o arquivo for o mesmo
+                    if arq not in st.session_state["fotos_polaroid_cliente"] and len(st.session_state["fotos_polaroid_cliente"]) < 2:
+                        st.session_state["fotos_polaroid_cliente"].append(arq)
 
-    return adicionais_selecionados, polaroid, fotos_up
+            # Exibe preview e botões de remoção individual
+            if st.session_state["fotos_polaroid_cliente"]:
+                st.markdown(f"**Fotos anexadas ({len(st.session_state['fotos_polaroid_cliente'])}/2):**")
+                cols_preview = st.columns(2)
+                
+                indices_para_remover = []
+                for i, arquivo_foto in enumerate(st.session_state["fotos_polaroid_cliente"]):
+                    with cols_preview[i % 2]:
+                        st.image(arquivo_foto, caption=f"Foto {i+1}", use_container_width=True)
+                        if st.button("🗑️ Remover Foto", key=f"remover_foto_{i}", use_container_width=True):
+                            indices_para_remover.append(i)
+
+                # Processa a remoção se o botão foi clicado
+                if indices_para_remover:
+                    for idx in sorted(indices_para_remover, reverse=True):
+                        st.session_state["fotos_polaroid_cliente"].pop(idx)
+                    st.rerun()
+
+    else:
+        # Se desmarcar o Polaroid, limpa as fotos da memória
+        st.session_state["fotos_polaroid_cliente"] = []
+
+    return adicionais_selecionados, polaroid, st.session_state["fotos_polaroid_cliente"]
 
 adicionais_selecionados, polaroid, fotos = renderizar_complementos_e_polaroid()
 
@@ -579,6 +602,7 @@ Abra o painel administrativo para ver os detalhes completos!
         except:
             pass 
 
+        # Preenche resumo e limpa a memória das fotos enviadas
         st.session_state["resumo_pedido_sucesso"] = {
             "cliente_nome": nome.strip(),
             "cesta_nome": cesta["nome"],
@@ -591,6 +615,7 @@ Abra o painel administrativo para ver os detalhes completos!
             "valor_total": val_fmt
         }
         
+        st.session_state["fotos_polaroid_cliente"] = []
         st.session_state["pedido_enviado_com_sucesso"] = True
         st.rerun()
 
