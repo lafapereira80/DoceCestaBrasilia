@@ -55,10 +55,9 @@ if "pdf_gerado" not in st.session_state:
 # =====================================================
 
 def atualizar_selecao_impressao(pedido_id):
-    # Se a seleção mudar, limpa o PDF antigo da memória
     st.session_state["pdf_gerado"] = None
-    
     chave = f"imprimir_{pedido_id}"
+    
     if st.session_state.get(chave):
         if pedido_id not in st.session_state["pedidos_impressao"]:
             st.session_state["pedidos_impressao"].append(pedido_id)
@@ -90,39 +89,11 @@ def formatar_data(data_str):
 st.markdown(
 """
 <style>
-/* =========================================
-   CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
-========================================== */
-.block-container {
-    padding-top: 1rem !important;
-    padding-bottom: 2rem !important;
-    max-width: 1200px;
-}
+.block-container { padding-top: 1rem !important; padding-bottom: 2rem !important; max-width: 1200px; }
+h1 { font-size: 24px !important; font-weight: 700 !important; color: #5a3b28; margin-bottom: 2px !important; }
+h2, h3 { font-size: 16px !important; font-weight: 700 !important; color: #5a3b28; margin-top: 15px !important; margin-bottom: 8px !important; }
+.block-container p, .block-container label { font-family: Arial, sans-serif !important; font-size: 13px !important; }
 
-h1 {
-    font-size: 24px !important;
-    font-weight: 700 !important;
-    color: #5a3b28;
-    margin-bottom: 2px !important;
-}
-
-h2, h3 {
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    color: #5a3b28;
-    margin-top: 15px !important;
-    margin-bottom: 8px !important;
-}
-
-.block-container p, 
-.block-container label {
-    font-family: Arial, sans-serif !important;
-    font-size: 13px !important;
-}
-
-/* =========================================
-   CONTAINERS DOS PEDIDOS E REVISÃO
-========================================== */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff;
     border: 1px solid #e8ddd3 !important;
@@ -132,71 +103,21 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     transition: all 0.2s ease;
 }
+div[data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: #dfcdbb !important; box-shadow: 0 2px 6px rgba(90, 59, 40, 0.08); }
 
-div[data-testid="stVerticalBlockBorderWrapper"]:hover {
-    border-color: #dfcdbb !important;
-    box-shadow: 0 2px 6px rgba(90, 59, 40, 0.08);
-}
-
-.preview-impressao {
-    background-color: #fffbf7;
-    border-left: 4px solid #b06000 !important;
-}
-
-/* =========================================
-   BADGES DE STATUS VISUAL E LABELS
-========================================== */
-.badge-status {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-weight: 700;
-    font-size: 12px !important;
-    text-align: center;
-}
-
+.preview-impressao { background-color: #fffbf7; border-left: 4px solid #b06000 !important; }
+.badge-status { display: inline-block; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 12px !important; text-align: center; }
 .badge-pago { background-color: #e6f4ea; color: #137333; }
 .badge-recebido { background-color: #fef7e0; color: #b06000; }
 .badge-desistencia { background-color: #fce8e6; color: #c5221f; }
+.info-label { font-weight: 800; color: #9d7d65; font-size: 10px !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.cliente-nome { font-weight: 700; color: #333; font-size: 14px !important; }
+.valor-pedido { font-weight: 700; color: #2e7d32; font-size: 14px !important; }
 
-.info-label {
-    font-weight: 800;
-    color: #9d7d65;
-    font-size: 10px !important;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 2px;
-}
-
-/* =========================================
-   ELEMENTOS DE TEXTO E VALORES
-========================================== */
-.cliente-nome {
-    font-weight: 700;
-    color: #333;
-    font-size: 14px !important;
-}
-
-.valor-pedido {
-    font-weight: 700;
-    color: #2e7d32;
-    font-size: 14px !important;
-}
-
-/* Botões da Tabela */
 div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button {
-    font-size: 14px !important;
-    padding: 2px !important;
-    border-radius: 8px !important;
-    min-height: 36px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    font-size: 14px !important; padding: 2px !important; border-radius: 8px !important; min-height: 36px !important; display: flex !important; align-items: center !important; justify-content: center !important;
 }
-
-div[data-testid="stCheckbox"] {
-    margin-top: 4px;
-}
+div[data-testid="stCheckbox"] { margin-top: 4px; }
 </style>
 """,
 unsafe_allow_html=True
@@ -288,8 +209,11 @@ def mostrar_lista(titulo, status_filtro, permitir_exclusao=False, permitir_impre
 
             if permitir_impressao:
                 with col_check:
+                    # AQUI CORRIGIMOS A CAIXA FANTASMA: Lendo da memória oficial (session_state)
+                    esta_marcado = pedido["id"] in st.session_state["pedidos_impressao"]
                     st.checkbox(
                         "🖨️",
+                        value=esta_marcado,
                         key=f"imprimir_{pedido['id']}",
                         on_change=atualizar_selecao_impressao,
                         args=(pedido["id"],),
@@ -346,14 +270,21 @@ mostrar_lista("❌ Desistências", "Desistência", permitir_exclusao=(usuario.ge
 
 
 # =====================================================
-# IMPRESSÃO DOS PEDIDOS SELECIONADOS (NOVO LAYOUT)
+# IMPRESSÃO DOS PEDIDOS SELECIONADOS
 # =====================================================
 
 if st.session_state["pedidos_impressao"]:
     st.divider()
-    st.subheader("🖨️ Impressão de Pedidos")
+    
+    col_t_imp1, col_t_imp2 = st.columns([3, 1])
+    with col_t_imp1:
+        st.subheader("🖨️ Impressão de Pedidos")
+    with col_t_imp2:
+        if st.button("🧹 Limpar Fila", use_container_width=True):
+            st.session_state["pedidos_impressao"] = []
+            st.session_state["pdf_gerado"] = None
+            st.rerun()
 
-    # Resgata os dados completos apenas dos pedidos marcados no Checkbox
     pedidos_selecionados_dados = []
     for pid in st.session_state["pedidos_impressao"]:
         pedido_completo = buscar_pedido(pid)
@@ -361,71 +292,68 @@ if st.session_state["pedidos_impressao"]:
             pedidos_selecionados_dados.append(pedido_completo)
 
     quantidade = len(pedidos_selecionados_dados)
-    st.success(f"✅ {quantidade} pedido(s) selecionado(s) e pronto(s) para impressão.")
+    if quantidade > 0:
+        st.success(f"✅ {quantidade} pedido(s) selecionado(s) e pronto(s) para impressão.")
 
-    # --- PAINEL DE REVISÃO DOS PEDIDOS ---
-    st.markdown("#### 🛒 Revisão dos Pedidos Selecionados")
-    for ped in pedidos_selecionados_dados:
-        # Pega as variáveis e trata valores nulos
-        nome_comprador = ped.get('cliente_nome', '-')
-        tel_comprador = ped.get('cliente_telefone', '-')
-        nome_homenageado = ped.get('destinatario_nome', '-')
-        tel_homenageado = ped.get('destinatario_telefone', '-')
-        nome_cesta = ped.get('cesta_nome', '-')
-        data_entrega = formatar_data(ped.get('data_entrega'))
-        periodo = ped.get('periodo_entrega', '-')
-        horario = ped.get('horario_combinado', '')
-        horario_str = f" ({horario})" if horario else ""
+        # Painel Visual de Revisão
+        st.markdown("#### 🛒 Revisão dos Pedidos Selecionados")
+        for ped in pedidos_selecionados_dados:
+            nome_comprador = ped.get('cliente_nome', '-')
+            tel_comprador = ped.get('cliente_telefone', '-')
+            nome_homenageado = ped.get('destinatario_nome', '-')
+            tel_homenageado = ped.get('destinatario_telefone', '-')
+            nome_cesta = ped.get('cesta_nome', '-')
+            data_entrega = formatar_data(ped.get('data_entrega'))
+            periodo = ped.get('periodo_entrega', '-')
+            horario = ped.get('horario_combinado', '')
+            horario_str = f" ({horario})" if horario else ""
 
-        # Monta um Card visual para cada pedido
-        st.markdown(
-            f"""
-            <div data-testid="stVerticalBlockBorderWrapper" class="preview-impressao">
-                <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 200px;">
-                        <div class="info-label">👤 Comprador</div>
-                        <div style="font-weight: 600; color: #333;">{nome_comprador}</div>
-                        <div style="font-size: 12px; color: #666;">📱 {tel_comprador}</div>
-                    </div>
-                    <div style="flex: 1; min-width: 200px;">
-                        <div class="info-label">💝 Homenageado</div>
-                        <div style="font-weight: 600; color: #333;">{nome_homenageado}</div>
-                        <div style="font-size: 12px; color: #666;">📱 {tel_homenageado}</div>
-                    </div>
-                    <div style="flex: 1.5; min-width: 250px;">
-                        <div class="info-label">🚚 Cesta e Entrega</div>
-                        <div style="font-weight: 600; color: #333;">🎁 {nome_cesta}</div>
-                        <div style="font-size: 12px; color: #666;">🗓️ {data_entrega} | 🕒 {periodo}{horario_str}</div>
+            st.markdown(
+                f"""
+                <div data-testid="stVerticalBlockBorderWrapper" class="preview-impressao">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <div class="info-label">👤 Comprador</div>
+                            <div style="font-weight: 600; color: #333;">{nome_comprador}</div>
+                            <div style="font-size: 12px; color: #666;">📱 {tel_comprador}</div>
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <div class="info-label">💝 Homenageado</div>
+                            <div style="font-weight: 600; color: #333;">{nome_homenageado}</div>
+                            <div style="font-size: 12px; color: #666;">📱 {tel_homenageado}</div>
+                        </div>
+                        <div style="flex: 1.5; min-width: 250px;">
+                            <div class="info-label">🚚 Cesta e Entrega</div>
+                            <div style="font-weight: 600; color: #333;">🎁 {nome_cesta}</div>
+                            <div style="font-size: 12px; color: #666;">🗓️ {data_entrega} | 🕒 {periodo}{horario_str}</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            """, 
-            unsafe_allow_html=True
+                """, 
+                unsafe_allow_html=True
+            )
+
+        st.write("") 
+
+        formato_impressao = st.radio(
+            "Formato do PDF",
+            ["📄 Folha A4 - 12 pedidos por página", "🧾 Individual 7x10 cm"],
+            horizontal=True
         )
 
-    st.write("") # Quebra de linha suave
-
-    # --- BOTÕES E GERAÇÃO DE PDF ---
-    formato_impressao = st.radio(
-        "Formato do PDF",
-        ["📄 Folha A4 - 12 pedidos por página", "🧾 Individual 7x10 cm"],
-        horizontal=True
-    )
-
-    if st.button("📄 Gerar PDF Definitivo", use_container_width=True, type="primary"):
-        if pedidos_selecionados_dados:
+        if st.button("📄 Gerar PDF Definitivo", use_container_width=True, type="primary"):
             pdf = gerar_pdf_pedidos(pedidos_selecionados_dados, formato_impressao)
             st.session_state["pdf_gerado"] = pdf
             st.success("✅ PDF gerado com sucesso! Clique no botão abaixo para salvar o arquivo.")
 
-    if st.session_state.get("pdf_gerado"):
-        st.download_button(
-            "⬇️ Baixar PDF",
-            st.session_state["pdf_gerado"],
-            file_name=f"pedidos_producao_{datetime.now().strftime('%d%m%H%M')}.pdf",
-            mime="application/pdf",
-            use_container_width=True
-        )
+        if st.session_state.get("pdf_gerado"):
+            st.download_button(
+                "⬇️ Baixar PDF",
+                st.session_state["pdf_gerado"],
+                file_name=f"pedidos_producao_{datetime.now().strftime('%d%m%H%M')}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
 
 
 # =====================================================
