@@ -145,7 +145,7 @@ div[data-testid="stFileUploader"] section {
 }
 div[data-testid="stFileUploader"] section button { background-color: #ffffff !important; border: 1px solid #dfcdbb !important; color: #5a3b28 !important; font-weight: 600 !important; border-radius: 8px !important; }
 div[data-testid="stFileUploader"] section button span { display: none !important; }
-div[data-testid="stFileUploader"] section button::after { content: "📁 Selecionar Fotos" !important; font-size: 13px !important; font-weight: 600 !important; }
+div[data-testid="stFileUploader"] section button::after { content: "📁 Selecionar Fotos (Máx. 2)" !important; font-size: 13px !important; font-weight: 600 !important; }
 
 /* =========================================
    TELA DE SUCESSO MODERNA
@@ -240,6 +240,7 @@ if st.session_state["pedido_enviado_com_sucesso"]:
                 🎁 <b>Cesta:</b> {dados.get('cesta_nome')}<br>
                 🛒 <b>Produtos/Personalização:</b><br>{dados.get('produtos').replace(chr(10), '<br>')}<br><br>
                 🎀 <b>Complementos:</b> {dados.get('adicionais_str') if dados.get('adicionais_str') else 'Nenhum'}<br>
+                📷 <b>Fotos Polaroid Enviadas:</b> {dados.get('qtd_fotos')} foto(s)<br>
                 📅 <b>Entrega:</b> {dados.get('data_entrega')} ({dados.get('periodo_entrega')})<br>
                 📍 <b>Endereço:</b> {dados.get('endereco')}<br>
                 <hr style="border: 0; border-top: 1px dashed #dfcdbb; margin: 10px 0;">
@@ -311,7 +312,6 @@ cesta = None
 if cestas:
     opcoes_cestas = [{"id": None, "nome": "Selecione uma cesta..."}] + cestas
     
-    # Sincroniza com a vitrine se houver registro anterior
     if st.session_state.get("cesta_selecionada_home"):
         st.session_state["cesta_selecionada_id"] = st.session_state["cesta_selecionada_home"]
         st.session_state["cesta_selecionada_home"] = None
@@ -327,7 +327,6 @@ if cestas:
     with st.container(border=True):
         st.markdown('<div class="secao-titulo">🎁 Escolha sua Cesta</div>', unsafe_allow_html=True)
         
-        # Callback para atualizar o estado global da página sem perder a referência
         def atualizar_cesta_selecionada():
             sel = st.session_state.get("selectbox_cesta_escolhida")
             if sel:
@@ -407,7 +406,7 @@ else:
 
 
 # ==========================================================
-# COMPLEMENTOS (ADICIONAIS) E FOTOS POLAROID
+# COMPLEMENTOS (ADICIONAIS) E FOTOS POLAROID (ATÉ 2 FOTOS COM PREVIEW)
 # ==========================================================
 st.markdown("### 🎀 Complementos")
 st.caption("Escolha itens adicionais para complementar sua cesta.")
@@ -452,9 +451,26 @@ for categoria_item in categorias_exibir:
 fotos = []
 if polaroid:
     with st.container(border=True):
-        st.markdown('<div class="secao-titulo">📷 Fotos da Polaroid</div>', unsafe_allow_html=True)
-        st.caption("Envie as fotos para revelação estilo Polaroid.")
-        fotos = st.file_uploader("Selecione as imagens", type=["jpg", "jpeg", "png", "webp"], accept_multiple_files=True, key="upload_polaroid_cliente")
+        st.markdown('<div class="secao-titulo">📷 Fotos da Polaroid (Até 2 fotos)</div>', unsafe_allow_html=True)
+        st.caption("Envie até 2 imagens para revelação estilo Polaroid.")
+        
+        # Garante o limite estrito de 2 arquivos e permite visualização imediata (preview)
+        fotos = st.file_uploader(
+            "Selecione as imagens", 
+            type=["jpg", "jpeg", "png", "webp"], 
+            accept_multiple_files=True, 
+            key="upload_polaroid_cliente"
+        )
+        
+        if fotos:
+            if len(fotos) > 2:
+                st.error("⚠️ Você selecionou mais de 2 fotos. Por favor, mantenha no máximo 2 imagens.")
+            else:
+                st.markdown(f"**Fotos anexadas ({len(fotos)}/2):**")
+                cols_preview = st.columns(2)
+                for i, foto_arquivo in enumerate(fotos):
+                    with cols_preview[i % 2]:
+                        st.image(foto_arquivo, caption=f"Foto {i+1}", use_container_width=True)
 
 
 # ==========================================================
@@ -549,6 +565,7 @@ if enviar:
     if not telefone.strip(): st.error("Informe o telefone do comprador."); st.stop()
     if not cesta: st.error("Selecione uma cesta."); st.stop()
     if not destinatario_nome.strip(): st.error("Informe o nome de quem vai receber (Homenageado)."); st.stop()
+    if polaroid and len(fotos) > 2: st.error("⚠️ O limite para o Polaroid é de no máximo 2 fotos."); st.stop()
 
     produtos_escolhidos = [f"{cat_nome}: {item['nome']}" for cat_nome, itens in selecoes_cliente.items() for item in itens]
     complementos_texto = [f"{item['nome']} (Sob consulta)" if item["preco"] is None else item["nome"] for item in adicionais_selecionados]
@@ -585,10 +602,10 @@ if enviar:
         if adicionais_selecionados: 
             salvar_adicionais_pedido(pedido_id, adicionais_selecionados)
         
-        # SALVAMENTO BLINDADO DAS FOTOS POLAROID
+        # SALVAMENTO BLINDADO DAS FOTOS POLAROID (ATÉ 2)
         if polaroid and fotos:
             try:
-                salvar_fotos_local(pedido_id, fotos)
+                salvar_fotos_local(pedido_id, fotos[:2])
             except Exception as e:
                 print(f"Erro ao enviar fotos polaroid: {e}")
 
@@ -617,6 +634,7 @@ Abra o painel administrativo para ver os detalhes completos!
             "cesta_nome": cesta["nome"],
             "produtos": "\n".join(produtos_escolhidos) if produtos_escolhidos else "Nenhuma personalização informada",
             "adicionais_str": ", ".join(complementos_texto),
+            "qtd_fotos": len(fotos) if polaroid else 0,
             "data_entrega": data_entrega.strftime("%d/%m/%Y"),
             "periodo_entrega": periodo_entrega,
             "endereco": endereco,
