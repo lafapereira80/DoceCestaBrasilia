@@ -181,9 +181,9 @@ div[data-testid="stPageLink"] a:hover {
 /* =========================================
    MEDIA QUERY EXCLUSIVA PARA CELULAR
 ========================================== */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
     .admin-logo-img {
-        width: 50px !important;
+        width: 65px !important;
     }
 
     .titulo {
@@ -194,13 +194,16 @@ div[data-testid="stPageLink"] a:hover {
         font-size: 12px !important;
     }
 
-    /* Transformar o Menu de 3 para 2 por linha */
+    /* FORÇA O MENU A FICAR LADO A LADO (2 POR LINHA) NO MOBILE */
     div[data-testid="stHorizontalBlock"]:has(div[data-testid="stPageLink"]) {
+        flex-direction: row !important;
         flex-wrap: wrap !important;
     }
     
     div[data-testid="stHorizontalBlock"]:has(div[data-testid="stPageLink"]) > div[data-testid="column"] {
+        width: calc(50% - 0.5rem) !important;
         min-width: calc(50% - 0.5rem) !important;
+        max-width: calc(50% - 0.5rem) !important;
         flex: 1 1 calc(50% - 0.5rem) !important;
     }
 }
@@ -370,29 +373,6 @@ with col1:
 
 if usuario["perfil"] != "Administrador":
     st.warning("⚠️ Perfil Operador: acesso limitado aos módulos operacionais.")
-
-
-# =====================================================
-# ÁREA DE TESTES (PODE SER REMOVIDA DEPOIS)
-# =====================================================
-from services.telegram_service import enviar_notificacao_telegram
-
-st.divider()
-st.markdown("### 🔔 Área de Testes (Sistema)")
-
-with st.container(border=True):
-    st.write("Teste a integração com o bot do Telegram sem precisar simular uma compra completa.")
-    
-    if st.button("🔔 Disparar Mensagem de Teste no Telegram", use_container_width=True):
-        mensagem_teste = "🔔 <b>Teste de Notificação</b>\n\nSe você recebeu isso, a integração com o Telegram está funcionando perfeitamente no sistema da Doce Cesta Brasília! 🚀"
-        
-        with st.spinner("Enviando teste para o Telegram..."):
-            sucesso = enviar_notificacao_telegram(mensagem_teste)
-            
-        if sucesso:
-            st.success("✅ Mensagem enviada com sucesso! Olhe o seu celular.")
-        else:
-            st.error("❌ Falha ao enviar. Verifique o arquivo services/telegram_service.py e os logs.")
 
 
 # =====================================================
