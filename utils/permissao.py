@@ -1,39 +1,40 @@
 import streamlit as st
-import time
 
 # =====================================================
-# VERIFICA LOGIN (BLINDADO CONTRA RESET DE NAVEGAÇÃO)
+# VERIFICA LOGIN (SINCRONIZAÇÃO PERFEITA COM O NAVEGADOR)
 # =====================================================
 
 def verificar_login():
-    # 1. SE JÁ ESTIVER LOGADO: SUCESSO IMEDIATO!
-    # Passa direto sem acionar a biblioteca de cookies para não bugar a troca de páginas.
+    # 1. Se o usuário já está na memória (navegação normal), passa direto!
     if st.session_state.get("usuario"):
         return True
         
-    # 2. Se a memória está vazia (F5 no navegador), tentamos ler o cookie
-    cookie_usuario = None
+    # 2. Se a memória está vazia (F5 ou aba fechada), acionamos a biblioteca
     try:
         from streamlit_cookies_controller import CookieController
-        controller = CookieController(key="auth_guard")
-        cookie_usuario = controller.get("doce_cesta_admin")
+        controller = CookieController()
     except Exception:
-        pass
-        
-    # 3. Se achou o cookie, restaura a sessão e sucesso!
-    if cookie_usuario:
-        st.session_state["usuario"] = cookie_usuario
-        st.session_state.pop("esperando_cookie", None)
-        return True
-        
-    # 4. Dá 1 segundo para o navegador carregar o cookie na primeira vez
-    if not st.session_state.get("esperando_cookie"):
-        st.session_state["esperando_cookie"] = True
-        time.sleep(1.0)
+        st.switch_page("pages/99_Admin.py")
+
+    # 3. Pede o cookie para o navegador
+    cookie = controller.get("doce_cesta_admin")
+
+    # 4. Se o navegador já respondeu com o cookie, restaura a vida!
+    if cookie:
+        st.session_state["usuario"] = cookie
+        st.session_state.pop("ciclo_leitura", None)
         st.rerun()
-        
-    # 5. Se já esperou e não tem cookie, expulsa pro login
-    st.session_state.pop("esperando_cookie", None)
+
+    # 5. O PULO DO GATO: Na 1ª vez, a resposta SEMPRE vem vazia porque o JavaScript demora 1 milissegundo a mais.
+    # Usamos o st.stop() para PARAR o Python e deixar o navegador trabalhar. 
+    # Quando o navegador achar o cookie, ele mesmo gera o rerun automático!
+    if not st.session_state.get("ciclo_leitura"):
+        st.session_state["ciclo_leitura"] = True
+        st.markdown("<h4 style='text-align:center; color:#5a3b28; margin-top: 40px;'>🔄 Restaurando conexão segura...</h4>", unsafe_allow_html=True)
+        st.stop() # Pausa o Python e entrega a bola pro navegador
+
+    # 6. Se o código chegou aqui (depois da pausa) e não achou nada, você está deslogado de verdade.
+    st.session_state.pop("ciclo_leitura", None)
     st.switch_page("pages/99_Admin.py")
 
 
