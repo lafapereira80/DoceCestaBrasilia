@@ -72,7 +72,6 @@ def formatar_data(data_str):
     if not data_str:
         return "-"
     try:
-        # Tenta converter se vier no formato ISO ou com hora (ex: 2026-06-12 ou 2026-06-12 00:00:00)
         dt = pd.to_datetime(data_str)
         if pd.isna(dt):
             return str(data_str)
@@ -178,12 +177,15 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     font-size: 14px !important;
 }
 
-/* Botões da Tabela */
-div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button {
-    font-size: 13px !important;
-    padding: 2px 8px !important;
+/* Botões da Tabela (Correção do ícone espremido) */
+div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button {
+    font-size: 14px !important;
+    padding: 2px !important;
     border-radius: 8px !important;
-    min-height: 32px !important;
+    min-height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 div[data-testid="stCheckbox"] {
@@ -218,31 +220,22 @@ df = pd.DataFrame(pedidos) if pedidos else pd.DataFrame(columns=["id", "cliente_
 
 
 # =====================================================
-# ORDENAÇÃO
+# ORDENAÇÃO E PESQUISA
 # =====================================================
 
 if not df.empty and "created_at" in df.columns:
     df["created_at"] = pd.to_datetime(df["created_at"])
     df = df.sort_values("created_at", ascending=False)
 
-
-# =====================================================
-# PESQUISA
-# =====================================================
-
 st.subheader("🔍 Pesquisar cliente")
 pesquisa = st.text_input("", placeholder="Digite o nome do cliente...")
 
 if pesquisa.strip() and not df.empty:
-    df = df[
-        df["cliente_nome"]
-        .fillna("")
-        .str.contains(pesquisa, case=False)
-    ]
+    df = df[df["cliente_nome"].fillna("").str.contains(pesquisa, case=False)]
 
 
 # =====================================================
-# STATUS VISUAL (TAGS ENCAPSULADAS)
+# STATUS VISUAL
 # =====================================================
 
 def status_visual_html(status):
@@ -260,12 +253,7 @@ def status_visual_html(status):
 # FUNÇÃO DE RENDERIZAÇÃO DA LISTA DE PEDIDOS
 # =====================================================
 
-def mostrar_lista(
-    titulo,
-    status_filtro,
-    permitir_exclusao=False,
-    permitir_impressao=False
-):
+def mostrar_lista(titulo, status_filtro, permitir_exclusao=False, permitir_impressao=False):
     st.subheader(titulo)
 
     if df.empty or "status" not in df.columns:
@@ -288,11 +276,10 @@ def mostrar_lista(
 
         with st.container(border=True):
             if permitir_impressao:
-                col_check, col_info1, col_info2, col_status, col_valor, col_acoes = st.columns([1.2, 3.2, 2.8, 1.8, 1.8, 1.2])
+                col_check, col_info1, col_info2, col_status, col_valor, col_acoes = st.columns([1.2, 3.2, 2.8, 1.8, 1.8, 1.5])
             else:
-                col_info1, col_info2, col_status, col_valor, col_acoes = st.columns([3.8, 3.0, 2.0, 2.0, 1.2])
+                col_info1, col_info2, col_status, col_valor, col_acoes = st.columns([3.8, 3.0, 2.0, 2.0, 1.5])
 
-            # Seleção de Impressão (apenas se permitido)
             if permitir_impressao:
                 with col_check:
                     st.checkbox(
@@ -303,41 +290,33 @@ def mostrar_lista(
                         help="Selecionar para impressão"
                     )
 
-            # Coluna Cliente & Telefone
             with col_info1:
                 nome_cliente = str(pedido.get("cliente_nome", "-")).strip()
                 nome_cliente = " ".join(nome_cliente.split())
                 st.markdown(f'<div class="cliente-nome">{nome_cliente}</div>', unsafe_allow_html=True)
                 st.caption(f"📱 {pedido.get('cliente_telefone', '-')}")
 
-            # Coluna Cesta & Data de Entrega Formatada
             with col_info2:
                 st.write(f"🎁 **{pedido.get('cesta_nome','-')}**")
                 data_formatada = formatar_data(pedido.get('data_entrega'))
                 st.caption(f"🗓️ Entrega: {data_formatada}")
 
-            # Coluna Status
             with col_status:
-                st.markdown(
-                    status_visual_html(pedido.get("status", "-")),
-                    unsafe_allow_html=True
-                )
+                st.markdown(status_visual_html(pedido.get("status", "-")), unsafe_allow_html=True)
 
-            # Coluna Valor
             with col_valor:
                 valor = float(pedido.get("valor_total", 0) or 0)
                 valor_formatado = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
                 st.markdown(f'<div class="valor-pedido">{valor_formatado}</div>', unsafe_allow_html=True)
 
-            # Coluna Ações
+            # Coluna Ações: Estrutura inteligente para não espremer o layout
             with col_acoes:
-                sub_col1, sub_col2 = st.columns(2)
-                with sub_col1:
-                    if st.button("👁️", key=f"abrir_{pedido['id']}", help="Abrir pedido", use_container_width=True):
-                        st.session_state["pedido_aberto"] = pedido["id"]
-                        st.switch_page("pages/09_Detalhes_Pedido.py")
-
                 if permitir_exclusao:
+                    sub_col1, sub_col2 = st.columns(2)
+                    with sub_col1:
+                        if st.button("👁️", key=f"abrir_{pedido['id']}", help="Abrir pedido", use_container_width=True):
+                            st.session_state["pedido_aberto"] = pedido["id"]
+                            st.switch_page("pages/09_Detalhes_Pedido.py")
                     with sub_col2:
                         if st.button("🗑️", key=f"excluir_{pedido['id']}", help="Excluir pedido", use_container_width=True):
                             sucesso, mensagem = excluir_pedido_completo(pedido["id"])
@@ -346,24 +325,20 @@ def mostrar_lista(
                                 st.rerun()
                             else:
                                 st.error(mensagem)
+                else:
+                    # Se não houver lixeira, cria apenas 1 botão ocupando 100% com conforto
+                    if st.button("👁️", key=f"abrir_{pedido['id']}", help="Abrir pedido", use_container_width=True):
+                        st.session_state["pedido_aberto"] = pedido["id"]
+                        st.switch_page("pages/09_Detalhes_Pedido.py")
 
 
 # =====================================================
-# FLUXO COMPLETO DE PEDIDOS NA TELA (SEMPRE VISÍVEIS)
+# FLUXO COMPLETO DE PEDIDOS NA TELA
 # =====================================================
 
-# 1. Pedidos que acabaram de dar entrada (Recebidos)
 mostrar_lista("📥 Pedidos Recebidos", "Recebido")
-
-# 2. Pedidos já confirmados financeiramente (Pagos) com opção de impressão em lote
 mostrar_lista("💰 Pedidos Pagos", "Pago", permitir_impressao=True)
-
-# 3. Pedidos cancelados / desistidos (Permite exclusão se for Administrador)
-mostrar_lista(
-    "❌ Desistências",
-    "Desistência",
-    permitir_exclusao=(usuario.get("perfil") == "Administrador")
-)
+mostrar_lista("❌ Desistências", "Desistência", permitir_exclusao=(usuario.get("perfil") == "Administrador"))
 
 
 # =====================================================
@@ -379,20 +354,13 @@ if st.session_state["pedidos_impressao"]:
 
     formato_impressao = st.radio(
         "Formato do PDF",
-        [
-            "📄 Folha A4 - 12 pedidos por página",
-            "🧾 Individual 7x10 cm"
-        ],
+        ["📄 Folha A4 - 12 pedidos por página", "🧾 Individual 7x10 cm"],
         horizontal=True
     )
 
     if st.button("📄 Gerar PDF", use_container_width=True, type="primary"):
-        pedidos_pdf = []
-        for pedido_id in st.session_state["pedidos_impressao"]:
-            pedido = buscar_pedido(pedido_id)
-            if pedido:
-                pedidos_pdf.append(pedido)
-
+        pedidos_pdf = [buscar_pedido(pid) for pid in st.session_state["pedidos_impressao"] if buscar_pedido(pid)]
+        
         if pedidos_pdf:
             pdf = gerar_pdf_pedidos(pedidos_pdf, formato_impressao)
             st.session_state["pdf_gerado"] = pdf
@@ -409,7 +377,7 @@ if st.session_state["pedidos_impressao"]:
 
 
 # =====================================================
-# RODAPÉ / TOTAL
+# RODAPÉ
 # =====================================================
 
 st.divider()
