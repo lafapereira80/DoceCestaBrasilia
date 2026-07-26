@@ -83,7 +83,7 @@ def formatar_data(data_str):
 
 
 # =====================================================
-# CSS COMPACTO E ISOLADO
+# CSS COMPACTO E ISOLADO (COM RESPONSIVIDADE MOBILE)
 # =====================================================
 
 st.markdown(
@@ -98,8 +98,8 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff;
     border: 1px solid #e8ddd3 !important;
     border-radius: 12px !important;
-    padding: 6px 12px !important;
-    margin-bottom: 6px !important;
+    padding: 10px 16px !important;
+    margin-bottom: 8px !important;
     box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     transition: all 0.2s ease;
 }
@@ -118,6 +118,38 @@ div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] butt
     font-size: 14px !important; padding: 2px !important; border-radius: 8px !important; min-height: 36px !important; display: flex !important; align-items: center !important; justify-content: center !important;
 }
 div[data-testid="stCheckbox"] { margin-top: 4px; }
+
+/* =========================================
+   MEDIA QUERY: MELHORIAS PARA CELULAR
+========================================== */
+@media (max-width: 768px) {
+    .block-container { padding-top: 0.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+    h1 { font-size: 20px !important; }
+    
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        padding: 10px 12px !important;
+    }
+
+    /* FORÇA AS COLUNAS ANINHADAS (BOTÕES DE AÇÃO) A FICAREM LADO A LADO */
+    div[data-testid="stHorizontalBlock"] div[data-testid="stHorizontalBlock"] {
+        flex-wrap: nowrap !important;
+        flex-direction: row !important;
+        display: flex !important;
+        gap: 8px !important;
+        margin-top: 6px !important;
+    }
+    
+    div[data-testid="stHorizontalBlock"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+        width: 50% !important;
+        min-width: 0 !important;
+        flex: 1 1 0% !important;
+    }
+
+    /* Ajuste de tipografia para leitura no mobile */
+    .cliente-nome { font-size: 15px !important; margin-bottom: 2px; }
+    .info-label { font-size: 11px !important; margin-top: 4px; }
+    .valor-pedido { font-size: 16px !important; margin-top: 4px; }
+}
 </style>
 """,
 unsafe_allow_html=True
@@ -240,6 +272,7 @@ def mostrar_lista(titulo, status_filtro, permitir_exclusao=False, permitir_impre
 
             with col_acoes:
                 if permitir_exclusao:
+                    # As colunas aninhadas abaixo agora ficarão 50/50 no mobile devido ao CSS
                     sub_col1, sub_col2 = st.columns(2)
                     with sub_col1:
                         if st.button("👁️", key=f"abrir_{pedido['id']}", help="Abrir pedido", use_container_width=True):
