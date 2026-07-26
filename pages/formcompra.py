@@ -126,18 +126,11 @@ unsafe_allow_html=True
 
 
 # ==========================================================
-# CONTROLE DE ESTADO GLOBAL
+# CONTROLE DE ESTADO GLOBAL E VARIÁVEIS DE ENDEREÇO
 # ==========================================================
-if "pedido_enviado_com_sucesso" not in st.session_state:
-    st.session_state["pedido_enviado_com_sucesso"] = False
-
-if "resumo_pedido_sucesso" not in st.session_state:
-    st.session_state["resumo_pedido_sucesso"] = {}
-
-# Estados para autocompletar endereço via CEP
-if "end_rua" not in st.session_state: st.session_state.end_rua = ""
-if "end_bairro" not in st.session_state: st.session_state.end_bairro = ""
-if "end_cidade" not in st.session_state: st.session_state.end_cidade = ""
+if "pedido_enviado_com_sucesso" not in st.session_state: st.session_state["pedido_enviado_com_sucesso"] = False
+if "resumo_pedido_sucesso" not in st.session_state: st.session_state["resumo_pedido_sucesso"] = {}
+if "ultimo_cep_buscado" not in st.session_state: st.session_state["ultimo_cep_buscado"] = ""
 
 
 # ==========================================================
@@ -196,9 +189,10 @@ if st.session_state["pedido_enviado_com_sucesso"]:
     if st.button("🎁 Fazer Novo Pedido", use_container_width=True, type="primary"):
         st.session_state["pedido_enviado_com_sucesso"] = False
         st.session_state["resumo_pedido_sucesso"] = {}
-        st.session_state.end_rua = ""
-        st.session_state.end_bairro = ""
-        st.session_state.end_cidade = ""
+        # Limpa o endereço para o próximo pedido
+        for key in ["input_cep", "input_rua", "input_numero", "input_bairro", "input_cidade"]:
+            if key in st.session_state: del st.session_state[key]
+        st.session_state["ultimo_cep_buscado"] = ""
         st.rerun()
 
     st.stop()
@@ -232,10 +226,8 @@ def render_comprador():
         st.caption("Preencha com os dados de quem está realizando o pagamento.")
 
         col1, col2 = st.columns(2)
-        with col1:
-            st.text_input("Nome completo *", placeholder="Seu nome completo", key="input_nome_comprador")
-        with col2:
-            st.text_input("Seu Telefone *", placeholder="(61) 99999-9999", key="input_tel_comprador")
+        with col1: st.text_input("Nome completo *", placeholder="Seu nome completo", key="input_nome_comprador")
+        with col2: st.text_input("Seu Telefone *", placeholder="(61) 99999-9999", key="input_tel_comprador")
         st.text_input("Seu CPF *", placeholder="000.000.000-00", key="input_cpf_comprador")
 
 render_comprador()
@@ -248,8 +240,7 @@ try:
     cestas_brutas = listar_cestas()
     cestas_ativas = [c for c in cestas_brutas if c.get("ativa", True)]
     for c in cestas_ativas:
-        if "ordem" not in c or c["ordem"] is None:
-            c["ordem"] = 999
+        if "ordem" not in c or c["ordem"] is None: c["ordem"] = 999
     cestas = sorted(cestas_ativas, key=lambda x: x["ordem"])
 except:
     cestas = []
@@ -267,19 +258,10 @@ if cestas:
 
     with st.container(border=True):
         st.markdown('<div class="secao-titulo">🎁 Escolha sua Cesta</div>', unsafe_allow_html=True)
-        
-        cesta_escolhida = st.selectbox(
-            "Selecione a cesta", 
-            opcoes_dropdown, 
-            format_func=lambda c: c["nome"],
-            key="selectbox_cesta_escolhida"
-        )
-
-        if cesta_escolhida and cesta_escolhida.get("id") is not None:
-            cesta = cesta_escolhida
+        cesta_escolhida = st.selectbox("Selecione a cesta", opcoes_dropdown, format_func=lambda c: c["nome"], key="selectbox_cesta_escolhida")
+        if cesta_escolhida and cesta_escolhida.get("id") is not None: cesta = cesta_escolhida
 else:
-    with st.container(border=True):
-        st.warning("Nenhuma cesta cadastrada.")
+    with st.container(border=True): st.warning("Nenhuma cesta cadastrada.")
 
 
 # ==========================================================
@@ -295,18 +277,12 @@ if cesta:
                 st.markdown('<div class="imagem-cesta">', unsafe_allow_html=True)
                 st.image(cesta["imagem"], use_container_width=True)
                 st.markdown('</div>', unsafe_allow_html=True)
-            else:
-                st.info("Sem imagem.")
         with col2:
-            if cesta.get("descricao"):
-                st.info(cesta["descricao"])
+            if cesta.get("descricao"): st.info(cesta["descricao"])
             if cesta.get("preco") is not None:
-                try:
-                    valor = float(cesta["preco"])
-                    valor_formatado = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
-                    st.markdown(f"**🎁 Valor da cesta:** <span style='font-size:16px; color:#2e7d32; font-weight:bold;'>{valor_formatado}</span>", unsafe_allow_html=True)
-                except:
-                    pass
+                valor = float(cesta["preco"])
+                valor_formatado = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
+                st.markdown(f"**🎁 Valor da cesta:** <span style='font-size:16px; color:#2e7d32; font-weight:bold;'>{valor_formatado}</span>", unsafe_allow_html=True)
 
     st.markdown("### 🍓 Personalize sua cesta")
     configuracao_cesta = carregar_configuracao_cesta(cesta["id"])
@@ -318,7 +294,6 @@ if cesta:
             maximo = grupo.get("max_escolhas", 1)
 
             if not produtos: continue
-
             with st.container(border=True):
                 st.markdown(f"**📦 {categoria}**")
                 if maximo == 1:
@@ -340,77 +315,45 @@ adicionais_selecionados = []
 polaroid = False
 fotos = []
 
-try:
-    categorias_pedido = obter_categorias()
-except:
-    categorias_pedido = []
+try: categorias_pedido = obter_categorias()
+except: categorias_pedido = []
 
-categoria_adicionais = None
-for categoria_item in categorias_pedido:
-    if categoria_item.get("nome", "").strip().lower() == "adicionais":
-        categoria_adicionais = categoria_item
-        break
-
+categoria_adicionais = next((c for c in categorias_pedido if c.get("nome", "").strip().lower() == "adicionais"), None)
 categorias_exibir = [categoria_adicionais] if categoria_adicionais else []
 
 for categoria_item in categorias_exibir:
     nome_categoria = categoria_item.get("nome", "")
     produtos_categoria = listar_produtos_por_categoria_id(categoria_item["id"])
-
     if not produtos_categoria: continue
 
     with st.container(border=True):
         st.markdown(f"**{nome_categoria}**")
         colunas = st.columns(2)
-
         for indice, produto in enumerate(produtos_categoria):
-            coluna = colunas[indice % 2]
-            with coluna:
+            with colunas[indice % 2]:
                 preco = produto.get("preco")
                 texto_valor = f"R$ {float(preco):,.2f}".replace(",", "X").replace(".", ",").replace("X",".") if preco is not None else "Consultar valor"
-                marcado = st.checkbox(f"{produto['nome']} | {texto_valor}", key=f"complemento_{produto['id']}")
-
-                if marcado:
-                    adicionais_selecionados.append({
-                        "produto_id": produto["id"], 
-                        "nome": produto["nome"], 
-                        "preco": float(preco) if preco is not None else None, 
-                        "categoria": nome_categoria
-                    })
-                    if produto["nome"].lower().strip() == "polaroid":
-                        polaroid = True
+                if st.checkbox(f"{produto['nome']} | {texto_valor}", key=f"complemento_{produto['id']}"):
+                    adicionais_selecionados.append({"produto_id": produto["id"], "nome": produto["nome"], "preco": float(preco) if preco is not None else None, "categoria": nome_categoria})
+                    if produto["nome"].lower().strip() == "polaroid": polaroid = True
 
 if polaroid:
     with st.container(border=True):
         st.markdown('<div class="secao-titulo">📷 Fotos da Polaroid (Até 2 fotos)</div>', unsafe_allow_html=True)
         st.caption("Envie até 2 imagens para revelação estilo Polaroid.")
-        
-        fotos_up = st.file_uploader(
-            "Selecione as imagens", 
-            type=["jpg", "jpeg", "png", "webp", "heic"], 
-            accept_multiple_files=True, 
-            key="uploader_polaroid_input"
-        )
-        
+        fotos_up = st.file_uploader("Selecione as imagens", type=["jpg", "jpeg", "png", "webp", "heic"], accept_multiple_files=True, key="uploader_polaroid")
         if fotos_up:
-            if len(fotos_up) > 2:
-                st.error("⚠️ Você selecionou mais de 2 fotos. Por favor, mantenha no máximo 2 imagens.")
+            if len(fotos_up) > 2: st.error("⚠️ Você selecionou mais de 2 fotos. Por favor, mantenha no máximo 2 imagens.")
             else:
                 st.markdown(f"**Fotos anexadas ({len(fotos_up)}/2):**")
                 cols_preview = st.columns(2)
                 for i, arquivo_foto in enumerate(fotos_up):
-                    with cols_preview[i % 2]:
-                        try:
-                            img_bytes = arquivo_foto.getvalue()
-                            img_pil = Image.open(BytesIO(img_bytes))
-                            st.image(img_pil, caption=f"Foto {i+1}", use_container_width=True)
-                        except Exception:
-                            st.image(arquivo_foto, caption=f"Foto {i+1}", use_container_width=True)
+                    with cols_preview[i % 2]: st.image(Image.open(BytesIO(arquivo_foto.getvalue())), caption=f"Foto {i+1}", use_container_width=True)
             fotos = fotos_up
 
 
 # ==========================================================
-# HOMENAGEADO E ENTREGA (COM BUSCA AUTOMÁTICA DE CEP)
+# HOMENAGEADO E ENTREGA (CEP AUTOMÁTICO EM COLUNAS)
 # ==========================================================
 @st.fragment
 def render_homenageado_entrega():
@@ -418,12 +361,9 @@ def render_homenageado_entrega():
 
     with st.container(border=True):
         st.markdown('<div class="secao-titulo">Destinatário</div>', unsafe_allow_html=True)
-        col_dest1, col_dest2 = st.columns(2)
-        with col_dest1:
-            st.text_input("Nome do Homenageado *", placeholder="Quem receberá a cesta?", key="input_dest_nome")
-        with col_dest2:
-            st.text_input("Telefone do Homenageado", placeholder="(Opcional)", key="input_dest_tel")
-            
+        col_d1, col_d2 = st.columns(2)
+        with col_d1: st.text_input("Nome do Homenageado *", placeholder="Quem receberá a cesta?", key="input_dest_nome")
+        with col_d2: st.text_input("Telefone do Homenageado", placeholder="(Opcional)", key="input_dest_tel")
         st.text_input("Motivo da Homenagem", placeholder="Ex: Aniversário, Dia das Mães...", key="input_motivo")
 
     with st.container(border=True):
@@ -433,28 +373,43 @@ def render_homenageado_entrega():
     with st.container(border=True):
         st.markdown('<div class="secao-titulo">📍 Detalhes da Entrega</div>', unsafe_allow_html=True)
         
-        # Campo de CEP com verificação e preenchimento automático
-        cep_input = st.text_input("CEP de Entrega (Apenas números)", max_chars=8, placeholder="Ex: 70000000", key="input_cep")
+        # 1. Grid: CEP e Cidade
+        col_cep, col_cid = st.columns([1, 1.5])
+        with col_cep:
+            cep_input = st.text_input("CEP *", max_chars=8, placeholder="Somente números", key="input_cep")
         
+        # Lógica de Busca do CEP (Atualiza as keys da sessão para preencher os campos abaixo automaticamente)
         cep_limpo = re.sub(r'\D', '', cep_input)
-        if len(cep_limpo) == 8:
+        if len(cep_limpo) == 8 and st.session_state["ultimo_cep_buscado"] != cep_limpo:
             try:
-                response = requests.get(f"https://viacep.com.br/ws/{cep_limpo}/json/", timeout=3)
-                if response.status_code == 200:
-                    dados_cep = response.json()
-                    if "erro" not in dados_cep:
-                        st.session_state.end_rua = dados_cep.get("logradouro", "")
-                        st.session_state.end_bairro = dados_cep.get("bairro", "")
-                        st.session_state.end_cidade = f"{dados_cep.get('localidade', '')} - {dados_cep.get('uf', '')}"
-            except Exception:
+                res = requests.get(f"https://viacep.com.br/ws/{cep_limpo}/json/", timeout=3)
+                if res.status_code == 200:
+                    dados = res.json()
+                    if "erro" not in dados:
+                        st.session_state["input_rua"] = dados.get("logradouro", "")
+                        st.session_state["input_bairro"] = dados.get("bairro", "")
+                        st.session_state["input_cidade"] = f"{dados.get('localidade', '')} - {dados.get('uf', '')}"
+            except:
                 pass
+            st.session_state["ultimo_cep_buscado"] = cep_limpo
+            st.rerun(scope="fragment") # Força a tela a atualizar com os novos dados
+            
+        with col_cid:
+            st.text_input("Cidade - UF *", placeholder="Ex: Brasília - DF", key="input_cidade")
 
-        # Campos de endereço preenchidos automaticamente ou customizáveis
-        rua_val = st.text_input("Endereço (Rua, Quadra, Lote)", value=st.session_state.end_rua, key="input_rua")
-        numero_val = st.text_input("Número / Complemento", placeholder="Ex: Bloco A, Apto 202", key="input_numero")
-        bairro_val = st.text_input("Bairro", value=st.session_state.end_bairro, key="input_bairro")
-        cidade_val = st.text_input("Cidade - UF", value=st.session_state.end_cidade, key="input_cidade")
+        # 2. Rua (Largura total)
+        st.text_input("Rua / Logradouro *", placeholder="Ex: SQS 101 Bloco A", key="input_rua")
 
+        # 3. Grid: Número e Bairro
+        col_num, col_bairro = st.columns([1, 1])
+        with col_num:
+            st.text_input("Número / Complemento *", placeholder="Ex: Apto 202", key="input_numero")
+        with col_bairro:
+            st.text_input("Bairro *", placeholder="Ex: Asa Sul", key="input_bairro")
+
+        st.divider()
+
+        # 4. Data e Período
         col_ent1, col_ent2 = st.columns(2)
         with col_ent1:
             st.date_input("📅 Data de entrega", format="DD/MM/YYYY", key="input_data_entrega")
@@ -467,56 +422,37 @@ render_homenageado_entrega()
 
 
 # ==========================================================
-# PAGAMENTO
+# PAGAMENTO E VALORES
 # ==========================================================
 with st.container(border=True):
     st.markdown('<div class="secao-titulo">💳 Forma de Pagamento</div>', unsafe_allow_html=True)
     pagamento = st.radio("Escolha como deseja pagar:", ["Pix", "Cartão de Crédito"], horizontal=True, key="forma_pagamento_radio")
 
-
-# ==========================================================
-# CÁLCULO DOS VALORES
-# ==========================================================
 valor_cesta = float(cesta.get("preco", 0)) if cesta and cesta.get("preco") is not None else 0
 valor_adicionais = 0
 tem_adicional_consulta = False
 
 for item in adicionais_selecionados:
-    if item["preco"] is None:
-        tem_adicional_consulta = True
-        continue
-    try: 
-        valor_adicionais += float(item["preco"])
-    except: 
-        pass
+    if item["preco"] is None: tem_adicional_consulta = True; continue
+    try: valor_adicionais += float(item["preco"])
+    except: pass
 
 valor_estimado = valor_cesta + valor_adicionais
 
-
-# ==========================================================
-# RESUMO DO PEDIDO NA TELA
-# ==========================================================
 if cesta:
     with st.container(border=True):
         st.markdown('<div class="secao-titulo">💰 Resumo do Pedido</div>', unsafe_allow_html=True)
         col1, col2 = st.columns(2)
-        with col1:
-            st.caption("🎁 Valor da cesta")
-            st.markdown(f"**R$ {valor_cesta:,.2f}**".replace(",", "X").replace(".", ",").replace("X","."))
-        with col2:
-            st.caption("🎀 Complementos")
-            st.markdown(f"**R$ {valor_adicionais:,.2f}**".replace(",", "X").replace(".", ",").replace("X","."))
-
+        with col1: st.caption("🎁 Valor da cesta"); st.markdown(f"**R$ {valor_cesta:,.2f}**".replace(",", "X").replace(".", ",").replace("X","."))
+        with col2: st.caption("🎀 Complementos"); st.markdown(f"**R$ {valor_adicionais:,.2f}**".replace(",", "X").replace(".", ",").replace("X","."))
         st.divider()
         val_fmt = f"R$ {valor_estimado:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
         st.success(f"💝 Valor estimado: **{val_fmt}**")
-
-        if tem_adicional_consulta:
-            st.warning("⚠️ Existem itens com valor sob consulta. Nossa equipe confirmará o valor final.")
+        if tem_adicional_consulta: st.warning("⚠️ Existem itens com valor sob consulta. Nossa equipe confirmará o valor final.")
 
 
 # ==========================================================
-# BOTÃO ENVIO E PROCESSAMENTO DE DADOS
+# ENVIO DO PEDIDO
 # ==========================================================
 st.write("")
 enviar = st.button("🎁 ENVIAR PEDIDO", use_container_width=True, type="primary")
@@ -525,21 +461,17 @@ if enviar:
     nome = st.session_state.get("input_nome_comprador", "")
     telefone = re.sub(r'\D', '', st.session_state.get("input_tel_comprador", "")) 
     cpf = re.sub(r'\D', '', st.session_state.get("input_cpf_comprador", "")) 
-    
     dest_nome = st.session_state.get("input_dest_nome", "")
     dest_tel = re.sub(r'\D', '', st.session_state.get("input_dest_tel", "")) 
-    
     motivo_homenagem = st.session_state.get("input_motivo", "")
     mensagem = st.session_state.get("input_mensagem", "")
     
-    # Consolida o endereço estruturado junto com o CEP e número
-    cep_informado = st.session_state.get("input_cep", "")
-    rua_informada = st.session_state.get("input_rua", "")
-    numero_informado = st.session_state.get("input_numero", "")
-    bairro_informado = st.session_state.get("input_bairro", "")
-    cidade_informada = st.session_state.get("input_cidade", "")
-    
-    endereco = f"{rua_informada}, {numero_informado} - {bairro_informado}, {cidade_informada} (CEP: {cep_informado})"
+    cep = st.session_state.get("input_cep", "")
+    rua = st.session_state.get("input_rua", "")
+    num = st.session_state.get("input_numero", "")
+    bairro = st.session_state.get("input_bairro", "")
+    cidade = st.session_state.get("input_cidade", "")
+    endereco_completo = f"{rua}, {num} - {bairro}, {cidade} (CEP: {cep})"
 
     dt_ent = st.session_state.get("input_data_entrega")
     data_entrega_str = dt_ent.strftime("%Y-%m-%d") if dt_ent else str(date.today())
@@ -547,13 +479,12 @@ if enviar:
     periodo_entrega = st.session_state.get("input_periodo_entrega", "")
     pedido_especial = st.session_state.get("input_pedido_especial", "")
 
-    # Validações Básicas
     if not nome.strip(): st.error("Informe o nome do comprador."); st.stop()
     if not cpf.strip(): st.error("Informe o CPF do comprador."); st.stop()
     if not telefone.strip(): st.error("Informe o telefone do comprador."); st.stop()
     if not cesta: st.error("Selecione uma cesta."); st.stop()
     if not dest_nome.strip(): st.error("Informe o nome de quem vai receber (Homenageado)."); st.stop()
-    if not rua_informada.strip(): st.error("Informe o endereço de entrega (Rua/Logradouro)."); st.stop()
+    if not rua.strip() or not num.strip(): st.error("Informe a Rua e o Número da entrega."); st.stop()
     if polaroid and fotos and len(fotos) > 2: st.error("⚠️ O limite para o Polaroid é de no máximo 2 fotos."); st.stop()
 
     produtos_escolhidos = [f"{cat_nome}: {item['nome']}" for cat_nome, itens in selecoes_cliente.items() for item in itens]
@@ -573,7 +504,7 @@ if enviar:
         "pagamento": pagamento,
         "mensagem": mensagem,
         "pedido_especial": pedido_especial,
-        "endereco": endereco,
+        "endereco": endereco_completo,
         "data_entrega": data_entrega_str,
         "periodo_entrega": periodo_entrega,
         "status": "Recebido",
@@ -581,37 +512,19 @@ if enviar:
         "valor_total": valor_estimado
     }
 
-    try:
-        sucesso, pedido_id = salvar_pedido(dados)
-    except Exception as erro:
-        st.error(f"Erro ao salvar pedido: {erro}"); st.stop()
+    try: sucesso, pedido_id = salvar_pedido(dados)
+    except Exception as erro: st.error(f"Erro ao salvar pedido: {erro}"); st.stop()
 
     if sucesso:
-        if adicionais_selecionados: 
-            salvar_adicionais_pedido(pedido_id, adicionais_selecionados)
-        
+        if adicionais_selecionados: salvar_adicionais_pedido(pedido_id, adicionais_selecionados)
         if polaroid and fotos:
-            try:
-                salvar_fotos(pedido_id, fotos[:2])
-            except Exception as e:
-                print(f"Erro ao enviar fotos polaroid: {e}")
+            try: salvar_fotos(pedido_id, fotos[:2])
+            except Exception as e: print(f"Erro ao enviar fotos polaroid: {e}")
 
         try:
-            texto_aviso = f"""🚨 <b>NOVO PEDIDO RECEBIDO!</b> 🚨
-
-👤 <b>Comprador:</b> {nome}
-📱 <b>WhatsApp:</b> <a href="https://wa.me/55{telefone}">{telefone}</a>
-🎁 <b>Cesta:</b> {cesta["nome"]}
-💝 <b>Para:</b> {dest_nome} ({motivo_homenagem if motivo_homenagem else "Sem motivo"})
-💳 <b>Pagamento:</b> {pagamento}
-💰 <b>Valor Estimado:</b> R$ {valor_estimado:,.2f}
-📷 <b>Contém Fotos Polaroid:</b> {"Sim (" + str(len(fotos)) + " fotos)" if fotos and polaroid else "Não"}
-
-Abra o painel administrativo para ver os detalhes completos!
-"""
+            texto_aviso = f"""🚨 <b>NOVO PEDIDO RECEBIDO!</b> 🚨\n\n👤 <b>Comprador:</b> {nome}\n📱 <b>WhatsApp:</b> <a href="https://wa.me/55{telefone}">{telefone}</a>\n🎁 <b>Cesta:</b> {cesta["nome"]}\n💝 <b>Para:</b> {dest_nome}\n📍 <b>Local:</b> {bairro}\n💰 <b>Valor Estimado:</b> R$ {valor_estimado:,.2f}"""
             enviar_notificacao_telegram(texto_aviso)
-        except:
-            pass 
+        except: pass 
 
         st.session_state["resumo_pedido_sucesso"] = {
             "cliente_nome": nome.strip(),
@@ -621,20 +534,16 @@ Abra o painel administrativo para ver os detalhes completos!
             "qtd_fotos": len(fotos) if polaroid and fotos else 0,
             "data_entrega": data_entrega_br,
             "periodo_entrega": periodo_entrega,
-            "endereco": endereco,
+            "endereco": endereco_completo,
             "valor_total": val_fmt
         }
         
         st.session_state["pedido_enviado_com_sucesso"] = True
         st.rerun()
-
     else:
         st.error(f"Erro ao salvar pedido: {pedido_id}")
 
 
-# ==========================================================
-# RODAPÉ
-# ==========================================================
 st.divider()
 st.markdown('<div style="text-align:center; font-size:12px; color:#888; padding:10px;">Doce Cesta Brasília © 2026</div>', unsafe_allow_html=True)
 st.page_link("app.py", label="Voltar para a Vitrine", icon="🛍️")
