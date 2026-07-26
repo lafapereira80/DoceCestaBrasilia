@@ -2,6 +2,7 @@ import streamlit as st
 import base64
 import time
 from pathlib import Path
+from streamlit_cookies_controller import CookieController
 
 from services.usuario_service import autenticar_usuario
 from utils.menu import configurar_pagina
@@ -9,21 +10,29 @@ from utils.menu import configurar_pagina
 # =====================================================
 # CONFIGURAÇÃO DA PÁGINA
 # =====================================================
-
-st.set_page_config(
-    page_title="Área Administrativa",
-    page_icon="🔒",
-    layout="centered",
-    initial_sidebar_state="collapsed"
-)
-
+st.set_page_config(page_title="Área Administrativa", page_icon="🔒", layout="centered", initial_sidebar_state="collapsed")
 configurar_pagina()
 
+# =====================================================
+# GERENCIADOR DE COOKIES (Único local do sistema)
+# =====================================================
+controller = CookieController()
 
 # =====================================================
-# CSS ULTRA COMPACTO E ISOLADO
+# TRATAMENTO DE LOGOUT SEGURO
 # =====================================================
+if st.session_state.get("fazer_logout"):
+    st.session_state.clear() # Limpa a memória toda
+    try:
+        controller.remove("doce_cesta_admin") # Apaga o cookie
+    except:
+        pass
+    time.sleep(0.5)
+    st.rerun()
 
+# =====================================================
+# CSS ULTRA COMPACTO E LOGO
+# =====================================================
 st.markdown(
 """
 <style>
@@ -50,9 +59,7 @@ div[data-testid="stPageLink"] a:hover { background-color: #f3ece6 !important; bo
 .rodape { text-align: center; font-size: 12px; color: #888; margin-top: 15px; }
 @media (max-width: 640px) { .admin-logo-img { width: 50px !important; } .titulo { font-size: 20px !important; } .subtitulo { font-size: 12px !important; } }
 </style>
-""",
-unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
 logo_path = Path("assets/logo.webp")
 logo_html = ""
@@ -65,39 +72,26 @@ st.markdown(f'<div class="admin-logo-banner">{logo_html}</div>', unsafe_allow_ht
 st.markdown("<div class='titulo'>Painel Administrativo</div>", unsafe_allow_html=True)
 st.markdown("<div class='subtitulo'>Doce Cesta Brasília</div>", unsafe_allow_html=True)
 
-
 # =====================================================
-# RECUPERAÇÃO DE COOKIE (Só roda se estiver deslogado)
+# AUTO-LOGIN MÁGICO (Se a memória caiu, resgata o cookie)
 # =====================================================
-
 if not st.session_state.get("usuario"):
-    cookie_user = None
-    try:
-        from streamlit_cookies_controller import CookieController
-        controller_login = CookieController(key="admin_cookie")
-        cookie_user = controller_login.get("doce_cesta_admin")
-    except Exception:
-        pass
+    if not st.session_state.get("aguardou_cookie"):
+        st.session_state["aguardou_cookie"] = True
+        time.sleep(0.4)
+        st.rerun()
         
+    cookie_user = controller.get("doce_cesta_admin")
     if cookie_user:
         st.session_state["usuario"] = cookie_user
-        st.session_state.pop("esperou_login", None)
-        st.rerun()
-        
-    if not st.session_state.get("esperou_login"):
-        st.session_state["esperou_login"] = True
-        time.sleep(1.0)
         st.rerun()
 
-
 # =====================================================
-# TELA DE LOGIN
+# TELA DE LOGIN (Se realmente não tiver cookie)
 # =====================================================
-
 if not st.session_state.get("usuario"):
     with st.container(border=True):
         st.markdown("<div class='card-title'>🔐 Acesso Administrativo</div>", unsafe_allow_html=True)
-
         login = st.text_input("Usuário", placeholder="Digite seu usuário")
         senha = st.text_input("Senha", type="password", placeholder="Digite sua senha")
         st.write("")
@@ -105,29 +99,21 @@ if not st.session_state.get("usuario"):
 
         if entrar:
             usuario = autenticar_usuario(login, senha)
-
             if usuario:
                 st.session_state["usuario"] = usuario
                 try:
-                    from streamlit_cookies_controller import CookieController
-                    controller_set = CookieController(key="set_cookie")
-                    controller_set.set("doce_cesta_admin", usuario, max_age=2592000)
-                except Exception:
+                    controller.set("doce_cesta_admin", usuario, max_age=2592000)
+                except:
                     pass
-                
-                st.session_state.pop("esperou_login", None)
-                time.sleep(0.5)
+                time.sleep(0.6)
                 st.rerun()
             else:
                 st.error("Usuário ou senha inválidos.")
-
     st.stop()
 
-
 # =====================================================
-# TELA PRINCIPAL (USUÁRIO AUTENTICADO)
+# TELA PRINCIPAL (Painel de Módulos)
 # =====================================================
-
 usuario = st.session_state.usuario
 
 with st.container(border=True):
@@ -136,14 +122,7 @@ with st.container(border=True):
         st.markdown(f"👤 **{usuario['login']}** | Perfil: **{usuario['perfil']}**")
     with col_u2:
         if st.button("🚪 Sair", use_container_width=True):
-            st.session_state.pop("usuario", None)
-            try:
-                from streamlit_cookies_controller import CookieController
-                controller_out = CookieController(key="remove_cookie")
-                controller_out.remove("doce_cesta_admin")
-            except Exception:
-                pass
-            time.sleep(0.5) 
+            st.session_state["fazer_logout"] = True
             st.rerun()
 
 st.subheader("📂 Módulos do Sistema")
