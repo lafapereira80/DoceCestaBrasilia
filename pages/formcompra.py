@@ -2,7 +2,6 @@ import streamlit as st
 import base64
 from pathlib import Path
 import importlib
-from uuid import uuid4
 
 from services.pedido_service import salvar_pedido
 from services.cesta_service import listar_cestas
@@ -10,6 +9,7 @@ from services.configuracao_cesta_service import carregar_configuracao_cesta
 from services.produto_service import listar_produtos_por_categoria_id
 from services.pedido_adicional_service import salvar_adicionais_pedido
 from services.telegram_service import enviar_notificacao_telegram
+from services.foto_service import salvar_fotos
 from config.supabase import supabase
 
 
@@ -31,42 +31,6 @@ def obter_categorias():
         return resposta.data or []
     except Exception as e:
         return []
-
-
-# ==========================================================
-# ROTINA BLINDADA DE UPLOAD DE FOTOS (PADRÃO DO SISTEMA)
-# ==========================================================
-def salvar_fotos_local(pid, arquivos):
-    if not arquivos: return True, ""
-    if not isinstance(arquivos, list): arquivos = [arquivos]
-    erros = []
-    url_base = st.secrets.get("SUPABASE_URL", "").rstrip("/")
-    
-    for arquivo in arquivos:
-        try:
-            extensao = arquivo.name.split(".")[-1]
-            nome_arquivo = f"{pid}/{uuid4()}.{extensao}"
-            conteudo = arquivo.getvalue()
-            
-            # 1. Faz o upload pro Bucket (Storage)
-            supabase.storage.from_("pedido_fotos").upload(nome_arquivo, conteudo, {"content-type": arquivo.type})
-            
-            # 2. Cria a URL pública baseada no padrão do Supabase
-            url_publica = f"{url_base}/storage/v1/object/public/pedido_fotos/{nome_arquivo}"
-            
-            # 3. Salva no banco de dados na tabela 'pedido_fotos'
-            supabase.table("pedido_fotos").insert({
-                "pedido_id": pid,
-                "arquivo": nome_arquivo,
-                "nome_original": arquivo.name,
-                "url": url_publica
-            }).execute()
-            
-        except Exception as e:
-            erros.append(f"Erro ao processar {arquivo.name}: {e}")
-            
-    if erros: return False, " | ".join(erros)
-    return True, ""
 
 
 # ==========================================================
@@ -406,7 +370,7 @@ else:
 
 
 # ==========================================================
-# COMPLEMENTOS (ADICIONAIS) E FOTOS POLAROID (ATÉ 2 FOTOS COM PREVIEW)
+# COMPLEMENTOS (ADICIONAIS) E FOTOS POLAROID (ATÉ 2 FOTOS)
 # ==========================================================
 st.markdown("### 🎀 Complementos")
 st.caption("Escolha itens adicionais para complementar sua cesta.")
@@ -454,7 +418,7 @@ if polaroid:
         st.markdown('<div class="secao-titulo">📷 Fotos da Polaroid (Até 2 fotos)</div>', unsafe_allow_html=True)
         st.caption("Envie até 2 imagens para revelação estilo Polaroid.")
         
-        # Garante o limite estrito de 2 arquivos e permite visualização imediata (preview)
+        # Componente oficial de upload
         fotos = st.file_uploader(
             "Selecione as imagens", 
             type=["jpg", "jpeg", "png", "webp"], 
@@ -462,15 +426,16 @@ if polaroid:
             key="upload_polaroid_cliente"
         )
         
+        # PREVIEW VISUAL IMEDIATO NA TELA PARA O CLIENTE
         if fotos:
             if len(fotos) > 2:
                 st.error("⚠️ Você selecionou mais de 2 fotos. Por favor, mantenha no máximo 2 imagens.")
             else:
                 st.markdown(f"**Fotos anexadas ({len(fotos)}/2):**")
                 cols_preview = st.columns(2)
-                for i, foto_arquivo in enumerate(fotos):
+                for i, arquivo_foto in enumerate(fotos):
                     with cols_preview[i % 2]:
-                        st.image(foto_arquivo, caption=f"Foto {i+1}", use_container_width=True)
+                        st.image(arquivo_foto, caption=f"Foto {i+1}", use_container_width=True)
 
 
 # ==========================================================
@@ -602,10 +567,12 @@ if enviar:
         if adicionais_selecionados: 
             salvar_adicionais_pedido(pedido_id, adicionais_selecionados)
         
-        # SALVAMENTO BLINDADO DAS FOTOS POLAROID (ATÉ 2)
+        # UTILIZAÇÃO DA SUA FUNÇÃO OFICIAL DE SALVAR FOTOS
         if polaroid and fotos:
             try:
-                salvar_fotos_local(pedido_id, fotos[:2])
+                sucesso_fotos, erro_fotos = salvar_fotos(pedido_id, fotos[:2])
+                if not sucesso_fotos:
+                    print(f"Aviso no envio de fotos: {erro_fotos}")
             except Exception as e:
                 print(f"Erro ao enviar fotos polaroid: {e}")
 
