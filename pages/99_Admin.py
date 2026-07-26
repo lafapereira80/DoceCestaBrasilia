@@ -194,17 +194,23 @@ div[data-testid="stPageLink"] a:hover {
         font-size: 12px !important;
     }
 
-    /* FORÇA O MENU A FICAR LADO A LADO (2 POR LINHA) NO MOBILE */
-    div[data-testid="stHorizontalBlock"]:has(div[data-testid="stPageLink"]) {
+    /* FORÇA A LINHA A NÃO QUEBRAR (ABRANGENDO VÁRIAS VERSÕES DO STREAMLIT) */
+    div[data-testid="stColumns"]:has(div[data-testid="stPageLink"]),
+    div[data-testid="stHorizontalBlock"]:has(div[data-testid="stPageLink"]),
+    div[data-testid="stColumnLayout"]:has(div[data-testid="stPageLink"]) {
+        display: flex !important;
         flex-direction: row !important;
         flex-wrap: wrap !important;
+        justify-content: space-between !important;
     }
     
-    div[data-testid="stHorizontalBlock"]:has(div[data-testid="stPageLink"]) > div[data-testid="column"] {
-        width: calc(50% - 0.5rem) !important;
-        min-width: calc(50% - 0.5rem) !important;
-        max-width: calc(50% - 0.5rem) !important;
-        flex: 1 1 calc(50% - 0.5rem) !important;
+    /* FORÇA AS COLUNAS A TEREM 48% DO TAMANHO, COLOCANDO 2 POR LINHA */
+    div[data-testid="stColumn"]:has(div[data-testid="stPageLink"]),
+    div[data-testid="column"]:has(div[data-testid="stPageLink"]) {
+        width: 48% !important;
+        min-width: 48% !important;
+        max-width: 48% !important;
+        flex: 1 1 48% !important;
     }
 }
 </style>
