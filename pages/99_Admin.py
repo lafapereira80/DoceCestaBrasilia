@@ -72,19 +72,27 @@ st.markdown(f'<div class="admin-logo-banner">{logo_html}</div>', unsafe_allow_ht
 st.markdown("<div class='titulo'>Painel Administrativo</div>", unsafe_allow_html=True)
 st.markdown("<div class='subtitulo'>Doce Cesta Brasília</div>", unsafe_allow_html=True)
 
+
 # =====================================================
-# AUTO-LOGIN MÁGICO (Se a memória caiu, resgata o cookie)
+# AUTO-LOGIN MÁGICO (Com armadura contra erros)
 # =====================================================
 if not st.session_state.get("usuario"):
     if not st.session_state.get("aguardou_cookie"):
         st.session_state["aguardou_cookie"] = True
-        time.sleep(0.4)
+        time.sleep(0.5)
         st.rerun()
         
-    cookie_user = controller.get("doce_cesta_admin")
+    cookie_user = None
+    try:
+        # Tenta ler o cookie protegido por Try/Except
+        cookie_user = controller.get("doce_cesta_admin")
+    except Exception:
+        pass
+        
     if cookie_user:
         st.session_state["usuario"] = cookie_user
         st.rerun()
+
 
 # =====================================================
 # TELA DE LOGIN (Se realmente não tiver cookie)
@@ -110,6 +118,7 @@ if not st.session_state.get("usuario"):
             else:
                 st.error("Usuário ou senha inválidos.")
     st.stop()
+
 
 # =====================================================
 # TELA PRINCIPAL (Painel de Módulos)
