@@ -2,14 +2,15 @@ import streamlit as st
 import base64
 from pathlib import Path
 import importlib
+from uuid import uuid4
 
 from services.pedido_service import salvar_pedido
-from services.foto_service import salvar_fotos
 from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
 from services.produto_service import listar_produtos_por_categoria_id
 from services.pedido_adicional_service import salvar_adicionais_pedido
 from services.telegram_service import enviar_notificacao_telegram
+from config.supabase import supabase
 
 
 # ==========================================================
@@ -26,11 +27,46 @@ def obter_categorias():
         pass 
         
     try:
-        from config.supabase import supabase
         resposta = supabase.table("categorias").select("*").execute()
         return resposta.data or []
     except Exception as e:
         return []
+
+
+# ==========================================================
+# ROTINA BLINDADA DE UPLOAD DE FOTOS (PADRÃO DO SISTEMA)
+# ==========================================================
+def salvar_fotos_local(pid, arquivos):
+    if not arquivos: return True, ""
+    if not isinstance(arquivos, list): arquivos = [arquivos]
+    erros = []
+    url_base = st.secrets.get("SUPABASE_URL", "").rstrip("/")
+    
+    for arquivo in arquivos:
+        try:
+            extensao = arquivo.name.split(".")[-1]
+            nome_arquivo = f"{pid}/{uuid4()}.{extensao}"
+            conteudo = arquivo.getvalue()
+            
+            # 1. Faz o upload pro Bucket (Storage)
+            supabase.storage.from_("pedido_fotos").upload(nome_arquivo, conteudo, {"content-type": arquivo.type})
+            
+            # 2. Cria a URL pública baseada no padrão do Supabase
+            url_publica = f"{url_base}/storage/v1/object/public/pedido_fotos/{nome_arquivo}"
+            
+            # 3. Salva no banco de dados na tabela 'pedido_fotos'
+            supabase.table("pedido_fotos").insert({
+                "pedido_id": pid,
+                "arquivo": nome_arquivo,
+                "nome_original": arquivo.name,
+                "url": url_publica
+            }).execute()
+            
+        except Exception as e:
+            erros.append(f"Erro ao processar {arquivo.name}: {e}")
+            
+    if erros: return False, " | ".join(erros)
+    return True, ""
 
 
 # ==========================================================
@@ -413,7 +449,9 @@ def renderizar_complementos_e_polaroid():
     if polaroid:
         with st.container(border=True):
             st.markdown('<div class="secao-titulo">📷 Fotos da Polaroid</div>', unsafe_allow_html=True)
-            fotos_up = st.file_uploader("Selecione as imagens", type=["jpg", "jpeg", "png", "webp"], accept_multiple_files=True, key="upload_polaroid")
+            st.caption("Envie as fotos para revelação estilo Polaroid.")
+            # Chave fixa garantindo que a foto permaneça na memória durante o preenchimento
+            fotos_up = st.file_uploader("Selecione as imagens", type=["jpg", "jpeg", "png", "webp"], accept_multiple_files=True, key="upload_polaroid_cliente")
 
     return adicionais_selecionados, polaroid, fotos_up
 
@@ -545,8 +583,15 @@ if enviar:
         st.error(f"Erro ao salvar pedido: {erro}"); st.stop()
 
     if sucesso:
-        if adicionais_selecionados: salvar_adicionais_pedido(pedido_id, adicionais_selecionados)
-        if polaroid and fotos: salvar_fotos(pedido_id, fotos)
+        if adicionais_selecionados: 
+            salvar_adicionais_pedido(pedido_id, adicionais_selecionados)
+        
+        # SALVAMENTO BLINDADO DAS FOTOS POLAROID DIRETAMENTE NO STORAGE E BANCO
+        if polaroid and fotos:
+            try:
+                salvar_fotos_local(pedido_id, fotos)
+            except Exception as e:
+                print(f"Erro ao enviar fotos polaroid: {e}")
 
         # INTEGRAÇÃO COM TELEGRAM
         try:
@@ -559,6 +604,7 @@ if enviar:
 💝 <b>Para:</b> {destinatario_nome} ({motivo_homenagem if motivo_homenagem else "Sem motivo"})
 💳 <b>Pagamento:</b> {pagamento}
 💰 <b>Valor Estimado:</b> R$ {valor_estimado:,.2f}
+📷 <b>Contém Fotos Polaroid:</b> {"Sim (" + str(len(fotos)) + " fotos)" if fotos else "Não"}
 
 Abra o painel administrativo para ver os detalhes completos!
 """
