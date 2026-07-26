@@ -328,32 +328,38 @@ if st.session_state.editar_pedido:
 
                 if "erro_admin" in st.session_state: del st.session_state["erro_admin"]
                 
+                # NOVO SALVAMENTO: SEM ESCONDER ERROS DO BANCO DE DADOS
                 try:
-                    try: supabase.table("pedido_adicional").delete().eq("pedido_id", pedido["id"]).execute()
-                    except: pass
-                    try: supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido["id"]).execute()
-                    except: pass
-                    
+                    # 1. Tenta apagar os adicionais antigos
+                    try: 
+                        supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido["id"]).execute()
+                    except Exception as err_del1:
+                        try: 
+                            supabase.table("pedido_adicional").delete().eq("pedido_id", pedido["id"]).execute()
+                        except Exception as err_del2:
+                            st.session_state["erro_admin"] = f"❌ O Supabase bloqueou a exclusão. Falta a política DELETE na tabela de adicionais! Detalhe: {err_del1}"
+                            raise Exception("Parada Forçada - Falha no DELETE")
+                            
+                    # 2. Se apagou com sucesso, insere os novos (caso tenha algum marcado)
                     if adicionais_selecionados:
                         for ad in adicionais_selecionados:
                             ad["pedido_id"] = pedido["id"]
                             
-                        inseriu = False
                         try:
-                            supabase.table("pedido_adicional").insert(adicionais_selecionados).execute()
-                            inseriu = True
-                        except: pass
-                        
-                        if not inseriu:
+                            supabase.table("pedido_adicionais").insert(adicionais_selecionados).execute()
+                        except Exception as err_ins1:
                             try:
-                                supabase.table("pedido_adicionais").insert(adicionais_selecionados).execute()
-                            except Exception as db_erro:
-                                st.session_state["erro_admin"] = f"Erro no Banco (Adicionais): {db_erro}"
-                except Exception as e:
-                    st.session_state["erro_admin"] = f"Erro Geral (Adicionais): {e}"
+                                supabase.table("pedido_adicional").insert(adicionais_selecionados).execute()
+                            except Exception as err_ins2:
+                                st.session_state["erro_admin"] = f"❌ O Supabase bloqueou a inserção de adicionais. Detalhe: {err_ins1}"
+                                raise Exception("Parada Forçada - Falha no INSERT")
+                                
+                except Exception:
+                    pass # Se caiu aqui, a mensagem já está salva e pronta para ser exibida
                 
                 if "erro_admin" not in st.session_state:
                     st.session_state.editar_pedido = False
+                    
                 st.rerun()
 
         with cs2:
@@ -410,7 +416,6 @@ with col_esquerda:
         with st.container(border=True):
             st.markdown('<div class="card-title">🎀 Adicionais</div>', unsafe_allow_html=True)
             if adicionais_pedido:
-                # O enumerate ainda é mantido como dupla proteção
                 for idx_ad, adicional in enumerate(adicionais_pedido):
                     nome = adicional.get("nome_produto", "-")
                     valor = adicional.get("valor_unitario")
