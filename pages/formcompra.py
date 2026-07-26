@@ -6,6 +6,7 @@ import importlib
 from io import BytesIO
 from PIL import Image
 from datetime import date
+import requests
 
 from services.pedido_service import salvar_pedido
 from services.cesta_service import listar_cestas
@@ -133,6 +134,11 @@ if "pedido_enviado_com_sucesso" not in st.session_state:
 if "resumo_pedido_sucesso" not in st.session_state:
     st.session_state["resumo_pedido_sucesso"] = {}
 
+# Estados para autocompletar endereço via CEP
+if "end_rua" not in st.session_state: st.session_state.end_rua = ""
+if "end_bairro" not in st.session_state: st.session_state.end_bairro = ""
+if "end_cidade" not in st.session_state: st.session_state.end_cidade = ""
+
 
 # ==========================================================
 # LOGO E CABEÇALHO UNIFICADO
@@ -164,7 +170,6 @@ if st.session_state["pedido_enviado_com_sucesso"]:
         unsafe_allow_html=True
     )
     
-    # A string HTML está sem indentação/espaçamento lateral para o Streamlit não confundi-la com um código (fundo cinza)
     html_sucesso = (
         '<div class="sucesso-container">\n'
         '  <div class="sucesso-titulo">✅ Pedido Realizado com Sucesso!</div>\n'
@@ -191,6 +196,9 @@ if st.session_state["pedido_enviado_com_sucesso"]:
     if st.button("🎁 Fazer Novo Pedido", use_container_width=True, type="primary"):
         st.session_state["pedido_enviado_com_sucesso"] = False
         st.session_state["resumo_pedido_sucesso"] = {}
+        st.session_state.end_rua = ""
+        st.session_state.end_bairro = ""
+        st.session_state.end_cidade = ""
         st.rerun()
 
     st.stop()
@@ -215,7 +223,7 @@ st.write("")
 
 
 # ==========================================================
-# DADOS DO COMPRADOR (FRAGMENTADO P/ NÃO PISCAR AO DIGITAR)
+# DADOS DO COMPRADOR
 # ==========================================================
 @st.fragment
 def render_comprador():
@@ -234,7 +242,7 @@ render_comprador()
 
 
 # ==========================================================
-# SELEÇÃO DA CESTA (FORA DE FRAGMENTO P/ ATUALIZAR VALOR)
+# SELEÇÃO DA CESTA
 # ==========================================================
 try:
     cestas_brutas = listar_cestas()
@@ -250,7 +258,6 @@ cesta = None
 if cestas:
     opcoes_dropdown = [{"id": None, "nome": "Selecione uma cesta..."}] + cestas
     
-    # Se o cliente veio da vitrine, carrega a cesta. Senão, inicia na posição 0 (vazio).
     if "selectbox_cesta_escolhida" not in st.session_state:
         if st.session_state.get("cesta_selecionada_home"):
             st.session_state["selectbox_cesta_escolhida"] = next((c for c in opcoes_dropdown if c["id"] == st.session_state["cesta_selecionada_home"]), opcoes_dropdown[0])
@@ -325,7 +332,7 @@ if cesta:
 
 
 # ==========================================================
-# COMPLEMENTOS E FOTOS POLAROID (FORA DE FRAGMENTO P/ ATUALIZAR RESUMO)
+# COMPLEMENTOS E FOTOS POLAROID
 # ==========================================================
 st.markdown("### 🎀 Complementos")
 st.caption("Escolha itens adicionais para complementar sua cesta.")
@@ -403,7 +410,7 @@ if polaroid:
 
 
 # ==========================================================
-# HOMENAGEADO E ENTREGA (FRAGMENTADO P/ NÃO PISCAR AO DIGITAR)
+# HOMENAGEADO E ENTREGA (COM BUSCA AUTOMÁTICA DE CEP)
 # ==========================================================
 @st.fragment
 def render_homenageado_entrega():
@@ -425,7 +432,28 @@ def render_homenageado_entrega():
 
     with st.container(border=True):
         st.markdown('<div class="secao-titulo">📍 Detalhes da Entrega</div>', unsafe_allow_html=True)
-        st.text_area("Endereço de entrega", height=80, placeholder="Informe o endereço completo...", key="input_endereco")
+        
+        # Campo de CEP com verificação e preenchimento automático
+        cep_input = st.text_input("CEP de Entrega (Apenas números)", max_chars=8, placeholder="Ex: 70000000", key="input_cep")
+        
+        cep_limpo = re.sub(r'\D', '', cep_input)
+        if len(cep_limpo) == 8:
+            try:
+                response = requests.get(f"https://viacep.com.br/ws/{cep_limpo}/json/", timeout=3)
+                if response.status_code == 200:
+                    dados_cep = response.json()
+                    if "erro" not in dados_cep:
+                        st.session_state.end_rua = dados_cep.get("logradouro", "")
+                        st.session_state.end_bairro = dados_cep.get("bairro", "")
+                        st.session_state.end_cidade = f"{dados_cep.get('localidade', '')} - {dados_cep.get('uf', '')}"
+            except Exception:
+                pass
+
+        # Campos de endereço preenchidos automaticamente ou customizáveis
+        rua_val = st.text_input("Endereço (Rua, Quadra, Lote)", value=st.session_state.end_rua, key="input_rua")
+        numero_val = st.text_input("Número / Complemento", placeholder="Ex: Bloco A, Apto 202", key="input_numero")
+        bairro_val = st.text_input("Bairro", value=st.session_state.end_bairro, key="input_bairro")
+        cidade_val = st.text_input("Cidade - UF", value=st.session_state.end_cidade, key="input_cidade")
 
         col_ent1, col_ent2 = st.columns(2)
         with col_ent1:
@@ -466,7 +494,7 @@ valor_estimado = valor_cesta + valor_adicionais
 
 
 # ==========================================================
-# RESUMO DO PEDIDO NA TELA (ATUALIZAÇÃO EM TEMPO REAL)
+# RESUMO DO PEDIDO NA TELA
 # ==========================================================
 if cesta:
     with st.container(border=True):
@@ -488,23 +516,31 @@ if cesta:
 
 
 # ==========================================================
-# BOTÃO ENVIO E PROCESSAMENTO DE DADOS COM LIMPEZA (CPF/TEL)
+# BOTÃO ENVIO E PROCESSAMENTO DE DADOS
 # ==========================================================
 st.write("")
 enviar = st.button("🎁 ENVIAR PEDIDO", use_container_width=True, type="primary")
 
 if enviar:
-    # Captura os dados lendo diretamente da memória do Streamlit
     nome = st.session_state.get("input_nome_comprador", "")
-    telefone = re.sub(r'\D', '', st.session_state.get("input_tel_comprador", "")) # Limpa telefone
-    cpf = re.sub(r'\D', '', st.session_state.get("input_cpf_comprador", "")) # Limpa CPF
+    telefone = re.sub(r'\D', '', st.session_state.get("input_tel_comprador", "")) 
+    cpf = re.sub(r'\D', '', st.session_state.get("input_cpf_comprador", "")) 
     
     dest_nome = st.session_state.get("input_dest_nome", "")
-    dest_tel = re.sub(r'\D', '', st.session_state.get("input_dest_tel", "")) # Limpa telefone dest.
+    dest_tel = re.sub(r'\D', '', st.session_state.get("input_dest_tel", "")) 
     
     motivo_homenagem = st.session_state.get("input_motivo", "")
     mensagem = st.session_state.get("input_mensagem", "")
-    endereco = st.session_state.get("input_endereco", "")
+    
+    # Consolida o endereço estruturado junto com o CEP e número
+    cep_informado = st.session_state.get("input_cep", "")
+    rua_informada = st.session_state.get("input_rua", "")
+    numero_informado = st.session_state.get("input_numero", "")
+    bairro_informado = st.session_state.get("input_bairro", "")
+    cidade_informada = st.session_state.get("input_cidade", "")
+    
+    endereco = f"{rua_informada}, {numero_informado} - {bairro_informado}, {cidade_informada} (CEP: {cep_informado})"
+
     dt_ent = st.session_state.get("input_data_entrega")
     data_entrega_str = dt_ent.strftime("%Y-%m-%d") if dt_ent else str(date.today())
     data_entrega_br = dt_ent.strftime("%d/%m/%Y") if dt_ent else ""
@@ -517,6 +553,7 @@ if enviar:
     if not telefone.strip(): st.error("Informe o telefone do comprador."); st.stop()
     if not cesta: st.error("Selecione uma cesta."); st.stop()
     if not dest_nome.strip(): st.error("Informe o nome de quem vai receber (Homenageado)."); st.stop()
+    if not rua_informada.strip(): st.error("Informe o endereço de entrega (Rua/Logradouro)."); st.stop()
     if polaroid and fotos and len(fotos) > 2: st.error("⚠️ O limite para o Polaroid é de no máximo 2 fotos."); st.stop()
 
     produtos_escolhidos = [f"{cat_nome}: {item['nome']}" for cat_nome, itens in selecoes_cliente.items() for item in itens]
