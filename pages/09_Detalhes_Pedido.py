@@ -3,7 +3,6 @@ import json
 import urllib.parse
 from uuid import uuid4
 
-# Importando apenas o necessário
 from services.pedido_service import buscar_pedido
 from services.pedido_adicional_service import listar_adicionais_pedido
 from config.supabase import supabase
@@ -14,25 +13,13 @@ from utils.permissao import administrador_operador
 
 
 # =====================================================
-# CONFIGURAÇÃO
+# CONFIGURAÇÃO DA PÁGINA E CSS
 # =====================================================
-
-st.set_page_config(
-    page_title="Detalhes do Pedido",
-    page_icon="📋",
-    layout="wide"
-)
-
+st.set_page_config(page_title="Detalhes do Pedido", page_icon="📋", layout="wide")
 configurar_pagina()
 menu_lateral()
 administrador_operador()
-
 usuario = st.session_state.usuario
-
-
-# =====================================================
-# CSS ULTRA COMPACTO, ISOLADO E RESPONSIVO
-# =====================================================
 
 st.markdown(
 """
@@ -60,72 +47,52 @@ div[data-testid="stColumn"] > div > div > div > div[data-testid="stLinkButton"] 
 unsafe_allow_html=True
 )
 
-
 # =====================================================
 # VALIDA PEDIDO ABERTO E BUSCA DADOS
 # =====================================================
-
 if "pedido_aberto" not in st.session_state:
     st.error("Nenhum pedido selecionado.")
-    if st.button("⬅ Voltar"):
-        st.switch_page("pages/02_Pedidos.py")
     st.stop()
 
 pedido_id = st.session_state["pedido_aberto"]
-
-try:
-    pedido = buscar_pedido(pedido_id)
-except Exception as erro:
-    st.error(f"Erro ao carregar pedido: {erro}"); st.stop()
+pedido = buscar_pedido(pedido_id)
 
 if not pedido:
-    st.error("Pedido não encontrado."); st.stop()
+    st.error("Pedido não encontrado.")
+    st.stop()
 
-try:
-    adicionais_pedido = listar_adicionais_pedido(pedido["id"])
-except:
-    adicionais_pedido = []
+try: adicionais_pedido = listar_adicionais_pedido(pedido["id"])
+except: adicionais_pedido = []
 
 if "editar_pedido" not in st.session_state:
     st.session_state.editar_pedido = False
 
-itens_consulta_salvos = pedido.get("itens_consulta")
-if not itens_consulta_salvos: itens_consulta_salvos = {}
-elif isinstance(itens_consulta_salvos, str):
+itens_consulta_salvos = pedido.get("itens_consulta") or {}
+if isinstance(itens_consulta_salvos, str):
     try: itens_consulta_salvos = json.loads(itens_consulta_salvos)
     except: itens_consulta_salvos = {}
-if not isinstance(itens_consulta_salvos, dict): itens_consulta_salvos = {}
 
 
 # =====================================================
-# FUNÇÕES DE BANCO DE DADOS (INCORPORADAS)
+# FUNÇÕES DE BANCO (LIMPAS E DIRETAS)
 # =====================================================
-
 def atualizar_pedido(pid, dados):
-    try:
-        supabase.table("pedidos").update(dados).eq("id", pid).execute()
-        return True
-    except Exception as erro:
-        st.error(f"Erro ao atualizar pedido: {erro}")
-        return False
+    try: supabase.table("pedidos").update(dados).eq("id", pid).execute(); return True
+    except: return False
 
 def atualizar_anotacao_pedido(pid, anotacao):
-    try:
-        supabase.table("pedidos").update({"anotacoes_internas": anotacao}).eq("id", pid).execute()
-        return True
-    except Exception as erro:
-        st.error(f"Erro ao atualizar anotação: {erro}")
-        return False
+    try: supabase.table("pedidos").update({"anotacoes_internas": anotacao}).eq("id", pid).execute(); return True
+    except: return False
 
 
 # =====================================================
-# FUNÇÕES DE FOTO (COM TRATAMENTO DE ERRO VISUAL)
+# FOTOS - INTEGRAÇÃO PURA COM A TABELA 'pedido_fotos'
 # =====================================================
-
 def salvar_fotos_local(pid, arquivos):
     if not arquivos: return True, ""
     if not isinstance(arquivos, list): arquivos = [arquivos]
     erros = []
+    url_base = st.secrets.get("SUPABASE_URL", "").rstrip("/")
     
     for arquivo in arquivos:
         try:
@@ -133,55 +100,40 @@ def salvar_fotos_local(pid, arquivos):
             nome_arquivo = f"{pid}/{uuid4()}.{extensao}"
             conteudo = arquivo.getvalue()
             
-            # 1. Faz o upload para o Bucket Storage
-            supabase.storage.from_("pedido_fotos").upload(
-                nome_arquivo, conteudo, {"content-type": arquivo.type}
-            )
+            # 1. Faz o upload pro Bucket (Storage)
+            supabase.storage.from_("pedido_fotos").upload(nome_arquivo, conteudo, {"content-type": arquivo.type})
             
-            # 2. Tenta salvar na tabela pedido_fotos (ou foto_pedido como fallback)
-            try:
-                supabase.table("pedido_fotos").insert({
-                    "pedido_id": pid, "arquivo": nome_arquivo, "nome_original": arquivo.name
-                }).execute()
-            except Exception:
-                supabase.table("foto_pedido").insert({
-                    "pedido_id": pid, "arquivo": nome_arquivo, "nome_original": arquivo.name
-                }).execute()
-                
+            # 2. Cria a URL pública baseada no padrão do Supabase
+            url_publica = f"{url_base}/storage/v1/object/public/pedido_fotos/{nome_arquivo}"
+            
+            # 3. Salva no banco de dados respeitando exatamente as colunas
+            supabase.table("pedido_fotos").insert({
+                "pedido_id": pid,
+                "arquivo": nome_arquivo,
+                "nome_original": arquivo.name,
+                "url": url_publica
+            }).execute()
+            
         except Exception as e:
-            erros.append(f"Erro na foto {arquivo.name}: {str(e)}")
+            erros.append(f"Erro ao processar {arquivo.name}: {e}")
             
-    if erros:
-        return False, " | ".join(erros)
+    if erros: return False, " | ".join(erros)
     return True, ""
 
 def listar_fotos_local(pid):
     try:
-        try:
-            resposta = supabase.table("pedido_fotos").select("*").eq("pedido_id", pid).order("created_at").execute()
-        except Exception:
-            resposta = supabase.table("foto_pedido").select("*").eq("pedido_id", pid).order("created_at").execute()
-            
-        fotos = resposta.data or []
-        fotos_validas = []
-        url_base = st.secrets["SUPABASE_URL"].rstrip("/")
-        
-        for foto in fotos:
-            caminho = foto.get("arquivo")
-            if caminho:
-                foto["url"] = f"{url_base}/storage/v1/object/public/pedido_fotos/{caminho}"
-                fotos_validas.append(foto)
-        return fotos_validas, ""
+        resposta = supabase.table("pedido_fotos").select("*").eq("pedido_id", pid).order("created_at").execute()
+        return resposta.data or [], ""
     except Exception as e:
         return [], str(e)
 
 def deletar_foto_local(foto_id, caminho_arquivo):
     try:
-        supabase.storage.from_("pedido_fotos").remove([caminho_arquivo])
-        try:
-            supabase.table("pedido_fotos").delete().eq("id", foto_id).execute()
-        except Exception:
-            supabase.table("foto_pedido").delete().eq("id", foto_id).execute()
+        # 1. Deleta fisicamente do Bucket
+        if caminho_arquivo:
+            supabase.storage.from_("pedido_fotos").remove([caminho_arquivo])
+        # 2. Deleta o registro do banco
+        supabase.table("pedido_fotos").delete().eq("id", foto_id).execute()
         return True, ""
     except Exception as e:
         return False, str(e)
@@ -190,25 +142,19 @@ def deletar_foto_local(foto_id, caminho_arquivo):
 # =====================================================
 # FUNÇÕES AUXILIARES E WHATSAPP
 # =====================================================
-
 def formatar_valor(valor):
     try: return f"R$ {float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
     except: return "R$ 0,00"
 
-def limpar_telefone(numero):
-    return str(numero).replace("(","").replace(")","").replace("-","").replace(" ","")
-
 def formatar_data(data):
     if not data: return "-"
-    try:
-        ano, mes, dia = str(data)[:10].split("-")
-        return f"{dia}/{mes}/{ano}"
+    try: ano, mes, dia = str(data)[:10].split("-"); return f"{dia}/{mes}/{ano}"
     except: return str(data)
 
 def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_atual, desconto_atual):
-    itens_consulta = pedido.get("itens_consulta")
-    if not isinstance(itens_consulta, dict):
-        try: itens_consulta = json.loads(itens_consulta) if itens_consulta else {}
+    itens_consulta = pedido.get("itens_consulta") or {}
+    if isinstance(itens_consulta, str):
+        try: itens_consulta = json.loads(itens_consulta)
         except: itens_consulta = {}
 
     lista_adicionais = []
@@ -217,49 +163,41 @@ def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_atual, d
         valor = item.get("valor_unitario")
         if valor is not None: lista_adicionais.append(f"• {nome} - {formatar_valor(valor)}")
         else:
-            valor_manual = itens_consulta.get(nome, 0)
-            if valor_manual: lista_adicionais.append(f"• {nome} - {formatar_valor(valor_manual)}")
+            val_manual = itens_consulta.get(nome, 0)
+            if val_manual: lista_adicionais.append(f"• {nome} - {formatar_valor(val_manual)}")
             else: lista_adicionais.append(f"• {nome} (sob consulta)")
 
     dest_nome = (pedido.get("destinatario_nome") or "").strip()
     dest_tel = (pedido.get("destinatario_telefone") or "").strip()
     motivo = (pedido.get("motivo_homenagem") or "").strip()
     
-    texto_destinatario = ""
+    texto_dest = ""
     if dest_nome or dest_tel or motivo:
-        texto_destinatario = "💝 *Entrega Especial Para:*\n"
-        if dest_nome: texto_destinatario += f"Nome: {dest_nome}\n"
-        if dest_tel: texto_destinatario += f"Contato: {dest_tel}\n"
-        if motivo: texto_destinatario += f"Motivo: {motivo}\n\n"
+        texto_dest = "💝 *Entrega Especial Para:*\n"
+        if dest_nome: texto_dest += f"Nome: {dest_nome}\n"
+        if dest_tel: texto_dest += f"Contato: {dest_tel}\n"
+        if motivo: texto_dest += f"Motivo: {motivo}\n\n"
         
-    texto_valores = ""
-    if float(frete_atual or 0) > 0: texto_valores += f"🚚 Frete: {formatar_valor(frete_atual)}\n"
-    if float(extras_atual or 0) > 0: texto_valores += f"➕ Extras: {formatar_valor(extras_atual)}\n"
-    if float(desconto_atual or 0) > 0: texto_valores += f"🏷️ Desconto: - {formatar_valor(desconto_atual)}\n"
+    texto_val = ""
+    if float(frete_atual or 0) > 0: texto_val += f"🚚 Frete: {formatar_valor(frete_atual)}\n"
+    if float(extras_atual or 0) > 0: texto_val += f"➕ Extras: {formatar_valor(extras_atual)}\n"
+    if float(desconto_atual or 0) > 0: texto_val += f"🏷️ Desconto: - {formatar_valor(desconto_atual)}\n"
 
     texto = (
-        f"🎁 *Doce Cesta Brasília*\n\n"
-        f"Olá {pedido.get('cliente_nome','') if pedido else ''}!\n\n"
-        f"{texto_destinatario}"
-        f"🎀 Cesta: {pedido.get('cesta_nome','-') if pedido else '-'}\n\n"
-        f"🛒 Produtos:\n{pedido.get('produtos','-') if pedido else '-'}\n\n"
-        f"🎀 Adicionais:\n{chr(10).join(lista_adicionais)}\n\n"
-        f"📍 Entrega:\n"
-        f"Data: {formatar_data(pedido.get('data_entrega')) if pedido else '-'}\n"
-        f"Período: {pedido.get('periodo_entrega','-') if pedido else '-'}\n"
-        f"Horário: {pedido.get('horario_combinado','-') if pedido else '-'}\n\n"
-        f"💳 Pagamento: {pedido.get('pagamento','-') if pedido else '-'}\n\n"
-        f"💰 *Resumo Financeiro*\n{texto_valores}"
-        f"✅ *Valor Final: {formatar_valor(valor_final)}*\n\nObrigado! ❤️"
+        f"🎁 *Doce Cesta Brasília*\n\nOlá {pedido.get('cliente_nome','') if pedido else ''}!\n\n"
+        f"{texto_dest}🎀 Cesta: {pedido.get('cesta_nome','-')}\n\n🛒 Produtos:\n{pedido.get('produtos','-')}\n\n"
+        f"🎀 Adicionais:\n{chr(10).join(lista_adicionais)}\n\n📍 Entrega:\n"
+        f"Data: {formatar_data(pedido.get('data_entrega'))}\nPeríodo: {pedido.get('periodo_entrega','-')}\n"
+        f"Horário: {pedido.get('horario_combinado','-')}\n\n💳 Pagamento: {pedido.get('pagamento','-')}\n\n"
+        f"💰 *Resumo Financeiro*\n{texto_val}✅ *Valor Final: {formatar_valor(valor_final)}*\n\nObrigado! ❤️"
     )
-    telefone = limpar_telefone(pedido.get("cliente_telefone", ""))
+    telefone = str(pedido.get("cliente_telefone", "")).replace("(","").replace(")","").replace("-","").replace(" ","")
     return f"https://wa.me/55{telefone}?text={urllib.parse.quote(texto)}"
 
 
 # =====================================================
-# CABEÇALHO & EDIÇÃO DO PEDIDO (MODO SUPER ADMIN)
+# CABEÇALHO & EDIÇÃO DO PEDIDO
 # =====================================================
-
 col_t1, col_t2 = st.columns([3, 1])
 with col_t1:
     st.title("📋 Detalhes do Pedido")
@@ -273,89 +211,70 @@ if st.session_state.editar_pedido:
         st.markdown('<div class="card-title">✏️ Painel de Edição Avançada</div>', unsafe_allow_html=True)
         aba_dados, aba_cesta, aba_adicionais = st.tabs(["👤 Dados", "🎁 Cesta e Produtos", "🎀 Adicionais"])
 
-        # ------------------- ABA 1: DADOS -------------------
         with aba_dados:
             col_d1, col_d2 = st.columns(2)
             with col_d1:
-                st.write("**Comprador**")
-                novo_nome = st.text_input("Nome", value=pedido.get("cliente_nome") or "")
-                novo_telefone = st.text_input("Telefone", value=pedido.get("cliente_telefone") or "")
+                novo_nome = st.text_input("Comprador - Nome", value=pedido.get("cliente_nome") or "")
+                novo_telefone = st.text_input("Comprador - Telefone", value=pedido.get("cliente_telefone") or "")
             with col_d2:
-                st.write("**Destinatário (Homenageado)**")
-                novo_dest_nome = st.text_input("Nome Destinatário", value=pedido.get("destinatario_nome") or "")
-                novo_dest_tel = st.text_input("Telefone Destinatário", value=pedido.get("destinatario_telefone") or "")
-                novo_motivo = st.text_input("Motivo", value=pedido.get("motivo_homenagem") or "")
+                novo_dest_nome = st.text_input("Destinatário - Nome", value=pedido.get("destinatario_nome") or "")
+                novo_dest_tel = st.text_input("Destinatário - Telefone", value=pedido.get("destinatario_telefone") or "")
+                novo_motivo = st.text_input("Motivo da Homenagem", value=pedido.get("motivo_homenagem") or "")
 
-        # ------------------- ABA 2: CESTA, PRODUTOS E MSG -------------------
         with aba_cesta:
-            try:
-                cestas = listar_cestas()
-                nomes_cestas = [c.get("nome", "") for c in cestas]
-            except: 
-                cestas, nomes_cestas = [], []
+            try: cestas = listar_cestas(); nomes_cestas = [c.get("nome", "") for c in cestas]
+            except: cestas, nomes_cestas = [], []
             
             cesta_atual = pedido.get("cesta_nome") or ""
             nova_cesta_nome = st.selectbox("🎁 Cesta Base", nomes_cestas, index=nomes_cestas.index(cesta_atual) if cesta_atual in nomes_cestas else 0) if nomes_cestas else cesta_atual
             cesta_selecionada = next((c for c in cestas if c.get("nome") == nova_cesta_nome), None)
-            
             novo_produtos = pedido.get("produtos") or ""
             
             if cesta_selecionada:
-                configuracao_cesta = carregar_configuracao_cesta(cesta_selecionada["id"])
-                if configuracao_cesta:
+                config_cesta = carregar_configuracao_cesta(cesta_selecionada["id"])
+                if config_cesta:
                     st.markdown("### 🍓 Personalização da Cesta")
                     selecoes_admin = {}
-                    texto_produtos_atuais = pedido.get("produtos") or ""
+                    txt_prod_atuais = pedido.get("produtos") or ""
 
-                    for grupo in configuracao_cesta:
-                        categoria = grupo.get("categoria", "Sem categoria")
-                        produtos = grupo.get("produtos", [])
-                        minimo = grupo.get("min_escolhas", 0)
+                    for grupo in config_cesta:
+                        cat = grupo.get("categoria", "Sem categoria")
+                        prods = grupo.get("produtos", [])
                         maximo = grupo.get("max_escolhas", 1)
 
-                        if not produtos: continue
+                        if not prods: continue
 
                         with st.container(border=True):
-                            defaults_encontrados = [p for p in produtos if p["nome"] in texto_produtos_atuais]
-                            st.markdown(f"**📦 {categoria}**")
+                            defaults = [p for p in prods if p["nome"] in txt_prod_atuais]
+                            st.markdown(f"**📦 {cat}**")
                             
                             if maximo == 1:
-                                idx_default = produtos.index(defaults_encontrados[0]) if defaults_encontrados else 0
-                                escolhido = st.radio(f"Escolha 1", produtos, format_func=lambda p: p["nome"], index=idx_default, key=f"edit_rad_{categoria}")
-                                if escolhido: selecoes_admin[categoria] = [escolhido]
+                                idx_def = prods.index(defaults[0]) if defaults else 0
+                                escolhido = st.radio(f"Escolha 1", prods, format_func=lambda p: p["nome"], index=idx_def, key=f"edit_rad_{cat}")
+                                if escolhido: selecoes_admin[cat] = [escolhido]
                             else:
-                                escolhidos = st.multiselect(f"Escolha até {maximo}", produtos, format_func=lambda p: p["nome"], default=defaults_encontrados, max_selections=maximo, key=f"edit_mult_{categoria}")
-                                selecoes_admin[categoria] = escolhidos
+                                escolhidos = st.multiselect(f"Escolha até {maximo}", prods, format_func=lambda p: p["nome"], default=defaults, max_selections=maximo, key=f"edit_mult_{cat}")
+                                selecoes_admin[cat] = escolhidos
 
-                    produtos_escolhidos_texto = [f"{cat_nome}: {item['nome']}" for cat_nome, itens in selecoes_admin.items() for item in itens]
-                    novo_produtos = "\n".join(produtos_escolhidos_texto)
-                else:
-                    st.info("Essa cesta não possui configurações ativas de produtos.")
+                    novo_produtos = "\n".join([f"{c}: {i['nome']}" for c, itens in selecoes_admin.items() for i in itens])
+                else: st.info("Cesta sem produtos configurados.")
 
             st.divider()
-            st.markdown('<div class="card-title">📍 Destino e Mensagem</div>', unsafe_allow_html=True)
             col_m1, col_m2 = st.columns(2)
-            with col_m1:
-                nova_mensagem = st.text_area("💌 Mensagem do Cartão", value=pedido.get("mensagem") or "", height=120)
-            with col_m2:
-                novo_endereco = st.text_area("📍 Endereço de Entrega", value=pedido.get("endereco") or "", height=120)
+            with col_m1: nova_mensagem = st.text_area("💌 Mensagem do Cartão", value=pedido.get("mensagem") or "", height=120)
+            with col_m2: novo_endereco = st.text_area("📍 Endereço de Entrega", value=pedido.get("endereco") or "", height=120)
             novo_especial = st.text_input("✨ Solicitação Especial", value=pedido.get("pedido_especial") or "")
 
-        # ------------------- ABA 3: ADICIONAIS -------------------
         with aba_adicionais:
             st.write("🎀 **Catálogo de Adicionais**")
-            
             adicionais_catalogo = []
             try:
                 cat_res = supabase.table("categorias").select("id, nome").execute()
-                cats = cat_res.data or []
-                cat_adicionais_id = next((c["id"] for c in cats if "adicionais" in str(c.get("nome", "")).lower()), None)
-                if cat_adicionais_id:
-                    prod_res = supabase.table("produtos").select("*").eq("categoria_id", cat_adicionais_id).execute()
-                    adicionais_catalogo = prod_res.data or []
+                cat_add_id = next((c["id"] for c in (cat_res.data or []) if "adicionais" in str(c.get("nome", "")).lower()), None)
+                if cat_add_id: adicionais_catalogo = supabase.table("produtos").select("*").eq("categoria_id", cat_add_id).execute().data or []
             except: pass
             
-            nomes_adicionais_atuais = [a.get("nome_produto") for a in adicionais_pedido]
+            nomes_atuais = [a.get("nome_produto") for a in adicionais_pedido]
             adicionais_selecionados = []
 
             if adicionais_catalogo:
@@ -363,64 +282,39 @@ if st.session_state.editar_pedido:
                 for i, prod in enumerate(adicionais_catalogo):
                     nome_prod = prod.get("nome", "")
                     preco_prod = prod.get("preco")
-                    selecionado = nome_prod in nomes_adicionais_atuais
-                    texto_cb = f"{nome_prod} - R$ {float(preco_prod):.2f}".replace(".",",") if preco_prod else f"{nome_prod} (Consulta)"
-                    
+                    selec = nome_prod in nomes_atuais
+                    txt = f"{nome_prod} - R$ {float(preco_prod):.2f}".replace(".",",") if preco_prod else f"{nome_prod} (Consulta)"
                     with cols[i % 3]:
-                        if st.checkbox(texto_cb, value=selecionado, key=f"chk_ad_{prod.get('id')}"):
+                        if st.checkbox(txt, value=selec, key=f"chk_ad_{prod.get('id')}"):
                             adicionais_selecionados.append({"nome_produto": nome_prod, "valor_unitario": float(preco_prod) if preco_prod else None})
-            else:
-                st.caption("Nenhum adicional no catálogo.")
+            else: st.caption("Catálogo vazio.")
 
-        # ------------------- BOTÕES DE SALVAMENTO -------------------
         st.divider()
-        col_salvar, col_cancelar = st.columns(2)
-        with col_salvar:
+        cs1, cs2 = st.columns(2)
+        with cs1:
             if st.button("💾 Salvar Todas as Alterações", use_container_width=True, type="primary"):
-                dados = {
-                    "cliente_nome": novo_nome, 
-                    "cliente_telefone": novo_telefone, 
-                    "destinatario_nome": novo_dest_nome, 
-                    "destinatario_telefone": novo_dest_tel, 
-                    "motivo_homenagem": novo_motivo, 
-                    "cesta_nome": nova_cesta_nome, 
-                    "produtos": novo_produtos,
-                    "mensagem": nova_mensagem, 
-                    "pedido_especial": novo_especial, 
-                    "endereco": novo_endereco
-                }
-                
-                # Salva os dados gerais
+                dados = {"cliente_nome": novo_nome, "cliente_telefone": novo_telefone, "destinatario_nome": novo_dest_nome, 
+                         "destinatario_telefone": novo_dest_tel, "motivo_homenagem": novo_motivo, "cesta_nome": nova_cesta_nome, 
+                         "produtos": novo_produtos, "mensagem": nova_mensagem, "pedido_especial": novo_especial, "endereco": novo_endereco}
                 atualizar_pedido(pedido["id"], dados)
 
-                # Salva os adicionais com sistema de Fallback de Tabela
                 try:
-                    try: supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido["id"]).execute()
-                    except: supabase.table("pedido_adicional").delete().eq("pedido_id", pedido["id"]).execute()
-                    
-                    lista_salvar = list(adicionais_selecionados)
-                    for ad in lista_salvar: ad["pedido_id"] = pedido["id"]
-                    
-                    if lista_salvar: 
-                        try: supabase.table("pedido_adicionais").insert(lista_salvar).execute()
-                        except: supabase.table("pedido_adicional").insert(lista_salvar).execute()
-                except Exception as e: 
-                    st.error(f"Aviso no Adicional: {e}")
-
-                st.success("Pedido alterado com sucesso!")
+                    supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido["id"]).execute()
+                    for ad in adicionais_selecionados: ad["pedido_id"] = pedido["id"]
+                    if adicionais_selecionados: 
+                        supabase.table("pedido_adicionais").insert(adicionais_selecionados).execute()
+                except: pass
                 st.session_state.editar_pedido = False
                 st.rerun()
-
-        with col_cancelar:
+        with cs2:
             if st.button("❌ Cancelar", use_container_width=True):
                 st.session_state.editar_pedido = False
                 st.rerun()
 
 
 # =====================================================
-# LAYOUT PRINCIPAL (VISUALIZAÇÃO DOS DADOS SALVOS)
+# LAYOUT PRINCIPAL (VISUALIZAÇÃO)
 # =====================================================
-
 col_esquerda, col_direita = st.columns([1.2, 1])
 
 with col_esquerda:
@@ -467,34 +361,29 @@ with col_esquerda:
                     nome = adicional.get("nome_produto", "-")
                     valor = adicional.get("valor_unitario")
                     if valor is not None:
-                        valor = float(valor)
-                        valor_adicionais += valor
+                        valor = float(valor); valor_adicionais += valor
                         st.write(f"• {nome} - {formatar_valor(valor)}")
                     else:
                         st.write(f"• {nome}")
-                        valor_salvo = float(itens_consulta_salvos.get(nome, 0) or 0)
-                        valor_digitado = st.number_input("Definir valor", min_value=0.0, value=valor_salvo, step=1.0, key=f"consulta_{nome}")
-                        itens_consulta[nome] = valor_digitado
-                        if valor_digitado > 0:
-                            valor_consulta += valor_digitado
-                            valor_adicionais += valor_digitado
+                        val_salvo = float(itens_consulta_salvos.get(nome, 0) or 0)
+                        val_dig = st.number_input("Definir valor", min_value=0.0, value=val_salvo, step=1.0, key=f"cons_{nome}")
+                        itens_consulta[nome] = val_dig
+                        if val_dig > 0: valor_consulta += val_dig; valor_adicionais += val_dig
             else: st.caption("Nenhum adicional selecionado.")
 
     c_m1, c_m2 = st.columns(2)
     with c_m1:
         with st.container(border=True):
-            st.markdown('<div class="card-title">💌 Mensagem da Cesta</div>', unsafe_allow_html=True)
-            st.text_area("", value=pedido.get("mensagem") or "", disabled=True, height=60, key="mensagem_cliente")
-
+            st.markdown('<div class="card-title">💌 Mensagem do Cartão</div>', unsafe_allow_html=True)
+            st.text_area("", value=pedido.get("mensagem") or "", disabled=True, height=60, key="msg_vis")
     with c_m2:
         with st.container(border=True):
             st.markdown('<div class="card-title">✨ Pedido Especial</div>', unsafe_allow_html=True)
-            st.text_area("", value=pedido.get("pedido_especial") or "", disabled=True, height=60, key="pedido_especial")
+            st.text_area("", value=pedido.get("pedido_especial") or "", disabled=True, height=60, key="esp_vis")
 
     with st.container(border=True):
         st.markdown('<div class="card-title">📍 Endereço de Entrega</div>', unsafe_allow_html=True)
-        st.text_area("", value=pedido.get("endereco") or "", disabled=True, height=60, key="endereco_entrega_vis")
-
+        st.text_area("", value=pedido.get("endereco") or "", disabled=True, height=60, key="end_vis")
 
 with col_direita:
     valor_cesta = 0.0
@@ -502,7 +391,7 @@ with col_direita:
         if pedido.get("cesta_id"):
             cesta = buscar_cesta(pedido["cesta_id"])
             if cesta: valor_cesta = float(cesta.get("preco", 0) or 0)
-    except: valor_cesta = 0.0
+    except: pass
 
     with st.container(border=True):
         st.markdown('<div class="card-title">💰 Fechamento Financeiro</div>', unsafe_allow_html=True)
@@ -511,10 +400,9 @@ with col_direita:
         with cf2: valor_extras = st.number_input("➕ Extras", min_value=0.0, value=float(pedido.get("valor_extras") or 0), step=1.0, key="extras")
         with cf3: desconto = st.number_input("🏷️ Desconto", min_value=0.0, value=float(pedido.get("desconto") or 0), step=1.0, key="desconto")
         with cf4:
-            status_opcoes = ["Recebido", "Pago", "Desistência", "Entregue"]
+            status_op = ["Recebido", "Pago", "Desistência", "Entregue"]
             status_atual = pedido.get("status", "Recebido")
-            if status_atual not in status_opcoes: status_atual = "Recebido"
-            status = st.selectbox("Status", status_opcoes, index=status_opcoes.index(status_atual))
+            status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0)
 
         horario_combinado = st.text_input("🕒 Horário Combinado de Entrega", value=pedido.get("horario_combinado") or "", placeholder="Ex: 15:30")
 
@@ -527,89 +415,78 @@ with col_direita:
             <div class="resumo-container">
                 <div class="resumo-row"><span class="resumo-label">🎁 Cesta</span><span class="resumo-val">{formatar_valor(valor_cesta)}</span></div>
                 <div class="resumo-row"><span class="resumo-label">🎀 Adicionais</span><span class="resumo-val">{formatar_valor(valor_adicionais)}</span></div>
-                <div class="resumo-row"><span class="resumo-label">⚠️ Sob consulta</span><span class="resumo-val">{formatar_valor(valor_consulta)}</span></div>
                 <div class="resumo-row"><span class="resumo-label">🚚 Frete</span><span class="resumo-val">{formatar_valor(valor_frete)}</span></div>
                 <div class="resumo-row"><span class="resumo-label">➕ Extras</span><span class="resumo-val">{formatar_valor(valor_extras)}</span></div>
                 <div class="resumo-row"><span class="resumo-label">🏷️ Desconto</span><span class="resumo-val" style="color: #c62828;">- {formatar_valor(desconto)}</span></div>
-                <div class="resumo-row"><span class="resumo-label">💳 Pagamento</span><span class="pgto-badge">{pedido.get('pagamento','-')}</span></div>
                 <div class="resumo-row"><span class="resumo-label" style="font-size:14px; font-weight:700;">💰 TOTAL</span><span class="resumo-total-val">{formatar_valor(valor_total_calculado)}</span></div>
             </div>
             """, unsafe_allow_html=True
         )
 
     with st.container(border=True):
-        st.markdown('<div class="card-title">📲 Atendimento WhatsApp</div>', unsafe_allow_html=True)
-        if valor_total_calculado > 0:
-            link_whatsapp = gerar_whatsapp(pedido, adicionais_pedido, valor_total_calculado, valor_frete, valor_extras, desconto)
-            st.link_button("📲 Enviar resumo pelo WhatsApp", link_whatsapp, use_container_width=True)
-        else: st.info("Defina os valores para liberar o WhatsApp.")
-
-    with st.container(border=True):
         st.markdown('<div class="card-title">📝 Anotações Internas</div>', unsafe_allow_html=True)
         anotacao = st.text_area("Observações do atendimento", value=pedido.get("anotacoes_internas") or "", height=70, key="campo_anotacao")
         if st.button("💾 Salvar Anotação", use_container_width=True):
             atualizar_anotacao_pedido(pedido["id"], anotacao)
-            st.success("✅ Anotação salva!")
+            st.session_state['msg_geral'] = "✅ Anotação salva!"
             st.rerun()
 
     # =====================================================
-    # MOTOR DE FOTOS LOCAL: GESTÃO VISUAL DE ERROS
+    # MOTOR DE FOTOS BLINDADO COM FEEDBACK VISUAL
     # =====================================================
     with st.container(border=True):
         st.markdown('<div class="card-title">📷 Gestão de Fotos Polaroid</div>', unsafe_allow_html=True)
         
-        novas_fotos = st.file_uploader(
-            "Adicionar uma ou mais fotos", 
-            type=["jpg", "jpeg", "png", "webp"], 
-            accept_multiple_files=True, 
-            key="up_fotos_multi"
-        )
+        if "msg_foto" in st.session_state:
+            if "❌" in st.session_state['msg_foto']: st.error(st.session_state['msg_foto'])
+            else: st.success(st.session_state['msg_foto'])
+            del st.session_state['msg_foto']
+        
+        novas_fotos = st.file_uploader("Adicionar fotos", type=["jpg", "jpeg", "png", "webp"], accept_multiple_files=True, key="up_fotos_multi")
         
         if novas_fotos:
             if st.button("📤 Salvar Novas Fotos", use_container_width=True):
-                with st.spinner("Enviando fotos..."):
+                with st.spinner("Processando..."):
                     sucesso, erro_msg = salvar_fotos_local(pedido["id"], novas_fotos)
                 
-                if sucesso:
-                    st.success("✅ Fotos enviadas com sucesso!")
-                    st.rerun()
-                else:
-                    st.error(f"❌ Ocorreu um erro ao salvar: {erro_msg}")
+                if sucesso: st.session_state['msg_foto'] = "✅ Foto salva!"
+                else: st.session_state['msg_foto'] = f"❌ Erro Supabase: {erro_msg}"
+                st.rerun()
 
         st.divider()
 
         fotos, erro_listar = listar_fotos_local(pedido["id"])
         
         if erro_listar:
-            st.error(f"❌ Erro ao buscar fotos: {erro_listar}")
+            st.error(f"❌ Erro ao buscar: {erro_listar}")
         elif fotos:
             colunas = st.columns(2)
             for i, foto in enumerate(fotos):
                 with colunas[i % 2]:
-                    link_imagem = foto.get("url")
-                    caminho_arquivo = foto.get("arquivo")
-
+                    # Agora puxa da coluna 'url' que criamos
+                    link_imagem = foto.get("url") 
                     if link_imagem:
                         st.image(link_imagem, caption=foto.get("nome_original", "Foto"), use_container_width=True)
-                        if st.button("🗑️ Deletar Foto", key=f"del_foto_{foto.get('id')}", use_container_width=True):
-                            if caminho_arquivo:
-                                suc_del, err_del = deletar_foto_local(foto["id"], caminho_arquivo)
-                                if suc_del:
-                                    st.rerun()
-                                else:
-                                    st.error(f"❌ Erro ao deletar: {err_del}")
-                    else:
-                        st.caption("⚠️ Link da foto indisponível.")
+                        if st.button("🗑️ Deletar", key=f"del_foto_{foto['id']}", use_container_width=True):
+                            suc, err_del = deletar_foto_local(foto["id"], foto.get("arquivo"))
+                            if suc: st.session_state['msg_foto'] = "✅ Foto deletada!"
+                            else: st.session_state['msg_foto'] = f"❌ Erro ao deletar: {err_del}"
+                            st.rerun()
+                    else: st.caption("⚠️ Link da foto indisponível.")
         else:
             st.caption("Nenhuma foto anexada ao pedido.")
 
+
+if "msg_geral" in st.session_state:
+    st.success(st.session_state['msg_geral'])
+    del st.session_state['msg_geral']
 
 col_bot1, col_bot2 = st.columns(2)
 with col_bot1:
     if st.button("💾 Salvar Atendimento Completo", use_container_width=True, type="primary"):
         dados = {"status": status, "valor_frete": valor_frete, "valor_extras": valor_extras, "desconto": desconto, "valor_total": valor_total_calculado, "horario_combinado": horario_combinado, "itens_consulta": itens_consulta}
         atualizar_pedido(pedido["id"], dados)
-        st.success("✅ Atendimento salvo com sucesso!")
+        st.session_state['msg_geral'] = "✅ Atendimento financeiro salvo com sucesso!"
         st.rerun()
 with col_bot2:
     if st.button("⬅ Voltar para Pedidos", use_container_width=True):
