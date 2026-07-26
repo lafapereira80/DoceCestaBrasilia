@@ -329,16 +329,13 @@ if st.session_state.editar_pedido:
 
                 if "erro_admin" in st.session_state: del st.session_state["erro_admin"]
                 
-                # NOVO SALVAMENTO DIRETO: SEM REMENDOS
                 try:
-                    # 1. Tenta apagar os adicionais antigos usando o nome correto da tabela
                     try: 
                         supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido["id"]).execute()
                     except Exception as err_del:
                         st.session_state["erro_admin"] = f"❌ O Supabase bloqueou a exclusão. Falta a política DELETE na tabela de adicionais! Detalhe: {err_del}"
                         raise Exception("Parada Forçada - Falha no DELETE")
                             
-                    # 2. Se apagou com sucesso, insere os novos (caso tenha algum marcado)
                     if adicionais_selecionados:
                         for ad in adicionais_selecionados:
                             ad["pedido_id"] = pedido["id"]
@@ -350,7 +347,7 @@ if st.session_state.editar_pedido:
                             raise Exception("Parada Forçada - Falha no INSERT")
                                 
                 except Exception:
-                    pass # Se caiu aqui, a mensagem já está salva e pronta para ser exibida na tela
+                    pass 
                 
                 if "erro_admin" not in st.session_state:
                     st.session_state.editar_pedido = False
@@ -435,9 +432,25 @@ with col_esquerda:
             st.markdown('<div class="card-title">✨ Pedido Especial</div>', unsafe_allow_html=True)
             st.text_area("", value=pedido.get("pedido_especial") or "", disabled=True, height=60, key="esp_vis")
 
+    # =====================================================
+    # ENDEREÇO DE ENTREGA COM BOTÕES DE MAPAS (GOOGLE MAPS & WAZE)
+    # =====================================================
     with st.container(border=True):
-        st.markdown('<div class="card-title">📍 Endereço de Entrega</div>', unsafe_allow_html=True)
-        st.text_area("", value=pedido.get("endereco") or "", disabled=True, height=60, key="end_vis")
+        st.markdown('<div class="card-title">📍 Endereço de Entrega & Rotas</div>', unsafe_allow_html=True)
+        endereco_pedido = pedido.get("endereco", "")
+        
+        st.text_area("", value=endereco_pedido if endereco_pedido else "Endereço não informado.", disabled=True, height=65, key="end_vis")
+        
+        if endereco_pedido:
+            endereco_encoded = urllib.parse.quote(endereco_pedido)
+            link_google_maps = f"https://www.google.com/maps/search/?api=1&query={endereco_encoded}"
+            link_waze = f"https://waze.com/ul?q={endereco_encoded}&navigate=yes"
+            
+            col_map1, col_map2 = st.columns(2)
+            with col_map1:
+                st.link_button("🗺️ Abrir no Google Maps", url=link_google_maps, use_container_width=True)
+            with col_map2:
+                st.link_button("🚗 Abrir no Waze", url=link_waze, use_container_width=True)
 
 with col_direita:
     valor_cesta = 0.0
@@ -548,7 +561,6 @@ with col_bot1:
         st.rerun()
 
 with col_bot2:
-    # Gera o link usando a função que já estava no código e cria o botão
     link_wpp = gerar_whatsapp(pedido, adicionais_pedido, valor_total_calculado, valor_frete, valor_extras, desconto)
     st.link_button("💬 Enviar Resumo no WhatsApp", url=link_wpp, use_container_width=True)
 
