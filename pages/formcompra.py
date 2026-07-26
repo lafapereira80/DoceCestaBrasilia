@@ -1,5 +1,6 @@
 import streamlit as st
 import base64
+import re
 from pathlib import Path
 import importlib
 from io import BytesIO
@@ -151,7 +152,7 @@ if logo_path.exists():
 
 
 # ==========================================================
-# TELA DE SUCESSO
+# TELA DE SUCESSO (CORRIGIDA COM UNSAFE_ALLOW_HTML=TRUE)
 # ==========================================================
 if st.session_state["pedido_enviado_com_sucesso"]:
     dados = st.session_state["resumo_pedido_sucesso"]
@@ -224,7 +225,7 @@ st.write("")
 
 
 # ==========================================================
-# DADOS DO COMPRADOR (ISOLADO EM FRAGMENTO)
+# DADOS DO COMPRADOR (COM TRATAMENTO DE APENAS NÚMEROS)
 # ==========================================================
 @st.fragment
 def renderizar_dados_comprador():
@@ -236,16 +237,19 @@ def renderizar_dados_comprador():
         with col1:
             n = st.text_input("Nome completo *", placeholder="Seu nome completo", key="input_nome_comprador")
         with col2:
-            t = st.text_input("Seu Telefone *", placeholder="(61) 99999-9999", key="input_tel_comprador")
+            t_raw = st.text_input("Seu Telefone *", placeholder="(61) 99999-9999", key="input_tel_comprador")
+            t = re.sub(r'\D', '', t_raw) # Mantém apenas números
 
-        c_cpf = st.text_input("Seu CPF *", placeholder="000.000.000-00", key="input_cpf_comprador")
+        cpf_raw = st.text_input("Seu CPF *", placeholder="000.000.000-00", key="input_cpf_comprador")
+        c_cpf = re.sub(r'\D', '', cpf_raw) # Mantém apenas números
+        
     return n, t, c_cpf
 
 nome, telefone, cpf = renderizar_dados_comprador()
 
 
 # ==========================================================
-# SELEÇÃO DA CESTA (SINCRONIZADA COM O ESTADO)
+# SELEÇÃO DA CESTA
 # ==========================================================
 try:
     cestas_brutas = listar_cestas()
@@ -323,7 +327,7 @@ if cesta:
 
 
 # ==========================================================
-# PERSONALIZAÇÃO DA CESTA (ITENS / GRUPOS DE ESCOLHA)
+# PERSONALIZAÇÃO DA CESTA
 # ==========================================================
 st.markdown("### 🍓 Personalize sua cesta")
 selecoes_cliente = {}
@@ -394,7 +398,12 @@ def renderizar_complementos_e_polaroid():
                     marcado = st.checkbox(f"{produto['nome']} | {texto_valor}", key=f"complemento_{produto['id']}")
 
                     if marcado:
-                        adicionais_selecionados.append({"produto_id": produto["id"], "nome": produto["nome"], "preco": produto.get("preco"), "categoria": nome_categoria})
+                        adicionais_selecionados.append({
+                            "produto_id": produto["id"], 
+                            "nome": produto["nome"], 
+                            "preco": float(preco) if preco is not None else None, 
+                            "categoria": nome_categoria
+                        })
                         if produto["nome"].lower().strip() == "polaroid":
                             polaroid = True
 
@@ -447,7 +456,7 @@ adicionais_selecionados, polaroid, fotos = renderizar_complementos_e_polaroid()
 
 
 # ==========================================================
-# HOMENAGEADO E ENTREGA (ISOLADO EM FRAGMENTO)
+# HOMENAGEADO E ENTREGA
 # ==========================================================
 @st.fragment
 def renderizar_homenageado_e_entrega():
@@ -459,7 +468,8 @@ def renderizar_homenageado_e_entrega():
         with col_dest1:
             d_nome = st.text_input("Nome do Homenageado *", placeholder="Quem receberá a cesta?", key="input_dest_nome")
         with col_dest2:
-            d_tel = st.text_input("Telefone do Homenageado", placeholder="(Opcional)", key="input_dest_tel")
+            d_tel_raw = st.text_input("Telefone do Homenageado", placeholder="(Opcional)", key="input_dest_tel")
+            d_tel = re.sub(r'\D', '', d_tel_raw)
             
         motivo = st.text_input("Motivo da Homenagem", placeholder="Ex: Aniversário, Dia das Mães, Agradecimento, Surpresa...", key="input_motivo")
 
@@ -485,7 +495,7 @@ destinatario_nome, destinatario_telefone, motivo_homenagem, mensagem, endereco, 
 
 
 # ==========================================================
-# PAGAMENTO (ISOLADO EM FRAGMENTO)
+# PAGAMENTO
 # ==========================================================
 @st.fragment
 def renderizar_pagamento():
@@ -508,8 +518,10 @@ for item in adicionais_selecionados:
     if item["preco"] is None:
         tem_adicional_consulta = True
         continue
-    try: valor_adicionais += float(item["preco"])
-    except: pass
+    try: 
+        valor_adicionais += float(item["preco"])
+    except: 
+        pass
 
 valor_estimado = valor_cesta + valor_adicionais
 
@@ -591,7 +603,7 @@ if enviar:
                 print(f"Erro ao enviar fotos polaroid: {e}")
 
         try:
-            telefone_limpo = telefone.replace('(', '').replace(')', '').replace('-', '').replace(' ', '')
+            telefone_limpo = telefone
             texto_aviso = f"""🚨 <b>NOVO PEDIDO RECEBIDO!</b> 🚨
 
 👤 <b>Comprador:</b> {nome}
