@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 from pathlib import Path
+from streamlit_cookies_controller import CookieController
 
 from services.usuario_service import (
     autenticar_usuario
@@ -10,6 +11,8 @@ from utils.menu import (
     configurar_pagina
 )
 
+# Inicializa o controlador de cookies
+controller = CookieController()
 
 # =====================================================
 # CONFIGURAÇÃO DA PÁGINA
@@ -229,8 +232,13 @@ st.markdown("<div class='subtitulo'>Doce Cesta Brasília</div>", unsafe_allow_ht
 # CONTROLE DE LOGIN
 # =====================================================
 
-if "usuario" not in st.session_state:
-    st.session_state.usuario = None
+# Tenta carregar do Cookie caso a sessão tenha caído
+if "usuario" not in st.session_state or st.session_state.usuario is None:
+    cookie_user = controller.get("doce_cesta_admin")
+    if cookie_user:
+        st.session_state.usuario = cookie_user
+    else:
+        st.session_state.usuario = None
 
 
 # =====================================================
@@ -252,7 +260,12 @@ if st.session_state.usuario is None:
             usuario = autenticar_usuario(login, senha)
 
             if usuario:
+                # Salva na memória temporária
                 st.session_state.usuario = usuario
+                
+                # Salva no navegador (Cookie com validade de 30 dias)
+                controller.set("doce_cesta_admin", usuario, max_age=2592000)
+                
                 st.rerun()
             else:
                 st.error("Usuário ou senha inválidos.")
@@ -276,6 +289,7 @@ with st.container(border=True):
     with col_u2:
         if st.button("🚪 Sair", use_container_width=True):
             st.session_state.usuario = None
+            controller.remove("doce_cesta_admin") # Remove o cookie
             st.rerun()
 
 
