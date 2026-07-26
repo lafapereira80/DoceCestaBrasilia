@@ -295,7 +295,12 @@ if st.session_state.editar_pedido:
                     txt = f"{nome_prod} - R$ {float(preco_prod):.2f}".replace(".",",") if preco_prod else f"{nome_prod} (Consulta)"
                     with cols[i % 3]:
                         if st.checkbox(txt, value=selec, key=f"chk_ad_{prod.get('id')}"):
-                            adicionais_selecionados.append({"nome_produto": nome_prod, "valor_unitario": float(preco_prod) if preco_prod else None})
+                            # AQUI ESTÁ A CORREÇÃO! Adicionando o 'produto_id' no dicionário.
+                            adicionais_selecionados.append({
+                                "produto_id": prod.get("id"),
+                                "nome_produto": nome_prod, 
+                                "valor_unitario": float(preco_prod) if preco_prod else None
+                            })
             else: st.caption("Catálogo vazio.")
 
         st.divider()
@@ -308,17 +313,17 @@ if st.session_state.editar_pedido:
                 
                 atualizar_pedido(pedido["id"], dados)
 
-                # SALVAMENTO BLINDADO DE ADICIONAIS
+                # SALVAMENTO DE ADICIONAIS COM CAPTURA DE ERRO NA TELA
                 if "erro_admin" in st.session_state: del st.session_state["erro_admin"]
                 
                 try:
-                    # 1. Apaga os registros antigos caçando o nome da tabela no singular e no plural
+                    # 1. Apaga os antigos
                     try: supabase.table("pedido_adicional").delete().eq("pedido_id", pedido["id"]).execute()
                     except: pass
                     try: supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido["id"]).execute()
                     except: pass
                     
-                    # 2. Insere os novos dados
+                    # 2. Grava os novos com os IDs inseridos
                     if adicionais_selecionados:
                         for ad in adicionais_selecionados:
                             ad["pedido_id"] = pedido["id"]
