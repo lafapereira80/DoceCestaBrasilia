@@ -1,5 +1,4 @@
 from config.supabase import supabase
-# IMPORTAÇÃO CORRIGIDA PARA O NOME NOVO
 from services.foto_service import listar_fotos
 
 # =====================================================
@@ -11,24 +10,19 @@ def _apagar_fotos_fisicas_do_pedido(pedido_id):
     e deleta os arquivos reais de dentro do Storage (Bucket) do Supabase.
     """
     try:
-        # CHAMADA CORRIGIDA PARA O NOME NOVO
         fotos = listar_fotos(pedido_id)
         if not fotos:
             return
             
         for foto in fotos:
-            # O serviço novo retorna 'url' para a imagem
             url_foto = str(foto.get("url", ""))
             if "/public/" in url_foto:
-                # Extrai apenas a parte "pasta/nome_arquivo" depois de "/public/"
                 caminho_pos_public = url_foto.split("/public/")[1]
                 partes = caminho_pos_public.split("/")
                 
-                # Assume que a primeira parte é o nome do bucket, e o resto é o caminho
                 if len(partes) >= 2:
                     nome_bucket = partes[0]
                     caminho_arquivo = "/".join(partes[1:])
-                    # Remove o arquivo físico diretamente
                     supabase.storage.from_(nome_bucket).remove([caminho_arquivo])
     except Exception as erro:
         print(f"Aviso - Erro ao limpar bucket: {erro}")
@@ -96,6 +90,32 @@ def buscar_pedido(pedido_id):
 
 
 # =====================================================
+# ATUALIZAR PEDIDO (DADOS GERAIS)
+# =====================================================
+def atualizar_pedido(pedido_id, dados):
+    """Atualiza as informações de um pedido existente."""
+    try:
+        supabase.table("pedidos").update(dados).eq("id", pedido_id).execute()
+        return True
+    except Exception as erro:
+        print(f"Erro ao atualizar pedido: {erro}")
+        return False
+
+
+# =====================================================
+# ATUALIZAR ANOTAÇÃO INTERNA DO PEDIDO
+# =====================================================
+def atualizar_anotacao_pedido(pedido_id, anotacao):
+    """Atualiza especificamente o campo de anotações internas."""
+    try:
+        supabase.table("pedidos").update({"anotacoes_internas": anotacao}).eq("id", pedido_id).execute()
+        return True
+    except Exception as erro:
+        print(f"Erro ao atualizar anotação: {erro}")
+        return False
+
+
+# =====================================================
 # ATUALIZAR STATUS (MUDANÇA DE ESTÁGIO)
 # =====================================================
 def atualizar_status(pedido_id, novo_status):
@@ -129,10 +149,10 @@ def excluir_pedido_completo(pedido_id):
         # 1. Deleta os arquivos (imagens) pesados do servidor primeiro
         _apagar_fotos_fisicas_do_pedido(pedido_id)
 
-        # 2. Deleta as referências das fotos no banco (NOME DA TABELA CORRIGIDO)
+        # 2. Deleta as referências das fotos no banco
         supabase.table("pedido_fotos").delete().eq("pedido_id", pedido_id).execute()
         
-        # 3. Deleta os adicionais no banco (NOME DA TABELA CORRIGIDO)
+        # 3. Deleta os adicionais no banco
         supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido_id).execute()
         
         # 4. Deleta o pedido em si (Tabela pedidos)
