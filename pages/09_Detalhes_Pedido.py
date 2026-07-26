@@ -62,8 +62,25 @@ if not pedido:
     st.error("Pedido não encontrado.")
     st.stop()
 
-try: adicionais_pedido = listar_adicionais_pedido(pedido["id"])
-except: adicionais_pedido = []
+
+# -----------------------------------------------------
+# NOVO: FILTRO ANTI-DUPLICIDADE DE ADICIONAIS
+# -----------------------------------------------------
+try:
+    lista_bruta_adicionais = listar_adicionais_pedido(pedido["id"])
+    adicionais_pedido = []
+    nomes_vistos = set()
+    
+    for ad in lista_bruta_adicionais:
+        nome_ad = ad.get("nome_produto")
+        # Só adiciona na lista final se o nome ainda não tiver passado pelo filtro
+        if nome_ad and nome_ad not in nomes_vistos:
+            adicionais_pedido.append(ad)
+            nomes_vistos.add(nome_ad)
+except: 
+    adicionais_pedido = []
+# -----------------------------------------------------
+
 
 if "editar_pedido" not in st.session_state:
     st.session_state.editar_pedido = False
@@ -107,7 +124,7 @@ def salvar_fotos_local(pid, arquivos):
             # 2. Cria a URL pública baseada no padrão do Supabase
             url_publica = f"{url_base}/storage/v1/object/public/pedido_fotos/{nome_arquivo}"
             
-            # 3. Salva no banco de dados respeitando exatamente as colunas
+            # 3. Salva no banco de dados
             supabase.table("pedido_fotos").insert({
                 "pedido_id": pid,
                 "arquivo": nome_arquivo,
@@ -126,7 +143,6 @@ def listar_fotos_local(pid):
         resposta = supabase.table("pedido_fotos").select("*").eq("pedido_id", pid).order("created_at").execute()
         fotos = resposta.data or []
         
-        # SISTEMA DE RESGATE PARA FOTOS ANTIGAS
         url_base = st.secrets.get("SUPABASE_URL", "").rstrip("/")
         for foto in fotos:
             if not foto.get("url") and foto.get("arquivo"):
@@ -138,10 +154,8 @@ def listar_fotos_local(pid):
 
 def deletar_foto_local(foto_id, caminho_arquivo):
     try:
-        # 1. Deleta fisicamente do Bucket
         if caminho_arquivo:
             supabase.storage.from_("pedido_fotos").remove([caminho_arquivo])
-        # 2. Deleta o registro do banco
         supabase.table("pedido_fotos").delete().eq("id", foto_id).execute()
         return True, ""
     except Exception as e:
@@ -396,8 +410,7 @@ with col_esquerda:
         with st.container(border=True):
             st.markdown('<div class="card-title">🎀 Adicionais</div>', unsafe_allow_html=True)
             if adicionais_pedido:
-                # O CORAÇÃO DA CORREÇÃO NO LAYOUT:
-                # O "enumerate" fornece um índice único para a chave de cada input.
+                # O enumerate ainda é mantido como dupla proteção
                 for idx_ad, adicional in enumerate(adicionais_pedido):
                     nome = adicional.get("nome_produto", "-")
                     valor = adicional.get("valor_unitario")
@@ -407,7 +420,6 @@ with col_esquerda:
                     else:
                         st.write(f"• {nome}")
                         val_salvo = float(itens_consulta_salvos.get(nome, 0) or 0)
-                        # Inclusão do 'idx_ad' garante que não haverá duplicidade de chaves!
                         val_dig = st.number_input("Definir valor", min_value=0.0, value=val_salvo, step=1.0, key=f"cons_{nome}_{idx_ad}")
                         itens_consulta[nome] = val_dig
                         if val_dig > 0: valor_consulta += val_dig; valor_adicionais += val_dig
