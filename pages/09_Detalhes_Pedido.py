@@ -4,10 +4,9 @@ import urllib.parse
 import pandas as pd
 from uuid import uuid4
 
+# Importando apenas o que temos certeza que existe no cache antigo para evitar erros!
 from services.pedido_service import (
-    buscar_pedido,
-    atualizar_pedido,
-    atualizar_anotacao_pedido
+    buscar_pedido
 )
 
 from services.pedido_adicional_service import (
@@ -120,7 +119,30 @@ if not isinstance(itens_consulta_salvos, dict): itens_consulta_salvos = {}
 
 
 # =====================================================
-# FUNÇÕES DE FOTO LOCAIS (DIRETO NA PÁGINA)
+# FUNÇÕES DE BANCO DE DADOS (INCORPORADAS PARA EVITAR ERRO DE CACHE)
+# =====================================================
+
+def atualizar_pedido(pid, dados):
+    """Atualiza as informações de um pedido diretamente no banco"""
+    try:
+        supabase.table("pedidos").update(dados).eq("id", pid).execute()
+        return True
+    except Exception as erro:
+        print(f"Erro ao atualizar pedido: {erro}")
+        return False
+
+def atualizar_anotacao_pedido(pid, anotacao):
+    """Atualiza a anotação do pedido diretamente no banco"""
+    try:
+        supabase.table("pedidos").update({"anotacoes_internas": anotacao}).eq("id", pid).execute()
+        return True
+    except Exception as erro:
+        print(f"Erro ao atualizar anotação: {erro}")
+        return False
+
+
+# =====================================================
+# FUNÇÕES DE FOTO LOCAIS
 # =====================================================
 
 def salvar_fotos_local(pid, arquivos):
