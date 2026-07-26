@@ -3,7 +3,7 @@ import time
 from streamlit_cookies_controller import CookieController
 
 # =====================================================
-# VERIFICA LOGIN (COM SINCRONIZAÇÃO SEGURA)
+# VERIFICA LOGIN (COM SINCRONIZAÇÃO SEGURA E BLINDADA)
 # =====================================================
 
 def verificar_login():
@@ -17,14 +17,19 @@ def verificar_login():
         time.sleep(0.5)
         st.rerun()
         
-    # 3. Lê o cookie
+    # 3. Lê o cookie de forma segura (Evita crash de 'NoneType')
     controller = CookieController()
-    cookie_usuario = controller.get("doce_cesta_admin")
+    cookie_usuario = None
+    try:
+        cookie_usuario = controller.get("doce_cesta_admin")
+    except Exception:
+        # Se a biblioteca falhar antes de inicializar, ignora o erro
+        pass
     
     if cookie_usuario:
         # Recuperou o login com sucesso! Restaura a memória
         st.session_state["usuario"] = cookie_usuario
-        st.session_state.pop("aguardou_cookie", None) # Jeito 100% seguro de limpar a memória
+        st.session_state.pop("aguardou_cookie", None)
         return True
     
     # 4. Sem cookie válido, remove a trava e expulsa para o login
