@@ -14,7 +14,7 @@ from config.supabase import supabase
 
 
 # ==========================================================
-# BUSCA INTELIGENTE DE CATEGORIAS (INFALÍVEL)
+# BUSCA INTELIGENTE DE CATEGORIAS
 # ==========================================================
 def obter_categorias():
     try:
@@ -36,7 +36,6 @@ def obter_categorias():
 # ==========================================================
 # CONFIGURAÇÃO DA PÁGINA
 # ==========================================================
-
 st.set_page_config(
     page_title="Doce Cesta Brasília",
     page_icon="🎁",
@@ -48,22 +47,15 @@ st.set_page_config(
 # ==========================================================
 # CSS MODERNO E RESPONSIVO
 # ==========================================================
-
 st.markdown(
 """
 <style>
-/* =========================================
-   REMOÇÃO DE ELEMENTOS PADRÃO E SIDEBAR
-========================================== */
 section[data-testid="stSidebar"] { display: none !important; }
 [data-testid="collapsedControl"] { display: none !important; }
 header { visibility: hidden !important; height: 0px !important; }
 footer { visibility: hidden !important; }
 #MainMenu { visibility: hidden !important; }
 
-/* =========================================
-   CONTAINER PRINCIPAL E ESPAÇAMENTOS
-========================================== */
 .block-container {
     max-width: 680px !important;
     padding-top: 1rem !important;
@@ -74,9 +66,6 @@ footer { visibility: hidden !important; }
 
 div[data-testid="stVerticalBlock"] { gap: 0.6rem !important; }
 
-/* =========================================
-   CABEÇALHO UNIFICADO (LOGO + TITULOS)
-========================================== */
 .header-banner {
     display: flex; align-items: center; justify-content: center;
     gap: 14px; margin-bottom: 12px; width: 100%;
@@ -86,9 +75,6 @@ div[data-testid="stVerticalBlock"] { gap: 0.6rem !important; }
 .header-title { font-size: 24px !important; font-weight: 800 !important; color: #5a3b28 !important; margin: 0 !important; line-height: 1.15 !important; }
 .header-subtitle { font-size: 13px !important; color: #775a46 !important; margin-top: 2px !important; margin-bottom: 0 !important; }
 
-/* =========================================
-   TYPOGRAPHY E CARDS
-========================================== */
 h2, h3 { font-size: 16px !important; font-weight: 700 !important; color: #5a3b28 !important; margin-top: 8px !important; margin-bottom: 6px !important; }
 p, label, span, div { font-family: Arial, sans-serif !important; font-size: 13px !important; }
 
@@ -99,9 +85,6 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
 
 .secao-titulo { font-size: 15px !important; font-weight: 700 !important; color: #5a3b28 !important; margin-bottom: 8px !important; }
 
-/* =========================================
-   CUSTOMIZAÇÃO DO UPLOADER (DROPZONE)
-========================================== */
 div[data-testid="stFileUploader"] { width: 100% !important; }
 div[data-testid="stFileUploader"] section {
     background-color: #faf7f3 !important; border: 2px dashed #dfcdbb !important;
@@ -111,17 +94,11 @@ div[data-testid="stFileUploader"] section button { background-color: #ffffff !im
 div[data-testid="stFileUploader"] section button span { display: none !important; }
 div[data-testid="stFileUploader"] section button::after { content: "📁 Selecionar Fotos (Máx. 2)" !important; font-size: 13px !important; font-weight: 600 !important; }
 
-/* =========================================
-   TELA DE SUCESSO MODERNA
-========================================== */
 .sucesso-container { background: #f0f7f4; border: 2px solid #2e7d32; border-radius: 14px; padding: 24px; text-align: center; margin-top: 20px; }
 .sucesso-titulo { font-size: 22px; font-weight: 800; color: #137333; margin-bottom: 8px; }
 .sucesso-texto { font-size: 14px; color: #333; line-height: 1.5; margin-bottom: 16px; }
 .resumo-box { background: #fff8ef; border: 1px solid #e6d1bb; border-radius: 10px; padding: 14px; text-align: left; margin-bottom: 16px; font-size: 13px; color: #444; }
 
-/* =========================================
-   BOTÃO PRINCIPAL DE ENVIO (CTA)
-========================================== */
 .stButton button {
     background: #5a3b28 !important; color: white !important; border-radius: 12px !important;
     height: 48px !important; font-size: 16px !important; font-weight: 700 !important;
@@ -130,9 +107,6 @@ div[data-testid="stFileUploader"] section button::after { content: "📁 Selecio
 .stButton button:hover { background: #42291d !important; color: white !important; }
 .imagem-cesta img { border-radius: 12px; object-fit: cover; max-width: 100%; }
 
-/* =========================================
-   AJUSTES RESPONSIVOS (MOBILE)
-========================================== */
 @media (max-width: 640px) {
     .block-container { padding-top: 0.5rem !important; }
     .header-banner { gap: 12px; }
@@ -148,7 +122,7 @@ unsafe_allow_html=True
 
 
 # ==========================================================
-# CONTROLE DE ESTADO PARA TELA DE SUCESSO E CESTA
+# CONTROLE DE ESTADO GLOBAL
 # ==========================================================
 if "pedido_enviado_com_sucesso" not in st.session_state:
     st.session_state["pedido_enviado_com_sucesso"] = False
@@ -260,57 +234,63 @@ with st.container(border=True):
 
 
 # ==========================================================
-# CARREGA CESTAS DO BANCO
+# SELEÇÃO DA CESTA (BLINDADA CONTRA "PISCA-PISCA")
 # ==========================================================
-try:
-    cestas_brutas = listar_cestas()
-    cestas_ativas = [c for c in cestas_brutas if c.get("ativa", True)]
-    for c in cestas_ativas:
-        if "ordem" not in c or c["ordem"] is None:
-            c["ordem"] = 999
-    cestas = sorted(cestas_ativas, key=lambda x: x["ordem"])
-except:
-    cestas = []
+@st.fragment
+def renderizar_bloco_cestas():
+    try:
+        cestas_brutas = listar_cestas()
+        cestas_ativas = [c for c in cestas_brutas if c.get("ativa", True)]
+        for c in cestas_ativas:
+            if "ordem" not in c or c["ordem"] is None:
+                c["ordem"] = 999
+        cestas = sorted(cestas_ativas, key=lambda x: x["ordem"])
+    except:
+        cestas = []
 
-cesta = None
-if cestas:
-    opcoes_cestas = [{"id": None, "nome": "Selecione uma cesta..."}] + cestas
-    
-    if st.session_state.get("cesta_selecionada_home"):
-        st.session_state["cesta_selecionada_id"] = st.session_state["cesta_selecionada_home"]
-        st.session_state["cesta_selecionada_home"] = None
-
-    cesta_inicial_index = 0
-    current_id = st.session_state.get("cesta_selecionada_id")
-    if current_id:
-        for idx, item in enumerate(opcoes_cestas):
-            if item.get("id") == current_id:
-                cesta_inicial_index = idx
-                break
-
-    with st.container(border=True):
-        st.markdown('<div class="secao-titulo">🎁 Escolha sua Cesta</div>', unsafe_allow_html=True)
+    cesta_obj = None
+    if cestas:
+        opcoes_cestas = [{"id": None, "nome": "Selecione uma cesta..."}] + cestas
         
-        def atualizar_cesta_selecionada():
-            sel = st.session_state.get("selectbox_cesta_escolhida")
-            if sel:
-                st.session_state["cesta_selecionada_id"] = sel.get("id")
+        if st.session_state.get("cesta_selecionada_home"):
+            st.session_state["cesta_selecionada_id"] = st.session_state["cesta_selecionada_home"]
+            st.session_state["cesta_selecionada_home"] = None
 
-        cesta_selecionada = st.selectbox(
-            "Selecione a cesta", 
-            opcoes_cestas, 
-            format_func=lambda c: c["nome"], 
-            index=cesta_inicial_index,
-            key="selectbox_cesta_escolhida",
-            on_change=atualizar_cesta_selecionada
-        )
+        cesta_inicial_index = 0
+        current_id = st.session_state.get("cesta_selecionada_id")
+        if current_id:
+            for idx, item in enumerate(opcoes_cestas):
+                if item.get("id") == current_id:
+                    cesta_inicial_index = idx
+                    break
 
-        if cesta_selecionada and cesta_selecionada.get("id"):
-            cesta = cesta_selecionada
-            st.session_state["cesta_selecionada_id"] = cesta_selecionada.get("id")
-else:
-    with st.container(border=True):
-        st.warning("Nenhuma cesta cadastrada.")
+        with st.container(border=True):
+            st.markdown('<div class="secao-titulo">🎁 Escolha sua Cesta</div>', unsafe_allow_html=True)
+            
+            def atualizar_cesta_selecionada():
+                sel = st.session_state.get("selectbox_cesta_escolhida")
+                if sel:
+                    st.session_state["cesta_selecionada_id"] = sel.get("id")
+
+            cesta_selecionada = st.selectbox(
+                "Selecione a cesta", 
+                opcoes_cestas, 
+                format_func=lambda c: c["nome"], 
+                index=cesta_inicial_index,
+                key="selectbox_cesta_escolhida",
+                on_change=atualizar_cesta_selecionada
+            )
+
+            if cesta_selecionada and cesta_selecionada.get("id"):
+                cesta_obj = cesta_selecionada
+                st.session_state["cesta_selecionada_id"] = cesta_selecionada.get("id")
+    else:
+        with st.container(border=True):
+            st.warning("Nenhuma cesta cadastrada.")
+
+    return cesta_obj
+
+cesta = renderizar_bloco_cestas()
 
 
 # ==========================================================
@@ -339,103 +319,113 @@ if cesta:
 
 
 # ==========================================================
-# PERSONALIZAÇÃO DA CESTA (DINÂMICA)
+# PERSONALIZAÇÃO DA CESTA (FRAGMENTO ISOLADO)
 # ==========================================================
-st.markdown("### 🍓 Personalize sua cesta")
-selecoes_cliente = {}
+@st.fragment
+def renderizar_personalizacao(cesta_atual):
+    st.markdown("### 🍓 Personalize sua cesta")
+    selecoes_cliente = {}
 
-if cesta:
-    configuracao_cesta = carregar_configuracao_cesta(cesta["id"])
-    if configuracao_cesta:
-        for grupo in configuracao_cesta:
-            categoria = grupo.get("categoria", "Sem categoria")
-            produtos = grupo.get("produtos", [])
-            minimo = grupo.get("min_escolhas", 0)
-            maximo = grupo.get("max_escolhas", 1)
+    if cesta_atual:
+        configuracao_cesta = carregar_configuracao_cesta(cesta_atual["id"])
+        if configuracao_cesta:
+            for grupo in configuracao_cesta:
+                categoria = grupo.get("categoria", "Sem categoria")
+                produtos = grupo.get("produtos", [])
+                minimo = grupo.get("min_escolhas", 0)
+                maximo = grupo.get("max_escolhas", 1)
 
-            if not produtos: continue
+                if not produtos: continue
 
-            with st.container(border=True):
-                st.markdown(f"**📦 {categoria}**")
-                if maximo == 1:
-                    escolhido = st.radio("Escolha uma opção", produtos, format_func=lambda p: p["nome"], key=f"radio_{cesta['id']}_{categoria}")
-                    if escolhido: selecoes_cliente[categoria] = [escolhido]
-                else:
-                    escolhidos = st.multiselect(f"Escolha entre {minimo} e {maximo} opções", produtos, format_func=lambda p: p["nome"], max_selections=maximo, key=f"multi_{cesta['id']}_{categoria}")
-                    selecoes_cliente[categoria] = escolhidos
+                with st.container(border=True):
+                    st.markdown(f"**📦 {categoria}**")
+                    if maximo == 1:
+                        escolhido = st.radio("Escolha uma opção", produtos, format_func=lambda p: p["nome"], key=f"radio_{cesta_atual['id']}_{categoria}")
+                        if escolhido: selecoes_cliente[categoria] = [escolhido]
+                    else:
+                        escolhidos = st.multiselect(f"Escolha entre {minimo} e {maximo} opções", produtos, format_func=lambda p: p["nome"], max_selections=maximo, key=f"multi_{cesta_atual['id']}_{categoria}")
+                        selecoes_cliente[categoria] = escolhidos
+        else:
+            st.info("Esta cesta ainda não possui produtos configurados.")
     else:
-        st.info("Esta cesta ainda não possui produtos configurados.")
-else:
-    st.info("Escolha uma cesta acima para visualizar os itens de personalização disponíveis.")
+        st.info("Escolha uma cesta acima para visualizar os itens de personalização disponíveis.")
+    
+    return selecoes_cliente
+
+selecoes_cliente = renderizar_personalizacao(cesta)
 
 
 # ==========================================================
-# COMPLEMENTOS (ADICIONAIS) E FOTOS POLAROID (ATÉ 2 FOTOS)
+# COMPLEMENTOS E FOTOS POLAROID (FRAGMENTO ISOLADO)
 # ==========================================================
-st.markdown("### 🎀 Complementos")
-st.caption("Escolha itens adicionais para complementar sua cesta.")
-adicionais_selecionados = []
-polaroid = False
+@st.fragment
+def renderizar_complementos_e_polaroid():
+    st.markdown("### 🎀 Complementos")
+    st.caption("Escolha itens adicionais para complementar sua cesta.")
+    adicionais_selecionados = []
+    polaroid = False
 
-try:
-    categorias_pedido = obter_categorias()
-except:
-    categorias_pedido = []
+    try:
+        categorias_pedido = obter_categorias()
+    except:
+        categorias_pedido = []
 
-categoria_adicionais = None
-for categoria_item in categorias_pedido:
-    if categoria_item.get("nome", "").strip().lower() == "adicionais":
-        categoria_adicionais = categoria_item
-        break
+    categoria_adicionais = None
+    for categoria_item in categorias_pedido:
+        if categoria_item.get("nome", "").strip().lower() == "adicionais":
+            categoria_adicionais = categoria_item
+            break
 
-categorias_exibir = [categoria_adicionais] if categoria_adicionais else []
+    categorias_exibir = [categoria_adicionais] if categoria_adicionais else []
 
-for categoria_item in categorias_exibir:
-    nome_categoria = categoria_item.get("nome", "")
-    produtos_categoria = listar_produtos_por_categoria_id(categoria_item["id"])
+    for categoria_item in categorias_exibir:
+        nome_categoria = categoria_item.get("nome", "")
+        produtos_categoria = listar_produtos_por_categoria_id(categoria_item["id"])
 
-    if not produtos_categoria: continue
+        if not produtos_categoria: continue
 
-    with st.container(border=True):
-        st.markdown(f"**{nome_categoria}**")
-        colunas = st.columns(2)
+        with st.container(border=True):
+            st.markdown(f"**{nome_categoria}**")
+            colunas = st.columns(2)
 
-        for indice, produto in enumerate(produtos_categoria):
-            coluna = colunas[indice % 2]
-            with coluna:
-                preco = produto.get("preco")
-                texto_valor = f"R$ {float(preco):,.2f}".replace(",", "X").replace(".", ",").replace("X",".") if preco is not None else "Consultar valor"
-                marcado = st.checkbox(f"{produto['nome']} | {texto_valor}", key=f"complemento_{produto['id']}")
+            for indice, produto in enumerate(produtos_categoria):
+                coluna = colunas[indice % 2]
+                with coluna:
+                    preco = produto.get("preco")
+                    texto_valor = f"R$ {float(preco):,.2f}".replace(",", "X").replace(".", ",").replace("X",".") if preco is not None else "Consultar valor"
+                    marcado = st.checkbox(f"{produto['nome']} | {texto_valor}", key=f"complemento_{produto['id']}")
 
-                if marcado:
-                    adicionais_selecionados.append({"produto_id": produto["id"], "nome": produto["nome"], "preco": produto.get("preco"), "categoria": nome_categoria})
-                    if produto["nome"].lower().strip() == "polaroid":
-                        polaroid = True
+                    if marcado:
+                        adicionais_selecionados.append({"produto_id": produto["id"], "nome": produto["nome"], "preco": produto.get("preco"), "categoria": nome_categoria})
+                        if produto["nome"].lower().strip() == "polaroid":
+                            polaroid = True
 
-fotos = []
-if polaroid:
-    with st.container(border=True):
-        st.markdown('<div class="secao-titulo">📷 Fotos da Polaroid (Até 2 fotos)</div>', unsafe_allow_html=True)
-        st.caption("Envie até 2 imagens para revelação estilo Polaroid.")
-        
-        # Componente oficial de upload
-        fotos = st.file_uploader(
-            "Selecione as imagens", 
-            type=["jpg", "jpeg", "png", "webp"], 
-            accept_multiple_files=True, 
-            key="upload_polaroid_cliente"
-        )
-        
-        # PREVIEW VISUAL IMEDIATO NA TELA PARA O CLIENTE
-        if fotos:
-            if len(fotos) > 2:
-                st.error("⚠️ Você selecionou mais de 2 fotos. Por favor, mantenha no máximo 2 imagens.")
-            else:
-                st.markdown(f"**Fotos anexadas ({len(fotos)}/2):**")
-                cols_preview = st.columns(2)
-                for i, arquivo_foto in enumerate(fotos):
-                    with cols_preview[i % 2]:
-                        st.image(arquivo_foto, caption=f"Foto {i+1}", use_container_width=True)
+    fotos_up = []
+    if polaroid:
+        with st.container(border=True):
+            st.markdown('<div class="secao-titulo">📷 Fotos da Polaroid (Até 2 fotos)</div>', unsafe_allow_html=True)
+            st.caption("Envie até 2 imagens para revelação estilo Polaroid.")
+            
+            fotos_up = st.file_uploader(
+                "Selecione as imagens", 
+                type=["jpg", "jpeg", "png", "webp"], 
+                accept_multiple_files=True, 
+                key="upload_polaroid_cliente"
+            )
+            
+            if fotos_up:
+                if len(fotos_up) > 2:
+                    st.error("⚠️ Você selecionou mais de 2 fotos. Por favor, mantenha no máximo 2 imagens.")
+                else:
+                    st.markdown(f"**Fotos anexadas ({len(fotos_up)}/2):**")
+                    cols_preview = st.columns(2)
+                    for i, arquivo_foto in enumerate(fotos_up):
+                        with cols_preview[i % 2]:
+                            st.image(arquivo_foto, caption=f"Foto {i+1}", use_container_width=True)
+
+    return adicionais_selecionados, polaroid, fotos_up
+
+adicionais_selecionados, polaroid, fotos = renderizar_complementos_e_polaroid()
 
 
 # ==========================================================
@@ -524,7 +514,6 @@ st.write("")
 enviar = st.button("🎁 ENVIAR PEDIDO", use_container_width=True, type="primary", key="enviar_pedido")
 
 if enviar:
-    # Validações Básicas
     if not nome.strip(): st.error("Informe o nome do comprador."); st.stop()
     if not cpf.strip(): st.error("Informe o CPF do comprador."); st.stop()
     if not telefone.strip(): st.error("Informe o telefone do comprador."); st.stop()
@@ -535,7 +524,6 @@ if enviar:
     produtos_escolhidos = [f"{cat_nome}: {item['nome']}" for cat_nome, itens in selecoes_cliente.items() for item in itens]
     complementos_texto = [f"{item['nome']} (Sob consulta)" if item["preco"] is None else item["nome"] for item in adicionais_selecionados]
 
-    # Criação do Payload de Dados
     dados = {
         "cliente_nome": nome.strip(),
         "cliente_cpf": cpf.strip(),
@@ -567,16 +555,12 @@ if enviar:
         if adicionais_selecionados: 
             salvar_adicionais_pedido(pedido_id, adicionais_selecionados)
         
-        # UTILIZAÇÃO DA SUA FUNÇÃO OFICIAL DE SALVAR FOTOS
         if polaroid and fotos:
             try:
-                sucesso_fotos, erro_fotos = salvar_fotos(pedido_id, fotos[:2])
-                if not sucesso_fotos:
-                    print(f"Aviso no envio de fotos: {erro_fotos}")
+                salvar_fotos(pedido_id, fotos[:2])
             except Exception as e:
                 print(f"Erro ao enviar fotos polaroid: {e}")
 
-        # INTEGRAÇÃO COM TELEGRAM
         try:
             telefone_limpo = telefone.replace('(', '').replace(')', '').replace('-', '').replace(' ', '')
             texto_aviso = f"""🚨 <b>NOVO PEDIDO RECEBIDO!</b> 🚨
@@ -595,7 +579,6 @@ Abra o painel administrativo para ver os detalhes completos!
         except:
             pass 
 
-        # PREENCHE O ESTADO DE SUCESSO PARA EXIBIR A TELA DE CONFIRMAÇÃO
         st.session_state["resumo_pedido_sucesso"] = {
             "cliente_nome": nome.strip(),
             "cesta_nome": cesta["nome"],
