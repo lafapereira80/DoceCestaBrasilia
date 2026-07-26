@@ -3,6 +3,7 @@ import json
 import urllib.parse
 from uuid import uuid4
 
+# Importando apenas o necessário
 from services.pedido_service import buscar_pedido
 from services.pedido_adicional_service import listar_adicionais_pedido
 from config.supabase import supabase
@@ -304,20 +305,49 @@ if st.session_state.editar_pedido:
                 dados = {"cliente_nome": novo_nome, "cliente_telefone": novo_telefone, "destinatario_nome": novo_dest_nome, 
                          "destinatario_telefone": novo_dest_tel, "motivo_homenagem": novo_motivo, "cesta_nome": nova_cesta_nome, 
                          "produtos": novo_produtos, "mensagem": nova_mensagem, "pedido_especial": novo_especial, "endereco": novo_endereco}
+                
                 atualizar_pedido(pedido["id"], dados)
 
+                # SALVAMENTO BLINDADO DE ADICIONAIS
+                if "erro_admin" in st.session_state: del st.session_state["erro_admin"]
+                
                 try:
-                    supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido["id"]).execute()
-                    for ad in adicionais_selecionados: ad["pedido_id"] = pedido["id"]
-                    if adicionais_selecionados: 
-                        supabase.table("pedido_adicionais").insert(adicionais_selecionados).execute()
-                except: pass
-                st.session_state.editar_pedido = False
+                    # 1. Apaga os registros antigos caçando o nome da tabela no singular e no plural
+                    try: supabase.table("pedido_adicional").delete().eq("pedido_id", pedido["id"]).execute()
+                    except: pass
+                    try: supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido["id"]).execute()
+                    except: pass
+                    
+                    # 2. Insere os novos dados
+                    if adicionais_selecionados:
+                        for ad in adicionais_selecionados:
+                            ad["pedido_id"] = pedido["id"]
+                            
+                        inseriu = False
+                        try:
+                            supabase.table("pedido_adicional").insert(adicionais_selecionados).execute()
+                            inseriu = True
+                        except: pass
+                        
+                        if not inseriu:
+                            try:
+                                supabase.table("pedido_adicionais").insert(adicionais_selecionados).execute()
+                            except Exception as db_erro:
+                                st.session_state["erro_admin"] = f"Erro no Banco (Adicionais): {db_erro}"
+                except Exception as e:
+                    st.session_state["erro_admin"] = f"Erro Geral (Adicionais): {e}"
+                
+                if "erro_admin" not in st.session_state:
+                    st.session_state.editar_pedido = False
                 st.rerun()
+
         with cs2:
             if st.button("❌ Cancelar", use_container_width=True):
                 st.session_state.editar_pedido = False
                 st.rerun()
+
+        if "erro_admin" in st.session_state:
+            st.error(st.session_state["erro_admin"])
 
 
 # =====================================================
