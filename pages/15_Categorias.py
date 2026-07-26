@@ -1,12 +1,5 @@
 import streamlit as st
-
-from services.categoria_service import (
-    listar_categorias,
-    cadastrar_categoria,
-    atualizar_categoria,
-    alterar_status_categoria,
-    excluir_categoria
-)
+from config.supabase import supabase
 
 from utils.menu import (
     configurar_pagina,
@@ -16,6 +9,44 @@ from utils.menu import (
 from utils.permissao import (
     administrador_operador
 )
+
+# =====================================================
+# FUNÇÕES DE BANCO DE DADOS (INCORPORADAS DIRETAMENTE)
+# =====================================================
+def listar_categorias():
+    resposta = supabase.table("categorias").select("*").order("ordem").execute()
+    return resposta.data or []
+
+def cadastrar_categoria(nome, possui_preco, exibir_no_pedido, ativo, ordem):
+    dados = {
+        "nome": nome,
+        "possui_preco": possui_preco,
+        "exibir_no_pedido": exibir_no_pedido,
+        "ativo": ativo,
+        "ordem": ordem
+    }
+    supabase.table("categorias").insert(dados).execute()
+
+def atualizar_categoria(cat_id, nome, possui_preco, exibir_no_pedido, ativo, ordem):
+    dados = {
+        "nome": nome,
+        "possui_preco": possui_preco,
+        "exibir_no_pedido": exibir_no_pedido,
+        "ativo": ativo,
+        "ordem": ordem
+    }
+    supabase.table("categorias").update(dados).eq("id", cat_id).execute()
+
+def alterar_status_categoria(cat_id, ativo):
+    supabase.table("categorias").update({"ativo": ativo}).eq("id", cat_id).execute()
+
+def excluir_categoria(cat_id):
+    try:
+        supabase.table("categorias").delete().eq("id", cat_id).execute()
+        return True
+    except Exception as e:
+        print(f"Erro ao excluir categoria: {e}")
+        return False
 
 
 # =====================================================
