@@ -74,25 +74,25 @@ st.markdown("<div class='subtitulo'>Doce Cesta Brasília</div>", unsafe_allow_ht
 # CONTROLE DE LOGIN E CAPTURA DO COOKIE NA RAIZ
 # =====================================================
 
-if "usuario" not in st.session_state or st.session_state.usuario is None:
-    if "aguardou_cookie_login" not in st.session_state:
-        st.session_state.aguardou_cookie_login = True
+if not st.session_state.get("usuario"):
+    if not st.session_state.get("aguardou_cookie_login"):
+        st.session_state["aguardou_cookie_login"] = True
         time.sleep(0.5)
         st.rerun()
         
     cookie_user = controller.get("doce_cesta_admin")
     if cookie_user:
-        st.session_state.usuario = cookie_user
-        del st.session_state.aguardou_cookie_login
+        st.session_state["usuario"] = cookie_user
+        st.session_state.pop("aguardou_cookie_login", None) # Jeito 100% seguro de limpar a memória
     else:
-        st.session_state.usuario = None
+        st.session_state["usuario"] = None
 
 
 # =====================================================
 # TELA DE LOGIN
 # =====================================================
 
-if st.session_state.usuario is None:
+if not st.session_state.get("usuario"):
     with st.container(border=True):
         st.markdown("<div class='card-title'>🔐 Acesso Administrativo</div>", unsafe_allow_html=True)
 
@@ -107,7 +107,7 @@ if st.session_state.usuario is None:
             usuario = autenticar_usuario(login, senha)
 
             if usuario:
-                st.session_state.usuario = usuario
+                st.session_state["usuario"] = usuario
                 
                 # Manda o navegador salvar o Cookie
                 controller.set("doce_cesta_admin", usuario, max_age=2592000)
@@ -134,7 +134,7 @@ with st.container(border=True):
         st.markdown(f"👤 **{usuario['login']}** | Perfil: **{usuario['perfil']}**")
     with col_u2:
         if st.button("🚪 Sair", use_container_width=True):
-            st.session_state.usuario = None
+            st.session_state["usuario"] = None
             controller.remove("doce_cesta_admin")
             time.sleep(0.5) # Dá tempo de apagar o cookie
             st.rerun()
