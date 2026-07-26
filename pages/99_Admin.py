@@ -80,10 +80,16 @@ if not st.session_state.get("usuario"):
         time.sleep(0.5)
         st.rerun()
         
-    cookie_user = controller.get("doce_cesta_admin")
+    cookie_user = None
+    try:
+        # Tenta ler o cookie de forma segura
+        cookie_user = controller.get("doce_cesta_admin")
+    except Exception:
+        pass
+        
     if cookie_user:
         st.session_state["usuario"] = cookie_user
-        st.session_state.pop("aguardou_cookie_login", None) # Jeito 100% seguro de limpar a memória
+        st.session_state.pop("aguardou_cookie_login", None)
     else:
         st.session_state["usuario"] = None
 
@@ -109,8 +115,11 @@ if not st.session_state.get("usuario"):
             if usuario:
                 st.session_state["usuario"] = usuario
                 
-                # Manda o navegador salvar o Cookie
-                controller.set("doce_cesta_admin", usuario, max_age=2592000)
+                try:
+                    # Manda o navegador salvar o Cookie
+                    controller.set("doce_cesta_admin", usuario, max_age=2592000)
+                except Exception:
+                    pass
                 
                 # O SEGREDO: Dá quase 1 segundo para garantir a gravação na web antes de recarregar
                 time.sleep(0.8)
@@ -135,7 +144,10 @@ with st.container(border=True):
     with col_u2:
         if st.button("🚪 Sair", use_container_width=True):
             st.session_state["usuario"] = None
-            controller.remove("doce_cesta_admin")
+            try:
+                controller.remove("doce_cesta_admin")
+            except Exception:
+                pass
             time.sleep(0.5) # Dá tempo de apagar o cookie
             st.rerun()
 
