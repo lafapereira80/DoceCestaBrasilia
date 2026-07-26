@@ -1,40 +1,40 @@
 import streamlit as st
-import time
 
 # =====================================================
-# VERIFICA LOGIN (BLINDADO CONTRA ERROS DA API)
+# VERIFICA LOGIN (Sincronização Assíncrona Inteligente)
 # =====================================================
 
 def verificar_login():
-    # 1. Se o usuário já está na memória temporária, segue a vida
+    # 1. Se o usuário já está na memória temporária, segue a vida normal
     if st.session_state.get("usuario"):
         return True
         
-    # 2. Sincronização segura do navegador (Pausa)
-    if not st.session_state.get("aguardou_cookie"):
-        st.session_state["aguardou_cookie"] = True
-        time.sleep(0.4)
-        st.rerun()
-        
-    # 3. Escudo anti-crash para ler o cookie
+    # 2. Chama a biblioteca de cookies
     cookie_usuario = None
     try:
         from streamlit_cookies_controller import CookieController
-        # A key única evita que o Streamlit confunda os componentes e dê erro
         controller = CookieController(key="auth_guard")
         cookie_usuario = controller.get("doce_cesta_admin")
     except Exception:
-        # Se a biblioteca der QUALQUER erro (como o StreamlitAPIException), ele ignora silenciosamente
         pass
-    
+        
+    # 3. Se o navegador já enviou o cookie, restaura a sessão e continua
     if cookie_usuario:
-        # Recuperou o login com sucesso! Restaura a memória
         st.session_state["usuario"] = cookie_usuario
-        st.session_state.pop("aguardou_cookie", None)
+        st.session_state.pop("esperando_cookie", None)
         return True
-    
-    # 4. Sem cookie válido, remove a trava e expulsa para o login
-    st.session_state.pop("aguardou_cookie", None) 
+        
+    # 4. O SEGREDO: Na 1ª leitura, o navegador ainda está processando.
+    # Nós usamos o st.stop() para PARAR o Python e deixar o navegador trabalhar.
+    # Assim que o navegador achar o cookie, ele força o sistema a continuar sozinho.
+    if not st.session_state.get("esperando_cookie"):
+        st.session_state["esperando_cookie"] = True
+        st.markdown("<h4 style='text-align:center; color:#5a3b28; margin-top: 40px;'>🔄 Sincronizando conexão segura...</h4>", unsafe_allow_html=True)
+        st.stop() # Trava a tela para impedir o redirecionamento apressado
+        
+    # 5. Se o sistema chegou aqui, o navegador respondeu que o cookie NÃO EXISTE.
+    # O usuário está realmente deslogado.
+    st.session_state.pop("esperando_cookie", None)
     st.switch_page("pages/99_Admin.py")
 
 
