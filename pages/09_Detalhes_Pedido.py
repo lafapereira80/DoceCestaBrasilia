@@ -295,7 +295,6 @@ if st.session_state.editar_pedido:
                     txt = f"{nome_prod} - R$ {float(preco_prod):.2f}".replace(".",",") if preco_prod else f"{nome_prod} (Consulta)"
                     with cols[i % 3]:
                         if st.checkbox(txt, value=selec, key=f"chk_ad_{prod.get('id')}"):
-                            # AQUI ESTÁ A CORREÇÃO! Adicionando o 'produto_id' no dicionário.
                             adicionais_selecionados.append({
                                 "produto_id": prod.get("id"),
                                 "nome_produto": nome_prod, 
@@ -313,17 +312,14 @@ if st.session_state.editar_pedido:
                 
                 atualizar_pedido(pedido["id"], dados)
 
-                # SALVAMENTO DE ADICIONAIS COM CAPTURA DE ERRO NA TELA
                 if "erro_admin" in st.session_state: del st.session_state["erro_admin"]
                 
                 try:
-                    # 1. Apaga os antigos
                     try: supabase.table("pedido_adicional").delete().eq("pedido_id", pedido["id"]).execute()
                     except: pass
                     try: supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido["id"]).execute()
                     except: pass
                     
-                    # 2. Grava os novos com os IDs inseridos
                     if adicionais_selecionados:
                         for ad in adicionais_selecionados:
                             ad["pedido_id"] = pedido["id"]
@@ -400,7 +396,9 @@ with col_esquerda:
         with st.container(border=True):
             st.markdown('<div class="card-title">🎀 Adicionais</div>', unsafe_allow_html=True)
             if adicionais_pedido:
-                for adicional in adicionais_pedido:
+                # O CORAÇÃO DA CORREÇÃO NO LAYOUT:
+                # O "enumerate" fornece um índice único para a chave de cada input.
+                for idx_ad, adicional in enumerate(adicionais_pedido):
                     nome = adicional.get("nome_produto", "-")
                     valor = adicional.get("valor_unitario")
                     if valor is not None:
@@ -409,7 +407,8 @@ with col_esquerda:
                     else:
                         st.write(f"• {nome}")
                         val_salvo = float(itens_consulta_salvos.get(nome, 0) or 0)
-                        val_dig = st.number_input("Definir valor", min_value=0.0, value=val_salvo, step=1.0, key=f"cons_{nome}")
+                        # Inclusão do 'idx_ad' garante que não haverá duplicidade de chaves!
+                        val_dig = st.number_input("Definir valor", min_value=0.0, value=val_salvo, step=1.0, key=f"cons_{nome}_{idx_ad}")
                         itens_consulta[nome] = val_dig
                         if val_dig > 0: valor_consulta += val_dig; valor_adicionais += val_dig
             else: st.caption("Nenhum adicional selecionado.")
