@@ -74,31 +74,17 @@ def formatar_horario(horario):
 def limitar_texto(texto, tamanho=80):
     if not texto:
         return "-"
+    # Troca quebras de linha por espaço
     texto = str(texto).replace("\n", " ")
     if len(texto) > tamanho:
         return texto[:tamanho] + "..."
     return texto
-
-def formatar_valor(valor):
-    try:
-        return f"R$ {float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
-    except:
-        return "R$ 0,00"
 
 
 # =====================================================
 # ESTILOS PDF
 # =====================================================
 styles = getSampleStyleSheet()
-
-estilo_titulo = ParagraphStyle(
-    "titulo",
-    parent=styles["Normal"],
-    fontName="Helvetica-Bold",
-    fontSize=11,
-    alignment=TA_CENTER,
-    leading=12
-)
 
 estilo_destaque = ParagraphStyle(
     "destaque",
@@ -146,7 +132,7 @@ def buscar_itens_montagem(pedido):
         for item in str(produtos).split("\n"):
             item = item.strip()
             if item:
-                # Remove os bullets textuais para colocar a caixinha do PDF
+                # Remove bullets soltos
                 item = item.replace('•', '').strip()
                 itens.append(item)
 
@@ -171,7 +157,7 @@ def buscar_itens_montagem(pedido):
 
 
 # =====================================================
-# MONTA LISTA DE ITENS COM CHECKBOX
+# MONTA LISTA DE ITENS COM CHECKBOX EM TEXTO
 # =====================================================
 def montar_itens_pdf(itens):
     if not itens:
@@ -179,7 +165,8 @@ def montar_itens_pdf(itens):
 
     linhas = []
     for item in itens:
-        linhas.append(f"☐ {item}")
+        # Usamos colchetes normais para garantir compatibilidade 100% com a fonte
+        linhas.append(f"[  ] {item}")
 
     return Paragraph("<br/>".join(linhas), estilo_item)
 
@@ -204,12 +191,12 @@ def montar_conteudo_etiqueta(pedido):
     horario_str = f" ({horario})" if horario else ""
 
     # --- 1. Título / Cesta ---
-    elementos.append(Paragraph(f"🎁 <b>{cesta.upper()}</b>", estilo_destaque))
+    elementos.append(Paragraph(f"<b>CESTA: {cesta.upper()}</b>", estilo_destaque))
     elementos.append(Spacer(1, 4))
 
     # --- 2. Envolvidos (Comprador e Homenageado) ---
-    elementos.append(Paragraph(f"<b>COMPRADOR:</b> {cliente_nome} | ☎ {cliente_tel}", estilo_normal))
-    elementos.append(Paragraph(f"<b>HOMENAGEADO:</b> {destinatario_nome} | ☎ {destinatario_tel}", estilo_normal))
+    elementos.append(Paragraph(f"<b>COMPRADOR:</b> {cliente_nome} | Tel: {cliente_tel}", estilo_normal))
+    elementos.append(Paragraph(f"<b>HOMENAGEADO:</b> {destinatario_nome} | Tel: {destinatario_tel}", estilo_normal))
     
     # --- 3. Logística de Entrega ---
     elementos.append(Paragraph(f"<b>ENTREGA:</b> {data} - {periodo}{horario_str}", estilo_normal))
@@ -223,22 +210,21 @@ def montar_conteudo_etiqueta(pedido):
 
     # --- 5. Endereço e Mensagem do Cartão ---
     endereco = limitar_texto(pedido.get("endereco", "-"), 90)
-    elementos.append(Paragraph(f"<b>ENDEREÇO:</b> {endereco}", estilo_observacao))
+    elementos.append(Paragraph(f"<b>ENDERECO:</b> {endereco}", estilo_observacao))
     
     mensagem = limitar_texto(pedido.get("mensagem", "-"), 90)
-    elementos.append(Paragraph(f"<b>CARTÃO:</b> {mensagem}", estilo_observacao))
+    elementos.append(Paragraph(f"<b>CARTAO:</b> {mensagem}", estilo_observacao))
 
     # --- 6. Pedido Especial (Opcional) ---
     pedido_especial = limitar_texto(pedido.get("pedido_especial", ""), 90)
     if pedido_especial and pedido_especial != "-":
-        elementos.append(Paragraph(f"<b>⚠️ PEDIDO ESPECIAL:</b> {pedido_especial}", estilo_observacao))
+        elementos.append(Paragraph(f"<b>ATENCAO - PEDIDO ESPECIAL:</b> {pedido_especial}", estilo_observacao))
 
     # --- 7. Observações da Administração (Opcional) ---
-    # Agora puxa da chave certa 'anotacoes_internas' ao invés da antiga 'observacao_admin'
     observacao = limitar_texto(pedido.get("anotacoes_internas", ""), 100)
     if observacao and observacao != "-":
         elementos.append(Spacer(1, 2))
-        elementos.append(Paragraph(f"<b>🛑 OBS INTERNA:</b> {observacao}", estilo_observacao))
+        elementos.append(Paragraph(f"<b>OBS INTERNA:</b> {observacao}", estilo_observacao))
 
     return elementos
 
@@ -361,6 +347,7 @@ def gerar_pdf_individual(pedidos):
 # FUNÇÃO PRINCIPAL
 # =====================================================
 def gerar_pdf_pedidos(pedidos, formato):
+    # A verificação pelo "📄" é baseada na label do rádio do streamlit
     if formato.startswith("📄"):
         return gerar_pdf_a4(pedidos)
 
