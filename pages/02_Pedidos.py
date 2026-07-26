@@ -209,7 +209,6 @@ def mostrar_lista(titulo, status_filtro, permitir_exclusao=False, permitir_impre
 
             if permitir_impressao:
                 with col_check:
-                    # AQUI CORRIGIMOS A CAIXA FANTASMA: Lendo da memória oficial (session_state)
                     esta_marcado = pedido["id"] in st.session_state["pedidos_impressao"]
                     st.checkbox(
                         "🖨️",
@@ -270,7 +269,7 @@ mostrar_lista("❌ Desistências", "Desistência", permitir_exclusao=(usuario.ge
 
 
 # =====================================================
-# IMPRESSÃO DOS PEDIDOS SELECIONADOS
+# IMPRESSÃO DOS PEDIDOS SELECIONADOS (BLINDADO)
 # =====================================================
 
 if st.session_state["pedidos_impressao"]:
@@ -285,11 +284,25 @@ if st.session_state["pedidos_impressao"]:
             st.session_state["pdf_gerado"] = None
             st.rerun()
 
+    # Bloco blindado para buscar apenas IDs válidos
     pedidos_selecionados_dados = []
+    ids_para_remover = []
+
     for pid in st.session_state["pedidos_impressao"]:
-        pedido_completo = buscar_pedido(pid)
-        if pedido_completo:
-            pedidos_selecionados_dados.append(pedido_completo)
+        try:
+            pedido_completo = buscar_pedido(pid)
+            if pedido_completo:
+                pedidos_selecionados_dados.append(pedido_completo)
+            else:
+                ids_para_remover.append(pid)
+        except Exception:
+            # Se der erro no PostgREST, removemos o ID corrompido da fila para desatar o nó
+            ids_para_remover.append(pid)
+
+    # Remove da fila os IDs inválidos encontrados
+    for pid in ids_para_remover:
+        if pid in st.session_state["pedidos_impressao"]:
+            st.session_state["pedidos_impressao"].remove(pid)
 
     quantidade = len(pedidos_selecionados_dados)
     if quantidade > 0:
