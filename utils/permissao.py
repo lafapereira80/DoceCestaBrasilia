@@ -1,15 +1,17 @@
 import streamlit as st
+import time
 
 # =====================================================
-# VERIFICA LOGIN (Sincronização Assíncrona Inteligente)
+# VERIFICA LOGIN (BLINDADO CONTRA RESET DE NAVEGAÇÃO)
 # =====================================================
 
 def verificar_login():
-    # 1. Se o usuário já está na memória temporária, segue a vida normal
+    # 1. SE JÁ ESTIVER LOGADO: SUCESSO IMEDIATO!
+    # Passa direto sem acionar a biblioteca de cookies para não bugar a troca de páginas.
     if st.session_state.get("usuario"):
         return True
         
-    # 2. Chama a biblioteca de cookies
+    # 2. Se a memória está vazia (F5 no navegador), tentamos ler o cookie
     cookie_usuario = None
     try:
         from streamlit_cookies_controller import CookieController
@@ -18,22 +20,19 @@ def verificar_login():
     except Exception:
         pass
         
-    # 3. Se o navegador já enviou o cookie, restaura a sessão e continua
+    # 3. Se achou o cookie, restaura a sessão e sucesso!
     if cookie_usuario:
         st.session_state["usuario"] = cookie_usuario
         st.session_state.pop("esperando_cookie", None)
         return True
         
-    # 4. O SEGREDO: Na 1ª leitura, o navegador ainda está processando.
-    # Nós usamos o st.stop() para PARAR o Python e deixar o navegador trabalhar.
-    # Assim que o navegador achar o cookie, ele força o sistema a continuar sozinho.
+    # 4. Dá 1 segundo para o navegador carregar o cookie na primeira vez
     if not st.session_state.get("esperando_cookie"):
         st.session_state["esperando_cookie"] = True
-        st.markdown("<h4 style='text-align:center; color:#5a3b28; margin-top: 40px;'>🔄 Sincronizando conexão segura...</h4>", unsafe_allow_html=True)
-        st.stop() # Trava a tela para impedir o redirecionamento apressado
+        time.sleep(1.0)
+        st.rerun()
         
-    # 5. Se o sistema chegou aqui, o navegador respondeu que o cookie NÃO EXISTE.
-    # O usuário está realmente deslogado.
+    # 5. Se já esperou e não tem cookie, expulsa pro login
     st.session_state.pop("esperando_cookie", None)
     st.switch_page("pages/99_Admin.py")
 
