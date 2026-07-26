@@ -1,5 +1,6 @@
 from config.supabase import supabase
-from services.foto_service import listar_fotos_pedido
+# IMPORTAÇÃO CORRIGIDA PARA O NOME NOVO
+from services.foto_service import listar_fotos
 
 # =====================================================
 # FUNÇÃO PRIVADA (APAGA FOTOS FÍSICAS DO BUCKET)
@@ -10,13 +11,14 @@ def _apagar_fotos_fisicas_do_pedido(pedido_id):
     e deleta os arquivos reais de dentro do Storage (Bucket) do Supabase.
     """
     try:
-        fotos = listar_fotos_pedido(pedido_id)
+        # CHAMADA CORRIGIDA PARA O NOME NOVO
+        fotos = listar_fotos(pedido_id)
         if not fotos:
             return
             
-        caminhos_para_deletar = []
         for foto in fotos:
-            url_foto = str(foto.get("caminho", ""))
+            # O serviço novo retorna 'url' para a imagem
+            url_foto = str(foto.get("url", ""))
             if "/public/" in url_foto:
                 # Extrai apenas a parte "pasta/nome_arquivo" depois de "/public/"
                 caminho_pos_public = url_foto.split("/public/")[1]
@@ -127,11 +129,11 @@ def excluir_pedido_completo(pedido_id):
         # 1. Deleta os arquivos (imagens) pesados do servidor primeiro
         _apagar_fotos_fisicas_do_pedido(pedido_id)
 
-        # 2. Deleta as referências das fotos no banco (Tabela foto_pedido)
-        supabase.table("foto_pedido").delete().eq("pedido_id", pedido_id).execute()
+        # 2. Deleta as referências das fotos no banco (NOME DA TABELA CORRIGIDO)
+        supabase.table("pedido_fotos").delete().eq("pedido_id", pedido_id).execute()
         
-        # 3. Deleta os adicionais no banco (Tabela pedido_adicional)
-        supabase.table("pedido_adicional").delete().eq("pedido_id", pedido_id).execute()
+        # 3. Deleta os adicionais no banco (NOME DA TABELA CORRIGIDO)
+        supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido_id).execute()
         
         # 4. Deleta o pedido em si (Tabela pedidos)
         supabase.table("pedidos").delete().eq("id", pedido_id).execute()
