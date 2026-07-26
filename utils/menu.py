@@ -1,8 +1,8 @@
 import streamlit as st
-
+from streamlit_cookies_controller import CookieController
 
 # =====================================================
-# CONFIGURA VISUAL DO STREAMLIT
+# CONFIGURA VISUAL DO STREAMLIT (OTIMIZADO MOBILE)
 # =====================================================
 
 def configurar_pagina():
@@ -20,13 +20,12 @@ def configurar_pagina():
         header[data-testid="stHeader"] {
             background: transparent !important;
             z-index: 99999 !important;
-            pointer-events: none !important; /* Evita que o header invisível bloqueie cliques */
+            pointer-events: none !important; 
         }
 
         /* =========================================
            CORREÇÃO DOS BOTAOES ABRIR/FECHAR SIDEBAR
         ========================================== */
-        /* Oculta os textos de ícones vazados nativos */
         [data-testid="stSidebarCollapseButton"] button span,
         [data-testid="collapsedControl"] button span,
         button[aria-label="Close sidebar"] span,
@@ -34,7 +33,6 @@ def configurar_pagina():
             display: none !important;
         }
 
-        /* Ícone bonito para fechar no menu */
         [data-testid="stSidebarCollapseButton"] button::after,
         button[aria-label="Close sidebar"]::after {
             content: "✕" !important;
@@ -43,22 +41,20 @@ def configurar_pagina():
             color: #5a3b28 !important;
         }
 
-        /* Ícone bonito para abrir na tela principal */
         [data-testid="collapsedControl"] button::after,
         button[aria-label="Open sidebar"]::after {
             content: "☰" !important;
-            font-size: 22px !important;
-            font-weight: 700 !important;
+            font-size: 24px !important;
+            font-weight: 800 !important;
             color: #5a3b28 !important;
         }
 
-        /* Ajusta área clicável padrão (PC) */
         [data-testid="stSidebarCollapseButton"],
         [data-testid="collapsedControl"] {
             display: flex !important;
             visibility: visible !important;
             opacity: 1 !important;
-            pointer-events: auto !important; /* Reativa o clique que o header removeu */
+            pointer-events: auto !important; 
         }
 
         /* =========================================
@@ -105,12 +101,12 @@ def configurar_pagina():
 
         div[data-testid="stPageLink"] a {
             border-radius: 8px !important;
-            padding: 6px 10px !important;
+            padding: 8px 10px !important;
             transition: all 0.2s ease !important;
             color: #5a3b28 !important;
             font-weight: 600 !important;
             font-size: 13px !important;
-            margin-bottom: 3px !important;
+            margin-bottom: 4px !important;
         }
 
         div[data-testid="stPageLink"] a:hover {
@@ -133,41 +129,49 @@ def configurar_pagina():
         }
 
         /* =========================================
-           RESPONSIVIDADE EXCLUSIVA PARA MOBILE
+           RESPONSIVIDADE EXCLUSIVA PARA MOBILE (CELULAR)
         ========================================== */
         @media (max-width: 768px) {
-            /* Destaca o botão de abrir (Hambúrguer) para não sumir no conteúdo */
+            /* Destaca fortemente o botão Hambúrguer */
             [data-testid="collapsedControl"] {
-                top: 8px !important;
-                left: 8px !important;
-                background-color: rgba(255, 255, 255, 0.9) !important;
+                top: 12px !important;
+                left: 12px !important;
+                background-color: #ffffff !important;
+                border: 2px solid #dfcdbb !important;
                 border-radius: 8px !important;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
-                padding: 4px 8px !important;
+                box-shadow: 0 4px 10px rgba(90, 59, 40, 0.15) !important;
+                padding: 6px 12px !important;
                 z-index: 100000 !important;
             }
 
-            /* Aumenta o tamanho dos textos e botões na lateral para facilitar o toque */
+            /* Aumenta a legibilidade da lateral */
             .sidebar-brand {
-                font-size: 22px !important;
-                margin-top: 15px !important;
-                margin-bottom: 20px !important;
+                font-size: 24px !important;
+                margin-top: 20px !important;
+                margin-bottom: 25px !important;
             }
 
             .user-name {
-                font-size: 15px !important;
+                font-size: 16px !important;
+            }
+            
+            .user-role {
+                font-size: 12px !important;
+                padding: 4px 8px !important;
             }
 
+            /* Links maiores para fácil toque (Touch Targets) */
             div[data-testid="stPageLink"] a {
-                padding: 12px 14px !important; /* Aumenta a área de toque */
-                font-size: 15px !important;
-                margin-bottom: 6px !important;
+                padding: 14px 16px !important; 
+                font-size: 16px !important;
+                margin-bottom: 8px !important;
             }
 
+            /* Botão Sair mais alto */
             div[data-testid="stSidebar"] button {
-                height: 48px !important; /* Botão de sair mais alto */
-                font-size: 15px !important;
-                margin-top: 10px !important;
+                height: 54px !important; 
+                font-size: 16px !important;
+                margin-top: 15px !important;
             }
         }
         </style>
@@ -182,6 +186,7 @@ def configurar_pagina():
 
 def menu_lateral():
     usuario = st.session_state.get("usuario")
+    controller = CookieController()
 
     if not usuario:
         return
@@ -253,5 +258,7 @@ def menu_lateral():
             "🚪 Sair da Conta",
             use_container_width=True
         ):
+            # Limpa o Cookie e a Sessão
+            controller.remove("doce_cesta_admin")
             st.session_state.pop("usuario", None)
             st.switch_page("app.py")
