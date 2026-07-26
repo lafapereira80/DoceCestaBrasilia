@@ -64,7 +64,7 @@ if not pedido:
 
 
 # -----------------------------------------------------
-# NOVO: FILTRO ANTI-DUPLICIDADE DE ADICIONAIS
+# FILTRO ANTI-DUPLICIDADE DE ADICIONAIS
 # -----------------------------------------------------
 try:
     lista_bruta_adicionais = listar_adicionais_pedido(pedido["id"])
@@ -73,7 +73,6 @@ try:
     
     for ad in lista_bruta_adicionais:
         nome_ad = ad.get("nome_produto")
-        # Só adiciona na lista final se o nome ainda não tiver passado pelo filtro
         if nome_ad and nome_ad not in nomes_vistos:
             adicionais_pedido.append(ad)
             nomes_vistos.add(nome_ad)
@@ -328,17 +327,14 @@ if st.session_state.editar_pedido:
 
                 if "erro_admin" in st.session_state: del st.session_state["erro_admin"]
                 
-                # NOVO SALVAMENTO: SEM ESCONDER ERROS DO BANCO DE DADOS
+                # NOVO SALVAMENTO DIRETO: SEM REMENDOS
                 try:
-                    # 1. Tenta apagar os adicionais antigos
+                    # 1. Tenta apagar os adicionais antigos usando o nome correto da tabela
                     try: 
                         supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido["id"]).execute()
-                    except Exception as err_del1:
-                        try: 
-                            supabase.table("pedido_adicional").delete().eq("pedido_id", pedido["id"]).execute()
-                        except Exception as err_del2:
-                            st.session_state["erro_admin"] = f"❌ O Supabase bloqueou a exclusão. Falta a política DELETE na tabela de adicionais! Detalhe: {err_del1}"
-                            raise Exception("Parada Forçada - Falha no DELETE")
+                    except Exception as err_del:
+                        st.session_state["erro_admin"] = f"❌ O Supabase bloqueou a exclusão. Falta a política DELETE na tabela de adicionais! Detalhe: {err_del}"
+                        raise Exception("Parada Forçada - Falha no DELETE")
                             
                     # 2. Se apagou com sucesso, insere os novos (caso tenha algum marcado)
                     if adicionais_selecionados:
@@ -347,15 +343,12 @@ if st.session_state.editar_pedido:
                             
                         try:
                             supabase.table("pedido_adicionais").insert(adicionais_selecionados).execute()
-                        except Exception as err_ins1:
-                            try:
-                                supabase.table("pedido_adicional").insert(adicionais_selecionados).execute()
-                            except Exception as err_ins2:
-                                st.session_state["erro_admin"] = f"❌ O Supabase bloqueou a inserção de adicionais. Detalhe: {err_ins1}"
-                                raise Exception("Parada Forçada - Falha no INSERT")
+                        except Exception as err_ins:
+                            st.session_state["erro_admin"] = f"❌ O Supabase bloqueou a inserção de adicionais. Detalhe: {err_ins}"
+                            raise Exception("Parada Forçada - Falha no INSERT")
                                 
                 except Exception:
-                    pass # Se caiu aqui, a mensagem já está salva e pronta para ser exibida
+                    pass # Se caiu aqui, a mensagem já está salva e pronta para ser exibida na tela
                 
                 if "erro_admin" not in st.session_state:
                     st.session_state.editar_pedido = False
