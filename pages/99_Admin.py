@@ -19,13 +19,6 @@ st.set_page_config(
 
 configurar_pagina()
 
-# Inicializa o controlador de cookies de forma blindada
-try:
-    from streamlit_cookies_controller import CookieController
-    controller = CookieController(key="login_cookie")
-except Exception:
-    controller = None
-
 
 # =====================================================
 # CSS ULTRA COMPACTO E ISOLADO
@@ -74,19 +67,26 @@ st.markdown("<div class='subtitulo'>Doce Cesta Brasília</div>", unsafe_allow_ht
 
 
 # =====================================================
-# AUTO-LOGIN SILENCIOSO
+# RECUPERAÇÃO DE COOKIE (Só roda se estiver deslogado)
 # =====================================================
 
 if not st.session_state.get("usuario"):
     cookie_user = None
-    if controller:
-        try:
-            cookie_user = controller.get("doce_cesta_admin")
-        except Exception:
-            pass
-            
+    try:
+        from streamlit_cookies_controller import CookieController
+        controller_login = CookieController(key="admin_cookie")
+        cookie_user = controller_login.get("doce_cesta_admin")
+    except Exception:
+        pass
+        
     if cookie_user:
         st.session_state["usuario"] = cookie_user
+        st.session_state.pop("esperou_login", None)
+        st.rerun()
+        
+    if not st.session_state.get("esperou_login"):
+        st.session_state["esperou_login"] = True
+        time.sleep(1.0)
         st.rerun()
 
 
@@ -100,7 +100,6 @@ if not st.session_state.get("usuario"):
 
         login = st.text_input("Usuário", placeholder="Digite seu usuário")
         senha = st.text_input("Senha", type="password", placeholder="Digite sua senha")
-
         st.write("")
         entrar = st.button("Entrar no Sistema", use_container_width=True)
 
@@ -109,15 +108,14 @@ if not st.session_state.get("usuario"):
 
             if usuario:
                 st.session_state["usuario"] = usuario
+                try:
+                    from streamlit_cookies_controller import CookieController
+                    controller_set = CookieController(key="set_cookie")
+                    controller_set.set("doce_cesta_admin", usuario, max_age=2592000)
+                except Exception:
+                    pass
                 
-                # Manda gravar a credencial no navegador
-                if controller:
-                    try:
-                        controller.set("doce_cesta_admin", usuario, max_age=2592000)
-                    except Exception:
-                        pass
-                
-                # Aguarda para garantir a gravação antes de limpar a tela
+                st.session_state.pop("esperou_login", None)
                 time.sleep(0.5)
                 st.rerun()
             else:
@@ -139,12 +137,13 @@ with st.container(border=True):
     with col_u2:
         if st.button("🚪 Sair", use_container_width=True):
             st.session_state.pop("usuario", None)
-            if controller:
-                try:
-                    controller.remove("doce_cesta_admin")
-                except Exception:
-                    pass
-            time.sleep(0.3) 
+            try:
+                from streamlit_cookies_controller import CookieController
+                controller_out = CookieController(key="remove_cookie")
+                controller_out.remove("doce_cesta_admin")
+            except Exception:
+                pass
+            time.sleep(0.5) 
             st.rerun()
 
 st.subheader("📂 Módulos do Sistema")
