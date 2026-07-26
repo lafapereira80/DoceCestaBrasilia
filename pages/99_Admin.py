@@ -182,35 +182,27 @@ div[data-testid="stPageLink"] a:hover {
    MEDIA QUERY EXCLUSIVA PARA CELULAR
 ========================================== */
 @media (max-width: 768px) {
-    .admin-logo-img {
-        width: 65px !important;
-    }
+    .admin-logo-img { width: 65px !important; }
+    .titulo { font-size: 20px !important; }
+    .subtitulo { font-size: 12px !important; }
 
-    .titulo {
-        font-size: 20px !important;
-    }
-
-    .subtitulo {
-        font-size: 12px !important;
-    }
-
-    /* FORÇA A LINHA A NÃO QUEBRAR (ABRANGENDO VÁRIAS VERSÕES DO STREAMLIT) */
-    div[data-testid="stColumns"]:has(div[data-testid="stPageLink"]),
-    div[data-testid="stHorizontalBlock"]:has(div[data-testid="stPageLink"]),
-    div[data-testid="stColumnLayout"]:has(div[data-testid="stPageLink"]) {
+    /* 1. DESTRÓI O EMPILHAMENTO PADRÃO DO STREAMLIT NO CELULAR */
+    div[data-testid="stColumnLayout"]:has(div[data-testid="stPageLink"]),
+    div[data-testid="stHorizontalBlock"]:has(div[data-testid="stPageLink"]) {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: wrap !important;
-        justify-content: space-between !important;
+        gap: 10px !important;
     }
     
-    /* FORÇA AS COLUNAS A TEREM 48% DO TAMANHO, COLOCANDO 2 POR LINHA */
-    div[data-testid="stColumn"]:has(div[data-testid="stPageLink"]),
-    div[data-testid="column"]:has(div[data-testid="stPageLink"]) {
-        width: 48% !important;
-        min-width: 48% !important;
-        max-width: 48% !important;
-        flex: 1 1 48% !important;
+    /* 2. FORÇA QUALQUER FILHO DIRETO A TER 48% DO TAMANHO (2 POR LINHA) */
+    div[data-testid="stColumnLayout"]:has(div[data-testid="stPageLink"]) > div,
+    div[data-testid="stHorizontalBlock"]:has(div[data-testid="stPageLink"]) > div {
+        width: calc(50% - 6px) !important;
+        min-width: calc(50% - 6px) !important;
+        max-width: calc(50% - 6px) !important;
+        flex: 1 1 calc(50% - 6px) !important;
+        margin-bottom: 2px !important;
     }
 }
 </style>
