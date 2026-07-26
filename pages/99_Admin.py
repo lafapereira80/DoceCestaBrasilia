@@ -6,9 +6,8 @@ from pathlib import Path
 from services.usuario_service import autenticar_usuario
 from utils.menu import configurar_pagina
 
-
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA (SEMPRE A PRIMEIRA LINHA)
+# CONFIGURAÇÃO DA PÁGINA
 # =====================================================
 
 st.set_page_config(
@@ -20,10 +19,10 @@ st.set_page_config(
 
 configurar_pagina()
 
-# Instancia o controlador de cookies APÓS a página estar configurada
+# Inicializa o controlador de cookies de forma blindada
 try:
     from streamlit_cookies_controller import CookieController
-    controller = CookieController(key="login_page_cookie")
+    controller = CookieController(key="login_cookie")
 except Exception:
     controller = None
 
@@ -75,15 +74,10 @@ st.markdown("<div class='subtitulo'>Doce Cesta Brasília</div>", unsafe_allow_ht
 
 
 # =====================================================
-# CONTROLE DE LOGIN E CAPTURA DO COOKIE NA RAIZ
+# AUTO-LOGIN SILENCIOSO
 # =====================================================
 
 if not st.session_state.get("usuario"):
-    if not st.session_state.get("aguardou_cookie_login"):
-        st.session_state["aguardou_cookie_login"] = True
-        time.sleep(0.4)
-        st.rerun()
-        
     cookie_user = None
     if controller:
         try:
@@ -93,9 +87,7 @@ if not st.session_state.get("usuario"):
             
     if cookie_user:
         st.session_state["usuario"] = cookie_user
-        st.session_state.pop("aguardou_cookie_login", None)
-    else:
-        st.session_state["usuario"] = None
+        st.rerun()
 
 
 # =====================================================
@@ -110,7 +102,6 @@ if not st.session_state.get("usuario"):
         senha = st.text_input("Senha", type="password", placeholder="Digite sua senha")
 
         st.write("")
-
         entrar = st.button("Entrar no Sistema", use_container_width=True)
 
         if entrar:
@@ -119,14 +110,15 @@ if not st.session_state.get("usuario"):
             if usuario:
                 st.session_state["usuario"] = usuario
                 
+                # Manda gravar a credencial no navegador
                 if controller:
                     try:
                         controller.set("doce_cesta_admin", usuario, max_age=2592000)
                     except Exception:
                         pass
                 
-                # Dá tempo para o navegador gravar a informação em segurança
-                time.sleep(0.6)
+                # Aguarda para garantir a gravação antes de limpar a tela
+                time.sleep(0.5)
                 st.rerun()
             else:
                 st.error("Usuário ou senha inválidos.")
@@ -146,13 +138,13 @@ with st.container(border=True):
         st.markdown(f"👤 **{usuario['login']}** | Perfil: **{usuario['perfil']}**")
     with col_u2:
         if st.button("🚪 Sair", use_container_width=True):
-            st.session_state["usuario"] = None
+            st.session_state.pop("usuario", None)
             if controller:
                 try:
                     controller.remove("doce_cesta_admin")
                 except Exception:
                     pass
-            time.sleep(0.4) 
+            time.sleep(0.3) 
             st.rerun()
 
 st.subheader("📂 Módulos do Sistema")
