@@ -240,7 +240,7 @@ with st.container(border=True):
 
 
 # ==========================================================
-# SELEÇÃO DA CESTA (BLINDADA)
+# SELEÇÃO DA CESTA (BLINDADA E SINCRONIZADA)
 # ==========================================================
 @st.fragment
 def renderizar_bloco_cestas():
@@ -256,40 +256,32 @@ def renderizar_bloco_cestas():
 
     cesta_obj = None
     if cestas:
-        opcoes_cestas = [{"id": None, "nome": "Selecione uma cesta..."}] + cestas
-        
+        # Se veio da vitrine, transfere o ID para o estado principal
         if st.session_state.get("cesta_selecionada_home"):
             st.session_state["cesta_selecionada_id"] = st.session_state["cesta_selecionada_home"]
             st.session_state["cesta_selecionada_home"] = None
 
-        cesta_inicial_index = 0
-        current_id = st.session_state.get("cesta_selecionada_id")
-        if current_id:
-            for idx, item in enumerate(opcoes_cestas):
-                if item.get("id") == current_id:
-                    cesta_inicial_index = idx
-                    break
+        # Mapeia IDs para objetos de cesta para busca direta
+        mapa_cestas = {c["id"]: c for c in cestas}
+        
+        # Define a seleção atual com base no session_state
+        id_atual = st.session_state.get("cesta_selecionada_id")
+        cesta_atual = mapa_cestas.get(id_atual) if id_atual else None
 
         with st.container(border=True):
             st.markdown('<div class="secao-titulo">🎁 Escolha sua Cesta</div>', unsafe_allow_html=True)
             
-            def atualizar_cesta_selecionada():
-                sel = st.session_state.get("selectbox_cesta_escolhida")
-                if sel:
-                    st.session_state["cesta_selecionada_id"] = sel.get("id")
-
-            cesta_selecionada = st.selectbox(
+            cesta_escolhida = st.selectbox(
                 "Selecione a cesta", 
-                opcoes_cestas, 
+                cestas, 
                 format_func=lambda c: c["nome"], 
-                index=cesta_inicial_index,
-                key="selectbox_cesta_escolhida",
-                on_change=atualizar_cesta_selecionada
+                index=cestas.index(cesta_atual) if cesta_atual in cestas else 0,
+                key="selectbox_cesta_escolhida"
             )
 
-            if cesta_selecionada and cesta_selecionada.get("id"):
-                cesta_obj = cesta_selecionada
-                st.session_state["cesta_selecionada_id"] = cesta_selecionada.get("id")
+            if cesta_escolhida:
+                cesta_obj = cesta_escolhida
+                st.session_state["cesta_selecionada_id"] = cesta_escolhida.get("id")
     else:
         with st.container(border=True):
             st.warning("Nenhuma cesta cadastrada.")
