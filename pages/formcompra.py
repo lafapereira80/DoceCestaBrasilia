@@ -151,7 +151,7 @@ if logo_path.exists():
 
 
 # ==========================================================
-# TELA DE SUCESSO (SUBSTITUI O FORMULÁRIO APÓS O ENVIO)
+# TELA DE SUCESSO (COM HTML CORRIGIDO E UNSAFE_ALLOW_HTML)
 # ==========================================================
 if st.session_state["pedido_enviado_com_sucesso"]:
     dados = st.session_state["resumo_pedido_sucesso"]
@@ -224,23 +224,28 @@ st.write("")
 
 
 # ==========================================================
-# DADOS DO COMPRADOR
+# DADOS DO COMPRADOR (ISOLADO EM FRAGMENTO PARA EVITAR PISCA-PISCA)
 # ==========================================================
-with st.container(border=True):
-    st.markdown('<div class="secao-titulo">👤 Seus Dados (Comprador)</div>', unsafe_allow_html=True)
-    st.caption("Preencha com os dados de quem está realizando o pagamento.")
+@st.fragment
+def renderizar_dados_comprador():
+    with st.container(border=True):
+        st.markdown('<div class="secao-titulo">👤 Seus Dados (Comprador)</div>', unsafe_allow_html=True)
+        st.caption("Preencha com os dados de quem está realizando o pagamento.")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        nome = st.text_input("Nome completo *", placeholder="Seu nome completo")
-    with col2:
-        telefone = st.text_input("Seu Telefone *", placeholder="(61) 99999-9999")
+        col1, col2 = st.columns(2)
+        with col1:
+            n = st.text_input("Nome completo *", placeholder="Seu nome completo", key="input_nome_comprador")
+        with col2:
+            t = st.text_input("Seu Telefone *", placeholder="(61) 99999-9999", key="input_tel_comprador")
 
-    cpf = st.text_input("Seu CPF *", placeholder="000.000.000-00")
+        c_cpf = st.text_input("Seu CPF *", placeholder="000.000.000-00", key="input_cpf_comprador")
+    return n, t, c_cpf
+
+nome, telefone, cpf = renderizar_dados_comprador()
 
 
 # ==========================================================
-# SELEÇÃO DA CESTA (BLINDADA E SINCRONIZADA)
+# SELEÇÃO DA CESTA (BLINDADA)
 # ==========================================================
 @st.fragment
 def renderizar_bloco_cestas():
@@ -256,15 +261,11 @@ def renderizar_bloco_cestas():
 
     cesta_obj = None
     if cestas:
-        # Se veio da vitrine, transfere o ID para o estado principal
         if st.session_state.get("cesta_selecionada_home"):
             st.session_state["cesta_selecionada_id"] = st.session_state["cesta_selecionada_home"]
             st.session_state["cesta_selecionada_home"] = None
 
-        # Mapeia IDs para objetos de cesta para busca direta
         mapa_cestas = {c["id"]: c for c in cestas}
-        
-        # Define a seleção atual com base no session_state
         id_atual = st.session_state.get("cesta_selecionada_id")
         cesta_atual = mapa_cestas.get(id_atual) if id_atual else None
 
@@ -354,7 +355,7 @@ selecoes_cliente = renderizar_personalizacao(cesta)
 
 
 # ==========================================================
-# COMPLEMENTOS E FOTOS POLAROID (BLINDADO COM COMPATIBILIDADE TOTAL)
+# COMPLEMENTOS E FOTOS POLAROID (FRAGMENTO ISOLADO)
 # ==========================================================
 @st.fragment
 def renderizar_complementos_e_polaroid():
@@ -447,43 +448,54 @@ adicionais_selecionados, polaroid, fotos = renderizar_complementos_e_polaroid()
 
 
 # ==========================================================
-# HOMENAGEADO E ENTREGA
+# HOMENAGEADO E ENTREGA (ISOLADO EM FRAGMENTO)
 # ==========================================================
-st.markdown("### 💝 Homenageado e Entrega")
+@st.fragment
+def renderizar_homenageado_e_entrega():
+    st.markdown("### 💝 Homenageado e Entrega")
 
-with st.container(border=True):
-    st.markdown('<div class="secao-titulo">Destinatário</div>', unsafe_allow_html=True)
-    col_dest1, col_dest2 = st.columns(2)
-    with col_dest1:
-        destinatario_nome = st.text_input("Nome do Homenageado *", placeholder="Quem receberá a cesta?")
-    with col_dest2:
-        destinatario_telefone = st.text_input("Telefone do Homenageado", placeholder="(Opcional)")
+    with st.container(border=True):
+        st.markdown('<div class="secao-titulo">Destinatário</div>', unsafe_allow_html=True)
+        col_dest1, col_dest2 = st.columns(2)
+        with col_dest1:
+            d_nome = st.text_input("Nome do Homenageado *", placeholder="Quem receberá a cesta?", key="input_dest_nome")
+        with col_dest2:
+            d_tel = st.text_input("Telefone do Homenageado", placeholder="(Opcional)", key="input_dest_tel")
+            
+        motivo = st.text_input("Motivo da Homenagem", placeholder="Ex: Aniversário, Dia das Mães, Agradecimento, Surpresa...", key="input_motivo")
+
+    with st.container(border=True):
+        st.markdown('<div class="secao-titulo">💌 Mensagem do Cartão</div>', unsafe_allow_html=True)
+        msg = st.text_area("O que deseja escrever no cartão?", height=80, placeholder="Digite sua mensagem especial...", key="input_mensagem")
+
+    with st.container(border=True):
+        st.markdown('<div class="secao-titulo">📍 Detalhes da Entrega</div>', unsafe_allow_html=True)
+        end = st.text_area("Endereço de entrega", height=80, placeholder="Informe o endereço completo (Rua, Número, Bairro, Ponto de Referência)...", key="input_endereco")
+
+        col_ent1, col_ent2 = st.columns(2)
+        with col_ent1:
+            dt_ent = st.date_input("📅 Data de entrega", format="DD/MM/YYYY", key="input_data_entrega")
+        with col_ent2:
+            p_ent = st.selectbox("🕘 Período", ["Manhã", "Tarde", "Noite"], key="input_periodo_entrega")
+
+        p_esp = st.text_area("✨ Alguma solicitação especial?", height=70, placeholder="Exemplo: entregar preferencialmente até as 09:00...", key="input_pedido_especial")
         
-    motivo_homenagem = st.text_input("Motivo da Homenagem", placeholder="Ex: Aniversário, Dia das Mães, Agradecimento, Surpresa...")
+    return d_nome, d_tel, motivo, msg, end, dt_ent, p_ent, p_esp
 
-with st.container(border=True):
-    st.markdown('<div class="secao-titulo">💌 Mensagem do Cartão</div>', unsafe_allow_html=True)
-    mensagem = st.text_area("O que deseja escrever no cartão?", height=80, placeholder="Digite sua mensagem especial...", key="mensagem_cliente")
-
-with st.container(border=True):
-    st.markdown('<div class="secao-titulo">📍 Detalhes da Entrega</div>', unsafe_allow_html=True)
-    endereco = st.text_area("Endereço de entrega", height=80, placeholder="Informe o endereço completo (Rua, Número, Bairro, Ponto de Referência)...")
-
-    col_ent1, col_ent2 = st.columns(2)
-    with col_ent1:
-        data_entrega = st.date_input("📅 Data de entrega", format="DD/MM/YYYY")
-    with col_ent2:
-        periodo_entrega = st.selectbox("🕘 Período", ["Manhã", "Tarde", "Noite"])
-
-    pedido_especial = st.text_area("✨ Alguma solicitação especial?", height=70, placeholder="Exemplo: entregar preferencialmente até as 09:00...")
+destinatario_nome, destinatario_telefone, motivo_homenagem, mensagem, endereco, data_entrega, periodo_entrega, pedido_especial = renderizar_homenageado_e_entrega()
 
 
 # ==========================================================
-# PAGAMENTO
+# PAGAMENTO (ISOLADO EM FRAGMENTO)
 # ==========================================================
-with st.container(border=True):
-    st.markdown('<div class="secao-titulo">💳 Forma de Pagamento</div>', unsafe_allow_html=True)
-    pagamento = st.radio("Escolha como deseja pagar:", ["Pix", "Cartão de Crédito"], horizontal=True, key="forma_pagamento")
+@st.fragment
+def renderizar_pagamento():
+    with st.container(border=True):
+        st.markdown('<div class="secao-titulo">💳 Forma de Pagamento</div>', unsafe_allow_html=True)
+        pag = st.radio("Escolha como deseja pagar:", ["Pix", "Cartão de Crédito"], horizontal=True, key="forma_pagamento_radio")
+    return pag
+
+pagamento = renderizar_pagamento()
 
 
 # ==========================================================
