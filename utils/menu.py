@@ -1,5 +1,4 @@
 import streamlit as st
-from streamlit_cookies_controller import CookieController
 
 # =====================================================
 # CONFIGURA VISUAL DO STREAMLIT (OTIMIZADO MOBILE)
@@ -16,7 +15,6 @@ def configurar_pagina():
         footer { display: none !important; }
         [data-testid="stSidebarNav"] { display: none !important; }
 
-        /* Deixa o header transparente para mostrar a seta no topo */
         header[data-testid="stHeader"] {
             background: transparent !important;
             z-index: 99999 !important;
@@ -129,10 +127,9 @@ def configurar_pagina():
         }
 
         /* =========================================
-           RESPONSIVIDADE EXCLUSIVA PARA MOBILE (CELULAR)
+           RESPONSIVIDADE EXCLUSIVA PARA MOBILE
         ========================================== */
         @media (max-width: 768px) {
-            /* Destaca fortemente o botão Hambúrguer */
             [data-testid="collapsedControl"] {
                 top: 12px !important;
                 left: 12px !important;
@@ -143,36 +140,11 @@ def configurar_pagina():
                 padding: 6px 12px !important;
                 z-index: 100000 !important;
             }
-
-            /* Aumenta a legibilidade da lateral */
-            .sidebar-brand {
-                font-size: 24px !important;
-                margin-top: 20px !important;
-                margin-bottom: 25px !important;
-            }
-
-            .user-name {
-                font-size: 16px !important;
-            }
-            
-            .user-role {
-                font-size: 12px !important;
-                padding: 4px 8px !important;
-            }
-
-            /* Links maiores para fácil toque (Touch Targets) */
-            div[data-testid="stPageLink"] a {
-                padding: 14px 16px !important; 
-                font-size: 16px !important;
-                margin-bottom: 8px !important;
-            }
-
-            /* Botão Sair mais alto */
-            div[data-testid="stSidebar"] button {
-                height: 54px !important; 
-                font-size: 16px !important;
-                margin-top: 15px !important;
-            }
+            .sidebar-brand { font-size: 24px !important; margin-top: 20px !important; margin-bottom: 25px !important; }
+            .user-name { font-size: 16px !important; }
+            .user-role { font-size: 12px !important; padding: 4px 8px !important; }
+            div[data-testid="stPageLink"] a { padding: 14px 16px !important; font-size: 16px !important; margin-bottom: 8px !important; }
+            div[data-testid="stSidebar"] button { height: 54px !important; font-size: 16px !important; margin-top: 15px !important; }
         }
         </style>
         """,
@@ -186,7 +158,6 @@ def configurar_pagina():
 
 def menu_lateral():
     usuario = st.session_state.get("usuario")
-    controller = CookieController()
 
     if not usuario:
         return
@@ -208,57 +179,30 @@ def menu_lateral():
 
         st.divider()
 
-        st.page_link(
-            "pages/99_Admin.py",
-            label="🏠 Administração"
-        )
+        st.page_link("pages/99_Admin.py", label="🏠 Administração")
 
         if perfil in ["Administrador", "Operador"]:
-            st.page_link(
-                "pages/02_Pedidos.py",
-                label="📦 Pedidos"
-            )
-
-            st.page_link(
-                "pages/03_Clientes.py",
-                label="👥 Clientes"
-            )
-
-            st.page_link(
-                "pages/04_Cestas.py",
-                label="🧺 Cestas"
-            )
-
-            st.page_link(
-                "pages/05_Produtos.py",
-                label="🍫 Produtos"
-            )
-
-            st.page_link(
-                "pages/15_Categorias.py",
-                label="📂 Categorias"
-            )
+            st.page_link("pages/02_Pedidos.py", label="📦 Pedidos")
+            st.page_link("pages/03_Clientes.py", label="👥 Clientes")
+            st.page_link("pages/04_Cestas.py", label="🧺 Cestas")
+            st.page_link("pages/05_Produtos.py", label="🍫 Produtos")
+            st.page_link("pages/15_Categorias.py", label="📂 Categorias")
 
         if perfil == "Administrador":
             st.divider()
-
-            st.page_link(
-                "pages/06_Financeiro.py",
-                label="💰 Financeiro"
-            )
-
-            st.page_link(
-                "pages/07_Usuarios.py",
-                label="👤 Usuários"
-            )
+            st.page_link("pages/06_Financeiro.py", label="💰 Financeiro")
+            st.page_link("pages/07_Usuarios.py", label="👤 Usuários")
 
         st.divider()
 
-        if st.button(
-            "🚪 Sair da Conta",
-            use_container_width=True
-        ):
-            # Limpa o Cookie e a Sessão
-            controller.remove("doce_cesta_admin")
+        if st.button("🚪 Sair da Conta", use_container_width=True):
+            # Escudo de exclusão do cookie
+            try:
+                from streamlit_cookies_controller import CookieController
+                controller = CookieController(key="menu_logout_cookie")
+                controller.remove("doce_cesta_admin")
+            except Exception:
+                pass
+                
             st.session_state.pop("usuario", None)
             st.switch_page("app.py")
