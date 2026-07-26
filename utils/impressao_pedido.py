@@ -37,27 +37,42 @@ ALTURA_ETIQUETA = 10 * cm
 
 
 # =====================================================
-# NORMALIZA JSON
+# ESCUDO XML (O segredo para o PDF não ficar em branco)
+# =====================================================
+def texto_seguro(texto):
+    """
+    Substitui caracteres que quebram o gerador de PDF
+    (&, <, >) pelas suas entidades seguras.
+    """
+    if not texto: return "-"
+    texto = str(texto).replace("\n", " ")
+    texto = texto.replace("&", "&amp;")
+    texto = texto.replace("<", "&lt;")
+    texto = texto.replace(">", "&gt;")
+    return texto
+
+def limitar_texto(texto, tamanho=80):
+    if not texto: return "-"
+    texto = str(texto).replace("\n", " ")
+    if len(texto) > tamanho:
+        texto = texto[:tamanho] + "..."
+    # Aplica o escudo de proteção final
+    return texto_seguro(texto)
+
+
+# =====================================================
+# NORMALIZA JSON E DATAS
 # =====================================================
 def normalizar_itens_consulta(valor):
-    if not valor:
-        return {}
-    if isinstance(valor, dict):
-        return valor
+    if not valor: return {}
+    if isinstance(valor, dict): return valor
     if isinstance(valor, str):
-        try:
-            return json.loads(valor)
-        except:
-            return {}
+        try: return json.loads(valor)
+        except: return {}
     return {}
 
-
-# =====================================================
-# FORMATAÇÕES E TRATAMENTO DE TEXTO
-# =====================================================
 def formatar_data(data):
-    if not data:
-        return "-"
+    if not data: return "-"
     try:
         if isinstance(data, str):
             data = data[:10]
@@ -67,18 +82,8 @@ def formatar_data(data):
         return str(data)
 
 def formatar_horario(horario):
-    if not horario:
-        return ""
+    if not horario: return ""
     return str(horario)[:5]
-
-def limitar_texto(texto, tamanho=80):
-    if not texto:
-        return "-"
-    # Troca quebras de linha por espaço
-    texto = str(texto).replace("\n", " ")
-    if len(texto) > tamanho:
-        return texto[:tamanho] + "..."
-    return texto
 
 
 # =====================================================
@@ -126,13 +131,12 @@ estilo_observacao = ParagraphStyle(
 def buscar_itens_montagem(pedido):
     itens = []
 
-    # 1. Produtos da cesta principal
+    # 1. Produtos da cesta
     produtos = pedido.get("produtos", "")
     if produtos:
         for item in str(produtos).split("\n"):
             item = item.strip()
             if item:
-                # Remove bullets soltos
                 item = item.replace('•', '').strip()
                 itens.append(item)
 
@@ -146,7 +150,7 @@ def buscar_itens_montagem(pedido):
     except Exception:
         pass
 
-    # 3. Itens preço sob consulta
+    # 3. Itens sob consulta
     consulta = normalizar_itens_consulta(pedido.get("itens_consulta"))
     for nome in consulta.keys():
         nome_marcado = f"[Extra] {nome}"
@@ -156,71 +160,67 @@ def buscar_itens_montagem(pedido):
     return itens
 
 
-# =====================================================
-# MONTA LISTA DE ITENS COM CHECKBOX EM TEXTO
-# =====================================================
 def montar_itens_pdf(itens):
     if not itens:
         return Paragraph("Sem itens na montagem", estilo_item)
 
     linhas = []
     for item in itens:
-        # Usamos colchetes normais para garantir compatibilidade 100% com a fonte
-        linhas.append(f"[  ] {item}")
+        # Passa o item pelo escudo seguro
+        item_seguro = texto_seguro(item)
+        linhas.append(f"[  ] {item_seguro}")
 
     return Paragraph("<br/>".join(linhas), estilo_item)
 
 
 # =====================================================
-# MONTA CONTEÚDO DA ETIQUETA (O CORAÇÃO DO PDF)
+# MONTA CONTEÚDO DA ETIQUETA
 # =====================================================
 def montar_conteudo_etiqueta(pedido):
     elementos = []
 
-    # --- Extração e Tratamento de Dados ---
+    # Extração de dados (O limitar_texto já protege o XML)
     cliente_nome = limitar_texto(pedido.get("cliente_nome", "-"), 30)
-    cliente_tel = pedido.get("cliente_telefone", "-")
+    cliente_tel = texto_seguro(pedido.get("cliente_telefone", "-"))
     
-    destinatario_nome = limitar_texto(pedido.get("destinatario_nome", "-"), 30)
-    destinatario_tel = pedido.get("destinatario_telefone", "-")
+    dest_nome = limitar_texto(pedido.get("destinatario_nome", "-"), 30)
+    dest_tel = texto_seguro(pedido.get("destinatario_telefone", "-"))
 
     cesta = limitar_texto(pedido.get("cesta_nome", "-"), 40)
     data = formatar_data(pedido.get("data_entrega"))
-    periodo = pedido.get("periodo_entrega", "")
-    horario = formatar_horario(pedido.get("horario_combinado"))
+    periodo = texto_seguro(pedido.get("periodo_entrega", ""))
+    horario = texto_seguro(formatar_horario(pedido.get("horario_combinado")))
     horario_str = f" ({horario})" if horario else ""
 
-    # --- 1. Título / Cesta ---
+    # 1. Cesta
     elementos.append(Paragraph(f"<b>CESTA: {cesta.upper()}</b>", estilo_destaque))
     elementos.append(Spacer(1, 4))
 
-    # --- 2. Envolvidos (Comprador e Homenageado) ---
+    # 2. Envolvidos
     elementos.append(Paragraph(f"<b>COMPRADOR:</b> {cliente_nome} | Tel: {cliente_tel}", estilo_normal))
-    elementos.append(Paragraph(f"<b>HOMENAGEADO:</b> {destinatario_nome} | Tel: {destinatario_tel}", estilo_normal))
+    elementos.append(Paragraph(f"<b>HOMENAGEADO:</b> {dest_nome} | Tel: {dest_tel}", estilo_normal))
     
-    # --- 3. Logística de Entrega ---
+    # 3. Logística
     elementos.append(Paragraph(f"<b>ENTREGA:</b> {data} - {periodo}{horario_str}", estilo_normal))
     elementos.append(Spacer(1, 4))
 
-    # --- 4. Checklist de Montagem ---
+    # 4. Itens
     elementos.append(Paragraph("<b>ITENS PARA MONTAGEM:</b>", estilo_normal))
     elementos.append(Spacer(1, 2))
     elementos.append(montar_itens_pdf(buscar_itens_montagem(pedido)))
     elementos.append(Spacer(1, 5))
 
-    # --- 5. Endereço e Mensagem do Cartão ---
+    # 5. Informações Extras
     endereco = limitar_texto(pedido.get("endereco", "-"), 90)
     elementos.append(Paragraph(f"<b>ENDERECO:</b> {endereco}", estilo_observacao))
     
     mensagem = limitar_texto(pedido.get("mensagem", "-"), 90)
     elementos.append(Paragraph(f"<b>CARTAO:</b> {mensagem}", estilo_observacao))
 
-    # --- 6. Pedido Especial (Opcional) ---
     pedido_especial = limitar_texto(pedido.get("pedido_especial", ""), 90)
     if pedido_especial and pedido_especial != "-":
         elementos.append(Paragraph(f"<b>ATENCAO - PEDIDO ESPECIAL:</b> {pedido_especial}", estilo_observacao))
 
-    # --- 7. Observações da Administração (Opcional) ---
     observacao = limitar_texto(pedido.get("anotacoes_internas", ""), 100)
     if observacao and observacao != "-":
         elementos.append(Spacer(1, 2))
@@ -256,55 +256,34 @@ def criar_caixa_7x10(pedido):
 
 
 # =====================================================
-# PDF A4 - 12 PEDIDOS
+# PDF A4 E INDIVIDUAL
 # =====================================================
 def gerar_pdf_a4(pedidos):
     arquivo = io.BytesIO()
-
-    doc = SimpleDocTemplate(
-        arquivo,
-        pagesize=A4,
-        rightMargin=0.4*cm,
-        leftMargin=0.4*cm,
-        topMargin=0.4*cm,
-        bottomMargin=0.4*cm
-    )
-
+    doc = SimpleDocTemplate(arquivo, pagesize=A4, rightMargin=0.4*cm, leftMargin=0.4*cm, topMargin=0.4*cm, bottomMargin=0.4*cm)
+    
     elementos = []
-    caixas = []
+    caixas = [criar_caixa_7x10(pedido) for pedido in pedidos]
 
-    for pedido in pedidos:
-        caixas.append(criar_caixa_7x10(pedido))
-
-    # Fecha blocos de 12 para a folha A4
     while len(caixas) % 12 != 0:
         caixas.append("")
 
     for pagina_inicio in range(0, len(caixas), 12):
         pagina = caixas[pagina_inicio : pagina_inicio + 12]
         linhas = []
-
         for i in range(0, 12, 3):
             linhas.append(pagina[i:i+3])
 
-        tabela = Table(
-            linhas,
-            colWidths=[LARGURA_ETIQUETA, LARGURA_ETIQUETA, LARGURA_ETIQUETA],
-            rowHeights=[ALTURA_ETIQUETA] * 4
-        )
-
-        tabela.setStyle(
-            TableStyle([
-                ("VALIGN", (0,0), (-1,-1), "TOP"),
-                ("LEFTPADDING", (0,0), (-1,-1), 0),
-                ("RIGHTPADDING", (0,0), (-1,-1), 0),
-                ("TOPPADDING", (0,0), (-1,-1), 0),
-                ("BOTTOMPADDING", (0,0), (-1,-1), 0)
-            ])
-        )
+        tabela = Table(linhas, colWidths=[LARGURA_ETIQUETA, LARGURA_ETIQUETA, LARGURA_ETIQUETA], rowHeights=[ALTURA_ETIQUETA] * 4)
+        tabela.setStyle(TableStyle([
+            ("VALIGN", (0,0), (-1,-1), "TOP"),
+            ("LEFTPADDING", (0,0), (-1,-1), 0),
+            ("RIGHTPADDING", (0,0), (-1,-1), 0),
+            ("TOPPADDING", (0,0), (-1,-1), 0),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 0)
+        ]))
 
         elementos.append(tabela)
-
         if pagina_inicio + 12 < len(caixas):
             elementos.append(PageBreak())
 
@@ -313,28 +292,14 @@ def gerar_pdf_a4(pedidos):
     return arquivo.getvalue()
 
 
-# =====================================================
-# PDF INDIVIDUAL 7X10 CM
-# =====================================================
 def gerar_pdf_individual(pedidos):
     arquivo = io.BytesIO()
-
-    doc = SimpleDocTemplate(
-        arquivo,
-        pagesize=(LARGURA_ETIQUETA, ALTURA_ETIQUETA),
-        rightMargin=0.3*cm,
-        leftMargin=0.3*cm,
-        topMargin=0.3*cm,
-        bottomMargin=0.3*cm
-    )
+    doc = SimpleDocTemplate(arquivo, pagesize=(LARGURA_ETIQUETA, ALTURA_ETIQUETA), rightMargin=0.3*cm, leftMargin=0.3*cm, topMargin=0.3*cm, bottomMargin=0.3*cm)
 
     elementos = []
-
     for indice, pedido in enumerate(pedidos):
         conteudo = montar_conteudo_etiqueta(pedido)
-        bloco = KeepTogether(conteudo)
-        elementos.append(bloco)
-
+        elementos.append(KeepTogether(conteudo))
         if indice < len(pedidos) - 1:
             elementos.append(PageBreak())
 
@@ -342,13 +307,7 @@ def gerar_pdf_individual(pedidos):
     arquivo.seek(0)
     return arquivo.getvalue()
 
-
-# =====================================================
-# FUNÇÃO PRINCIPAL
-# =====================================================
 def gerar_pdf_pedidos(pedidos, formato):
-    # A verificação pelo "📄" é baseada na label do rádio do streamlit
     if formato.startswith("📄"):
         return gerar_pdf_a4(pedidos)
-
     return gerar_pdf_individual(pedidos)
