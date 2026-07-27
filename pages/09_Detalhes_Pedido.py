@@ -39,12 +39,9 @@ div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1
 .resumo-val { font-weight: 700; color: #222; }
 .resumo-total-val { font-size: 20px !important; font-weight: 800 !important; color: #2e7d32 !important; }
 .pgto-badge { background: #f3ece6; color: #5a3b28; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid #dfcdbb; }
-
-/* Botões Corrigidos */
 div[data-testid="stButton"] > button { width: 100% !important; border-radius: 8px !important; min-height: 38px !important; font-weight: 700 !important; }
 div[data-testid="stLinkButton"] > a { width: 100% !important; border-radius: 8px !important; min-height: 38px !important; font-weight: 700 !important; display: flex !important; align-items: center !important; justify-content: center !important; background-color: #25D366 !important; color: white !important; border: none !important; }
 div[data-testid="stLinkButton"] > a:hover { background-color: #128C7E !important; color: white !important; }
-
 @media (max-width: 768px) { .block-container { padding-top: 0.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; } h1 { font-size: 18px !important; } div[data-testid="stVerticalBlockBorderWrapper"] { padding: 8px !important; } .info-value { font-size: 12px !important; } .resumo-total-val { font-size: 17px !important; } .resumo-container { padding: 8px 10px; } }
 .badge-montada { background-color: #e6f4ea; color: #137333; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 800; border: 1px solid #137333; margin-left: 10px; display: inline-block; }
 </style>
@@ -65,23 +62,27 @@ if not pedido:
 
 
 # =====================================================
-# LÓGICA DE BLOQUEIO E CONTROLE DE ESTADO
+# LÓGICA DE BLOQUEIO (MODO ARQUIVO)
 # =====================================================
 status_atual_pedido = str(pedido.get("status", "")).strip().capitalize()
 perfil_usuario = usuario.get("perfil", "Operador")
 
-bloquear_edicao = (status_atual_pedido in ["Enviado", "Entregue"]) and (perfil_usuario != "Administrador")
+# Se o pedido estiver finalizado (Entregue), a ficha se torna apenas um Arquivo Histórico.
+pedido_arquivado = (status_atual_pedido == "Entregue")
 
-# Esconde a checkbox de 'Cesta Pronta' se o pedido não estiver pago
-pode_montar = status_atual_pedido not in ["Recebido", "Desistência", "Desistencia"]
+# Bloqueio padrão para operadores em pedidos enviados
+bloquear_edicao = (status_atual_pedido == "Enviado") and (perfil_usuario != "Administrador")
 
 if "editar_pedido" not in st.session_state: st.session_state.editar_pedido = False
 
-if bloquear_edicao:
+if pedido_arquivado or bloquear_edicao:
     st.session_state.editar_pedido = False
 
+if pedido_arquivado:
+    st.success("📦 **PEDIDO FINALIZADO (ARQUIVO)** - Esta ficha está disponível apenas para leitura do histórico de vendas do cliente.")
+
 # -----------------------------------------------------
-# FILTRO ANTI-DUPLICIDADE DE ADICIONAIS E LEITURA
+# FILTRO ANTI-DUPLICIDADE E LEITURA JSON
 # -----------------------------------------------------
 try:
     lista_bruta_adicionais = listar_adicionais_pedido(pedido["id"])
@@ -215,18 +216,16 @@ def obter_icone_pagamento(metodo):
         return f'<span class="pgto-badge">{metodo}</span>'
 
 # =====================================================
-# AVISO DE BLOQUEIO E CABEÇALHO
+# CABEÇALHO 
 # =====================================================
-if bloquear_edicao:
-    st.warning("🔒 **Pedido Bloqueado:** Como o status já é 'Enviado' ou 'Entregue', apenas o Administrador pode fazer alterações neste pedido.")
-
 col_t1, col_t2 = st.columns([3.5, 1])
 with col_t1:
-    st.title("📋 Detalhes da Ficha Técnica")
+    st.title("📋 Ficha Técnica")
     badge_montada = '<span class="badge-montada">🧺 Cesta Montada</span>' if pedido.get("cesta_montada") else ''
     st.markdown(f"Pedido #{pedido.get('id')} | Status: **{pedido.get('status','-')}** {badge_montada}", unsafe_allow_html=True)
 with col_t2:
-    if not bloquear_edicao:
+    # Remove a opção de Alterar se estiver arquivado
+    if not pedido_arquivado and not bloquear_edicao:
         if st.button("✏️ Alterar Pedido", use_container_width=True):
             st.session_state.editar_pedido = True
             st.rerun()
@@ -392,7 +391,8 @@ else:
                         else:
                             st.write(f"• {nome}")
                             val_salvo = float(itens_consulta_salvos.get(nome, 0) or 0)
-                            val_dig = st.number_input("Definir valor", min_value=0.0, value=val_salvo, step=1.0, key=f"cons_{nome}_{idx_ad}", disabled=bloquear_edicao)
+                            # Se arquivado, desabilita a edição dos itens sob consulta
+                            val_dig = st.number_input("Definir valor", min_value=0.0, value=val_salvo, step=1.0, key=f"cons_{nome}_{idx_ad}", disabled=(bloquear_edicao or pedido_arquivado))
                             itens_consulta[nome] = val_dig
                             if val_dig > 0: valor_consulta += val_dig; valor_adicionais += val_dig
                 else: st.caption("Nenhum adicional selecionado.")
@@ -429,30 +429,31 @@ else:
         with st.container(border=True):
             st.markdown('<div class="card-title">💰 Fechamento Financeiro</div>', unsafe_allow_html=True)
             cf1, cf2, cf3, cf4 = st.columns(4)
-            with cf1: valor_frete = st.number_input("🚚 Frete", min_value=0.0, value=float(pedido.get("valor_frete") or 0), step=1.0, key="frete", disabled=bloquear_edicao)
-            with cf2: valor_extras = st.number_input("➕ Extras", min_value=0.0, value=float(pedido.get("valor_extras") or 0), step=1.0, key="extras", disabled=bloquear_edicao)
-            with cf3: desconto = st.number_input("🏷️ Desconto", min_value=0.0, value=float(pedido.get("desconto") or 0), step=1.0, key="desconto", disabled=bloquear_edicao)
+            # Se arquivado, todos os campos de fechamento travam
+            travar_financeiro = (bloquear_edicao or pedido_arquivado)
+            with cf1: valor_frete = st.number_input("🚚 Frete", min_value=0.0, value=float(pedido.get("valor_frete") or 0), step=1.0, key="frete", disabled=travar_financeiro)
+            with cf2: valor_extras = st.number_input("➕ Extras", min_value=0.0, value=float(pedido.get("valor_extras") or 0), step=1.0, key="extras", disabled=travar_financeiro)
+            with cf3: desconto = st.number_input("🏷️ Desconto", min_value=0.0, value=float(pedido.get("desconto") or 0), step=1.0, key="desconto", disabled=travar_financeiro)
             
             c_status1, c_status2 = st.columns(2)
             with c_status1:
-                # Retirado "Enviado" das opções normais
                 status_op = ["Recebido", "Pago", "Desistência"]
                 status_atual = pedido.get("status", "Recebido")
                 
-                # Garante visualização se já estiver em status oculto
-                if status_atual == "Entregue": status_op.append("Entregue")
-                if status_atual == "Enviado": status_op.append("Enviado")
+                # Se for administrador, exibe todas as opções (para correção de erros)
+                if perfil_usuario == "Administrador":
+                    status_op = ["Recebido", "Pago", "Enviado", "Entregue", "Desistência"]
+                else:
+                    if status_atual == "Entregue": status_op.append("Entregue")
+                    if status_atual == "Enviado": status_op.append("Enviado")
                     
-                status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0, disabled=bloquear_edicao)
+                status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0, disabled=travar_financeiro)
             
             with c_status2:
                 st.markdown("<div style='margin-top: 32px;'></div>", unsafe_allow_html=True)
-                if pode_montar:
-                    chk_montada = st.checkbox("🧺 Cesta Pronta", value=bool(pedido.get("cesta_montada")), disabled=bloquear_edicao)
-                else:
-                    chk_montada = bool(pedido.get("cesta_montada"))
+                chk_montada = st.checkbox("🧺 Cesta Pronta", value=bool(pedido.get("cesta_montada")), disabled=travar_financeiro)
 
-            horario_combinado = st.text_input("🕒 Horário Combinado de Entrega", value=pedido.get("horario_combinado") or "", placeholder="Ex: 15:30", disabled=bloquear_edicao)
+            horario_combinado = st.text_input("🕒 Horário Combinado de Entrega", value=pedido.get("horario_combinado") or "", placeholder="Ex: 15:30", disabled=travar_financeiro)
 
         valor_total_calculado = max(0, valor_cesta + valor_adicionais + valor_frete + valor_extras - desconto)
 
@@ -473,11 +474,12 @@ else:
 
         with st.container(border=True):
             st.markdown('<div class="card-title">📝 Anotações Internas</div>', unsafe_allow_html=True)
-            anotacao = st.text_area("Observações do atendimento", value=pedido.get("anotacoes_internas") or "", height=70, key="campo_anotacao")
-            if st.button("💾 Salvar Anotação", use_container_width=True):
-                atualizar_anotacao_pedido(pedido["id"], anotacao)
-                st.session_state['msg_geral'] = "✅ Anotação salva!"
-                st.rerun()
+            anotacao = st.text_area("Observações do atendimento", value=pedido.get("anotacoes_internas") or "", height=70, key="campo_anotacao", disabled=pedido_arquivado)
+            if not pedido_arquivado:
+                if st.button("💾 Salvar Anotação", use_container_width=True):
+                    atualizar_anotacao_pedido(pedido["id"], anotacao)
+                    st.session_state['msg_geral'] = "✅ Anotação salva!"
+                    st.rerun()
 
         with st.container(border=True):
             st.markdown('<div class="card-title">📷 Gestão de Fotos Polaroid</div>', unsafe_allow_html=True)
@@ -485,16 +487,19 @@ else:
                 if "❌" in st.session_state['msg_foto']: st.error(st.session_state['msg_foto'])
                 else: st.success(st.session_state['msg_foto'])
                 del st.session_state['msg_foto']
-            novas_fotos = st.file_uploader("Adicionar fotos", type=["jpg", "jpeg", "png", "webp"], accept_multiple_files=True, key="up_fotos_multi")
-            if novas_fotos:
-                if st.button("📤 Salvar Novas Fotos", use_container_width=True):
-                    with st.spinner("Processando..."):
-                        sucesso, erro_msg = salvar_fotos_local(pedido["id"], novas_fotos)
-                    if sucesso: st.session_state['msg_foto'] = "✅ Foto salva!"
-                    else: st.session_state['msg_foto'] = f"❌ Erro Supabase: {erro_msg}"
-                    st.rerun()
-
-            st.divider()
+            
+            # Esconde o upload de fotos se estiver arquivado
+            if not pedido_arquivado:
+                novas_fotos = st.file_uploader("Adicionar fotos", type=["jpg", "jpeg", "png", "webp"], accept_multiple_files=True, key="up_fotos_multi")
+                if novas_fotos:
+                    if st.button("📤 Salvar Novas Fotos", use_container_width=True):
+                        with st.spinner("Processando..."):
+                            sucesso, erro_msg = salvar_fotos_local(pedido["id"], novas_fotos)
+                        if sucesso: st.session_state['msg_foto'] = "✅ Foto salva!"
+                        else: st.session_state['msg_foto'] = f"❌ Erro Supabase: {erro_msg}"
+                        st.rerun()
+                st.divider()
+                
             fotos, erro_listar = listar_fotos_local(pedido["id"])
             if erro_listar: st.error(f"❌ Erro ao buscar: {erro_listar}")
             elif fotos:
@@ -504,11 +509,12 @@ else:
                         link_imagem = foto.get("url")
                         if link_imagem:
                             st.image(link_imagem, caption=foto.get("nome_original", "Foto"), use_container_width=True)
-                            if st.button("🗑️ Deletar", key=f"del_foto_{foto['id']}", use_container_width=True):
-                                suc, err_del = deletar_foto_local(foto["id"], foto.get("arquivo"))
-                                if suc: st.session_state['msg_foto'] = "✅ Foto deletada!"
-                                else: st.session_state['msg_foto'] = f"❌ Erro ao deletar: {err_del}"
-                                st.rerun()
+                            if not pedido_arquivado:
+                                if st.button("🗑️ Deletar", key=f"del_foto_{foto['id']}", use_container_width=True):
+                                    suc, err_del = deletar_foto_local(foto["id"], foto.get("arquivo"))
+                                    if suc: st.session_state['msg_foto'] = "✅ Foto deletada!"
+                                    else: st.session_state['msg_foto'] = f"❌ Erro ao deletar: {err_del}"
+                                    st.rerun()
                         else: st.caption("⚠️ Link indisponível.")
             else: st.caption("Nenhuma foto anexada.")
 
@@ -517,26 +523,29 @@ else:
         del st.session_state['msg_geral']
 
     col_bot1, col_bot2, col_bot3 = st.columns(3)
-    with col_bot1:
-        if st.button("💾 Salvar Atendimento Completo", use_container_width=True, type="primary", disabled=bloquear_edicao):
-            dados = {
-                "status": status, 
-                "cesta_montada": chk_montada,
-                "valor_frete": valor_frete, 
-                "valor_extras": valor_extras, 
-                "desconto": desconto, 
-                "valor_total": valor_total_calculado, 
-                "horario_combinado": horario_combinado, 
-                "itens_consulta": itens_consulta
-            }
-            atualizar_pedido(pedido["id"], dados)
-            st.session_state['msg_geral'] = "✅ Atendimento financeiro salvo com sucesso!"
-            st.rerun()
+    
+    # Esconde o botão de Salvar Atendimento se for arquivo morto
+    if not pedido_arquivado:
+        with col_bot1:
+            if st.button("💾 Salvar Atendimento Completo", use_container_width=True, type="primary", disabled=bloquear_edicao):
+                dados = {
+                    "status": status, 
+                    "cesta_montada": chk_montada,
+                    "valor_frete": valor_frete, 
+                    "valor_extras": valor_extras, 
+                    "desconto": desconto, 
+                    "valor_total": valor_total_calculado, 
+                    "horario_combinado": horario_combinado, 
+                    "itens_consulta": itens_consulta
+                }
+                atualizar_pedido(pedido["id"], dados)
+                st.session_state['msg_geral'] = "✅ Atendimento financeiro salvo com sucesso!"
+                st.rerun()
 
     with col_bot2:
         link_wpp = gerar_whatsapp(pedido, adicionais_pedido, valor_total_calculado, valor_frete, valor_extras, desconto)
         st.link_button("💬 Enviar Resumo no WhatsApp", url=link_wpp, use_container_width=True)
 
     with col_bot3:
-        if st.button("⬅ Voltar para Pedidos", use_container_width=True):
-            st.switch_page("pages/02_Pedidos.py")
+        if st.button("⬅ Voltar para Listagem", use_container_width=True):
+            st.switch_page("pages/03_Clientes.py" if pedido_arquivado else "pages/02_Pedidos.py")
