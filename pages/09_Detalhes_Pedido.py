@@ -13,7 +13,7 @@ from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA E CSS
+# CONFIGURAÇÃO DA PÁGINA
 # =====================================================
 st.set_page_config(page_title="Detalhes do Pedido", page_icon="📋", layout="wide")
 configurar_pagina()
@@ -66,10 +66,10 @@ if not pedido:
 # =====================================================
 status_atual_pedido = str(pedido.get("status", "")).strip().capitalize()
 perfil_usuario = usuario.get("perfil", "Operador")
+e_administrador = (perfil_usuario == "Administrador")
 
 pedido_arquivado = (status_atual_pedido == "Entregue")
-# Se estiver em Rota (Enviado), bloqueia edições operacionais comuns
-bloquear_edicao = (status_atual_pedido == "Enviado") and (perfil_usuario != "Administrador")
+bloquear_edicao = (status_atual_pedido == "Enviado") and not e_administrador
 
 if "editar_pedido" not in st.session_state: st.session_state.editar_pedido = False
 
@@ -434,16 +434,22 @@ else:
             
             c_status1, c_status2 = st.columns(2)
             with c_status1:
-                # O status operacional gerencia APENAS transações financeiras (Recebido, Pago, Desistência).
-                # NUNCA permitimos selecionar "Enviado" ou "Entregue" manualmente por aqui para proteger a logística.
-                status_op = ["Recebido", "Pago", "Desistência"]
                 status_atual = str(pedido.get("status", "Recebido")).strip().capitalize()
                 
-                # Se o pedido já estiver em Rota ou Entregue, fixamos ele na lista para leitura correta
-                if status_atual in ["Enviado", "Entregue"] and status_atual not in status_op:
-                    status_op.append(status_atual)
+                # REGRAS DO STATUS:
+                # 1. Se for ADMINISTRADOR: Ele pode escolher livremente entre ["Recebido", "Pago", "Desistência"]. 
+                #    (Se o pedido já estiver em Enviado/Entregue, mantemos ele visível na lista para não quebrar a leitura).
+                # 2. Se for OPERADOR (ou outro): O campo fica SEMPRE travado (disabled=True).
+                if e_administrador and not pedido_arquivado:
+                    status_op = ["Recebido", "Pago", "Desistência"]
+                    if status_atual not in status_op:
+                        status_op.append(status_atual)
                     
-                status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0, disabled=True)
+                    status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0, disabled=False)
+                else:
+                    # Trava total para Operador ou Pedido Arquivado/Enviado
+                    status_op = [status_atual]
+                    status = st.selectbox("Status", status_op, index=0, disabled=True)
             
             with c_status2:
                 st.markdown("<div style='margin-top: 32px;'></div>", unsafe_allow_html=True)
@@ -523,6 +529,7 @@ else:
         with col_bot1:
             if st.button("💾 Salvar Atendimento Completo", use_container_width=True, type="primary", disabled=bloquear_edicao):
                 dados = {
+                    "status": status,  # Salva o status que o Administrador alterou (se for admin)
                     "cesta_montada": chk_montada,
                     "valor_frete": valor_frete, 
                     "valor_extras": valor_extras, 
