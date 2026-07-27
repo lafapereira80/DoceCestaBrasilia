@@ -217,17 +217,29 @@ def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_atual, d
         f"💰 *Resumo Financeiro*\n{texto_val}✅ *Valor Final: {formatar_valor(valor_final)}*\n\nObrigado! ❤️"
     )
     
-    # Tratamento Inteligente de DDI para o link do WhatsApp
     tel_limpo = re.sub(r'\D', '', str(pedido.get("cliente_telefone", "")))
-    
-    # Se o número tiver 10 ou 11 dígitos, provavelmente é um pedido antigo sem DDI. Adicionamos o 55.
     if len(tel_limpo) == 10 or len(tel_limpo) == 11:
         tel_wpp = f"55{tel_limpo}"
     else:
-        # Se for maior que 11, assumimos que já veio com o DDI embutido (ex: EUA, Portugal ou os novos +55 do BR)
         tel_wpp = tel_limpo
         
     return f"https://wa.me/{tel_wpp}?text={urllib.parse.quote(texto)}"
+
+# Função para trocar o texto de pagamento pela Imagem / Ícone
+def obter_icone_pagamento(metodo):
+    m = str(metodo).strip().lower()
+    svg_cartao = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1a73e8" width="18px" height="18px"><path d="M20 4H4C2.89 4 2.01 4.89 2.01 6L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>'''
+    
+    if "pix" in m:
+        return '<div style="background-color: #e6f4ea; border: 1px solid #137333; border-radius: 6px; padding: 2px 10px; display: inline-flex; align-items: center; justify-content: center; height: 26px;" title="Pix"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a2/Logo%E2%80%94pix_nacional_brasil.svg" height="14"></div>'
+    elif "cart" in m:
+        return f'<div style="background-color: #e8f0fe; border: 1px solid #1a73e8; border-radius: 6px; padding: 2px 10px; display: inline-flex; align-items: center; justify-content: center; height: 26px;" title="Cartão de Crédito">{svg_cartao}</div>'
+    elif "dinheiro" in m:
+        return '<div style="background-color: #fef7e0; border: 1px solid #b06000; border-radius: 6px; padding: 2px 10px; display: inline-flex; align-items: center; justify-content: center; height: 26px;" title="Dinheiro"><span style="font-size: 14px;">💵</span></div>'
+    elif "transfer" in m:
+        return '<div style="background-color: #f3ece6; border: 1px solid #dfcdbb; border-radius: 6px; padding: 2px 10px; display: inline-flex; align-items: center; justify-content: center; height: 26px;" title="Transferência Bancária"><span style="font-size: 14px;">🏦</span></div>'
+    else:
+        return f'<span class="pgto-badge">{metodo}</span>'
 
 
 # =====================================================
@@ -398,7 +410,10 @@ with col_esquerda:
         st.markdown('<div class="card-title">🎁 Pedido</div>', unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns(4)
         with c1: st.markdown(f'<div class="info-label">Cesta</div><div class="info-value">{pedido.get("cesta_nome","-")}</div>', unsafe_allow_html=True)
-        with c2: st.markdown(f'<div class="info-label">Pagamento</div><div class="info-value"><span class="pgto-badge">{pedido.get("pagamento","-")}</span></div>', unsafe_allow_html=True)
+        
+        # APLICANDO A NOVA FUNÇÃO DE ÍCONES DE PAGAMENTO AQUI:
+        with c2: st.markdown(f'<div class="info-label">Pagamento</div><div class="info-value">{obter_icone_pagamento(pedido.get("pagamento", "-"))}</div>', unsafe_allow_html=True)
+        
         with c3: st.markdown(f'<div class="info-label">Entrega</div><div class="info-value">{formatar_data(pedido.get("data_entrega"))}</div>', unsafe_allow_html=True)
         with c4: st.markdown(f'<div class="info-label">Período</div><div class="info-value">{pedido.get("periodo_entrega","-")}</div>', unsafe_allow_html=True)
 
@@ -480,7 +495,6 @@ with col_direita:
         with cf2: valor_extras = st.number_input("➕ Extras", min_value=0.0, value=float(pedido.get("valor_extras") or 0), step=1.0, key="extras")
         with cf3: desconto = st.number_input("🏷️ Desconto", min_value=0.0, value=float(pedido.get("desconto") or 0), step=1.0, key="desconto")
         with cf4:
-            # ADICIONADO O STATUS "ENVIADO" NA LISTA ABAIXO
             status_op = ["Recebido", "Pago", "Enviado", "Entregue", "Desistência"]
             status_atual = pedido.get("status", "Recebido")
             status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0)
