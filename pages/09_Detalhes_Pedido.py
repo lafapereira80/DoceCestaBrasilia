@@ -480,7 +480,8 @@ with col_direita:
         with cf2: valor_extras = st.number_input("➕ Extras", min_value=0.0, value=float(pedido.get("valor_extras") or 0), step=1.0, key="extras")
         with cf3: desconto = st.number_input("🏷️ Desconto", min_value=0.0, value=float(pedido.get("desconto") or 0), step=1.0, key="desconto")
         with cf4:
-            status_op = ["Recebido", "Pago", "Desistência", "Entregue"]
+            # ADICIONADO O STATUS "ENVIADO" NA LISTA ABAIXO
+            status_op = ["Recebido", "Pago", "Enviado", "Entregue", "Desistência"]
             status_atual = pedido.get("status", "Recebido")
             status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0)
 
