@@ -185,7 +185,6 @@ def render_criar_pedido_manual():
         with cc3:
             tel_comp = st.text_input("Telefone *", key="man_tel")
 
-        # CAMPO DE PESQUISA INTELIGENTE (TEXTO + FILTRO)
         if st.session_state.modo_busca_cli:
             with st.container(border=True):
                 st.markdown("**🔍 Pesquisar Cliente**")
@@ -286,12 +285,12 @@ def render_criar_pedido_manual():
         with cm1: motivo = st.text_input("Motivo da Homenagem", key="man_motivo")
         with cm2: mensagem = st.text_area("Mensagem do Cartão", height=68, key="man_msg")
         
-        # Integração do CEP (Auto-busca)
+        # Integração do CEP (Opcional, com auto-busca se preenchido)
         with st.container(border=True):
             st.markdown("**📍 Endereço de Entrega**")
             cx1, cx2 = st.columns([1, 2])
             with cx1:
-                cep_in = st.text_input("CEP *", max_chars=8, key="man_cep")
+                cep_in = st.text_input("CEP (Opcional)", max_chars=8, key="man_cep")
             
             if "man_rua" not in st.session_state: st.session_state.man_rua = ""
             if "man_bairro" not in st.session_state: st.session_state.man_bairro = ""
@@ -312,7 +311,7 @@ def render_criar_pedido_manual():
                 st.session_state.ultimo_cep_man = cep_limpo
                 st.rerun(scope="fragment")
                 
-            with cx2: cidade = st.text_input("Cidade-UF *", value=st.session_state.man_cidade, key="man_cid_in")
+            with cx2: cidade = st.text_input("Cidade-UF", value=st.session_state.man_cidade, key="man_cid_in")
             rua = st.text_input("Rua/Logradouro *", value=st.session_state.man_rua, key="man_rua_in")
             cn1, cn2 = st.columns(2)
             with cn1: num = st.text_input("Número/Compl. *", key="man_num")
@@ -345,7 +344,10 @@ def render_criar_pedido_manual():
             
             prod_text = "\n".join([f"{c}: {i['nome']}" for c, itens in selecoes_admin.items() for i in itens])
             add_text = ", ".join([a["nome"] for a in adicionais_selecionados])
-            end_comp = f"{rua}, {num} - {bairro}, {cidade} (CEP: {cep_in})"
+            
+            # Formata o endereço final dinamicamente, ocultando o "(CEP: )" se o campo estiver vazio
+            cep_str = f" (CEP: {cep_in})" if cep_in.strip() else ""
+            end_comp = f"{rua}, {num} - {bairro}, {cidade}{cep_str}"
             
             dados_ped = {
                 "cliente_nome": nome_comp.strip(),
@@ -410,12 +412,6 @@ if not df.empty and "created_at" in df.columns:
     df["created_at"] = pd.to_datetime(df["created_at"])
     df = df.sort_values("created_at", ascending=False)
 
-st.subheader("🔍 Pesquisar pedido existente")
-pesquisa = st.text_input("", placeholder="Digite o nome do cliente...")
-
-if pesquisa.strip() and not df.empty:
-    df = df[df["cliente_nome"].fillna("").str.contains(pesquisa, case=False)]
-
 
 # =====================================================
 # STATUS VISUAL
@@ -446,6 +442,13 @@ def mostrar_lista(titulo, status_filtro, permitir_exclusao=False, permitir_impre
     if pedidos_status.empty:
         st.info(f"Nenhum pedido nesta etapa no momento.")
         return
+        
+    pesquisa_local = st.text_input("🔍 Buscar cliente:", placeholder="Digite o nome...", key=f"pesquisa_{status_filtro}")
+    if pesquisa_local.strip():
+        pedidos_status = pedidos_status[pedidos_status["cliente_nome"].fillna("").str.contains(pesquisa_local, case=False)]
+        if pedidos_status.empty:
+            st.info("Nenhum pedido encontrado com esse nome nesta aba.")
+            return
 
     for _, pedido in pedidos_status.iterrows():
         try:
@@ -520,15 +523,12 @@ def mostrar_lista(titulo, status_filtro, permitir_exclusao=False, permitir_impre
 aba_recebidos, aba_pagos, aba_desistencias = st.tabs(["📥 Recebidos", "💰 Pagos", "❌ Desistências"])
 
 with aba_recebidos:
-    st.subheader("📥 Pedidos Recebidos")
     mostrar_lista("Pedidos Recebidos", "Recebido")
 
 with aba_pagos:
-    st.subheader("💰 Pedidos Pagos")
     mostrar_lista("Pedidos Pagos", "Pago", permitir_impressao=True)
 
 with aba_desistencias:
-    st.subheader("❌ Desistências")
     mostrar_lista("Desistências", "Desistência", permitir_exclusao=(usuario.get("perfil") == "Administrador"))
 
 
