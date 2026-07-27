@@ -181,7 +181,7 @@ df_adicionais = pd.DataFrame(adicionais)
 
 
 # =====================================================
-# TRATAMENTO DOS DADOS
+# TRATAMENTO DOS DADOS E FILTRAGEM DE STATUS
 # =====================================================
 
 if "created_at" in df.columns:
@@ -193,15 +193,15 @@ df["valor_total"] = pd.to_numeric(df.get("valor_total", 0), errors="coerce").fil
 df["valor_frete"] = pd.to_numeric(df.get("valor_frete", 0), errors="coerce").fillna(0)
 df["desconto"] = pd.to_numeric(df.get("desconto", 0), errors="coerce").fillna(0)
 
-# Padroniza o status para capitalizado (Ex: "Pago", "Entregue", "Recebido", etc.)
+# Padroniza o status para capitalizado
 if "status" in df.columns:
     df["status"] = df["status"].fillna("Desconhecido").astype(str).str.strip().str.capitalize()
 else:
     df["status"] = "Desconhecido"
 
-# Considera para o financeiro os status de faturamento (Pago, Entregue, etc.)
-status_financeiro = ["Pago", "Entregue"]
-df = df[df["status"].isin(status_financeiro)]
+# EXCLUI os pedidos com status "Recebido" ou "Desistência/Desistencia"
+status_excluir = ["Recebido", "Desistência", "Desistencia"]
+df = df[~df["status"].isin(status_excluir)]
 
 df["ano"] = df["created_at"].dt.year
 df["mes"] = df["created_at"].dt.month
@@ -221,15 +221,15 @@ def moeda(valor):
 
 
 # =====================================================
-# FILTROS (MUITO COMPACTO)
+# FILTROS (REDUZIDOS PARA 2 COLUNAS POIS O STATUS SAIU)
 # =====================================================
 
 with st.container(border=True):
-    col_f1, col_f2, col_f3 = st.columns(3)
+    col_f1, col_f2 = st.columns(2)
 
     with col_f1:
         anos = sorted(df["ano"].dropna().unique(), reverse=True)
-        ano_selecionado = st.selectbox("Ano", ["Todos"] + list(anos))
+        ano_selecionado = st.selectbox("Ano (Data da Compra)", ["Todos"] + list(anos))
 
     with col_f2:
         meses = {
@@ -237,11 +237,7 @@ with st.container(border=True):
             5:"Maio", 6:"Junho", 7:"Julho", 8:"Agosto",
             9:"Setembro", 10:"Outubro", 11:"Novembro", 12:"Dezembro"
         }
-        mes_selecionado = st.selectbox("Mês", ["Todos"] + list(meses.values()))
-
-    with col_f3:
-        status_lista = sorted(df["status"].dropna().unique().tolist())
-        status_selecionado = st.selectbox("Status", ["Todos"] + status_lista)
+        mes_selecionado = st.selectbox("Mês (Data da Compra)", ["Todos"] + list(meses.values()))
 
 
 # =====================================================
@@ -256,9 +252,6 @@ if ano_selecionado != "Todos":
 if mes_selecionado != "Todos":
     numero_mes = [chave for chave, valor in meses.items() if valor == mes_selecionado][0]
     df_filtrado = df_filtrado[df_filtrado["mes"] == numero_mes]
-
-if status_selecionado != "Todos":
-    df_filtrado = df_filtrado[df_filtrado["status"] == status_selecionado]
 
 
 # =====================================================
