@@ -2,6 +2,7 @@ import streamlit as st
 import json
 import urllib.parse
 from uuid import uuid4
+import re  # Adicionado para tratar o endereço no GPS
 
 # Importando apenas o necessário
 from services.pedido_service import buscar_pedido
@@ -442,7 +443,10 @@ with col_esquerda:
         st.text_area("", value=endereco_pedido if endereco_pedido else "Endereço não informado.", disabled=True, height=65, key="end_vis")
         
         if endereco_pedido:
-            endereco_encoded = urllib.parse.quote(endereco_pedido)
+            # Remove a tag (CEP: xxxxx) apenas do link do GPS para evitar confusões de rota
+            endereco_limpo_gps = re.sub(r'\(CEP:.*?\)', '', endereco_pedido).strip()
+            endereco_encoded = urllib.parse.quote(endereco_limpo_gps)
+            
             link_google_maps = f"https://www.google.com/maps/search/?api=1&query={endereco_encoded}"
             link_waze = f"https://waze.com/ul?q={endereco_encoded}&navigate=yes"
             
