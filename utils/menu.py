@@ -200,14 +200,18 @@ def menu_lateral():
         if perfil in ["Administrador", "Operador", "Entregador"]:
             st.page_link("pages/08_Entregas.py", label="🛵 Rotas e Entregas")
 
-        # 3. Restante do catálogo (Apenas Admin e Operador)
+        # 3. NOVO: Previsão de Produção (Apenas Admin e Operador)
+        if perfil in ["Administrador", "Operador"]:
+            st.page_link("pages/16_Previsao.py", label="📅 Previsão de Produção")
+
+        # 4. Restante do catálogo (Apenas Admin e Operador)
         if perfil in ["Administrador", "Operador"]:
             st.page_link("pages/03_Clientes.py", label="👥 Clientes")
             st.page_link("pages/04_Cestas.py", label="🧺 Cestas")
             st.page_link("pages/05_Produtos.py", label="🍫 Produtos")
             st.page_link("pages/15_Categorias.py", label="📂 Categorias")
 
-        # 4. Módulo Financeiro e Configurações (Apenas Administrador)
+        # 5. Módulo Financeiro e Configurações (Apenas Administrador)
         if perfil == "Administrador":
             st.divider()
             st.page_link("pages/06_Financeiro.py", label="💰 Financeiro")
