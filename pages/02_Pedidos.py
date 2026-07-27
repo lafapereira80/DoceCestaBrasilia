@@ -11,8 +11,7 @@ from services.pedido_service import (
     listar_pedidos_ativos,
     excluir_pedido_completo,
     buscar_pedido,
-    salvar_pedido,
-    atualizar_status_pedido
+    salvar_pedido
 )
 from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
