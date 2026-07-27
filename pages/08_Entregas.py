@@ -379,26 +379,33 @@ else:
 
     if not st.session_state.modo_entrega_ativa:
         if pedidos_ativos_driver:
-            st.info("👇 Ajuste sua rota clicando nas setas e Inicie quando estiver pronto.")
+            st.info("👇 Abaixo estão as cestas atribuídas à sua rota. Ajuste a ordem clicando nas setas e Inicie quando estiver pronto.")
             salvar_ordem(pedidos_ativos_driver)
             
+            # Exibe os cards idênticos à Fila de Despacho, sem número do pedido
             for i, ped in enumerate(pedidos_ativos_driver):
                 with st.container(border=True):
+                    endereco_completo = ped.get('endereco', 'Endereço não informado')
+                    data_entrega = formatar_data(ped.get('data_entrega'))
+                    turno = ped.get('periodo_entrega', 'N/I')
+                    hora_combinada = ped.get('horario_combinado', '')
+                    hora_str = f" • Às {hora_combinada}" if hora_combinada else ""
+                    
+                    tel_dest = ped.get('destinatario_telefone')
+                    tel_dest_str = f" (📞 {tel_dest})" if tel_dest else ""
+                    
                     col_info, col_up, col_down = st.columns([5, 1, 1])
                     with col_info:
-                        bairro = str(ped.get('endereco', '')).split(',')[-1].split('(')[0].strip() or "Endereço incompleto"
-                        horario = ped.get('horario_combinado', '') or ped.get('periodo_entrega', 'Livre')
-                        data_e = formatar_data(ped.get('data_entrega'))
-                        tel_dest = ped.get('destinatario_telefone')
-                        tel_dest_str = f" (📞 {tel_dest})" if tel_dest else ""
-                        st.markdown(f"""
-                            <div class="card-info">
-                                <div class="bairro-destaque">📍 {i+1}º - {bairro}</div>
+                        st.markdown(
+                            f"""
+                            <div style="margin-bottom: 4px;">
                                 <div style="font-size:12px; color:#444;">👤 <strong>Comprador:</strong> {ped.get('cliente_nome')} (📞 {ped.get('cliente_telefone')})</div>
-                                <div class="nome-destaque">🎁 {ped.get('cesta_nome')} para <strong>{ped.get('destinatario_nome')}</strong>{tel_dest_str}</div>
-                                <div class="hora-destaque">📅 {data_e} | 🕒 {horario}</div>
+                                <div class="nome-destaque" style="margin-top: 4px;">🎁 <strong>{ped.get('cesta_nome')}</strong> para <em>{ped.get('destinatario_nome')}</em>{tel_dest_str}</div>
+                                <div style="font-size:12px; color:#333; font-weight: 700; margin-top: 6px; background: #faf7f3; padding: 6px; border-radius: 6px; border-left: 3px solid #dfcdbb;">📍 {endereco_completo}</div>
+                                <div class="hora-destaque">📅 {data_entrega} | 🕒 {turno}{hora_str}</div>
                             </div>
-                        """, unsafe_allow_html=True)
+                            """, unsafe_allow_html=True
+                        )
 
                     with col_up:
                         if i > 0:
