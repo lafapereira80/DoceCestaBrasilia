@@ -62,15 +62,13 @@ if not pedido:
 
 
 # =====================================================
-# LÓGICA DE BLOQUEIO (MODO ARQUIVO)
+# LÓGICA DE BLOQUEIO (MODO ARQUIVO / LOGÍSTICA)
 # =====================================================
 status_atual_pedido = str(pedido.get("status", "")).strip().capitalize()
 perfil_usuario = usuario.get("perfil", "Operador")
 
-# Se o pedido estiver finalizado (Entregue), a ficha se torna apenas um Arquivo Histórico.
 pedido_arquivado = (status_atual_pedido == "Entregue")
-
-# Bloqueio padrão para operadores em pedidos enviados
+# Se estiver em Rota (Enviado), bloqueia edições operacionais comuns
 bloquear_edicao = (status_atual_pedido == "Enviado") and (perfil_usuario != "Administrador")
 
 if "editar_pedido" not in st.session_state: st.session_state.editar_pedido = False
@@ -80,6 +78,8 @@ if pedido_arquivado or bloquear_edicao:
 
 if pedido_arquivado:
     st.success("📦 **PEDIDO FINALIZADO (ARQUIVO)** - Esta ficha está disponível apenas para leitura do histórico de vendas do cliente.")
+elif status_atual_pedido == "Enviado":
+    st.info("🛵 **PEDIDO EM ROTA DE ENTREGA** - O status logístico está trancado até que a entrega seja concluída.")
 
 # -----------------------------------------------------
 # FILTRO ANTI-DUPLICIDADE E LEITURA JSON
@@ -224,7 +224,6 @@ with col_t1:
     badge_montada = '<span class="badge-montada">🧺 Cesta Montada</span>' if pedido.get("cesta_montada") else ''
     st.markdown(f"Pedido #{pedido.get('id')} | Status: **{pedido.get('status','-')}** {badge_montada}", unsafe_allow_html=True)
 with col_t2:
-    # Remove a opção de Alterar se estiver arquivado
     if not pedido_arquivado and not bloquear_edicao:
         if st.button("✏️ Alterar Pedido", use_container_width=True):
             st.session_state.editar_pedido = True
@@ -391,7 +390,6 @@ else:
                         else:
                             st.write(f"• {nome}")
                             val_salvo = float(itens_consulta_salvos.get(nome, 0) or 0)
-                            # Se arquivado, desabilita a edição dos itens sob consulta
                             val_dig = st.number_input("Definir valor", min_value=0.0, value=val_salvo, step=1.0, key=f"cons_{nome}_{idx_ad}", disabled=(bloquear_edicao or pedido_arquivado))
                             itens_consulta[nome] = val_dig
                             if val_dig > 0: valor_consulta += val_dig; valor_adicionais += val_dig
@@ -429,7 +427,6 @@ else:
         with st.container(border=True):
             st.markdown('<div class="card-title">💰 Fechamento Financeiro</div>', unsafe_allow_html=True)
             cf1, cf2, cf3, cf4 = st.columns(4)
-            # Se arquivado, todos os campos de fechamento travam
             travar_financeiro = (bloquear_edicao or pedido_arquivado)
             with cf1: valor_frete = st.number_input("🚚 Frete", min_value=0.0, value=float(pedido.get("valor_frete") or 0), step=1.0, key="frete", disabled=travar_financeiro)
             with cf2: valor_extras = st.number_input("➕ Extras", min_value=0.0, value=float(pedido.get("valor_extras") or 0), step=1.0, key="extras", disabled=travar_financeiro)
@@ -437,17 +434,16 @@ else:
             
             c_status1, c_status2 = st.columns(2)
             with c_status1:
+                # O status operacional gerencia APENAS transações financeiras (Recebido, Pago, Desistência).
+                # NUNCA permitimos selecionar "Enviado" ou "Entregue" manualmente por aqui para proteger a logística.
                 status_op = ["Recebido", "Pago", "Desistência"]
-                status_atual = pedido.get("status", "Recebido")
+                status_atual = str(pedido.get("status", "Recebido")).strip().capitalize()
                 
-                # Se for administrador, exibe todas as opções (para correção de erros)
-                if perfil_usuario == "Administrador":
-                    status_op = ["Recebido", "Pago", "Enviado", "Entregue", "Desistência"]
-                else:
-                    if status_atual == "Entregue": status_op.append("Entregue")
-                    if status_atual == "Enviado": status_op.append("Enviado")
+                # Se o pedido já estiver em Rota ou Entregue, fixamos ele na lista para leitura correta
+                if status_atual in ["Enviado", "Entregue"] and status_atual not in status_op:
+                    status_op.append(status_atual)
                     
-                status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0, disabled=travar_financeiro)
+                status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0, disabled=True)
             
             with c_status2:
                 st.markdown("<div style='margin-top: 32px;'></div>", unsafe_allow_html=True)
@@ -488,7 +484,6 @@ else:
                 else: st.success(st.session_state['msg_foto'])
                 del st.session_state['msg_foto']
             
-            # Esconde o upload de fotos se estiver arquivado
             if not pedido_arquivado:
                 novas_fotos = st.file_uploader("Adicionar fotos", type=["jpg", "jpeg", "png", "webp"], accept_multiple_files=True, key="up_fotos_multi")
                 if novas_fotos:
@@ -524,12 +519,10 @@ else:
 
     col_bot1, col_bot2, col_bot3 = st.columns(3)
     
-    # Esconde o botão de Salvar Atendimento se for arquivo morto
     if not pedido_arquivado:
         with col_bot1:
             if st.button("💾 Salvar Atendimento Completo", use_container_width=True, type="primary", disabled=bloquear_edicao):
                 dados = {
-                    "status": status, 
                     "cesta_montada": chk_montada,
                     "valor_frete": valor_frete, 
                     "valor_extras": valor_extras, 
