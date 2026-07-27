@@ -255,13 +255,11 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                         st.selectbox("Realocar para:", opcoes_ent, index=indice_atual, key=chave_realocar, on_change=atualizar_entregador, args=(ped["id"], chave_realocar))
                                         
                                         st.write("")
-                                        col_i, col_u, col_d = st.columns([3, 1, 1])
-                                        with col_i:
-                                            st.caption(f"Pedido #{ped.get('id')}")
+                                        col_u, col_d = st.columns(2)
                                         with col_u:
                                             if i > 0:
                                                 st.markdown('<div class="btn-updown">', unsafe_allow_html=True)
-                                                if st.button("⬆️", key=f"up_admin_{ped['id']}", use_container_width=True):
+                                                if st.button("⬆️ Subir", key=f"up_admin_{ped['id']}", use_container_width=True):
                                                     ped_driver_ativos[i], ped_driver_ativos[i-1] = ped_driver_ativos[i-1], ped_driver_ativos[i]
                                                     salvar_ordem(ped_driver_ativos)
                                                     st.rerun()
@@ -269,7 +267,7 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                         with col_d:
                                             if i < len(ped_driver_ativos) - 1:
                                                 st.markdown('<div class="btn-updown">', unsafe_allow_html=True)
-                                                if st.button("⬇️", key=f"down_admin_{ped['id']}", use_container_width=True):
+                                                if st.button("⬇️ Descer", key=f"down_admin_{ped['id']}", use_container_width=True):
                                                     ped_driver_ativos[i], ped_driver_ativos[i+1] = ped_driver_ativos[i+1], ped_driver_ativos[i]
                                                     salvar_ordem(ped_driver_ativos)
                                                     st.rerun()
@@ -415,7 +413,7 @@ else:
                         if i < len(pedidos_ativos_driver) - 1:
                             st.markdown('<div class="btn-updown">', unsafe_allow_html=True)
                             if st.button("⬇️", key=f"down_{ped['id']}", use_container_width=True):
-                                pedidos_ativos_driver[i], pedidos_ativos_driver[i+1] = pedidos_ativos_driver[i+1], pedidos_ativos[i]
+                                pedidos_ativos_driver[i], pedidos_ativos_driver[i+1] = pedidos_ativos_driver[i+1], pedidos_ativos_driver[i]
                                 salvar_ordem(pedidos_ativos_driver)
                                 st.rerun()
                             st.markdown('</div>', unsafe_allow_html=True)
