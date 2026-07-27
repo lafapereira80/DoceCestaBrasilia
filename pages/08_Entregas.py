@@ -148,7 +148,6 @@ if perfil_usuario in ["Administrador", "Operador"]:
         if st.button("🔄 Atualizar Tempo Real", use_container_width=True):
             st.rerun()
 
-    # Criação das Abas para o Admin
     aba_geral, aba_visao_motoboy = st.tabs(["🗺️ Despacho e Rotas", "🚴 Visão por Entregador"])
 
     # -------------------------------------------------
@@ -168,7 +167,7 @@ if perfil_usuario in ["Administrador", "Operador"]:
         st.markdown("<h3 style='color: #b06000; margin-top: 15px;'>📦 Cestas na Rota (Aguardando Atribuição)</h3>", unsafe_allow_html=True)
         
         if not nao_atribuidos:
-            st.caption("✨ Todas as cestas enviadas já foram atribuídas a um entregador.")
+            st.caption("✨ Todas las cestas enviadas já foram atribuídas a um entregador.")
         else:
             cols_despacho = st.columns(3)
             for i, ped in enumerate(nao_atribuidos):
@@ -180,12 +179,15 @@ if perfil_usuario in ["Administrador", "Operador"]:
                         hora_combinada = ped.get('horario_combinado', '')
                         hora_str = f" • Às {hora_combinada}" if hora_combinada else ""
                         
+                        tel_dest = ped.get('destinatario_telefone')
+                        tel_dest_str = f" (📞 {tel_dest})" if tel_dest else ""
+                        
                         st.markdown(
                             f"""
                             <div style="margin-bottom: 8px;">
                                 <span style="font-size: 11px; font-weight: 800; color: #9d7d65; text-transform: uppercase;">Pedido #{ped.get('id')}</span>
-                                <div class="nome-destaque" style="margin-top: 2px;">🎁 <strong>{ped.get('cesta_nome')}</strong> para <em>{ped.get('destinatario_nome')}</em></div>
-                                <div style="font-size: 12px; color: #444; margin-top: 4px;">👤 <strong>Comprador:</strong> {ped.get('cliente_nome')} (📞 {ped.get('cliente_telefone')})</div>
+                                <div style="font-size: 13px; color: #333; margin-top: 2px;">👤 <strong>Comprador:</strong> {ped.get('cliente_nome')} (📞 {ped.get('cliente_telefone')})</div>
+                                <div class="nome-destaque" style="margin-top: 4px;">🎁 <strong>{ped.get('cesta_nome')}</strong> para <em>{ped.get('destinatario_nome')}</em>{tel_dest_str}</div>
                                 <div style="font-size: 12px; color: #333; font-weight: 700; margin-top: 6px; background: #faf7f3; padding: 6px; border-radius: 6px; border-left: 3px solid #dfcdbb;">📍 {endereco_completo}</div>
                                 <div class="hora-destaque">📅 {data_entrega} | 🕒 {turno}{hora_str}</div>
                             </div>
@@ -196,7 +198,7 @@ if perfil_usuario in ["Administrador", "Operador"]:
                         chave_widget = f"despacho_{ped['id']}"
                         st.selectbox("Definir Entregador:", opcoes_ent, index=0, key=chave_widget, on_change=atualizar_entregador, args=(ped["id"], chave_widget))
 
-        # --- 2. ROTAS ATIVAS (Só aparece se houver entregas vinculadas a algum entregador) ---
+        # --- 2. ROTAS ATIVAS ---
         tem_ativos_vinculados = any(p.get("entregador_login") for p in pedidos_ativos_geral)
         tem_concluidos_vinculados = any(p.get("entregador_login") for p in pedidos_concluidos_geral)
 
@@ -214,7 +216,7 @@ if perfil_usuario in ["Administrador", "Operador"]:
                     ped_driver_concluidos = [p for p in pedidos_concluidos_geral if p.get("entregador_login") == driver]
                     
                     if not ped_driver_ativos and not ped_driver_concluidos:
-                        continue # Oculta entregadores sem nenhuma entrega ativa ou concluída hoje
+                        continue 
                         
                     with cols_rotas[idx_driver % 2]:
                         with st.container(border=True):
@@ -236,11 +238,14 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                         hora_combinada = ped.get('horario_combinado', '')
                                         hora_str = f" • Às {hora_combinada}" if hora_combinada else ""
                                         
+                                        tel_dest = ped.get('destinatario_telefone')
+                                        tel_dest_str = f" (📞 {tel_dest})" if tel_dest else ""
+                                        
                                         st.markdown(
                                             f"""
                                             <div style="margin-bottom: 6px;">
-                                                <div style="font-size:13px; font-weight:800; color:#5a3b28;">#{i+1} - 🎁 {ped.get('cesta_nome')} ({ped.get('destinatario_nome')})</div>
                                                 <div style="font-size:12px; color:#444;">👤 <strong>Comprador:</strong> {ped.get('cliente_nome')} (📞 {ped.get('cliente_telefone')})</div>
+                                                <div style="font-size:13px; font-weight:800; color:#5a3b28; margin-top: 2px;">#{i+1} - 🎁 {ped.get('cesta_nome')} ({ped.get('destinatario_nome')}{tel_dest_str})</div>
                                                 <div style="font-size:12px; color:#333; margin-top: 4px; background: #faf7f3; padding: 4px 8px; border-radius: 4px;">📍 {endereco_completo}</div>
                                                 <div style="font-size: 11px; color: #b06000; font-weight: 700; margin-top: 4px;">📅 {data_entrega} | 🕒 {turno}{hora_str}</div>
                                             </div>
@@ -290,7 +295,7 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                     st.rerun()
 
     # -------------------------------------------------
-    # ABA 2: VISÃO POR ENTREGADOR (SIMULADOR DO APLICATIVO DO MOTOBOY)
+    # ABA 2: VISÃO POR ENTREGADOR (SIMULADOR DO APLICATIVO)
     # -------------------------------------------------
     with aba_visao_motoboy:
         st.markdown("### 🚴 Simulador de Tela do Entregador")
@@ -308,7 +313,6 @@ if perfil_usuario in ["Administrador", "Operador"]:
             motoboy_selecionado = st.selectbox("Selecione o Entregador:", lista_entregadores_todos, key="select_vis_motoboy")
             st.divider()
 
-            # Carrega dados específicos do entregador selecionado
             p_ativos_mb, p_concluidos_mb = buscar_entregas_dia(driver_login=motoboy_selecionado)
 
             if not p_ativos_mb and not p_concluidos_mb:
@@ -316,7 +320,6 @@ if perfil_usuario in ["Administrador", "Operador"]:
             else:
                 st.markdown(f"#### Rota Atual de: 🚴 {motoboy_selecionado}")
                 
-                # Exibe a lista ativa do entregador
                 if p_ativos_mb:
                     salvar_ordem(p_ativos_mb)
                     for i, ped in enumerate(p_ativos_mb):
@@ -324,12 +327,14 @@ if perfil_usuario in ["Administrador", "Operador"]:
                             bairro = str(ped.get('endereco', '')).split(',')[-1].split('(')[0].strip() or "Endereço incompleto"
                             horario = ped.get('horario_combinado', '') or ped.get('periodo_entrega', 'Livre')
                             data_e = formatar_data(ped.get('data_entrega'))
+                            tel_dest = ped.get('destinatario_telefone')
+                            tel_dest_str = f" (📞 {tel_dest})" if tel_dest else ""
                             
                             st.markdown(f"""
                                 <div class="card-info">
                                     <div class="bairro-destaque">📍 Parada #{i+1} - {bairro}</div>
-                                    <div class="nome-destaque">🎁 {ped.get('cesta_nome')} para <strong>{ped.get('destinatario_nome')}</strong></div>
-                                    <div style="font-size:12px; color:#444;">👤 Comprador: {ped.get('cliente_nome')} (📞 {ped.get('cliente_telefone')})</div>
+                                    <div style="font-size:12px; color:#444; margin-top: 2px;">👤 <strong>Comprador:</strong> {ped.get('cliente_nome')} (📞 {ped.get('cliente_telefone')})</div>
+                                    <div class="nome-destaque" style="margin-top: 2px;">🎁 {ped.get('cesta_nome')} para <strong>{ped.get('destinatario_nome')}</strong>{tel_dest_str}</div>
                                     <div class="hora-destaque">📅 {data_e} | 🕒 {horario}</div>
                                 </div>
                             """, unsafe_allow_html=True)
@@ -351,11 +356,14 @@ if perfil_usuario in ["Administrador", "Operador"]:
                     for ped in p_concluidos_mb:
                         hora_extraida = ped.get('hora_entrega_realizada', '')[-5:] 
                         bairro_concluido = str(ped.get('endereco', '')).split(',')[-1].split('(')[0].strip()
+                        tel_dest = ped.get('destinatario_telefone')
+                        tel_dest_str = f" (📞 {tel_dest})" if tel_dest else ""
                         st.markdown(f"""
                         <div data-testid="stVerticalBlockBorderWrapper" class="entregue-box">
                             <div class="bairro-destaque" style="color: #137333;">✅ Entregue às {hora_extraida}</div>
                             <div class="nome-destaque">📍 {bairro_concluido}</div>
-                            <div class="nome-destaque">👤 {ped.get('destinatario_nome', 'N/A')} | 🎁 {ped.get('cesta_nome', 'Cesta')}</div>
+                            <div style="font-size:12px; color:#444;">👤 Comprador: {ped.get('cliente_nome')} (📞 {ped.get('cliente_telefone')})</div>
+                            <div class="nome-destaque">🎁 {ped.get('cesta_nome')} para <strong>{ped.get('destinatario_nome')}</strong>{tel_dest_str}</div>
                         </div>
                         """, unsafe_allow_html=True)
 
@@ -385,11 +393,13 @@ else:
                         bairro = str(ped.get('endereco', '')).split(',')[-1].split('(')[0].strip() or "Endereço incompleto"
                         horario = ped.get('horario_combinado', '') or ped.get('periodo_entrega', 'Livre')
                         data_e = formatar_data(ped.get('data_entrega'))
+                        tel_dest = ped.get('destinatario_telefone')
+                        tel_dest_str = f" (📞 {tel_dest})" if tel_dest else ""
                         st.markdown(f"""
                             <div class="card-info">
                                 <div class="bairro-destaque">📍 {i+1}º - {bairro}</div>
-                                <div class="nome-destaque">Para: {ped.get('destinatario_nome', 'N/A')} ({ped.get('cesta_nome')})</div>
-                                <div style="font-size:12px; color:#555;">👤 {ped.get('cliente_nome')} (📞 {ped.get('cliente_telefone')})</div>
+                                <div style="font-size:12px; color:#444;">👤 <strong>Comprador:</strong> {ped.get('cliente_nome')} (📞 {ped.get('cliente_telefone')})</div>
+                                <div class="nome-destaque">🎁 {ped.get('cesta_nome')} para <strong>{ped.get('destinatario_nome')}</strong>{tel_dest_str}</div>
                                 <div class="hora-destaque">📅 {data_e} | 🕒 {horario}</div>
                             </div>
                         """, unsafe_allow_html=True)
@@ -407,7 +417,7 @@ else:
                         if i < len(pedidos_ativos_driver) - 1:
                             st.markdown('<div class="btn-updown">', unsafe_allow_html=True)
                             if st.button("⬇️", key=f"down_{ped['id']}", use_container_width=True):
-                                pedidos_ativos_driver[i], pedidos_ativos_driver[i+1] = pedidos_ativos_driver[i+1], pedidos_ativos_driver[i]
+                                pedidos_ativos_driver[i], pedidos_ativos_driver[i+1] = pedidos_ativos_driver[i+1], pedidos_ativos[i]
                                 salvar_ordem(pedidos_ativos_driver)
                                 st.rerun()
                             st.markdown('</div>', unsafe_allow_html=True)
@@ -417,7 +427,7 @@ else:
                 st.session_state.modo_entrega_ativa = True
                 st.rerun()
         else:
-            st.success("🎉 Fila ativa vazia! Todas as entregas programadas foram finalizadas.")
+            st.success("🎉 Fila ativa vazia! Todas las entregas programadas foram finalizadas.")
 
     else:
         if pedidos_ativos_driver:
@@ -427,11 +437,13 @@ else:
             with st.container(border=True):
                 st.markdown(f'<div class="bairro-destaque" style="font-size:20px; text-align:center;">Próxima Parada</div>', unsafe_allow_html=True)
                 st.divider()
+                tel_dest_atual = pedido_atual.get('destinatario_telefone')
+                tel_dest_atual_str = f" (📞 {tel_dest_atual})" if tel_dest_atual else " (Sem telefone)"
                 st.markdown(f"""
                     <div class="ficha-entrega">
                         <div><strong>Comprador:</strong> {pedido_atual.get('cliente_nome')} (📞 {pedido_atual.get('cliente_telefone')})</div>
-                        <div class="ficha-secao"><strong>Homenageado (Quem Recebe):</strong><br>{pedido_atual.get('destinatario_nome')}<br>📞 {pedido_atual.get('destinatario_telefone') or 'Sem telefone'}</div>
                         <div class="ficha-secao"><strong>Pacote:</strong> 🎁 {pedido_atual.get('cesta_nome')}</div>
+                        <div class="ficha-secao"><strong>Homenageado (Quem Recebe):</strong><br>{pedido_atual.get('destinatario_nome')}{tel_dest_atual_str}</div>
                         <div class="ficha-secao"><strong>Endereço Completo:</strong><br>📍 {pedido_atual.get('endereco')}</div>
                         <div class="ficha-secao"><strong>Data e Horário:</strong><br>📅 {formatar_data(pedido_atual.get('data_entrega'))} | 🕒 {pedido_atual.get('horario_combinado') or pedido_atual.get('periodo_entrega', 'Livre')}</div>
                     </div>
@@ -470,10 +482,13 @@ else:
         for ped in pedidos_concluidos_driver:
             hora_extraida = ped.get('hora_entrega_realizada', '')[-5:] 
             bairro_concluido = str(ped.get('endereco', '')).split(',')[-1].split('(')[0].strip()
+            tel_dest = ped.get('destinatario_telefone')
+            tel_dest_str = f" (📞 {tel_dest})" if tel_dest else ""
             st.markdown(f"""
             <div data-testid="stVerticalBlockBorderWrapper" class="entregue-box">
                 <div class="bairro-destaque" style="color: #137333;">✅ Entregue às {hora_extraida}</div>
                 <div class="nome-destaque">📍 {bairro_concluido}</div>
-                <div class="nome-destaque">👤 {ped.get('destinatario_nome', 'N/A')} | 🎁 {ped.get('cesta_nome', 'Cesta')}</div>
+                <div style="font-size:12px; color:#444;">👤 Comprador: {ped.get('cliente_nome')} (📞 {ped.get('cliente_telefone')})</div>
+                <div class="nome-destaque">🎁 {ped.get('cesta_nome')} para <strong>{ped.get('destinatario_nome')}</strong>{tel_dest_str}</div>
             </div>
             """, unsafe_allow_html=True)
