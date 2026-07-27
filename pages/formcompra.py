@@ -19,6 +19,25 @@ from config.supabase import supabase
 
 
 # ==========================================================
+# VALIDADOR MATEMÁTICO DE CPF
+# ==========================================================
+def validar_cpf(cpf: str) -> bool:
+    cpf = re.sub(r'\D', '', cpf)
+    if len(cpf) != 11: return False
+    if cpf == cpf[0] * 11: return False
+    
+    soma = sum(int(cpf[i]) * (10 - i) for i in range(9))
+    digito1 = (soma * 10 % 11) % 10
+    if digito1 != int(cpf[9]): return False
+    
+    soma = sum(int(cpf[i]) * (11 - i) for i in range(10))
+    digito2 = (soma * 10 % 11) % 10
+    if digito2 != int(cpf[10]): return False
+    
+    return True
+
+
+# ==========================================================
 # BUSCA INTELIGENTE DE CATEGORIAS
 # ==========================================================
 def obter_categorias():
@@ -238,10 +257,15 @@ def render_comprador():
         st.markdown('<div class="secao-titulo">👤 Seus Dados (Comprador)</div>', unsafe_allow_html=True)
         st.caption("Preencha com os dados de quem está realizando o pagamento.")
 
-        col1, col2 = st.columns(2)
-        with col1: st.text_input("Nome completo *", placeholder="Seu nome completo", key="input_nome_comprador")
-        with col2: st.text_input("Seu Telefone *", placeholder="(61) 99999-9999", key="input_tel_comprador")
-        st.text_input("Seu CPF *", placeholder="000.000.000-00", key="input_cpf_comprador")
+        nome = st.text_input("Nome completo *", placeholder="Seu nome completo", key="input_nome_comprador")
+        
+        col_ddi, col_tel, col_cpf = st.columns([1, 2, 2])
+        with col_ddi:
+            st.text_input("DDI *", value="+55", max_chars=4, key="input_ddi_comprador", help="País")
+        with col_tel:
+            st.text_input("Telefone (WhatsApp) *", placeholder="(61) 99999-9999", key="input_tel_comprador")
+        with col_cpf:
+            st.text_input("Seu CPF *", placeholder="Apenas números", max_chars=14, key="input_cpf_comprador")
 
 render_comprador()
 
@@ -538,8 +562,19 @@ enviar = st.button("🎁 ENVIAR PEDIDO", use_container_width=True, type="primary
 
 if enviar:
     nome = st.session_state.get("input_nome_comprador", "")
-    telefone = re.sub(r'\D', '', st.session_state.get("input_tel_comprador", "")) 
-    cpf = re.sub(r'\D', '', st.session_state.get("input_cpf_comprador", "")) 
+    
+    # Validação do CPF
+    cpf_bruto = st.session_state.get("input_cpf_comprador", "")
+    if not validar_cpf(cpf_bruto):
+        st.error("⚠️ O CPF informado é inválido. Por favor, verifique os números digitados.")
+        st.stop()
+    cpf_limpo = re.sub(r'\D', '', cpf_bruto)
+        
+    # Combina DDI e Telefone
+    ddi_comprador = re.sub(r'\D', '', st.session_state.get("input_ddi_comprador", "55"))
+    tel_comprador = re.sub(r'\D', '', st.session_state.get("input_tel_comprador", "")) 
+    telefone_completo = f"{ddi_comprador}{tel_comprador}"
+    
     dest_nome = st.session_state.get("input_dest_nome", "")
     dest_tel = re.sub(r'\D', '', st.session_state.get("input_dest_tel", "")) 
     motivo_homenagem = st.session_state.get("input_motivo", "")
@@ -561,8 +596,7 @@ if enviar:
     pedido_especial = st.session_state.get("input_pedido_especial", "")
 
     if not nome.strip(): st.error("Informe o nome do comprador."); st.stop()
-    if not cpf.strip(): st.error("Informe o CPF do comprador."); st.stop()
-    if not telefone.strip(): st.error("Informe o telefone do comprador."); st.stop()
+    if not tel_comprador.strip(): st.error("Informe o telefone do comprador."); st.stop()
     if not cesta: st.error("Selecione uma cesta."); st.stop()
     if not dest_nome.strip(): st.error("Informe o nome de quem vai receber (Homenageado)."); st.stop()
     if not rua.strip() or not num.strip(): st.error("Informe a Rua e o Número da entrega."); st.stop()
@@ -573,8 +607,8 @@ if enviar:
 
     dados = {
         "cliente_nome": nome.strip(),
-        "cliente_cpf": cpf.strip(),
-        "cliente_telefone": telefone.strip(),
+        "cliente_cpf": cpf_limpo,
+        "cliente_telefone": telefone_completo,
         "destinatario_nome": dest_nome.strip(),
         "destinatario_telefone": dest_tel.strip(),
         "motivo_homenagem": motivo_homenagem.strip(),
@@ -603,11 +637,10 @@ if enviar:
             except Exception as e: print(f"Erro ao enviar fotos polaroid: {e}")
 
         try:
-            texto_aviso = f"""🚨 <b>NOVO PEDIDO RECEBIDO!</b> 🚨\n\n👤 <b>Comprador:</b> {nome}\n📱 <b>WhatsApp:</b> <a href="https://wa.me/55{telefone}">{telefone}</a>\n🎁 <b>Cesta:</b> {cesta["nome"]}\n💝 <b>Para:</b> {dest_nome}\n📍 <b>Local:</b> {bairro}\n💰 <b>Valor Estimado:</b> R$ {valor_estimado:,.2f}"""
+            texto_aviso = f"""🚨 <b>NOVO PEDIDO RECEBIDO!</b> 🚨\n\n👤 <b>Comprador:</b> {nome}\n📱 <b>WhatsApp:</b> <a href="https://wa.me/{telefone_completo}">+{ddi_comprador} {tel_comprador}</a>\n🎁 <b>Cesta:</b> {cesta["nome"]}\n💝 <b>Para:</b> {dest_nome}\n📍 <b>Local:</b> {bairro}\n💰 <b>Valor Estimado:</b> R$ {valor_estimado:,.2f}"""
             enviar_notificacao_telegram(texto_aviso)
         except: pass 
 
-        # Atualizando o state para enviar para a tela de Sucesso
         st.session_state["resumo_pedido_sucesso"] = {
             "cliente_nome": nome.strip(),
             "destinatario_nome": dest_nome.strip(),
