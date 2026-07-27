@@ -206,6 +206,13 @@ df = df[~df["status"].isin(status_excluir)]
 df["ano"] = df["created_at"].dt.year
 df["mes"] = df["created_at"].dt.month
 
+# Dicionário fixo de meses
+meses_dict = {
+    1:"Janeiro", 2:"Fevereiro", 3:"Março", 4:"Abril",
+    5:"Maio", 6:"Junho", 7:"Julho", 8:"Agosto",
+    9:"Setembro", 10:"Outubro", 11:"Novembro", 12:"Dezembro"
+}
+
 
 # =====================================================
 # FORMATAÇÃO DE MOEDA
@@ -221,7 +228,7 @@ def moeda(valor):
 
 
 # =====================================================
-# FILTROS (REDUZIDOS PARA 2 COLUNAS POIS O STATUS SAIU)
+# FILTROS DINÂMICOS (ANO E MÊS CRUZADOS)
 # =====================================================
 
 with st.container(border=True):
@@ -232,12 +239,14 @@ with st.container(border=True):
         ano_selecionado = st.selectbox("Ano (Data da Compra)", ["Todos"] + list(anos))
 
     with col_f2:
-        meses = {
-            1:"Janeiro", 2:"Fevereiro", 3:"Março", 4:"Abril",
-            5:"Maio", 6:"Junho", 7:"Julho", 8:"Agosto",
-            9:"Setembro", 10:"Outubro", 11:"Novembro", 12:"Dezembro"
-        }
-        mes_selecionado = st.selectbox("Mês (Data da Compra)", ["Todos"] + list(meses.values()))
+        # Filtra os meses disponíveis com base estricta no ano selecionado
+        if ano_selecionado != "Todos":
+            meses_disponiveis_nums = sorted(df[df["ano"] == ano_selecionado]["mes"].dropna().unique())
+        else:
+            meses_disponiveis_nums = sorted(df["mes"].dropna().unique())
+            
+        meses_disponiveis_nomes = [meses_dict[m] for m in meses_disponiveis_nums if m in meses_dict]
+        mes_selecionado = st.selectbox("Mês (Data da Compra)", ["Todos"] + meses_disponiveis_nomes)
 
 
 # =====================================================
@@ -250,7 +259,7 @@ if ano_selecionado != "Todos":
     df_filtrado = df_filtrado[df_filtrado["ano"] == ano_selecionado]
 
 if mes_selecionado != "Todos":
-    numero_mes = [chave for chave, valor in meses.items() if valor == mes_selecionado][0]
+    numero_mes = [chave for chave, valor in meses_dict.items() if valor == mes_selecionado][0]
     df_filtrado = df_filtrado[df_filtrado["mes"] == numero_mes]
 
 
