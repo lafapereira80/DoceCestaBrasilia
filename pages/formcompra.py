@@ -158,49 +158,46 @@ if logo_path.exists():
     logo_html = f'<img src="data:image/webp;base64,{encoded_logo}" class="header-logo" alt="Logo">'
 
 # ==========================================================
-# TELA DE SUCESSO BLINDADA (HTML alinhado à esquerda)
+# TELA DE SUCESSO BLINDADA (HTML SEM NENHUM ESPAÇO NO INÍCIO DA LINHA)
 # ==========================================================
 if st.session_state["pedido_enviado_com_sucesso"]:
     dados = st.session_state["resumo_pedido_sucesso"]
     
     html_banner = f"""
 <div class="header-banner">
-    {logo_html}
-    <div class="header-text">
-        <h1 class="header-title">Doce Cesta Brasília</h1>
-        <p class="header-subtitle">Cestas personalizadas para momentos especiais 💝</p>
-    </div>
+{logo_html}
+<div class="header-text">
+<h1 class="header-title">Doce Cesta Brasília</h1>
+<p class="header-subtitle">Cestas personalizadas para momentos especiais 💝</p>
+</div>
 </div>
 """
     st.markdown(html_banner, unsafe_allow_html=True)
     
     html_sucesso = f"""
 <div class="sucesso-container">
-    <div class="sucesso-titulo">✅ Pedido Realizado com Sucesso!</div>
-    <div class="sucesso-texto">
-        Muito obrigado, <b>{dados.get('cliente_nome')}</b>! Recebemos o seu pedido com muito carinho. 
-        Nossa equipe entrará em contato com você o mais rápido possível para confirmar os detalhes finais e o pagamento.
-    </div>
-    
-    <div class="resumo-box">
-        <b>📋 Resumo do Pedido:</b><br><br>
-        💝 <b>Para (Homenageado):</b> {dados.get('destinatario_nome', '-')}<br>
-        🎁 <b>Cesta:</b> {dados.get('cesta_nome')}<br>
-        🛒 <b>Produtos/Personalização:</b><br>{dados.get('produtos').replace(chr(10), '<br>')}<br><br>
-        🎀 <b>Complementos:</b> {dados.get('adicionais_str') if dados.get('adicionais_str') else 'Nenhum'}<br>
-        🚚 <b>Frete:</b> A calcular<br>
-        📷 <b>Fotos Polaroid Enviadas:</b> {dados.get('qtd_fotos')} foto(s)<br>
-        📅 <b>Data da Entrega:</b> {dados.get('data_entrega')}<br>
-        🕘 <b>Turno da Entrega:</b> {dados.get('periodo_entrega')}<br>
-        📍 <b>Endereço:</b> {dados.get('endereco')}<br>
-        
-        <div style="font-size: 12px; color: #b06000; background: #fef7e0; padding: 8px; border-radius: 6px; margin-top: 14px; margin-bottom: 10px; border-left: 4px solid #b06000;">
-            ⚠️ <b>Aviso Importante:</b> Nossa equipe entrará em contato para informar o valor do frete, os produtos sob consulta (caso existam) e para verificar o horário exato da sua entrega.
-        </div>
-        
-        <hr style="border: 0; border-top: 1px dashed #dfcdbb; margin: 10px 0;">
-        💰 <b>Valor Total Estimado (sem frete):</b> <span style="color: #2e7d32; font-size: 16px; font-weight: 800;">{dados.get('valor_total')}</span>
-    </div>
+<div class="sucesso-titulo">✅ Pedido Realizado com Sucesso!</div>
+<div class="sucesso-texto">
+Muito obrigado, <b>{dados.get('cliente_nome')}</b>! Recebemos o seu pedido com muito carinho. 
+Nossa equipe entrará em contato com você o mais rápido possível para confirmar os detalhes finais e o pagamento.
+</div>
+<div class="resumo-box">
+<b>📋 Resumo do Pedido:</b><br><br>
+💝 <b>Para (Homenageado):</b> {dados.get('destinatario_nome', '-')}<br>
+🎁 <b>Cesta:</b> {dados.get('cesta_nome')}<br>
+🛒 <b>Produtos/Personalização:</b><br>{dados.get('produtos').replace(chr(10), '<br>')}<br><br>
+🎀 <b>Complementos:</b> {dados.get('adicionais_str') if dados.get('adicionais_str') else 'Nenhum'}<br>
+🚚 <b>Frete:</b> A calcular<br>
+📷 <b>Fotos Polaroid Enviadas:</b> {dados.get('qtd_fotos')} foto(s)<br>
+📅 <b>Data da Entrega:</b> {dados.get('data_entrega')}<br>
+🕘 <b>Turno da Entrega:</b> {dados.get('periodo_entrega')}<br>
+📍 <b>Endereço:</b> {dados.get('endereco')}<br>
+<div style="font-size: 12px; color: #b06000; background: #fef7e0; padding: 8px; border-radius: 6px; margin-top: 14px; margin-bottom: 10px; border-left: 4px solid #b06000;">
+⚠️ <b>Aviso Importante:</b> Nossa equipe entrará em contato para informar o valor do frete, os produtos sob consulta (caso existam) e para verificar o horário exato da sua entrega.
+</div>
+<hr style="border: 0; border-top: 1px dashed #dfcdbb; margin: 10px 0;">
+💰 <b>Valor Total Estimado (sem frete):</b> <span style="color: #2e7d32; font-size: 16px; font-weight: 800;">{dados.get('valor_total')}</span>
+</div>
 </div>
 """
     st.markdown(html_sucesso, unsafe_allow_html=True)
@@ -223,13 +220,13 @@ if st.session_state["pedido_enviado_com_sucesso"]:
 # ==========================================================
 st.markdown(
     f"""
-    <div class="header-banner">
-        {logo_html}
-        <div class="header-text">
-            <h1 class="header-title">Doce Cesta Brasília</h1>
-            <p class="header-subtitle">Cestas personalizadas para momentos especiais 💝</p>
-        </div>
-    </div>
+<div class="header-banner">
+{logo_html}
+<div class="header-text">
+<h1 class="header-title">Doce Cesta Brasília</h1>
+<p class="header-subtitle">Cestas personalizadas para momentos especiais 💝</p>
+</div>
+</div>
     """,
     unsafe_allow_html=True
 )
