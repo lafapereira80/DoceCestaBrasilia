@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta, date
+from datetime import datetime, date
 import json
 import time
 
@@ -11,7 +11,7 @@ from services.cesta_service import buscar_cesta
 from services.pedido_adicional_service import listar_adicionais_pedido
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA E CSS AVANÇADO
+# CONFIGURAÇÃO DA PÁGINA E CSS PREMIUM
 # =====================================================
 st.set_page_config(page_title="Chão de Fábrica", page_icon="🏭", layout="wide")
 configurar_pagina()
@@ -22,49 +22,54 @@ st.markdown(
 """
 <style>
 /* Layout Principal */
-.block-container { padding-top: 1.5rem !important; padding-bottom: 2rem !important; max-width: 1200px; }
+.block-container { padding-top: 1.5rem !important; padding-bottom: 2rem !important; max-width: 1100px; }
 h1 { font-size: 26px !important; font-weight: 800 !important; color: #5a3b28; margin-bottom: 5px !important;}
 
-/* Cards de Resumo (Topo) */
-.dashboard-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
-.summary-card { 
-    flex: 1; min-width: 140px; 
-    background: linear-gradient(145deg, #ffffff, #fffaf5); 
-    border: 1px solid #dfcdbb; 
-    border-radius: 12px; 
-    padding: 16px; 
-    text-align: center; 
-    box-shadow: 0 4px 6px rgba(90, 59, 40, 0.05); 
-    transition: transform 0.2s ease;
+/* Barra de Resumo Elegante (Pills) */
+.resumo-bar {
+    background: #fffbf7;
+    border: 1px solid #e8ddd3;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(90,59,40,0.03);
 }
-.summary-card:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(90, 59, 40, 0.08); }
-.summary-title { font-size: 13px; font-weight: 700; color: #775a46; text-transform: uppercase; margin-bottom: 4px; }
-.summary-value { font-size: 26px; font-weight: 800; color: #137333; line-height: 1; }
+.resumo-header {
+    font-size: 13px; font-weight: 800; color: #9d7d65; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+}
+.pills-container {
+    display: flex; flex-wrap: wrap; gap: 10px;
+}
+.cesta-pill {
+    background: #ffffff; border: 1px solid #dfcdbb; padding: 6px 14px; border-radius: 20px; 
+    font-size: 14px; font-weight: 700; color: #5a3b28; display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+.cesta-pill-qtd {
+    background: #b06000; color: #ffffff; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 800;
+}
 
 /* Estilização dos Expansores (Cards de Pedido) */
 div[data-testid="stExpander"] { 
-    border: 1px solid #e8ddd3 !important; 
-    border-radius: 12px !important; 
-    background-color: #ffffff !important; 
-    box-shadow: 0 2px 5px rgba(0,0,0,0.02) !important;
-    margin-bottom: 12px !important;
+    border: 1px solid #e8ddd3 !important; border-radius: 10px !important; background-color: #ffffff !important; margin-bottom: 12px !important;
 }
-div[data-testid="stExpander"] summary { padding: 12px 16px !important; }
-div[data-testid="stExpander"] summary p { font-weight: 800 !important; color: #5a3b28 !important; font-size: 14px !important; }
+div[data-testid="stExpander"] summary { padding: 12px 14px !important; background-color: #faf7f3; border-radius: 10px 10px 0 0; }
+div[data-testid="stExpander"] summary p { font-weight: 800 !important; color: #5a3b28 !important; font-size: 15px !important; }
 div[data-testid="stExpander"]:hover { border-color: #dfcdbb !important; }
 
 /* Badges e Textos internos */
-.info-linha { font-size: 13px; color: #444; margin-bottom: 4px; }
+.info-linha { font-size: 13px; color: #444; margin-bottom: 6px; background: #fdfaf6; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #dfcdbb;}
 .info-linha strong { color: #5a3b28; }
-.checklist-title { font-size: 13px; font-weight: 800; color: #b06000; margin-top: 12px; margin-bottom: 6px; border-bottom: 1px dashed #f0e0d0; padding-bottom: 2px;}
+.checklist-title { font-size: 13px; font-weight: 800; color: #b06000; margin-top: 14px; margin-bottom: 8px; border-bottom: 1px dashed #f0e0d0; padding-bottom: 4px;}
+
+/* Botões do Checklist */
+div[data-testid="stExpanderDetails"] div[data-testid="stButton"] > button { width: 100% !important; border-radius: 8px !important; min-height: 38px !important; font-weight: 700 !important; font-size: 13px !important;}
 
 /* Responsividade Celular */
 @media (max-width: 768px) {
     .block-container { padding-top: 1rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
     h1 { font-size: 22px !important; }
-    .summary-card { min-width: 45%; padding: 12px; }
-    .summary-value { font-size: 20px; }
-    /* Força os botões a ficarem lado a lado se possível, ou empilhados bonitos */
+    .cesta-pill { font-size: 13px; padding: 5px 12px; }
     div[data-testid="stHorizontalBlock"] { gap: 8px !important; }
 }
 </style>
@@ -139,16 +144,19 @@ def render_checklist_pedido(p):
     
     with st.expander(f"🛒 #{pid} | {p.get('cliente_nome', '-')} | 🎁 {p.get('cesta_nome', '-')} | {status_badge}", expanded=not montada):
         
-        # --- Resumo para Contexto (Estilo mais compacto) ---
-        st.markdown(f"<div class='info-linha'><strong>📍 Endereço:</strong> {p.get('endereco', 'N/I')}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-linha'><strong>🕒 Horário/Turno:</strong> {p.get('periodo_entrega', '')} - {p.get('horario_combinado', '')}</div>", unsafe_allow_html=True)
+        # --- Resumo para Contexto (Boxes estilizados) ---
+        st.markdown(f"<div class='info-linha'><strong>📍 Entrega:</strong> {p.get('endereco', 'N/I')}</div>", unsafe_allow_html=True)
+        
+        hora_especial = f" ({p.get('horario_combinado', '')})" if p.get('horario_combinado') else ""
+        st.markdown(f"<div class='info-linha'><strong>🕒 Turno:</strong> {p.get('periodo_entrega', '')}{hora_especial}</div>", unsafe_allow_html=True)
+        
         if p.get('pedido_especial'):
             st.markdown(f"<div class='info-linha'><strong>✨ Especial:</strong> {p.get('pedido_especial', '')}</div>", unsafe_allow_html=True)
         
-        st.markdown("<div class='checklist-title'>🧺 Checklist de Montagem</div>", unsafe_allow_html=True)
+        st.markdown("<div class='checklist-title'>🧺 ETAPAS DE MONTAGEM</div>", unsafe_allow_html=True)
         novo_checklist = {}
         
-        # 1. Cesta Padrão (Limpando "Inclusos:")
+        # 1. Cesta Padrão
         cesta_obj = buscar_cesta(p.get("cesta_id")) if p.get("cesta_id") else {}
         descricao_cesta = cesta_obj.get("descricao", "") if cesta_obj else ""
         if descricao_cesta:
@@ -206,7 +214,7 @@ def render_checklist_pedido(p):
             
         st.write("")
         
-        # --- Ações (Botões Lado a Lado) ---
+        # --- Ações ---
         c1, c2 = st.columns(2)
         with c1:
             if st.button("💾 Salvar Montagem", key=f"btn_salvar_{pid}", use_container_width=True):
@@ -220,20 +228,20 @@ def render_checklist_pedido(p):
                 st.rerun(scope="app")
                 
         with c2:
-            if st.button("🚚 Enviar para Rota", key=f"btn_rota_{pid}", type="primary", use_container_width=True):
+            if st.button("🚚 Enviar p/ Rota", key=f"btn_rota_{pid}", type="primary", use_container_width=True):
                 # Força a cesta para pronta e despacha
                 supabase.table("pedidos").update({
                     "checklist": novo_checklist,
                     "cesta_montada": True,
                     "status": "Enviado"
                 }).eq("id", pid).execute()
-                st.success("Despachado! Indo para a fila de entregas...")
+                st.success("Despachado para fila de entregas!")
                 time.sleep(1)
                 st.rerun(scope="app")
 
 
 # =====================================================
-# INTERFACE DE USUÁRIO (ABAS POR DATA + GRID MASONRY)
+# INTERFACE DE USUÁRIO (ABAS POR DATA)
 # =====================================================
 if dados_previsao:
     # Cria as abas (Tabs) com as datas disponíveis
@@ -242,34 +250,30 @@ if dados_previsao:
     
     for i, (data, info) in enumerate(dados_previsao.items()):
         with abas[i]:
-            st.markdown(f"### 🎯 Meta do Dia (Total: {info['total']} cestas)")
             
-            # 1. Cards de Resumo (Métricas do Dia)
-            st.markdown("<div class='dashboard-grid'>", unsafe_allow_html=True)
-            cols_metricas = st.columns(min(len(info["cestas_agrupadas"]), 4))
+            # --- BARRA DE RESUMO ELEGANTE ---
+            html_pills = ""
+            for cesta, qtd in info["cestas_agrupadas"].items():
+                html_pills += f"<div class='cesta-pill'>📦 {cesta} <span class='cesta-pill-qtd'>{qtd}</span></div>"
+                
+            st.markdown(
+                f"""
+                <div class='resumo-bar'>
+                    <div class='resumo-header'>📊 Resumo de Produção (Total: {info['total']} cestas)</div>
+                    <div class='pills-container'>
+                        {html_pills}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True
+            )
             
-            for j, (cesta, qtd) in enumerate(info["cestas_agrupadas"].items()):
-                with cols_metricas[j % len(cols_metricas)]:
-                    st.markdown(
-                        f"""
-                        <div class='summary-card'>
-                            <div class='summary-title'>{cesta}</div>
-                            <div class='summary-value'>{qtd}</div>
-                        </div>
-                        """, unsafe_allow_html=True
-                    )
-            st.markdown("</div>", unsafe_allow_html=True)
-            
-            st.divider()
-            st.markdown("### 🛠️ Fila de Montagem")
-            
-            # 2. Grid de Pedidos (2 colunas no Desktop, empilhado no Mobile)
+            # --- GRID DE PEDIDOS (MASONRY 2 COLUNAS) ---
             pedidos_lista = info["pedidos_lista"]
             
             col_esq, col_dir = st.columns(2)
             
             for idx, p in enumerate(pedidos_lista):
-                # Distribui alternadamente nas duas colunas para criar um grid inteligente
+                # Distribui alternadamente nas duas colunas
                 if idx % 2 == 0:
                     with col_esq:
                         render_checklist_pedido(p)
