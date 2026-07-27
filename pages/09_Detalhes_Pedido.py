@@ -12,7 +12,6 @@ from services.configuracao_cesta_service import carregar_configuracao_cesta
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 
-
 # =====================================================
 # CONFIGURAÇÃO DA PÁGINA E CSS
 # =====================================================
@@ -67,7 +66,7 @@ if not pedido:
 
 
 # =====================================================
-# LÓGICA DE BLOQUEIO DE EDIÇÃO (SEGURANÇA)
+# LÓGICA DE BLOQUEIO E CONTROLE DE ESTADO
 # =====================================================
 status_atual_pedido = str(pedido.get("status", "")).strip().capitalize()
 perfil_usuario = usuario.get("perfil", "Operador")
@@ -75,10 +74,17 @@ perfil_usuario = usuario.get("perfil", "Operador")
 # Bloqueia a edição se já foi enviado/entregue E o usuário não for o Administrador
 bloquear_edicao = (status_atual_pedido in ["Enviado", "Entregue"]) and (perfil_usuario != "Administrador")
 
+# Flag para ocultar opções de montagem se o pedido não estiver Pago
+pode_montar = status_atual_pedido not in ["Recebido", "Desistência", "Desistencia"]
+
+if "editar_pedido" not in st.session_state: st.session_state.editar_pedido = False
+if "modo_montagem" not in st.session_state: st.session_state.modo_montagem = False
+
+# Se a página rodar bloqueada, desliga a força
+if bloquear_edicao or not pode_montar:
+    st.session_state.modo_montagem = False
 if bloquear_edicao:
     st.session_state.editar_pedido = False
-    st.session_state.modo_montagem = False
-
 
 # -----------------------------------------------------
 # FILTRO ANTI-DUPLICIDADE DE ADICIONAIS
@@ -95,14 +101,11 @@ try:
 except: 
     adicionais_pedido = []
 
-if "editar_pedido" not in st.session_state: st.session_state.editar_pedido = False
-if "modo_montagem" not in st.session_state: st.session_state.modo_montagem = False
 
 itens_consulta_salvos = pedido.get("itens_consulta") or {}
 if isinstance(itens_consulta_salvos, str):
     try: itens_consulta_salvos = json.loads(itens_consulta_salvos)
     except: itens_consulta_salvos = {}
-
 
 def atualizar_pedido(pid, dados):
     try: supabase.table("pedidos").update(dados).eq("id", pid).execute(); return True
@@ -207,13 +210,16 @@ def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_atual, d
 
 def obter_icone_pagamento(metodo):
     m = str(metodo).strip().lower()
-    svg_cartao = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1a73e8" width="18px" height="18px"><path d="M20 4H4C2.89 4 2.01 4.89 2.01 6L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>'''
-    if "pix" in m: return '<div style="background-color: #e6f4ea; border: 1px solid #137333; border-radius: 6px; padding: 2px 10px; display: inline-flex; align-items: center; justify-content: center; height: 26px;" title="Pix"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a2/Logo%E2%80%94pix_nacional_brasil.svg" height="14"></div>'
-    elif "cart" in m: return f'<div style="background-color: #e8f0fe; border: 1px solid #1a73e8; border-radius: 6px; padding: 2px 10px; display: inline-flex; align-items: center; justify-content: center; height: 26px;" title="Cartão de Crédito">{svg_cartao}</div>'
-    elif "dinheiro" in m: return '<div style="background-color: #fef7e0; border: 1px solid #b06000; border-radius: 6px; padding: 2px 10px; display: inline-flex; align-items: center; justify-content: center; height: 26px;" title="Dinheiro"><span style="font-size: 14px;">💵</span></div>'
-    elif "transfer" in m: return '<div style="background-color: #f3ece6; border: 1px solid #dfcdbb; border-radius: 6px; padding: 2px 10px; display: inline-flex; align-items: center; justify-content: center; height: 26px;" title="Transferência Bancária"><span style="font-size: 14px;">🏦</span></div>'
-    else: return f'<span class="pgto-badge">{metodo}</span>'
-
+    if "pix" in m: 
+        return '<div style="background-color: #e6f4ea; border: 1px solid #137333; border-radius: 6px; padding: 2px 10px; display: inline-flex; align-items: center; justify-content: center; height: 26px; color: #137333; font-weight: bold; font-size: 12px;" title="Pix">⚡ PIX</div>'
+    elif "cart" in m: 
+        return '<div style="background-color: #e8f0fe; border: 1px solid #1a73e8; border-radius: 6px; padding: 2px 10px; display: inline-flex; align-items: center; justify-content: center; height: 26px; color: #1a73e8; font-weight: bold; font-size: 12px;" title="Cartão de Crédito">💳 CARTÃO</div>'
+    elif "dinheiro" in m: 
+        return '<div style="background-color: #fef7e0; border: 1px solid #b06000; border-radius: 6px; padding: 2px 10px; display: inline-flex; align-items: center; justify-content: center; height: 26px; color: #b06000; font-weight: bold; font-size: 12px;" title="Dinheiro">💵 DINHEIRO</div>'
+    elif "transfer" in m: 
+        return '<div style="background-color: #f3ece6; border: 1px solid #dfcdbb; border-radius: 6px; padding: 2px 10px; display: inline-flex; align-items: center; justify-content: center; height: 26px; color: #5a3b28; font-weight: bold; font-size: 12px;" title="Transferência Bancária">🏦 TRANSFERÊNCIA</div>'
+    else: 
+        return f'<span class="pgto-badge">{metodo}</span>'
 
 # =====================================================
 # AVISO DE BLOQUEIO (SE APLICÁVEL)
@@ -229,19 +235,22 @@ col_t1, col_t2, col_t3 = st.columns([2.5, 1, 1])
 
 with col_t1:
     st.title("📋 Detalhes do Pedido")
-    
     badge_montada = '<span class="badge-montada">🧺 Cesta Montada</span>' if pedido.get("cesta_montada") else ''
     st.markdown(f"Pedido #{pedido.get('id')} | Status: **{pedido.get('status','-')}** {badge_montada}", unsafe_allow_html=True)
     
 with col_t2:
-    if st.button("🧺 Montar Cesta", use_container_width=True, disabled=bloquear_edicao):
-        st.session_state.modo_montagem = not st.session_state.modo_montagem
-        st.session_state.editar_pedido = False
+    if pode_montar and not bloquear_edicao:
+        if st.button("🧺 Montar Cesta", use_container_width=True):
+            st.session_state.modo_montagem = True
+            st.session_state.editar_pedido = False
+            st.rerun()
 
 with col_t3:
-    if st.button("✏️ Alterar Pedido", use_container_width=True, disabled=bloquear_edicao):
-        st.session_state.editar_pedido = not st.session_state.editar_pedido
-        st.session_state.modo_montagem = False
+    if not bloquear_edicao:
+        if st.button("✏️ Alterar Pedido", use_container_width=True):
+            st.session_state.editar_pedido = True
+            st.session_state.modo_montagem = False
+            st.rerun()
 
 
 # =====================================================
@@ -252,14 +261,24 @@ if st.session_state.modo_montagem:
         st.markdown('<div class="card-title" style="color: #b06000 !important; font-size: 18px !important;">🧺 Checklist de Montagem da Cesta</div>', unsafe_allow_html=True)
         st.caption("Marque os itens conforme for colocando na cesta para garantir que nada foi esquecido.")
         
-        # --- DESCRIÇÃO DA CESTA ---
+        # --- DESCRIÇÃO DA CESTA (LIMPO) ---
         st.markdown(f"**🎁 Cesta Base:** {pedido.get('cesta_nome', '')}")
         cesta_obj = buscar_cesta(pedido.get("cesta_id")) if pedido.get("cesta_id") else {}
         descricao_cesta = cesta_obj.get("descricao", "") if cesta_obj else ""
         
         if descricao_cesta:
+            # Puxa apenas o que está depois de "Inclusos:"
+            bloco_inclusos = descricao_cesta
+            if "Inclusos:" in descricao_cesta:
+                bloco_inclusos = descricao_cesta.split("Inclusos:")[1]
+            elif "inclusos:" in descricao_cesta.lower():
+                bloco_inclusos = descricao_cesta.lower().split("inclusos:")[1]
+            
+            # Limpa tudo que vier depois de uma quebra de linha dupla (evitando puxar textos de observação)
+            bloco_inclusos = bloco_inclusos.split("\n\n")[0]
+            
             st.markdown("<div style='margin-top: 10px; margin-bottom: 5px; color:#5a3b28; font-weight:bold;'>Itens Padrão da Cesta:</div>", unsafe_allow_html=True)
-            itens_desc = [i.strip() for i in descricao_cesta.split(";") if i.strip()]
+            itens_desc = [i.strip() for i in bloco_inclusos.split(";") if i.strip()]
             for idx, item in enumerate(itens_desc):
                 st.checkbox(f"📦 {item}", key=f"chk_desc_{idx}")
         
@@ -291,24 +310,23 @@ if st.session_state.modo_montagem:
         st.divider()
         
         # --- ATRIBUIÇÃO E FINALIZAÇÃO ---
-        st.markdown("**🛵 Despachar Pedido**")
-        st.caption("Ao concluir, o status mudará para Enviado e ele aparecerá na fila da página de Entregas.")
-        
-        if st.button("✅ Concluir Montagem e Enviar para Rota", type="primary", use_container_width=True):
-            atualizar_pedido(pedido["id"], {
-                "status": "Enviado",
-                "cesta_montada": True 
-            })
-            
-            st.session_state.modo_montagem = False
-            st.session_state['msg_geral'] = "✅ Montagem concluída! O pedido foi enviado para a logística."
-            st.rerun()
+        col_m_btn1, col_m_btn2 = st.columns(2)
+        with col_m_btn1:
+            if st.button("💾 Salvar Montagem", type="primary", use_container_width=True):
+                atualizar_pedido(pedido["id"], {"cesta_montada": True})
+                st.session_state.modo_montagem = False
+                st.session_state['msg_geral'] = "✅ Montagem salva! A cesta está pronta."
+                st.rerun()
+        with col_m_btn2:
+            if st.button("❌ Voltar aos Detalhes", use_container_width=True):
+                st.session_state.modo_montagem = False
+                st.rerun()
 
 
 # =====================================================
 # BLOCO 2: EDIÇÃO AVANÇADA
 # =====================================================
-if st.session_state.editar_pedido:
+elif st.session_state.editar_pedido:
     with st.container(border=True):
         st.markdown('<div class="card-title">✏️ Painel de Edição Avançada</div>', unsafe_allow_html=True)
         aba_dados, aba_cesta, aba_adicionais = st.tabs(["👤 Dados", "🎁 Cesta e Produtos", "🎀 Adicionais"])
@@ -414,197 +432,203 @@ if st.session_state.editar_pedido:
 # =====================================================
 # LAYOUT PRINCIPAL (VISUALIZAÇÃO DA FICHA)
 # =====================================================
-col_esquerda, col_direita = st.columns([1.2, 1])
+else:
+    col_esquerda, col_direita = st.columns([1.2, 1])
 
-with col_esquerda:
-    with st.container(border=True):
-        st.markdown('<div class="card-title">👤 Cliente (Comprador)</div>', unsafe_allow_html=True)
-        c1, c2, c3 = st.columns(3)
-        with c1: st.markdown(f'<div class="info-label">Nome</div><div class="info-value">{pedido.get("cliente_nome") or "-"}</div>', unsafe_allow_html=True)
-        with c2: st.markdown(f'<div class="info-label">CPF</div><div class="info-value">{pedido.get("cliente_cpf") or "-"}</div>', unsafe_allow_html=True)
-        with c3: st.markdown(f'<div class="info-label">Telefone</div><div class="info-value">+{pedido.get("cliente_telefone") or "-"}</div>', unsafe_allow_html=True)
-
-    with st.container(border=True):
-        st.markdown('<div class="card-title">💝 Homenageado (Destinatário)</div>', unsafe_allow_html=True)
-        h1, h2, h3 = st.columns(3)
-        with h1: st.markdown(f'<div class="info-label">Nome</div><div class="info-value">{pedido.get("destinatario_nome") or "-"}</div>', unsafe_allow_html=True)
-        with h2: st.markdown(f'<div class="info-label">Telefone</div><div class="info-value">{pedido.get("destinatario_telefone") or "-"}</div>', unsafe_allow_html=True)
-        with h3: st.markdown(f'<div class="info-label">Motivo</div><div class="info-value">{pedido.get("motivo_homenagem") or "-"}</div>', unsafe_allow_html=True)
-
-    with st.container(border=True):
-        st.markdown('<div class="card-title">🎁 Pedido</div>', unsafe_allow_html=True)
-        c1, c2, c3, c4 = st.columns(4)
-        with c1: st.markdown(f'<div class="info-label">Cesta</div><div class="info-value">{pedido.get("cesta_nome","-")}</div>', unsafe_allow_html=True)
-        with c2: st.markdown(f'<div class="info-label">Pagamento</div><div class="info-value">{obter_icone_pagamento(pedido.get("pagamento", "-"))}</div>', unsafe_allow_html=True)
-        with c3: st.markdown(f'<div class="info-label">Entrega</div><div class="info-value">{formatar_data(pedido.get("data_entrega"))}</div>', unsafe_allow_html=True)
-        with c4: st.markdown(f'<div class="info-label">Período</div><div class="info-value">{pedido.get("periodo_entrega","-")}</div>', unsafe_allow_html=True)
-
-    c_p1, c_p2 = st.columns(2)
-    valor_adicionais = 0.0
-    valor_consulta = 0.0
-    itens_consulta = {}
-
-    with c_p1:
+    with col_esquerda:
         with st.container(border=True):
-            st.markdown('<div class="card-title">🛒 Produtos da Cesta</div>', unsafe_allow_html=True)
-            produtos = pedido.get("produtos", "")
-            if produtos:
-                for item in produtos.split("\n"): st.write(f"• {item.replace('•','').strip()}")
-            else: st.caption("Nenhum produto informado.")
+            st.markdown('<div class="card-title">👤 Cliente (Comprador)</div>', unsafe_allow_html=True)
+            c1, c2, c3 = st.columns(3)
+            with c1: st.markdown(f'<div class="info-label">Nome</div><div class="info-value">{pedido.get("cliente_nome") or "-"}</div>', unsafe_allow_html=True)
+            with c2: st.markdown(f'<div class="info-label">CPF</div><div class="info-value">{pedido.get("cliente_cpf") or "-"}</div>', unsafe_allow_html=True)
+            with c3: st.markdown(f'<div class="info-label">Telefone</div><div class="info-value">+{pedido.get("cliente_telefone") or "-"}</div>', unsafe_allow_html=True)
 
-    with c_p2:
         with st.container(border=True):
-            st.markdown('<div class="card-title">🎀 Adicionais</div>', unsafe_allow_html=True)
-            if adicionais_pedido:
-                for idx_ad, adicional in enumerate(adicionais_pedido):
-                    nome = adicional.get("nome_produto", "-")
-                    valor = adicional.get("valor_unitario")
-                    if valor is not None:
-                        valor = float(valor); valor_adicionais += valor
-                        st.write(f"• {nome} - {formatar_valor(valor)}")
-                    else:
-                        st.write(f"• {nome}")
-                        val_salvo = float(itens_consulta_salvos.get(nome, 0) or 0)
-                        val_dig = st.number_input("Definir valor", min_value=0.0, value=val_salvo, step=1.0, key=f"cons_{nome}_{idx_ad}", disabled=bloquear_edicao)
-                        itens_consulta[nome] = val_dig
-                        if val_dig > 0: valor_consulta += val_dig; valor_adicionais += val_dig
-            else: st.caption("Nenhum adicional selecionado.")
+            st.markdown('<div class="card-title">💝 Homenageado (Destinatário)</div>', unsafe_allow_html=True)
+            h1, h2, h3 = st.columns(3)
+            with h1: st.markdown(f'<div class="info-label">Nome</div><div class="info-value">{pedido.get("destinatario_nome") or "-"}</div>', unsafe_allow_html=True)
+            with h2: st.markdown(f'<div class="info-label">Telefone</div><div class="info-value">{pedido.get("destinatario_telefone") or "-"}</div>', unsafe_allow_html=True)
+            with h3: st.markdown(f'<div class="info-label">Motivo</div><div class="info-value">{pedido.get("motivo_homenagem") or "-"}</div>', unsafe_allow_html=True)
 
-    c_m1, c_m2 = st.columns(2)
-    with c_m1:
         with st.container(border=True):
-            st.markdown('<div class="card-title">💌 Mensagem do Cartão</div>', unsafe_allow_html=True)
-            st.text_area("", value=pedido.get("mensagem") or "", disabled=True, height=60, key="msg_vis")
-    with c_m2:
+            st.markdown('<div class="card-title">🎁 Pedido</div>', unsafe_allow_html=True)
+            c1, c2, c3, c4 = st.columns(4)
+            with c1: st.markdown(f'<div class="info-label">Cesta</div><div class="info-value">{pedido.get("cesta_nome","-")}</div>', unsafe_allow_html=True)
+            with c2: st.markdown(f'<div class="info-label">Pagamento</div><div class="info-value">{obter_icone_pagamento(pedido.get("pagamento", "-"))}</div>', unsafe_allow_html=True)
+            with c3: st.markdown(f'<div class="info-label">Entrega</div><div class="info-value">{formatar_data(pedido.get("data_entrega"))}</div>', unsafe_allow_html=True)
+            with c4: st.markdown(f'<div class="info-label">Período</div><div class="info-value">{pedido.get("periodo_entrega","-")}</div>', unsafe_allow_html=True)
+
+        c_p1, c_p2 = st.columns(2)
+        valor_adicionais = 0.0
+        valor_consulta = 0.0
+        itens_consulta = {}
+
+        with c_p1:
+            with st.container(border=True):
+                st.markdown('<div class="card-title">🛒 Produtos da Cesta</div>', unsafe_allow_html=True)
+                produtos = pedido.get("produtos", "")
+                if produtos:
+                    for item in produtos.split("\n"): st.write(f"• {item.replace('•','').strip()}")
+                else: st.caption("Nenhum produto informado.")
+
+        with c_p2:
+            with st.container(border=True):
+                st.markdown('<div class="card-title">🎀 Adicionais</div>', unsafe_allow_html=True)
+                if adicionais_pedido:
+                    for idx_ad, adicional in enumerate(adicionais_pedido):
+                        nome = adicional.get("nome_produto", "-")
+                        valor = adicional.get("valor_unitario")
+                        if valor is not None:
+                            valor = float(valor); valor_adicionais += valor
+                            st.write(f"• {nome} - {formatar_valor(valor)}")
+                        else:
+                            st.write(f"• {nome}")
+                            val_salvo = float(itens_consulta_salvos.get(nome, 0) or 0)
+                            val_dig = st.number_input("Definir valor", min_value=0.0, value=val_salvo, step=1.0, key=f"cons_{nome}_{idx_ad}", disabled=bloquear_edicao)
+                            itens_consulta[nome] = val_dig
+                            if val_dig > 0: valor_consulta += val_dig; valor_adicionais += val_dig
+                else: st.caption("Nenhum adicional selecionado.")
+
+        c_m1, c_m2 = st.columns(2)
+        with c_m1:
+            with st.container(border=True):
+                st.markdown('<div class="card-title">💌 Mensagem do Cartão</div>', unsafe_allow_html=True)
+                st.text_area("", value=pedido.get("mensagem") or "", disabled=True, height=60, key="msg_vis")
+        with c_m2:
+            with st.container(border=True):
+                st.markdown('<div class="card-title">✨ Pedido Especial</div>', unsafe_allow_html=True)
+                st.text_area("", value=pedido.get("pedido_especial") or "", disabled=True, height=60, key="esp_vis")
+
         with st.container(border=True):
-            st.markdown('<div class="card-title">✨ Pedido Especial</div>', unsafe_allow_html=True)
-            st.text_area("", value=pedido.get("pedido_especial") or "", disabled=True, height=60, key="esp_vis")
+            st.markdown('<div class="card-title">📍 Endereço de Entrega & Rotas</div>', unsafe_allow_html=True)
+            endereco_pedido = pedido.get("endereco", "")
+            st.text_area("", value=endereco_pedido if endereco_pedido else "Endereço não informado.", disabled=True, height=65, key="end_vis")
+            if endereco_pedido:
+                endereco_limpo_gps = re.sub(r'\(CEP:.*?\)', '', endereco_pedido).strip()
+                endereco_encoded = urllib.parse.quote(endereco_limpo_gps)
+                col_map1, col_map2 = st.columns(2)
+                with col_map1: st.link_button("🗺️ Abrir no Google Maps", url=f"https://www.google.com/maps/search/?api=1&query={endereco_encoded}", use_container_width=True)
+                with col_map2: st.link_button("🚗 Abrir no Waze", url=f"https://waze.com/ul?q={endereco_encoded}&navigate=yes", use_container_width=True)
 
-    with st.container(border=True):
-        st.markdown('<div class="card-title">📍 Endereço de Entrega & Rotas</div>', unsafe_allow_html=True)
-        endereco_pedido = pedido.get("endereco", "")
-        st.text_area("", value=endereco_pedido if endereco_pedido else "Endereço não informado.", disabled=True, height=65, key="end_vis")
-        if endereco_pedido:
-            endereco_limpo_gps = re.sub(r'\(CEP:.*?\)', '', endereco_pedido).strip()
-            endereco_encoded = urllib.parse.quote(endereco_limpo_gps)
-            col_map1, col_map2 = st.columns(2)
-            with col_map1: st.link_button("🗺️ Abrir no Google Maps", url=f"https://www.google.com/maps/search/?api=1&query={endereco_encoded}", use_container_width=True)
-            with col_map2: st.link_button("🚗 Abrir no Waze", url=f"https://waze.com/ul?q={endereco_encoded}&navigate=yes", use_container_width=True)
+    with col_direita:
+        valor_cesta = 0.0
+        try:
+            if pedido.get("cesta_id"):
+                cesta = buscar_cesta(pedido["cesta_id"])
+                if cesta: valor_cesta = float(cesta.get("preco", 0) or 0)
+        except: pass
 
-with col_direita:
-    valor_cesta = 0.0
-    try:
-        if pedido.get("cesta_id"):
-            cesta = buscar_cesta(pedido["cesta_id"])
-            if cesta: valor_cesta = float(cesta.get("preco", 0) or 0)
-    except: pass
-
-    with st.container(border=True):
-        st.markdown('<div class="card-title">💰 Fechamento Financeiro</div>', unsafe_allow_html=True)
-        cf1, cf2, cf3, cf4 = st.columns(4)
-        with cf1: valor_frete = st.number_input("🚚 Frete", min_value=0.0, value=float(pedido.get("valor_frete") or 0), step=1.0, key="frete", disabled=bloquear_edicao)
-        with cf2: valor_extras = st.number_input("➕ Extras", min_value=0.0, value=float(pedido.get("valor_extras") or 0), step=1.0, key="extras", disabled=bloquear_edicao)
-        with cf3: desconto = st.number_input("🏷️ Desconto", min_value=0.0, value=float(pedido.get("desconto") or 0), step=1.0, key="desconto", disabled=bloquear_edicao)
-        
-        c_status1, c_status2 = st.columns(2)
-        with c_status1:
-            # REMOVIDO "Entregue" do dropdown para garantir que só seja finalizado pelo entregador
-            status_op = ["Recebido", "Pago", "Enviado", "Desistência"]
-            status_atual = pedido.get("status", "Recebido")
+        with st.container(border=True):
+            st.markdown('<div class="card-title">💰 Fechamento Financeiro</div>', unsafe_allow_html=True)
+            cf1, cf2, cf3, cf4 = st.columns(4)
+            with cf1: valor_frete = st.number_input("🚚 Frete", min_value=0.0, value=float(pedido.get("valor_frete") or 0), step=1.0, key="frete", disabled=bloquear_edicao)
+            with cf2: valor_extras = st.number_input("➕ Extras", min_value=0.0, value=float(pedido.get("valor_extras") or 0), step=1.0, key="extras", disabled=bloquear_edicao)
+            with cf3: desconto = st.number_input("🏷️ Desconto", min_value=0.0, value=float(pedido.get("desconto") or 0), step=1.0, key="desconto", disabled=bloquear_edicao)
             
-            # Se já estiver como "Entregue", adicionamos só pra não quebrar a visualização atual
-            if status_atual == "Entregue": status_op.append("Entregue")
+            c_status1, c_status2 = st.columns(2)
+            with c_status1:
+                # REMOVIDO "Entregue" do dropdown para garantir que só seja finalizado pelo entregador
+                status_op = ["Recebido", "Pago", "Enviado", "Desistência"]
+                status_atual = pedido.get("status", "Recebido")
                 
-            status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0, disabled=bloquear_edicao)
-        with c_status2:
-            st.markdown("<div style='margin-top: 32px;'></div>", unsafe_allow_html=True)
-            chk_montada = st.checkbox("🧺 Cesta Pronta", value=bool(pedido.get("cesta_montada")), disabled=bloquear_edicao)
+                # Se já estiver como "Entregue", adicionamos só pra não quebrar a visualização atual
+                if status_atual == "Entregue": status_op.append("Entregue")
+                    
+                status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0, disabled=bloquear_edicao)
+            with c_status2:
+                st.markdown("<div style='margin-top: 32px;'></div>", unsafe_allow_html=True)
+                
+                # Só exibe o checkbox da cesta se for permitido montar
+                if pode_montar:
+                    chk_montada = st.checkbox("🧺 Cesta Pronta", value=bool(pedido.get("cesta_montada")), disabled=bloquear_edicao)
+                else:
+                    chk_montada = bool(pedido.get("cesta_montada"))
 
-        horario_combinado = st.text_input("🕒 Horário Combinado de Entrega", value=pedido.get("horario_combinado") or "", placeholder="Ex: 15:30", disabled=bloquear_edicao)
+            horario_combinado = st.text_input("🕒 Horário Combinado de Entrega", value=pedido.get("horario_combinado") or "", placeholder="Ex: 15:30", disabled=bloquear_edicao)
 
-    valor_total_calculado = max(0, valor_cesta + valor_adicionais + valor_frete + valor_extras - desconto)
+        valor_total_calculado = max(0, valor_cesta + valor_adicionais + valor_frete + valor_extras - desconto)
 
-    with st.container(border=True):
-        st.markdown('<div class="card-title">🧮 Resumo do Pedido</div>', unsafe_allow_html=True)
-        st.markdown(
-            f"""
-            <div class="resumo-container">
-                <div class="resumo-row"><span class="resumo-label">🎁 Cesta</span><span class="resumo-val">{formatar_valor(valor_cesta)}</span></div>
-                <div class="resumo-row"><span class="resumo-label">🎀 Adicionais</span><span class="resumo-val">{formatar_valor(valor_adicionais)}</span></div>
-                <div class="resumo-row"><span class="resumo-label">🚚 Frete</span><span class="resumo-val">{formatar_valor(valor_frete)}</span></div>
-                <div class="resumo-row"><span class="resumo-label">➕ Extras</span><span class="resumo-val">{formatar_valor(valor_extras)}</span></div>
-                <div class="resumo-row"><span class="resumo-label">🏷️ Desconto</span><span class="resumo-val" style="color: #c62828;">- {formatar_valor(desconto)}</span></div>
-                <div class="resumo-row"><span class="resumo-label" style="font-size:14px; font-weight:700;">💰 TOTAL</span><span class="resumo-total-val">{formatar_valor(valor_total_calculado)}</span></div>
-            </div>
-            """, unsafe_allow_html=True
-        )
+        with st.container(border=True):
+            st.markdown('<div class="card-title">🧮 Resumo do Pedido</div>', unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <div class="resumo-container">
+                    <div class="resumo-row"><span class="resumo-label">🎁 Cesta</span><span class="resumo-val">{formatar_valor(valor_cesta)}</span></div>
+                    <div class="resumo-row"><span class="resumo-label">🎀 Adicionais</span><span class="resumo-val">{formatar_valor(valor_adicionais)}</span></div>
+                    <div class="resumo-row"><span class="resumo-label">🚚 Frete</span><span class="resumo-val">{formatar_valor(valor_frete)}</span></div>
+                    <div class="resumo-row"><span class="resumo-label">➕ Extras</span><span class="resumo-val">{formatar_valor(valor_extras)}</span></div>
+                    <div class="resumo-row"><span class="resumo-label">🏷️ Desconto</span><span class="resumo-val" style="color: #c62828;">- {formatar_valor(desconto)}</span></div>
+                    <div class="resumo-row"><span class="resumo-label" style="font-size:14px; font-weight:700;">💰 TOTAL</span><span class="resumo-total-val">{formatar_valor(valor_total_calculado)}</span></div>
+                </div>
+                """, unsafe_allow_html=True
+            )
 
-    with st.container(border=True):
-        st.markdown('<div class="card-title">📝 Anotações Internas</div>', unsafe_allow_html=True)
-        anotacao = st.text_area("Observações do atendimento", value=pedido.get("anotacoes_internas") or "", height=70, key="campo_anotacao")
-        if st.button("💾 Salvar Anotação", use_container_width=True):
-            atualizar_anotacao_pedido(pedido["id"], anotacao)
-            st.session_state['msg_geral'] = "✅ Anotação salva!"
-            st.rerun()
-
-    with st.container(border=True):
-        st.markdown('<div class="card-title">📷 Gestão de Fotos Polaroid</div>', unsafe_allow_html=True)
-        if "msg_foto" in st.session_state:
-            if "❌" in st.session_state['msg_foto']: st.error(st.session_state['msg_foto'])
-            else: st.success(st.session_state['msg_foto'])
-            del st.session_state['msg_foto']
-        novas_fotos = st.file_uploader("Adicionar fotos", type=["jpg", "jpeg", "png", "webp"], accept_multiple_files=True, key="up_fotos_multi")
-        if novas_fotos:
-            if st.button("📤 Salvar Novas Fotos", use_container_width=True):
-                with st.spinner("Processando..."):
-                    sucesso, erro_msg = salvar_fotos_local(pedido["id"], novas_fotos)
-                if sucesso: st.session_state['msg_foto'] = "✅ Foto salva!"
-                else: st.session_state['msg_foto'] = f"❌ Erro Supabase: {erro_msg}"
+        with st.container(border=True):
+            st.markdown('<div class="card-title">📝 Anotações Internas</div>', unsafe_allow_html=True)
+            anotacao = st.text_area("Observações do atendimento", value=pedido.get("anotacoes_internas") or "", height=70, key="campo_anotacao")
+            if st.button("💾 Salvar Anotação", use_container_width=True):
+                atualizar_anotacao_pedido(pedido["id"], anotacao)
+                st.session_state['msg_geral'] = "✅ Anotação salva!"
                 st.rerun()
 
-        st.divider()
-        fotos, erro_listar = listar_fotos_local(pedido["id"])
-        if erro_listar: st.error(f"❌ Erro ao buscar: {erro_listar}")
-        elif fotos:
-            colunas = st.columns(2)
-            for i, foto in enumerate(fotos):
-                with colunas[i % 2]:
-                    link_imagem = foto.get("url")
-                    if link_imagem:
-                        st.image(link_imagem, caption=foto.get("nome_original", "Foto"), use_container_width=True)
-                        if st.button("🗑️ Deletar", key=f"del_foto_{foto['id']}", use_container_width=True):
-                            suc, err_del = deletar_foto_local(foto["id"], foto.get("arquivo"))
-                            if suc: st.session_state['msg_foto'] = "✅ Foto deletada!"
-                            else: st.session_state['msg_foto'] = f"❌ Erro ao deletar: {err_del}"
-                            st.rerun()
-                    else: st.caption("⚠️ Link indisponível.")
-        else: st.caption("Nenhuma foto anexada.")
+        with st.container(border=True):
+            st.markdown('<div class="card-title">📷 Gestão de Fotos Polaroid</div>', unsafe_allow_html=True)
+            if "msg_foto" in st.session_state:
+                if "❌" in st.session_state['msg_foto']: st.error(st.session_state['msg_foto'])
+                else: st.success(st.session_state['msg_foto'])
+                del st.session_state['msg_foto']
+            novas_fotos = st.file_uploader("Adicionar fotos", type=["jpg", "jpeg", "png", "webp"], accept_multiple_files=True, key="up_fotos_multi")
+            if novas_fotos:
+                if st.button("📤 Salvar Novas Fotos", use_container_width=True):
+                    with st.spinner("Processando..."):
+                        sucesso, erro_msg = salvar_fotos_local(pedido["id"], novas_fotos)
+                    if sucesso: st.session_state['msg_foto'] = "✅ Foto salva!"
+                    else: st.session_state['msg_foto'] = f"❌ Erro Supabase: {erro_msg}"
+                    st.rerun()
 
-if "msg_geral" in st.session_state:
-    st.success(st.session_state['msg_geral'])
-    del st.session_state['msg_geral']
+            st.divider()
+            fotos, erro_listar = listar_fotos_local(pedido["id"])
+            if erro_listar: st.error(f"❌ Erro ao buscar: {erro_listar}")
+            elif fotos:
+                colunas = st.columns(2)
+                for i, foto in enumerate(fotos):
+                    with colunas[i % 2]:
+                        link_imagem = foto.get("url")
+                        if link_imagem:
+                            st.image(link_imagem, caption=foto.get("nome_original", "Foto"), use_container_width=True)
+                            if st.button("🗑️ Deletar", key=f"del_foto_{foto['id']}", use_container_width=True):
+                                suc, err_del = deletar_foto_local(foto["id"], foto.get("arquivo"))
+                                if suc: st.session_state['msg_foto'] = "✅ Foto deletada!"
+                                else: st.session_state['msg_foto'] = f"❌ Erro ao deletar: {err_del}"
+                                st.rerun()
+                        else: st.caption("⚠️ Link indisponível.")
+            else: st.caption("Nenhuma foto anexada.")
 
-col_bot1, col_bot2, col_bot3 = st.columns(3)
-with col_bot1:
-    if st.button("💾 Salvar Atendimento Completo", use_container_width=True, type="primary", disabled=bloquear_edicao):
-        dados = {
-            "status": status, 
-            "cesta_montada": chk_montada,
-            "valor_frete": valor_frete, 
-            "valor_extras": valor_extras, 
-            "desconto": desconto, 
-            "valor_total": valor_total_calculado, 
-            "horario_combinado": horario_combinado, 
-            "itens_consulta": itens_consulta
-        }
-        atualizar_pedido(pedido["id"], dados)
-        st.session_state['msg_geral'] = "✅ Atendimento financeiro salvo com sucesso!"
-        st.rerun()
+    if "msg_geral" in st.session_state:
+        st.success(st.session_state['msg_geral'])
+        del st.session_state['msg_geral']
 
-with col_bot2:
-    link_wpp = gerar_whatsapp(pedido, adicionais_pedido, valor_total_calculado, valor_frete, valor_extras, desconto)
-    st.link_button("💬 Enviar Resumo no WhatsApp", url=link_wpp, use_container_width=True)
+    col_bot1, col_bot2, col_bot3 = st.columns(3)
+    with col_bot1:
+        if st.button("💾 Salvar Atendimento Completo", use_container_width=True, type="primary", disabled=bloquear_edicao):
+            dados = {
+                "status": status, 
+                "cesta_montada": chk_montada,
+                "valor_frete": valor_frete, 
+                "valor_extras": valor_extras, 
+                "desconto": desconto, 
+                "valor_total": valor_total_calculado, 
+                "horario_combinado": horario_combinado, 
+                "itens_consulta": itens_consulta
+            }
+            atualizar_pedido(pedido["id"], dados)
+            st.session_state['msg_geral'] = "✅ Atendimento financeiro salvo com sucesso!"
+            st.rerun()
 
-with col_bot3:
-    if st.button("⬅ Voltar para Pedidos", use_container_width=True):
-        st.switch_page("pages/02_Pedidos.py")
+    with col_bot2:
+        link_wpp = gerar_whatsapp(pedido, adicionais_pedido, valor_total_calculado, valor_frete, valor_extras, desconto)
+        st.link_button("💬 Enviar Resumo no WhatsApp", url=link_wpp, use_container_width=True)
+
+    with col_bot3:
+        if st.button("⬅ Voltar para Pedidos", use_container_width=True):
+            st.switch_page("pages/02_Pedidos.py")
