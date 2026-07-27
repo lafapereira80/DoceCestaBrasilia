@@ -11,8 +11,7 @@ from services.pedido_service import (
     listar_pedidos_ativos,
     excluir_pedido_completo,
     buscar_pedido,
-    salvar_pedido,
-    atualizar_status_pedido
+    salvar_pedido
 )
 from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
@@ -60,15 +59,17 @@ def formatar_data(data_str):
         return dt.strftime("%d/%m/%Y")
     except: return str(data_str)
 
-# Função para mudar status sem abrir detalhes
+# =====================================================
+# FUNÇÃO LOCAL PARA MUDAR STATUS NO BANCO
+# =====================================================
 def alterar_para_enviado(pedido_id):
-    sucesso, msg = atualizar_status_pedido(pedido_id, "Enviado")
-    if sucesso:
+    try:
+        supabase.table("pedidos").update({"status": "Enviado"}).eq("id", pedido_id).execute()
         st.success("🛵 Pedido enviado para a Rota de Entregas com sucesso!")
         time.sleep(1)
         st.rerun()
-    else:
-        st.error(f"Erro: {msg}")
+    except Exception as e:
+        st.error(f"Erro ao enviar para a rota: {e}")
 
 st.markdown(
 """
@@ -336,13 +337,11 @@ def mostrar_lista(titulo, status_filtro, eh_pago=False, permitir_exclusao=False)
                 nome_cliente = " ".join(str(pedido.get("cliente_nome", "-")).strip().split())
                 st.markdown(f'<div class="cliente-nome">{nome_cliente}</div>', unsafe_allow_html=True)
                 
-                # Ajuste visual para exibir "PIX" ou "Cartão" de forma limpa em texto, já que a imagem estava falhando no painel principal
                 txt_pagamento = str(pedido.get('pagamento', 'N/I'))
                 icone_pag = "💳" if "Cartão" in txt_pagamento or "Cartao" in txt_pagamento else "⚡" if "Pix" in txt_pagamento else "💵"
                 st.caption(f"📱 +{pedido.get('cliente_telefone', '-')} | {icone_pag} {txt_pagamento}")
 
             with col_info2:
-                # Na aba de "Pagos", mostramos se já está montada
                 tag_montada = ""
                 if eh_pago and pedido.get("cesta_montada"):
                     tag_montada = '<span class="badge-montada">🧺 MONTADA</span>'
@@ -359,7 +358,6 @@ def mostrar_lista(titulo, status_filtro, eh_pago=False, permitir_exclusao=False)
 
             with col_acoes:
                 if eh_pago:
-                    # EM PAGOS: Botões de Ação Completa (Ver Detalhe Montagem + Botão de Envio para a Rota)
                     sub_p1, sub_p2 = st.columns(2)
                     with sub_p1:
                         if st.button("👁️", key=f"abrir_{pedido['id']}", help="Abrir pedido (Detalhe Cesta Montada)", use_container_width=True):
@@ -370,7 +368,6 @@ def mostrar_lista(titulo, status_filtro, eh_pago=False, permitir_exclusao=False)
                             alterar_para_enviado(pedido["id"])
                 
                 elif permitir_exclusao:
-                    # EM DESISTÊNCIAS: Ver + Excluir (Só Admin)
                     sub_col1, sub_col2 = st.columns(2)
                     with sub_col1:
                         if st.button("👁️", key=f"abrir_{pedido['id']}", help="Abrir pedido", use_container_width=True):
@@ -382,7 +379,6 @@ def mostrar_lista(titulo, status_filtro, eh_pago=False, permitir_exclusao=False)
                             if sucesso: st.success(mensagem); st.rerun()
                             else: st.error(mensagem)
                 else:
-                    # EM RECEBIDOS: Somente abrir (Sem ação extra de montar)
                     if st.button("👁️ Abrir", key=f"abrir_{pedido['id']}", help="Abrir para Conferência", use_container_width=True):
                         st.session_state["pedido_aberto"] = pedido["id"]
                         st.switch_page("pages/09_Detalhes_Pedido.py")
