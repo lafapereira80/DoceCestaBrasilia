@@ -61,7 +61,8 @@ div[data-baseweb="select"] { margin-top: 0px; }
     div[data-testid="stVerticalBlockBorderWrapper"] { padding: 10px !important; }
 }
 </style>
-""", unsafe_allow_html=True)
+""",
+unsafe_allow_html=True)
 
 if "modo_entrega_ativa" not in st.session_state: st.session_state.modo_entrega_ativa = False
 
@@ -99,12 +100,12 @@ def salvar_ordem(pedidos_ordenados):
             except: pass 
 
 def atualizar_entregador(pedido_id, widget_key):
-    """Atribui um pedido a um entregador a partir do painel do Admin"""
+    """Atribui ou realoca um pedido a um entregador a partir do painel do Admin"""
     novo_entregador = st.session_state[widget_key]
     val = None if novo_entregador == "Não atribuído" else novo_entregador
     try: 
         supabase.table("pedidos").update({"entregador_login": val}).eq("id", pedido_id).execute()
-        st.toast("✅ Entregador atribuído com sucesso!")
+        st.toast("✅ Entregador atualizado com sucesso!")
     except Exception as e: 
         st.error(f"Erro ao atribuir: {e}")
 
@@ -155,34 +156,31 @@ if perfil_usuario in ["Administrador", "Operador"]:
     if not nao_atribuidos:
         st.caption("✨ Todas as cestas enviadas já foram atribuídas a um entregador.")
     else:
-        # Layout em grade (3 colunas) para os resumos de compra com endereço e select abaixo
         cols_despacho = st.columns(3)
         for i, ped in enumerate(nao_atribuidos):
             with cols_despacho[i % 3]:
                 with st.container(border=True):
-                    bairro = str(ped.get('endereco', '')).split(',')[-1].split('(')[0].strip()
-                    horario = ped.get('horario_combinado', '') or ped.get('periodo_entrega', 'Livre')
+                    endereco_completo = ped.get('endereco', 'Endereço não informado')
                     
                     st.markdown(
                         f"""
                         <div style="margin-bottom: 8px;">
                             <span style="font-size: 11px; font-weight: 800; color: #9d7d65; text-transform: uppercase;">Pedido #{ped.get('id')}</span>
-                            <div class="bairro-destaque">📍 {bairro}</div>
-                            <div class="nome-destaque">🎁 <strong>{ped.get('cesta_nome')}</strong> para <em>{ped.get('destinatario_nome')}</em></div>
+                            <div class="nome-destaque" style="margin-top: 2px;">🎁 <strong>{ped.get('cesta_nome')}</strong> para <em>{ped.get('destinatario_nome')}</em></div>
+                            <div style="font-size: 12px; color: #333; font-weight: 700; margin-top: 6px; background: #faf7f3; padding: 6px; border-radius: 6px; border-left: 3px solid #dfcdbb;">📍 {endereco_completo}</div>
                             <div style="font-size: 12px; color: #444; margin-top: 4px;">📞 {ped.get('destinatario_telefone') or 'Sem tel'}</div>
-                            <div class="hora-destaque">🕒 {horario}</div>
+                            <div class="hora-destaque">🕒 {ped.get('horario_combinado', '') or ped.get('periodo_entrega', 'Livre')}</div>
                         </div>
                         """, unsafe_allow_html=True
                     )
                     
                     st.write("")
                     chave_widget = f"despacho_{ped['id']}"
-                    # Caixa de seleção solicitada logo abaixo do resumo
                     st.selectbox("Definir Entregador:", opcoes_ent, index=0, key=chave_widget, on_change=atualizar_entregador, args=(ped["id"], chave_widget))
 
     st.divider()
 
-    # --- 2. ROTAS ATIVAS (Caixa/Cartão por Entregador com seus itens) ---
+    # --- 2. ROTAS ATIVAS (Com opção de realocar motoboy a qualquer momento) ---
     st.markdown("### 🛵 Rotas Ativas (Itens por Entregador)")
     if not lista_entregadores:
         st.info("Nenhum usuário com perfil 'Entregador' cadastrado no sistema.")
@@ -195,7 +193,6 @@ if perfil_usuario in ["Administrador", "Operador"]:
                 with st.container(border=True):
                     st.markdown(f"<div class='admin-card-header'>🚴 Entregador: {driver}</div>", unsafe_allow_html=True)
                     
-                    # Filtra pedidos desse motorista específico
                     ped_driver_ativos = [p for p in pedidos_ativos if p.get("entregador_login") == driver]
                     ped_driver_concluidos = [p for p in pedidos_concluidos if p.get("entregador_login") == driver]
                     
@@ -209,17 +206,30 @@ if perfil_usuario in ["Administrador", "Operador"]:
                         
                     salvar_ordem(ped_driver_ativos)
                     
-                    # Itens Ativos do Entregador
                     if ped_driver_ativos:
                         st.markdown("<span style='font-size:13px; font-weight:700; color:#5a3b28;'>Itens na Rota deste Entregador:</span>", unsafe_allow_html=True)
                         for i, ped in enumerate(ped_driver_ativos):
                             with st.container(border=True):
-                                col_i, col_u, col_d = st.columns([5, 1, 1])
-                                with col_i:
-                                    bairro = str(ped.get('endereco', '')).split(',')[-1].split('(')[0].strip()
-                                    horario = ped.get('horario_combinado', '') or ped.get('periodo_entrega', 'Livre')
-                                    st.markdown(f"**{i+1}º - 📍 {bairro}**<br><span style='font-size:12px; color:#666;'>🎁 {ped.get('cesta_nome')} | {ped.get('destinatario_nome')}</span><br><span class='hora-destaque'>🕒 {horario}</span>", unsafe_allow_html=True)
+                                endereco_completo = ped.get('endereco', 'Endereço não informado')
                                 
+                                st.markdown(
+                                    f"""
+                                    <div style="margin-bottom: 6px;">
+                                        <div style="font-size:13px; font-weight:800; color:#5a3b28;">#{i+1} - 🎁 {ped.get('cesta_nome')} ({ped.get('destinatario_nome')})</div>
+                                        <div style="font-size:12px; color:#333; margin-top: 4px; background: #faf7f3; padding: 4px 8px; border-radius: 4px;">📍 {endereco_completo}</div>
+                                    </div>
+                                    """, unsafe_allow_html=True
+                                )
+                                
+                                # Caixa para realocar o pedido para outro entregador ou desvincular
+                                chave_realocar = f"realocar_{ped['id']}"
+                                indice_atual = opcoes_ent.index(driver) if driver in opcoes_ent else 0
+                                st.selectbox("Realocar para:", opcoes_ent, index=indice_atual, key=chave_realocar, on_change=atualizar_entregador, args=(ped["id"], chave_realocar))
+                                
+                                st.write("")
+                                col_i, col_u, col_d = st.columns([3, 1, 1])
+                                with col_i:
+                                    st.caption(f"🕒 {ped.get('horario_combinado', '') or ped.get('periodo_entrega', 'Livre')}")
                                 with col_u:
                                     if i > 0:
                                         st.markdown('<div class="btn-updown">', unsafe_allow_html=True)
@@ -237,7 +247,6 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                             st.rerun()
                                         st.markdown('</div>', unsafe_allow_html=True)
 
-                    # Concluídos Hoje
                     if ped_driver_concluidos:
                         st.markdown("<span style='font-size:13px; font-weight:700; color:#137333; margin-top:10px; display:block;'>✅ Finalizados Hoje:</span>", unsafe_allow_html=True)
                         for ped in ped_driver_concluidos:
@@ -249,7 +258,6 @@ if perfil_usuario in ["Administrador", "Operador"]:
                             </div>
                             """, unsafe_allow_html=True)
 
-                    # Botão para limpar rota
                     if len(ped_driver_ativos) == 0 and len(ped_driver_concluidos) > 0:
                         st.write("")
                         if st.button(f"🧹 Concluir Entregas e Limpar Rota", key=f"btn_ok_{driver}", use_container_width=True):
