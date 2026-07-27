@@ -50,7 +50,7 @@ usuario = st.session_state.usuario
 
 
 # =====================================================
-# CONTROLE DE IMPRESSÃO
+# CONTROLE DE IMPRESSÃO E VARIÁVEIS
 # =====================================================
 
 if "pedidos_impressao" not in st.session_state:
@@ -174,41 +174,67 @@ st.caption("Acompanhamento do fluxo completo de compras.")
 @st.fragment
 def render_criar_pedido_manual():
     with st.expander("➕ CRIAR NOVO PEDIDO MANUALMENTE", expanded=False):
-        st.info("Registre aqui os pedidos feitos por clientes recorrentes via WhatsApp ou telefone. Este registro é interno e não notifica o Telegram.")
+        st.info("Registre aqui os pedidos feitos por WhatsApp ou telefone. Este registro é interno e não notifica o Telegram.")
         
-        # --- 1. BUSCA DE CLIENTES RECORRENTES ---
+        if "man_nome" not in st.session_state: st.session_state.man_nome = ""
+        if "man_cpf" not in st.session_state: st.session_state.man_cpf = ""
+        if "man_tel" not in st.session_state: st.session_state.man_tel = ""
+        if "modo_busca_cli" not in st.session_state: st.session_state.modo_busca_cli = False
+
+        # --- 1. DADOS DO COMPRADOR E BUSCA DINÂMICA ---
         st.markdown("#### 👤 Comprador")
         
-        try:
-            # Busca histórico para autocompletar
-            res_cli = supabase.table("pedidos").select("cliente_nome, cliente_cpf, cliente_telefone").execute()
-            cli_dict = {}
-            for c in (res_cli.data or []):
-                cpf_c = c.get("cliente_cpf", "").strip()
-                if cpf_c and cpf_c not in cli_dict:
-                    cli_dict[cpf_c] = c
-            lista_clientes = list(cli_dict.values())
-            lista_clientes.sort(key=lambda x: x.get("cliente_nome", ""))
-        except:
-            lista_clientes = []
-
-        tipo_cliente = st.radio("Origem do Cliente:", ["Novo Cliente", "Cliente Recorrente"], horizontal=True, key="man_tipo_cli")
+        cc1, cc_btn, cc2, cc3 = st.columns([3, 1, 2, 2])
         
-        nome_val, cpf_val, tel_val = "", "", ""
-        if tipo_cliente == "Cliente Recorrente":
-            if lista_clientes:
-                cli_sel = st.selectbox("Selecione o Cliente (Busca por Nome ou CPF)", lista_clientes, format_func=lambda x: f"{x['cliente_nome']} (CPF: {x['cliente_cpf']})", key="man_busca_cli")
-                if cli_sel:
-                    nome_val = cli_sel["cliente_nome"]
-                    cpf_val = cli_sel["cliente_cpf"]
-                    tel_val = cli_sel["cliente_telefone"]
-            else:
-                st.warning("Nenhum cliente recorrente encontrado no histórico.")
+        with cc1:
+            nome_comp = st.text_input("Nome *", key="man_nome")
+            
+        with cc_btn:
+            # Espaçamento para o botão alinhar com os campos de texto
+            st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
+            if st.button("🔍 Buscar", use_container_width=True, help="Pesquisar cliente cadastrado"):
+                st.session_state.modo_busca_cli = not st.session_state.modo_busca_cli
+                st.rerun(scope="fragment")
+                
+        with cc2:
+            cpf_comp = st.text_input("CPF *", key="man_cpf")
+            
+        with cc3:
+            tel_comp = st.text_input("Telefone *", key="man_tel")
 
-        cc1, cc2, cc3 = st.columns(3)
-        with cc1: nome_comp = st.text_input("Nome *", value=nome_val, key="man_nome")
-        with cc2: cpf_comp = st.text_input("CPF *", value=cpf_val, key="man_cpf")
-        with cc3: tel_comp = st.text_input("Telefone *", value=tel_val, key="man_tel")
+        # Campo de pesquisa que só aparece se o botão for clicado
+        if st.session_state.modo_busca_cli:
+            try:
+                res_cli = supabase.table("pedidos").select("cliente_nome, cliente_cpf, cliente_telefone").execute()
+                cli_dict = {}
+                for c in (res_cli.data or []):
+                    cpf_c = c.get("cliente_cpf", "").strip()
+                    if cpf_c and cpf_c not in cli_dict:
+                        cli_dict[cpf_c] = c
+                lista_clientes = list(cli_dict.values())
+                lista_clientes.sort(key=lambda x: x.get("cliente_nome", ""))
+            except:
+                lista_clientes = []
+
+            opcoes_cli = [{"cliente_nome": "--- Digite para pesquisar ---", "cliente_cpf": "", "cliente_telefone": ""}] + lista_clientes
+            
+            with st.container(border=True):
+                st.caption("Digite o nome ou CPF abaixo. O sistema filtrará automaticamente:")
+                cli_sel = st.selectbox(
+                    "Selecione o Cliente:", 
+                    opcoes_cli, 
+                    format_func=lambda x: f"{x['cliente_nome']} (CPF: {x['cliente_cpf']})" if x['cliente_cpf'] else x['cliente_nome'],
+                    key="man_busca_dropdown"
+                )
+                
+                # Se o usuário escolheu alguém, preenche e fecha a busca na hora
+                if cli_sel and cli_sel["cliente_nome"] != "--- Digite para pesquisar ---":
+                    st.session_state.man_nome = cli_sel["cliente_nome"]
+                    st.session_state.man_cpf = cli_sel["cliente_cpf"]
+                    st.session_state.man_tel = cli_sel["cliente_telefone"]
+                    st.session_state.modo_busca_cli = False
+                    st.rerun(scope="fragment")
+
         
         # --- 2. CESTA E PRODUTOS ---
         st.markdown("#### 🎁 Cesta e Produtos")
@@ -360,8 +386,15 @@ def render_criar_pedido_manual():
                 if adicionais_selecionados:
                     salvar_adicionais_pedido(p_id, adicionais_selecionados)
                 st.success("✅ Pedido criado com sucesso! O painel será atualizado...")
+                
+                # Limpeza dos dados da memória após salvar
+                for key in ["man_nome", "man_cpf", "man_tel", "man_rua", "man_bairro", "man_cidade", "man_cep", "ultimo_cep_man"]:
+                    if key in st.session_state:
+                        del st.session_state[key]
+                st.session_state.modo_busca_cli = False
+                
                 time.sleep(1)
-                st.rerun() # Atualiza a página inteira para o pedido aparecer na lista Recebidos/Pagos instantaneamente
+                st.rerun() # Atualiza a página inteira
             else:
                 st.error("Erro ao registrar o pedido no banco de dados.")
 
