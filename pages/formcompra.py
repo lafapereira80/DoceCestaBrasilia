@@ -259,11 +259,21 @@ def render_comprador():
 
         nome = st.text_input("Nome completo *", placeholder="Seu nome completo", key="input_nome_comprador")
         
-        col_ddi, col_tel, col_cpf = st.columns([1, 2, 2])
+        # Aumentamos um pouquinho a proporção da coluna do DDI para caber a bandeira
+        col_ddi, col_tel, col_cpf = st.columns([1.2, 2, 2])
+        
         with col_ddi:
-            st.text_input("DDI *", value="+55", max_chars=4, key="input_ddi_comprador", help="País")
+            opcoes_ddi = [
+                "🇧🇷 +55", "🇺🇸 +1", "🇵🇹 +351", "🇦🇷 +54", "🇬🇧 +44", 
+                "🇪🇸 +34", "🇮🇹 +39", "🇫🇷 +33", "🇩🇪 +49", "🇨🇭 +41", 
+                "🇦🇺 +61", "🇯🇵 +81", "🇨🇱 +56", "🇨🇴 +57", "🇺🇾 +598", 
+                "🇵🇾 +595", "🇲🇽 +52", "🇨🇦 +1"
+            ]
+            st.selectbox("País (DDI) *", opcoes_ddi, index=0, key="input_ddi_comprador")
+            
         with col_tel:
             st.text_input("Telefone (WhatsApp) *", placeholder="(61) 99999-9999", key="input_tel_comprador")
+            
         with col_cpf:
             st.text_input("Seu CPF *", placeholder="Apenas números", max_chars=14, key="input_cpf_comprador")
 
@@ -570,8 +580,9 @@ if enviar:
         st.stop()
     cpf_limpo = re.sub(r'\D', '', cpf_bruto)
         
-    # Combina DDI e Telefone
-    ddi_comprador = re.sub(r'\D', '', st.session_state.get("input_ddi_comprador", "55"))
+    # Combina DDI e Telefone (Remove a bandeirinha magicamente)
+    ddi_bruto = st.session_state.get("input_ddi_comprador", "🇧🇷 +55")
+    ddi_comprador = re.sub(r'\D', '', ddi_bruto)
     tel_comprador = re.sub(r'\D', '', st.session_state.get("input_tel_comprador", "")) 
     telefone_completo = f"{ddi_comprador}{tel_comprador}"
     
