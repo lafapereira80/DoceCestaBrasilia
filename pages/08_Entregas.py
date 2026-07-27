@@ -161,13 +161,12 @@ if perfil_usuario in ["Administrador", "Operador"]:
         except: pass
         opcoes_ent = ["Não atribuído"] + lista_entregadores
 
-        # --- 1. FILA DE DESPACHO ---
         nao_atribuidos = [p for p in pedidos_ativos_geral if not p.get("entregador_login")]
         
         st.markdown("<h3 style='color: #b06000; margin-top: 15px;'>📦 Cestas na Rota (Aguardando Atribuição)</h3>", unsafe_allow_html=True)
         
         if not nao_atribuidos:
-            st.caption("✨ Todas las cestas enviadas já foram atribuídas a um entregador.")
+            st.caption("✨ Todas as cestas enviadas já foram atribuídas a um entregador.")
         else:
             cols_despacho = st.columns(3)
             for i, ped in enumerate(nao_atribuidos):
@@ -186,7 +185,7 @@ if perfil_usuario in ["Administrador", "Operador"]:
                             f"""
                             <div style="margin-bottom: 8px;">
                                 <span style="font-size: 11px; font-weight: 800; color: #9d7d65; text-transform: uppercase;">Pedido #{ped.get('id')}</span>
-                                <div style="font-size: 13px; color: #333; margin-top: 2px;">👤 <strong>Comprador:</strong> {ped.get('cliente_nome')} (📞 {ped.get('cliente_telefone')})</div>
+                                <div style="font-size: 12px; color: #444; margin-top: 2px;">👤 <strong>Comprador:</strong> {ped.get('cliente_nome')} (📞 {ped.get('cliente_telefone')})</div>
                                 <div class="nome-destaque" style="margin-top: 4px;">🎁 <strong>{ped.get('cesta_nome')}</strong> para <em>{ped.get('destinatario_nome')}</em>{tel_dest_str}</div>
                                 <div style="font-size: 12px; color: #333; font-weight: 700; margin-top: 6px; background: #faf7f3; padding: 6px; border-radius: 6px; border-left: 3px solid #dfcdbb;">📍 {endereco_completo}</div>
                                 <div class="hora-destaque">📅 {data_entrega} | 🕒 {turno}{hora_str}</div>
@@ -198,7 +197,6 @@ if perfil_usuario in ["Administrador", "Operador"]:
                         chave_widget = f"despacho_{ped['id']}"
                         st.selectbox("Definir Entregador:", opcoes_ent, index=0, key=chave_widget, on_change=atualizar_entregador, args=(ped["id"], chave_widget))
 
-        # --- 2. ROTAS ATIVAS ---
         tem_ativos_vinculados = any(p.get("entregador_login") for p in pedidos_ativos_geral)
         tem_concluidos_vinculados = any(p.get("entregador_login") for p in pedidos_concluidos_geral)
 
@@ -427,7 +425,7 @@ else:
                 st.session_state.modo_entrega_ativa = True
                 st.rerun()
         else:
-            st.success("🎉 Fila ativa vazia! Todas las entregas programadas foram finalizadas.")
+            st.success("🎉 Fila ativa vazia! Todas as entregas programadas foram finalizadas.")
 
     else:
         if pedidos_ativos_driver:
