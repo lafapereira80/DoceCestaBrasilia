@@ -550,9 +550,11 @@ with aba_recebidos:
     mostrar_lista("Pedidos Recebidos", "Recebido")
 
 with aba_pagos:
-    mostrar_lista("Pedidos Pagos", "Pago", permitir_impressao=True)
+    # Ajuste aqui: Sem opção de imprimir na aba de pagos
+    mostrar_lista("Pedidos Pagos", "Pago")
     
 with aba_enviados:
+    # Apenas os Enviados podem ser impressos
     mostrar_lista("Pedidos Enviados", "Enviado", permitir_impressao=True)
     
 with aba_entregues:
