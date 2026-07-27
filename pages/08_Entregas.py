@@ -18,6 +18,7 @@ if not usuario:
     st.warning("⚠️ Você precisa fazer login para acessar esta página.")
     st.stop()
 perfil_usuario = usuario.get("perfil", "Operador")
+login_atual = usuario.get("login", "Sistema")
 
 # =====================================================
 # ESTILOS GERAIS E MOBILE-FIRST
@@ -49,7 +50,7 @@ div[data-testid="stLinkButton"] > a { font-weight: 700 !important; font-size: 14
 .btn-maps > a { background-color: #fce8e6 !important; color: #c5221f !important; }
 
 /* Cartão de Entregue */
-.entregue-box { opacity: 0.7; background-color: #f0f7f4 !important; border: 1px dashed #c8e6c9 !important; }
+.entregue-box { opacity: 0.85; background-color: #f0f7f4 !important; border: 1px dashed #c8e6c9 !important; }
 .admin-card-header { text-align: center; background-color: #fef7e0; color: #b06000; font-weight: 800; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 16px; border: 1px solid #dfcdbb; }
 
 div[data-baseweb="select"] { margin-top: 0px; }
@@ -83,7 +84,7 @@ def buscar_entregas_dia(driver_login=None):
     # 1. Ativos (Enviados)
     query_env = supabase.table("pedidos").select("*").eq("status", "Enviado")
     if perfil_usuario == "Entregador" or driver_login:
-        alvo = usuario.get("login") if perfil_usuario == "Entregador" else driver_login
+        alvo = login_atual if perfil_usuario == "Entregador" else driver_login
         query_env = query_env.eq("entregador_login", alvo)
         
     res_env = query_env.execute()
@@ -93,7 +94,7 @@ def buscar_entregas_dia(driver_login=None):
     # 2. Concluídos (Entregues hoje)
     query_ent = supabase.table("pedidos").select("*").eq("status", "Entregue")
     if perfil_usuario == "Entregador" or driver_login:
-        alvo = usuario.get("login") if perfil_usuario == "Entregador" else driver_login
+        alvo = login_atual if perfil_usuario == "Entregador" else driver_login
         query_ent = query_ent.eq("entregador_login", alvo)
         
     res_ent = query_ent.execute()
@@ -118,7 +119,7 @@ def atualizar_entregador(pedido_id, widget_key):
     except Exception as e: 
         st.error(f"Erro ao atribuir: {e}")
 
-def marcar_como_entregue(pedido, login_motorista):
+def marcar_como_entregue(pedido, login_autor):
     try:
         agora = datetime.now()
         hora_formatada = agora.strftime("%d/%m/%Y %H:%M")
@@ -126,10 +127,18 @@ def marcar_como_entregue(pedido, login_motorista):
         
         supabase.table("pedidos").update({"status": "Entregue", "ordem_entrega": 999, "hora_entrega_realizada": hora_formatada}).eq("id", pedido["id"]).execute()
         
-        texto_telegram = f"""✅ *ENTREGA REALIZADA!* ✅\n\n🛵 *Entregador:* {login_motorista}\n📦 *Cesta:* {pedido.get('cesta_nome', '-')}\n💝 *Destinatário:* {pedido.get('destinatario_nome', '-')}\n📍 *Local:* {str(pedido.get('endereco', '')).split(',')[-1].split('(')[0].strip()}\n⏰ *Horário da Entrega:* {apenas_hora}"""
+        texto_telegram = f"""✅ *ENTREGA REALIZADA!* ✅\n\n🛵 *Responsável:* {login_autor}\n📦 *Cesta:* {pedido.get('cesta_nome', '-')}\n💝 *Destinatário:* {pedido.get('destinatario_nome', '-')}\n📍 *Local:* {str(pedido.get('endereco', '')).split(',')[-1].split('(')[0].strip()}\n⏰ *Horário:* {apenas_hora}"""
         enviar_notificacao_telegram(texto_telegram)
     except Exception as e:
         st.error(f"Erro ao finalizar entrega: {e}")
+
+def voltar_para_enviado(pedido_id):
+    """Apenas Administrador pode reverter uma cesta entregue de volta para o status Enviado"""
+    try:
+        supabase.table("pedidos").update({"status": "Enviado", "ordem_entrega": 0, "hora_entrega_realizada": None}).eq("id", pedido_id).execute()
+        st.toast("↩️ Cesta retornada para a rota com sucesso!")
+    except Exception as e:
+        st.error(f"Erro ao reverter status: {e}")
 
 
 # Carregamento Global para Admin
@@ -196,6 +205,11 @@ if perfil_usuario in ["Administrador", "Operador"]:
                         st.write("")
                         chave_widget = f"despacho_{ped['id']}"
                         st.selectbox("Definir Entregador:", opcoes_ent, index=0, key=chave_widget, on_change=atualizar_entregador, args=(ped["id"], chave_widget))
+                        
+                        st.write("")
+                        if st.button("✅ Cesta Entregue", key=f"entregue_desp_{ped['id']}", use_container_width=True):
+                            marcar_como_entregue(ped, login_atual)
+                            st.rerun()
 
         tem_ativos_vinculados = any(p.get("entregador_login") for p in pedidos_ativos_geral)
         tem_concluidos_vinculados = any(p.get("entregador_login") for p in pedidos_concluidos_geral)
@@ -255,6 +269,11 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                         st.selectbox("Realocar para:", opcoes_ent, index=indice_atual, key=chave_realocar, on_change=atualizar_entregador, args=(ped["id"], chave_realocar))
                                         
                                         st.write("")
+                                        if st.button("✅ Cesta Entregue", key=f"entregue_ativa_{ped['id']}", use_container_width=True, type="primary"):
+                                            marcar_como_entregue(ped, login_atual)
+                                            st.rerun()
+
+                                        st.write("")
                                         col_u, col_d = st.columns(2)
                                         with col_u:
                                             if i > 0:
@@ -280,9 +299,17 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                     bairro_con = str(ped.get('endereco', '')).split(',')[-1].split('(')[0].strip()
                                     st.markdown(f"""
                                     <div data-testid="stVerticalBlockBorderWrapper" class="entregue-box" style="padding: 8px !important;">
-                                        <div style="font-size:12px; font-weight:700; color:#137333;">✅ Às {hora_ext} - 📍 {bairro_con} ({ped.get('cesta_nome')})</div>
+                                        <div style="font-size:12px; font-weight:700; color:#137333; display: flex; justify-content: space-between; align-items: center;">
+                                            <span>✅ Às {hora_ext} - 📍 {bairro_con} ({ped.get('cesta_nome')})</span>
+                                        </div>
                                     </div>
                                     """, unsafe_allow_html=True)
+                                    
+                                    # Somente o Administrador pode reverter uma cesta entregue de volta para a rota
+                                    if perfil_usuario == "Administrador":
+                                        if st.button("↩️ Retornar p/ Rota", key=f"voltar_rota_{ped['id']}", use_container_width=True):
+                                            voltar_para_enviado(ped['id'])
+                                            st.rerun()
 
                             if len(ped_driver_ativos) == 0 and len(ped_driver_concluidos) > 0:
                                 st.write("")
@@ -335,6 +362,12 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                 </div>
                             """, unsafe_allow_html=True)
                             
+                            st.write("")
+                            if st.button("✅ Cesta Entregue", key=f"entregue_sim_{ped['id']}", use_container_width=True, type="primary"):
+                                marcar_como_entregue(ped, motoboy_selecionado)
+                                st.rerun()
+
+                            st.write("")
                             endereco_gps = urllib.parse.quote(re.sub(r'\(CEP:.*?\)', '', ped.get('endereco', '')).strip())
                             c_m, c_w = st.columns(2)
                             with c_m:
@@ -362,6 +395,12 @@ if perfil_usuario in ["Administrador", "Operador"]:
                             <div class="nome-destaque">🎁 {ped.get('cesta_nome')} para <strong>{ped.get('destinatario_nome')}</strong>{tel_dest_str}</div>
                         </div>
                         """, unsafe_allow_html=True)
+                        
+                        # Somente Admin pode reverter pela visão do simulador também
+                        if perfil_usuario == "Administrador":
+                            if st.button("↩️ Retornar p/ Rota", key=f"voltar_sim_{ped['id']}", use_container_width=True):
+                                voltar_para_enviado(ped['id'])
+                                st.rerun()
 
 
 # =====================================================
@@ -379,7 +418,7 @@ else:
 
     if not st.session_state.modo_entrega_ativa:
         if pedidos_ativos_driver:
-            st.info("👇 Abaixo estão as cestas atribuídas à sua rota. Ajuste a ordem clicando nas setas e Inicie quando estiver pronto.")
+            st.info("👇 Abaixo estão as cestas atribuídas à sua rota. Ajuste a ordem nas setas ou marque como Entregue diretamente.")
             salvar_ordem(pedidos_ativos_driver)
             
             for i, ped in enumerate(pedidos_ativos_driver):
@@ -393,39 +432,43 @@ else:
                     tel_dest = ped.get('destinatario_telefone')
                     tel_dest_str = f" (📞 {tel_dest})" if tel_dest else ""
                     
-                    col_info, col_up, col_down = st.columns([5, 1, 1])
-                    with col_info:
-                        st.markdown(
-                            f"""
-                            <div style="margin-bottom: 4px;">
-                                <div style="font-size:12px; color:#444;">👤 <strong>Comprador:</strong> {ped.get('cliente_nome')} (📞 {ped.get('cliente_telefone')})</div>
-                                <div class="nome-destaque" style="margin-top: 4px;">🎁 <strong>{ped.get('cesta_nome')}</strong> para <em>{ped.get('destinatario_nome')}</em>{tel_dest_str}</div>
-                                <div style="font-size:12px; color:#333; font-weight: 700; margin-top: 6px; background: #faf7f3; padding: 6px; border-radius: 6px; border-left: 3px solid #dfcdbb;">📍 {endereco_completo}</div>
-                                <div class="hora-destaque">📅 {data_entrega} | 🕒 {turno}{hora_str}</div>
-                            </div>
-                            """, unsafe_allow_html=True
-                        )
+                    st.markdown(
+                        f"""
+                        <div style="margin-bottom: 6px;">
+                            <div style="font-size:12px; color:#444;">👤 <strong>Comprador:</strong> {ped.get('cliente_nome')} (📞 {ped.get('cliente_telefone')})</div>
+                            <div class="nome-destaque" style="margin-top: 4px;">🎁 <strong>{ped.get('cesta_nome')}</strong> para <em>{ped.get('destinatario_nome')}</em>{tel_dest_str}</div>
+                            <div style="font-size:12px; color:#333; font-weight: 700; margin-top: 6px; background: #faf7f3; padding: 6px; border-radius: 6px; border-left: 3px solid #dfcdbb;">📍 {endereco_completo}</div>
+                            <div class="hora-destaque">📅 {data_entrega} | 🕒 {turno}{hora_str}</div>
+                        </div>
+                        """, unsafe_allow_html=True
+                    )
+                    
+                    st.write("")
+                    if st.button("✅ Cesta Entregue", key=f"entregue_fila_{ped['id']}", use_container_width=True, type="primary"):
+                        marcar_como_entregue(ped, login_atual)
+                        st.rerun()
 
+                    st.write("")
+                    col_up, col_down = st.columns(2)
                     with col_up:
                         if i > 0:
                             st.markdown('<div class="btn-updown">', unsafe_allow_html=True)
-                            if st.button("⬆️", key=f"up_{ped['id']}", use_container_width=True):
+                            if st.button("⬆️ Subir", key=f"up_{ped['id']}", use_container_width=True):
                                 pedidos_ativos_driver[i], pedidos_ativos_driver[i-1] = pedidos_ativos_driver[i-1], pedidos_ativos_driver[i]
                                 salvar_ordem(pedidos_ativos_driver)
                                 st.rerun()
                             st.markdown('</div>', unsafe_allow_html=True)
-
                     with col_down:
                         if i < len(pedidos_ativos_driver) - 1:
                             st.markdown('<div class="btn-updown">', unsafe_allow_html=True)
-                            if st.button("⬇️", key=f"down_{ped['id']}", use_container_width=True):
+                            if st.button("⬇️ Descer", key=f"down_{ped['id']}", use_container_width=True):
                                 pedidos_ativos_driver[i], pedidos_ativos_driver[i+1] = pedidos_ativos_driver[i+1], pedidos_ativos_driver[i]
                                 salvar_ordem(pedidos_ativos_driver)
                                 st.rerun()
                             st.markdown('</div>', unsafe_allow_html=True)
 
             st.write("")
-            if st.button("🚀 INICIAR ROTA DE ENTREGA", type="primary", use_container_width=True):
+            if st.button("🚀 INICIAR NAVEGAÇÃO GPS", type="primary", use_container_width=True):
                 st.session_state.modo_entrega_ativa = True
                 st.rerun()
         else:
@@ -466,7 +509,7 @@ else:
             st.write("")
             if st.button("✅ MARCAR COMO ENTREGUE", type="primary", use_container_width=True):
                 with st.spinner("Confirmando entrega e avisando a central..."):
-                    marcar_como_entregue(pedido_atual, usuario.get('login', 'Motoboy'))
+                    marcar_como_entregue(pedido_atual, login_atual)
                 st.rerun() 
                 
             st.write("")
