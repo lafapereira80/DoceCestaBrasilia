@@ -135,6 +135,7 @@ def render_checklist_pedido(p):
     pid = p["id"]
     montada = p.get("cesta_montada", False)
     
+    # Tratamento seguro da coluna JSONB 'checklist'
     checklist_salvo = p.get("checklist") or {}
     if isinstance(checklist_salvo, str):
         try: checklist_salvo = json.loads(checklist_salvo)
@@ -144,7 +145,7 @@ def render_checklist_pedido(p):
     
     with st.expander(f"🛒 #{pid} | {p.get('cliente_nome', '-')} | 🎁 {p.get('cesta_nome', '-')} | {status_badge}", expanded=not montada):
         
-        # --- Resumo para Contexto (Boxes estilizados) ---
+        # --- Resumo para Contexto ---
         st.markdown(f"<div class='info-linha'><strong>📍 Entrega:</strong> {p.get('endereco', 'N/I')}</div>", unsafe_allow_html=True)
         
         hora_especial = f" ({p.get('horario_combinado', '')})" if p.get('horario_combinado') else ""
@@ -219,25 +220,31 @@ def render_checklist_pedido(p):
         with c1:
             if st.button("💾 Salvar Montagem", key=f"btn_salvar_{pid}", use_container_width=True):
                 tudo_pronto = len(novo_checklist) > 0 and all(novo_checklist.values())
-                supabase.table("pedidos").update({
-                    "checklist": novo_checklist,
-                    "cesta_montada": tudo_pronto
-                }).eq("id", pid).execute()
-                st.toast("✅ Progresso salvo com sucesso!")
-                time.sleep(0.5)
-                st.rerun(scope="app")
+                try:
+                    supabase.table("pedidos").update({
+                        "checklist": novo_checklist,
+                        "cesta_montada": tudo_pronto
+                    }).eq("id", pid).execute()
+                    st.toast("✅ Progresso salvo com sucesso!")
+                    time.sleep(0.5)
+                    st.rerun(scope="app")
+                except Exception as e:
+                    st.error(f"❌ Erro! A coluna 'checklist' foi criada no banco? Detalhes: {e}")
                 
         with c2:
             if st.button("🚚 Enviar p/ Rota", key=f"btn_rota_{pid}", type="primary", use_container_width=True):
-                # Força a cesta para pronta e despacha
-                supabase.table("pedidos").update({
-                    "checklist": novo_checklist,
-                    "cesta_montada": True,
-                    "status": "Enviado"
-                }).eq("id", pid).execute()
-                st.success("Despachado para fila de entregas!")
-                time.sleep(1)
-                st.rerun(scope="app")
+                try:
+                    # Força a cesta para pronta e despacha
+                    supabase.table("pedidos").update({
+                        "checklist": novo_checklist,
+                        "cesta_montada": True,
+                        "status": "Enviado"
+                    }).eq("id", pid).execute()
+                    st.success("Despachado para fila de entregas!")
+                    time.sleep(1)
+                    st.rerun(scope="app")
+                except Exception as e:
+                    st.error(f"❌ Erro ao despachar: {e}")
 
 
 # =====================================================
