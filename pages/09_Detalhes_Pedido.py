@@ -225,7 +225,6 @@ def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_atual, d
         
     return f"https://wa.me/{tel_wpp}?text={urllib.parse.quote(texto)}"
 
-# Função para trocar o texto de pagamento pela Imagem / Ícone
 def obter_icone_pagamento(metodo):
     m = str(metodo).strip().lower()
     svg_cartao = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1a73e8" width="18px" height="18px"><path d="M20 4H4C2.89 4 2.01 4.89 2.01 6L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>'''
@@ -411,7 +410,6 @@ with col_esquerda:
         c1, c2, c3, c4 = st.columns(4)
         with c1: st.markdown(f'<div class="info-label">Cesta</div><div class="info-value">{pedido.get("cesta_nome","-")}</div>', unsafe_allow_html=True)
         
-        # APLICANDO A NOVA FUNÇÃO DE ÍCONES DE PAGAMENTO AQUI:
         with c2: st.markdown(f'<div class="info-label">Pagamento</div><div class="info-value">{obter_icone_pagamento(pedido.get("pagamento", "-"))}</div>', unsafe_allow_html=True)
         
         with c3: st.markdown(f'<div class="info-label">Entrega</div><div class="info-value">{formatar_data(pedido.get("data_entrega"))}</div>', unsafe_allow_html=True)
@@ -471,14 +469,11 @@ with col_esquerda:
             endereco_limpo_gps = re.sub(r'\(CEP:.*?\)', '', endereco_pedido).strip()
             endereco_encoded = urllib.parse.quote(endereco_limpo_gps)
             
-            link_google_maps = f"https://www.google.com/maps/search/?api=1&query={endereco_encoded}"
-            link_waze = f"https://waze.com/ul?q={endereco_encoded}&navigate=yes"
-            
             col_map1, col_map2 = st.columns(2)
             with col_map1:
-                st.link_button("🗺️ Abrir no Google Maps", url=link_google_maps, use_container_width=True)
+                st.link_button("🗺️ Abrir no Google Maps", url=f"https://www.google.com/maps/search/?api=1&query={endereco_encoded}", use_container_width=True)
             with col_map2:
-                st.link_button("🚗 Abrir no Waze", url=link_waze, use_container_width=True)
+                st.link_button("🚗 Abrir no Waze", url=f"https://waze.com/ul?q={endereco_encoded}&navigate=yes", use_container_width=True)
 
 with col_direita:
     valor_cesta = 0.0
@@ -494,10 +489,28 @@ with col_direita:
         with cf1: valor_frete = st.number_input("🚚 Frete", min_value=0.0, value=float(pedido.get("valor_frete") or 0), step=1.0, key="frete")
         with cf2: valor_extras = st.number_input("➕ Extras", min_value=0.0, value=float(pedido.get("valor_extras") or 0), step=1.0, key="extras")
         with cf3: desconto = st.number_input("🏷️ Desconto", min_value=0.0, value=float(pedido.get("desconto") or 0), step=1.0, key="desconto")
+        
         with cf4:
+            # ----------------------------------------------------
+            # ATRIBUIÇÃO DE STATUS E ENTREGADOR LOGO ABAIXO
+            # ----------------------------------------------------
             status_op = ["Recebido", "Pago", "Enviado", "Entregue", "Desistência"]
             status_atual = pedido.get("status", "Recebido")
             status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0)
+            
+            entregador_selecionado = pedido.get("entregador_login", "")
+            
+            # Se for Enviado e for Admin/Operador, habilita o combo de escolha
+            if status == "Enviado" and usuario.get("perfil") in ["Administrador", "Operador"]:
+                try:
+                    res_ent = supabase.table("usuarios").select("login").eq("perfil", "Entregador").execute()
+                    lista_entregadores = [e["login"] for e in (res_ent.data or [])]
+                except:
+                    lista_entregadores = []
+                
+                opcoes_ent = [""] + lista_entregadores
+                idx_ent = opcoes_ent.index(entregador_selecionado) if entregador_selecionado in opcoes_ent else 0
+                entregador_selecionado = st.selectbox("Atribuir Entregador 🛵", opcoes_ent, index=idx_ent)
 
         horario_combinado = st.text_input("🕒 Horário Combinado de Entrega", value=pedido.get("horario_combinado") or "", placeholder="Ex: 15:30")
 
@@ -577,13 +590,23 @@ if "msg_geral" in st.session_state:
 
 
 # =====================================================
-# RODAPÉ DE AÇÕES (COM BOTÃO DO WHATSAPP RESTAURADO)
+# RODAPÉ DE AÇÕES (SALVAR E WHATSAPP)
 # =====================================================
 col_bot1, col_bot2, col_bot3 = st.columns(3)
 
 with col_bot1:
     if st.button("💾 Salvar Atendimento Completo", use_container_width=True, type="primary"):
-        dados = {"status": status, "valor_frete": valor_frete, "valor_extras": valor_extras, "desconto": desconto, "valor_total": valor_total_calculado, "horario_combinado": horario_combinado, "itens_consulta": itens_consulta}
+        # Inclui o entregador selecionado no banco
+        dados = {
+            "status": status, 
+            "valor_frete": valor_frete, 
+            "valor_extras": valor_extras, 
+            "desconto": desconto, 
+            "valor_total": valor_total_calculado, 
+            "horario_combinado": horario_combinado, 
+            "itens_consulta": itens_consulta,
+            "entregador_login": entregador_selecionado if status == "Enviado" else pedido.get("entregador_login")
+        }
         atualizar_pedido(pedido["id"], dados)
         st.session_state['msg_geral'] = "✅ Atendimento financeiro salvo com sucesso!"
         st.rerun()
