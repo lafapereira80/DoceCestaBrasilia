@@ -2,7 +2,7 @@ import streamlit as st
 import json
 import urllib.parse
 from uuid import uuid4
-import re  # Adicionado para tratar o endereço no GPS
+import re
 
 # Importando apenas o necessário
 from services.pedido_service import buscar_pedido
@@ -216,8 +216,18 @@ def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_atual, d
         f"Horário: {pedido.get('horario_combinado','-')}\n\n💳 Pagamento: {pedido.get('pagamento','-')}\n\n"
         f"💰 *Resumo Financeiro*\n{texto_val}✅ *Valor Final: {formatar_valor(valor_final)}*\n\nObrigado! ❤️"
     )
-    telefone = str(pedido.get("cliente_telefone", "")).replace("(","").replace(")","").replace("-","").replace(" ","")
-    return f"https://wa.me/55{telefone}?text={urllib.parse.quote(texto)}"
+    
+    # Tratamento Inteligente de DDI para o link do WhatsApp
+    tel_limpo = re.sub(r'\D', '', str(pedido.get("cliente_telefone", "")))
+    
+    # Se o número tiver 10 ou 11 dígitos, provavelmente é um pedido antigo sem DDI. Adicionamos o 55.
+    if len(tel_limpo) == 10 or len(tel_limpo) == 11:
+        tel_wpp = f"55{tel_limpo}"
+    else:
+        # Se for maior que 11, assumimos que já veio com o DDI embutido (ex: EUA, Portugal ou os novos +55 do BR)
+        tel_wpp = tel_limpo
+        
+    return f"https://wa.me/{tel_wpp}?text={urllib.parse.quote(texto)}"
 
 
 # =====================================================
@@ -375,7 +385,7 @@ with col_esquerda:
         c1, c2, c3 = st.columns(3)
         with c1: st.markdown(f'<div class="info-label">Nome</div><div class="info-value">{pedido.get("cliente_nome") or "-"}</div>', unsafe_allow_html=True)
         with c2: st.markdown(f'<div class="info-label">CPF</div><div class="info-value">{pedido.get("cliente_cpf") or "-"}</div>', unsafe_allow_html=True)
-        with c3: st.markdown(f'<div class="info-label">Telefone</div><div class="info-value">{pedido.get("cliente_telefone") or "-"}</div>', unsafe_allow_html=True)
+        with c3: st.markdown(f'<div class="info-label">Telefone</div><div class="info-value">+{pedido.get("cliente_telefone") or "-"}</div>', unsafe_allow_html=True)
 
     with st.container(border=True):
         st.markdown('<div class="card-title">💝 Homenageado (Destinatário)</div>', unsafe_allow_html=True)
@@ -443,7 +453,6 @@ with col_esquerda:
         st.text_area("", value=endereco_pedido if endereco_pedido else "Endereço não informado.", disabled=True, height=65, key="end_vis")
         
         if endereco_pedido:
-            # Remove a tag (CEP: xxxxx) apenas do link do GPS para evitar confusões de rota
             endereco_limpo_gps = re.sub(r'\(CEP:.*?\)', '', endereco_pedido).strip()
             endereco_encoded = urllib.parse.quote(endereco_limpo_gps)
             
