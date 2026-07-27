@@ -508,8 +508,13 @@ with col_direita:
         
         c_status1, c_status2 = st.columns(2)
         with c_status1:
-            status_op = ["Recebido", "Pago", "Enviado", "Entregue", "Desistência"]
+            # REMOVIDO "Entregue" do dropdown para garantir que só seja finalizado pelo entregador
+            status_op = ["Recebido", "Pago", "Enviado", "Desistência"]
             status_atual = pedido.get("status", "Recebido")
+            
+            # Se já estiver como "Entregue", adicionamos só pra não quebrar a visualização atual
+            if status_atual == "Entregue": status_op.append("Entregue")
+                
             status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0, disabled=bloquear_edicao)
         with c_status2:
             st.markdown("<div style='margin-top: 32px;'></div>", unsafe_allow_html=True)
