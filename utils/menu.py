@@ -9,28 +9,49 @@ def configurar_pagina():
         """
         <style>
         /* =========================================
-           REMOÇÃO DE ELEMENTOS PADRÃO
+           REMOÇÃO DE ELEMENTOS PADRÃO E CABEÇALHO
         ========================================== */
         #MainMenu { display: none !important; }
         footer { display: none !important; }
         [data-testid="stSidebarNav"] { display: none !important; }
-        header[data-testid="stHeader"] { background: transparent !important; z-index: 99999 !important; pointer-events: none !important; }
+        
+        /* Deixa o cabeçalho invisível, mas PERMITE clicar nos botões dele */
+        header[data-testid="stHeader"] { 
+            background: transparent !important; 
+            box-shadow: none !important;
+        }
 
         /* =========================================
-           BOTÕES DE MENU (SANDUÍCHE) MOBILE E DESKTOP
+           BOTÕES DE MENU (ABRIR E FECHAR) - CORRIGIDO
         ========================================== */
+        
+        /* Botão Sanduíche (Abrir Menu Mobile/Desktop) */
         [data-testid="collapsedControl"] {
-            top: 12px !important; left: 12px !important;
-            background-color: #ffffff !important; border: 1px solid #dfcdbb !important;
-            border-radius: 10px !important; box-shadow: 0 4px 10px rgba(90, 59, 40, 0.08) !important;
-            padding: 4px 12px !important; z-index: 100000 !important;
+            background-color: #ffffff !important; 
+            border: 1px solid #dfcdbb !important;
+            border-radius: 10px !important; 
+            box-shadow: 0 4px 10px rgba(90, 59, 40, 0.08) !important;
+            color: #5a3b28 !important; /* Cor do ícone nativo */
+            margin-top: 10px !important; margin-left: 10px !important;
+            transition: all 0.2s ease !important;
+            z-index: 100000 !important;
+        }
+        [data-testid="collapsedControl"]:hover { 
+            box-shadow: 0 6px 14px rgba(90, 59, 40, 0.15) !important; 
+            transform: translateY(-1px); 
+            color: #b06000 !important;
+        }
+
+        /* Botão de Fechar (X) dentro da Sidebar */
+        [data-testid="stSidebarCollapseButton"] {
+            color: #5a3b28 !important;
             transition: all 0.2s ease !important;
         }
-        [data-testid="collapsedControl"]:hover { box-shadow: 0 6px 14px rgba(90, 59, 40, 0.15) !important; transform: translateY(-1px); }
-        [data-testid="stSidebarCollapseButton"] button span, [data-testid="collapsedControl"] button span, button[aria-label="Close sidebar"] span, button[aria-label="Open sidebar"] span { display: none !important; }
-        [data-testid="collapsedControl"] button::after { content: "☰" !important; font-size: 22px !important; font-weight: 800 !important; color: #5a3b28 !important; }
-        button[aria-label="Close sidebar"]::after { content: "✕" !important; font-size: 18px !important; font-weight: 700 !important; color: #5a3b28 !important; }
-        [data-testid="stSidebarCollapseButton"], [data-testid="collapsedControl"] { display: flex !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; }
+        [data-testid="stSidebarCollapseButton"]:hover {
+            color: #c5221f !important;
+            background-color: #fce8e6 !important;
+            transform: scale(1.05);
+        }
 
         /* =========================================
            SIDEBAR - FUNDO E CARTÃO DO USUÁRIO
@@ -42,7 +63,7 @@ def configurar_pagina():
         
         .sidebar-brand {
             font-size: 19px !important; font-weight: 800 !important; color: #5a3b28 !important;
-            margin-top: 10px !important; margin-bottom: 15px !important; text-align: center;
+            margin-top: 5px !important; margin-bottom: 15px !important; text-align: center;
         }
         
         .user-card {
@@ -59,21 +80,21 @@ def configurar_pagina():
         }
 
         /* =======================================================
-           🔥 O SEGREDO DO ESPAÇAMENTO PERFEITO 🔥
+           ESPAÇAMENTO PERFEITO DOS LINKS (GAP)
         ======================================================= */
         
-        /* 1. Controla a distância global entre os blocos sem usar margem negativa */
+        /* Controla a distância global entre os blocos sem usar margem negativa */
         section[data-testid="stSidebar"] > div > div > div > div > div[data-testid="stVerticalBlock"] {
             gap: 0.35rem !important; 
         }
 
-        /* 2. Zera margens externas apenas dos links */
+        /* Zera margens externas apenas dos links */
         div[data-testid="stPageLink"] { 
             margin: 0 !important; 
             padding: 0 !important;
         }
 
-        /* 3. Estiliza o botão do link com respiro interno agradável */
+        /* Estiliza o botão do link com respiro interno agradável */
         div[data-testid="stPageLink"] a {
             border-radius: 8px !important;
             padding: 10px 14px !important;  
@@ -103,7 +124,7 @@ def configurar_pagina():
             border-bottom: 1px solid #dfcdbb !important;
         }
 
-        div[data-testid="stSidebar"] button {
+        div[data-testid="stSidebar"] button[kind="secondary"] {
             border-radius: 8px !important;
             font-size: 14px !important; font-weight: 700 !important;
             border: 1px solid #dfcdbb !important; background-color: #ffffff !important;
@@ -111,7 +132,7 @@ def configurar_pagina():
             margin-top: 5px !important;
             transition: all 0.2s ease !important;
         }
-        div[data-testid="stSidebar"] button:hover {
+        div[data-testid="stSidebar"] button[kind="secondary"]:hover {
             background-color: #fce8e6 !important; border-color: #f5c6cb !important;
             box-shadow: 0 4px 10px rgba(197, 34, 31, 0.1) !important;
             transform: translateY(-2px);
@@ -121,7 +142,6 @@ def configurar_pagina():
            CELULAR - AJUSTE FINO (MOBILE)
         ========================================== */
         @media (max-width: 768px) {
-            /* No celular, os links ficam ligeiramente mais "gordinhos" para facilitar o toque do dedo */
             div[data-testid="stPageLink"] a { 
                 padding: 12px 14px !important; 
                 font-size: 15px !important; 
@@ -131,7 +151,7 @@ def configurar_pagina():
                 margin: 12px 0 !important; 
             }
             
-            div[data-testid="stSidebar"] button { 
+            div[data-testid="stSidebar"] button[kind="secondary"] { 
                 min-height: 48px !important; 
                 font-size: 15px !important;
             }
