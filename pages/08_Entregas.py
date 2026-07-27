@@ -34,7 +34,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1
 .card-info { flex: 1; }
 .bairro-destaque { font-size: 15px; font-weight: 800; color: #333; margin-bottom: 2px;}
 .nome-destaque { font-size: 13px; font-weight: 600; color: #666; }
-.hora-destaque { font-size: 12px; font-weight: 700; color: #b06000; background: #fef7e0; padding: 2px 6px; border-radius: 6px; display: inline-block; margin-top:4px;}
+.hora-destaque { font-size: 12px; font-weight: 700; color: #b06000; background: #fef7e0; padding: 3px 8px; border-radius: 6px; display: inline-block; margin-top: 6px; border: 1px solid #f0e0d0; }
 
 /* Botões de Ordenação Simulações de Drag & Drop */
 .btn-updown button { font-size: 18px !important; padding: 0 !important; height: 36px !important; width: 36px !important; border-radius: 50% !important; border: 1px solid #dfcdbb !important; background: #faf7f3 !important; }
@@ -69,6 +69,14 @@ if "modo_entrega_ativa" not in st.session_state: st.session_state.modo_entrega_a
 # =====================================================
 # FUNÇÕES DE BANCO E LÓGICA COMPARTILHADA
 # =====================================================
+def formatar_data(data_str):
+    if not data_str: return "-"
+    try:
+        dt = datetime.strptime(str(data_str)[:10], "%Y-%m-%d")
+        return dt.strftime("%d/%m/%Y")
+    except:
+        return str(data_str)
+
 def buscar_entregas_dia():
     """Busca pedidos Enviados (Ativos) e Entregues hoje (Concluídos)"""
     data_hoje = datetime.now().strftime("%d/%m/%Y")
@@ -161,6 +169,10 @@ if perfil_usuario in ["Administrador", "Operador"]:
             with cols_despacho[i % 3]:
                 with st.container(border=True):
                     endereco_completo = ped.get('endereco', 'Endereço não informado')
+                    data_entrega = formatar_data(ped.get('data_entrega'))
+                    turno = ped.get('periodo_entrega', 'N/I')
+                    hora_combinada = ped.get('horario_combinado', '')
+                    hora_str = f" • Às {hora_combinada}" if hora_combinada else ""
                     
                     st.markdown(
                         f"""
@@ -169,7 +181,7 @@ if perfil_usuario in ["Administrador", "Operador"]:
                             <div class="nome-destaque" style="margin-top: 2px;">🎁 <strong>{ped.get('cesta_nome')}</strong> para <em>{ped.get('destinatario_nome')}</em></div>
                             <div style="font-size: 12px; color: #333; font-weight: 700; margin-top: 6px; background: #faf7f3; padding: 6px; border-radius: 6px; border-left: 3px solid #dfcdbb;">📍 {endereco_completo}</div>
                             <div style="font-size: 12px; color: #444; margin-top: 4px;">📞 {ped.get('destinatario_telefone') or 'Sem tel'}</div>
-                            <div class="hora-destaque">🕒 {ped.get('horario_combinado', '') or ped.get('periodo_entrega', 'Livre')}</div>
+                            <div class="hora-destaque">📅 {data_entrega} | 🕒 {turno}{hora_str}</div>
                         </div>
                         """, unsafe_allow_html=True
                     )
@@ -211,17 +223,21 @@ if perfil_usuario in ["Administrador", "Operador"]:
                         for i, ped in enumerate(ped_driver_ativos):
                             with st.container(border=True):
                                 endereco_completo = ped.get('endereco', 'Endereço não informado')
+                                data_entrega = formatar_data(ped.get('data_entrega'))
+                                turno = ped.get('periodo_entrega', 'N/I')
+                                hora_combinada = ped.get('horario_combinado', '')
+                                hora_str = f" • Às {hora_combinada}" if hora_combinada else ""
                                 
                                 st.markdown(
                                     f"""
                                     <div style="margin-bottom: 6px;">
                                         <div style="font-size:13px; font-weight:800; color:#5a3b28;">#{i+1} - 🎁 {ped.get('cesta_nome')} ({ped.get('destinatario_nome')})</div>
                                         <div style="font-size:12px; color:#333; margin-top: 4px; background: #faf7f3; padding: 4px 8px; border-radius: 4px;">📍 {endereco_completo}</div>
+                                        <div style="font-size: 11px; color: #b06000; font-weight: 700; margin-top: 4px;">📅 {data_entrega} | 🕒 {turno}{hora_str}</div>
                                     </div>
                                     """, unsafe_allow_html=True
                                 )
                                 
-                                # Caixa para realocar o pedido para outro entregador ou desvincular
                                 chave_realocar = f"realocar_{ped['id']}"
                                 indice_atual = opcoes_ent.index(driver) if driver in opcoes_ent else 0
                                 st.selectbox("Realocar para:", opcoes_ent, index=indice_atual, key=chave_realocar, on_change=atualizar_entregador, args=(ped["id"], chave_realocar))
@@ -229,7 +245,7 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                 st.write("")
                                 col_i, col_u, col_d = st.columns([3, 1, 1])
                                 with col_i:
-                                    st.caption(f"🕒 {ped.get('horario_combinado', '') or ped.get('periodo_entrega', 'Livre')}")
+                                    st.caption(f"Pedido #{ped.get('id')}")
                                 with col_u:
                                     if i > 0:
                                         st.markdown('<div class="btn-updown">', unsafe_allow_html=True)
