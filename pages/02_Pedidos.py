@@ -93,7 +93,7 @@ def formatar_data(data_str):
 
 
 # =====================================================
-# CSS COMPACTO E ISOLADO (COM RESPONSIVIDADE MOBILE)
+# CSS COMPACTO E ISOLADO
 # =====================================================
 
 st.markdown(
@@ -132,25 +132,9 @@ div[data-testid="stCheckbox"] { margin-top: 4px; }
 @media (max-width: 768px) {
     .block-container { padding-top: 0.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
     h1 { font-size: 20px !important; }
-    
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-        padding: 10px 12px !important;
-    }
-
-    div[data-testid="stHorizontalBlock"] div[data-testid="stHorizontalBlock"] {
-        flex-wrap: nowrap !important;
-        flex-direction: row !important;
-        display: flex !important;
-        gap: 8px !important;
-        margin-top: 6px !important;
-    }
-    
-    div[data-testid="stHorizontalBlock"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-        width: 50% !important;
-        min-width: 0 !important;
-        flex: 1 1 0% !important;
-    }
-
+    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 10px 12px !important; }
+    div[data-testid="stHorizontalBlock"] div[data-testid="stHorizontalBlock"] { flex-wrap: nowrap !important; flex-direction: row !important; display: flex !important; gap: 8px !important; margin-top: 6px !important; }
+    div[data-testid="stHorizontalBlock"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] { width: 50% !important; min-width: 0 !important; flex: 1 1 0% !important; }
     .cliente-nome { font-size: 15px !important; margin-bottom: 2px; }
     .info-label { font-size: 11px !important; margin-top: 4px; }
     .valor-pedido { font-size: 16px !important; margin-top: 4px; }
@@ -190,7 +174,6 @@ def render_criar_pedido_manual():
             nome_comp = st.text_input("Nome *", key="man_nome")
             
         with cc_btn:
-            # Espaçamento para o botão alinhar com os campos de texto
             st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
             if st.button("🔍 Buscar", use_container_width=True, help="Pesquisar cliente cadastrado"):
                 st.session_state.modo_busca_cli = not st.session_state.modo_busca_cli
@@ -202,33 +185,38 @@ def render_criar_pedido_manual():
         with cc3:
             tel_comp = st.text_input("Telefone *", key="man_tel")
 
-        # Campo de pesquisa que só aparece se o botão for clicado
+        # CAMPO DE PESQUISA INTELIGENTE (TEXTO + FILTRO)
         if st.session_state.modo_busca_cli:
-            try:
-                res_cli = supabase.table("pedidos").select("cliente_nome, cliente_cpf, cliente_telefone").execute()
-                cli_dict = {}
-                for c in (res_cli.data or []):
-                    cpf_c = c.get("cliente_cpf", "").strip()
-                    if cpf_c and cpf_c not in cli_dict:
-                        cli_dict[cpf_c] = c
-                lista_clientes = list(cli_dict.values())
-                lista_clientes.sort(key=lambda x: x.get("cliente_nome", ""))
-            except:
-                lista_clientes = []
-
-            opcoes_cli = [{"cliente_nome": "--- Digite para pesquisar ---", "cliente_cpf": "", "cliente_telefone": ""}] + lista_clientes
-            
             with st.container(border=True):
-                st.caption("Digite o nome ou CPF abaixo. O sistema filtrará automaticamente:")
+                st.markdown("**🔍 Pesquisar Cliente**")
+                
+                termo_busca = st.text_input("Digite o Nome ou CPF para filtrar a lista:", key="man_termo_busca")
+                
+                try:
+                    res_cli = supabase.table("pedidos").select("cliente_nome, cliente_cpf, cliente_telefone").execute()
+                    cli_dict = {}
+                    for c in (res_cli.data or []):
+                        cpf_c = c.get("cliente_cpf", "").strip()
+                        if cpf_c and cpf_c not in cli_dict:
+                            cli_dict[cpf_c] = c
+                    lista_clientes = list(cli_dict.values())
+                    lista_clientes.sort(key=lambda x: x.get("cliente_nome", ""))
+                except:
+                    lista_clientes = []
+
+                if termo_busca:
+                    lista_clientes = [c for c in lista_clientes if termo_busca.lower() in str(c.get("cliente_nome", "")).lower() or termo_busca in str(c.get("cliente_cpf", ""))]
+
+                opcoes_cli = [{"cliente_nome": "--- Clique aqui para selecionar o cliente ---", "cliente_cpf": "", "cliente_telefone": ""}] + lista_clientes
+                
                 cli_sel = st.selectbox(
-                    "Selecione o Cliente:", 
+                    "Resultados Encontrados:", 
                     opcoes_cli, 
                     format_func=lambda x: f"{x['cliente_nome']} (CPF: {x['cliente_cpf']})" if x['cliente_cpf'] else x['cliente_nome'],
                     key="man_busca_dropdown"
                 )
                 
-                # Se o usuário escolheu alguém, preenche e fecha a busca na hora
-                if cli_sel and cli_sel["cliente_nome"] != "--- Digite para pesquisar ---":
+                if cli_sel and cli_sel["cliente_nome"] != "--- Clique aqui para selecionar o cliente ---":
                     st.session_state.man_nome = cli_sel["cliente_nome"]
                     st.session_state.man_cpf = cli_sel["cliente_cpf"]
                     st.session_state.man_tel = cli_sel["cliente_telefone"]
@@ -387,14 +375,13 @@ def render_criar_pedido_manual():
                     salvar_adicionais_pedido(p_id, adicionais_selecionados)
                 st.success("✅ Pedido criado com sucesso! O painel será atualizado...")
                 
-                # Limpeza dos dados da memória após salvar
-                for key in ["man_nome", "man_cpf", "man_tel", "man_rua", "man_bairro", "man_cidade", "man_cep", "ultimo_cep_man"]:
+                for key in ["man_nome", "man_cpf", "man_tel", "man_rua", "man_bairro", "man_cidade", "man_cep", "ultimo_cep_man", "man_termo_busca"]:
                     if key in st.session_state:
                         del st.session_state[key]
                 st.session_state.modo_busca_cli = False
                 
                 time.sleep(1)
-                st.rerun() # Atualiza a página inteira
+                st.rerun() 
             else:
                 st.error("Erro ao registrar o pedido no banco de dados.")
 
@@ -450,10 +437,8 @@ def status_visual_html(status):
 # =====================================================
 
 def mostrar_lista(titulo, status_filtro, permitir_exclusao=False, permitir_impressao=False):
-    st.subheader(titulo)
-
     if df.empty or "status" not in df.columns:
-        st.info(f"Nenhum pedido registrado em '{titulo.replace('📥 ', '').replace('💰 ', '').replace('❌ ', '')}'.")
+        st.info(f"Nenhum pedido registrado em '{titulo}'.")
         return
 
     pedidos_status = df[df["status"].astype(str).str.strip().str.capitalize() == status_filtro.capitalize()]
@@ -529,12 +514,22 @@ def mostrar_lista(titulo, status_filtro, permitir_exclusao=False, permitir_impre
 
 
 # =====================================================
-# FLUXO COMPLETO DE PEDIDOS NA TELA
+# FLUXO COMPLETO DE PEDIDOS NA TELA (EM ABAS)
 # =====================================================
 
-mostrar_lista("📥 Pedidos Recebidos", "Recebido")
-mostrar_lista("💰 Pedidos Pagos", "Pago", permitir_impressao=True)
-mostrar_lista("❌ Desistências", "Desistência", permitir_exclusao=(usuario.get("perfil") == "Administrador"))
+aba_recebidos, aba_pagos, aba_desistencias = st.tabs(["📥 Recebidos", "💰 Pagos", "❌ Desistências"])
+
+with aba_recebidos:
+    st.subheader("📥 Pedidos Recebidos")
+    mostrar_lista("Pedidos Recebidos", "Recebido")
+
+with aba_pagos:
+    st.subheader("💰 Pedidos Pagos")
+    mostrar_lista("Pedidos Pagos", "Pago", permitir_impressao=True)
+
+with aba_desistencias:
+    st.subheader("❌ Desistências")
+    mostrar_lista("Desistências", "Desistência", permitir_exclusao=(usuario.get("perfil") == "Administrador"))
 
 
 # =====================================================
