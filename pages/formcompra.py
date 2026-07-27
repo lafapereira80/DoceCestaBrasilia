@@ -322,13 +322,18 @@ if cesta_obj:
                 st.markdown(f"**🎁 Valor da cesta:** <span style='font-size:16px; color:#2e7d32; font-weight:bold;'>{valor_cesta_formatado}</span>", unsafe_allow_html=True)
 
 # ==========================================================
-# 3. PERSONALIZAÇÃO DA CESTA
+# 3. PERSONALIZAÇÃO DA CESTA (COM PROTEÇÃO CONTRA TIMEOUT)
 # ==========================================================
 st.markdown("### 🍓 Personalize sua cesta")
 selecoes_cliente = {}
 
 if cesta_obj:
-    configuracao_cesta = carregar_configuracao_cesta(cesta_obj["id"])
+    configuracao_cesta = None
+    try:
+        configuracao_cesta = carregar_configuracao_cesta(cesta_obj["id"])
+    except Exception:
+        st.warning("⚠️ Ocorreu uma instabilidade na rede ao buscar as personalizações. Caso não apareçam opções abaixo, atualize a página.")
+        
     if configuracao_cesta:
         for grupo in configuracao_cesta:
             categoria = grupo.get("categoria", "Sem categoria")
@@ -351,7 +356,7 @@ else:
     st.info("Escolha uma cesta acima para visualizar os itens de personalização disponíveis.")
 
 # ==========================================================
-# 4. COMPLEMENTOS E FOTOS POLAROID
+# 4. COMPLEMENTOS E FOTOS POLAROID (COM PROTEÇÃO CONTRA TIMEOUT)
 # ==========================================================
 st.markdown("### 🎀 Complementos")
 st.caption("Escolha itens adicionais para complementar sua cesta.")
@@ -364,7 +369,13 @@ categorias_exibir = [categoria_adicionais] if categoria_adicionais else []
 
 for categoria_item in categorias_exibir:
     nome_categoria = categoria_item.get("nome", "")
-    produtos_categoria = listar_produtos_por_categoria_id(categoria_item["id"])
+    
+    produtos_categoria = []
+    try:
+        produtos_categoria = listar_produtos_por_categoria_id(categoria_item["id"])
+    except Exception:
+        pass
+        
     if not produtos_categoria: continue
 
     with st.container(border=True):
