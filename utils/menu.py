@@ -1,7 +1,7 @@
 import streamlit as st
 
 # =====================================================
-# CONFIGURA VISUAL DO STREAMLIT (DESIGNER PREMIUM)
+# CONFIGURA VISUAL DO STREAMLIT (DESIGNER PREMIUM E HARMÔNICO)
 # =====================================================
 
 def configurar_pagina():
@@ -39,40 +39,39 @@ def configurar_pagina():
         }
         
         .sidebar-brand {
-            font-size: 18px !important; font-weight: 800 !important; color: #5a3b28 !important;
-            margin-top: 15px !important; margin-bottom: 12px !important; text-align: center;
+            font-size: 19px !important; font-weight: 800 !important; color: #5a3b28 !important;
+            margin-top: 10px !important; margin-bottom: 15px !important; text-align: center;
         }
         
         .user-card {
-            background: #ffffff; border: 1px solid #dfcdbb; border-radius: 10px;
-            padding: 10px 10px !important; margin-bottom: 10px !important;
-            box-shadow: 0 2px 4px rgba(90,59,40,0.03); display: flex; flex-direction: column; align-items: center;
+            background: #ffffff; border: 1px solid #dfcdbb; border-radius: 12px;
+            padding: 14px 10px !important; margin-bottom: 6px !important;
+            box-shadow: 0 2px 5px rgba(90,59,40,0.05); display: flex; flex-direction: column; align-items: center;
         }
         
-        .user-name { font-weight: 800; color: #333; font-size: 14px !important; margin-bottom: 4px; }
+        .user-name { font-weight: 800; color: #333; font-size: 15px !important; margin-bottom: 6px; }
         
         .user-role {
             background-color: #f3ece6; color: #775a46; font-size: 10px !important;
-            font-weight: 800; padding: 3px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+            font-weight: 800; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;
         }
 
         /* =======================================================
-           🔥 A MÁGICA DO ESPAÇAMENTO (MARGENS NEGATIVAS) 🔥
+           🔥 A MÁGICA DO ESPAÇAMENTO HARMÔNICO 🔥
         ======================================================= */
         
-        /* 1. Esmaga o Gap nativo do Streamlit */
-        section[data-testid="stSidebar"] div[data-testid="stVerticalBlock"] {
-            gap: 0 !important; 
+        /* 1. Controla a distância natural entre os blocos (substitui as margens negativas quebradas) */
+        section[data-testid="stSidebar"] > div > div > div > div > div[data-testid="stVerticalBlock"] {
+            gap: 0.4rem !important; 
         }
 
-        /* 2. Puxa os links para cima e para baixo para colar um no outro */
+        /* 2. Zera margens externas dos links para não somar com o gap */
         div[data-testid="stPageLink"] { 
-            margin-top: -12px !important; 
+            margin: 0 !important; 
             padding: 0 !important;
-            z-index: 10;
         }
 
-        /* 3. Estiliza o botão do link: gordinho por dentro, colado por fora */
+        /* 3. Estiliza o link com respiro interno agradável */
         div[data-testid="stPageLink"] a {
             border-radius: 8px !important;
             padding: 10px 14px !important;  
@@ -82,48 +81,55 @@ def configurar_pagina():
             background-color: transparent !important;
             border: none !important;
             transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+            display: flex !important;
+            align-items: center !important;
         }
 
-        /* Efeito de destaque Magnético */
+        /* Efeito de destaque Magnético ao passar o mouse */
         div[data-testid="stPageLink"] a:hover {
             background-color: #e8ddd3 !important;
             color: #222 !important;
             transform: translateX(4px);
         }
 
-        /* Linhas Divisórias (hr) compactas */
+        /* Linhas Divisórias (hr) limpas e equilibradas */
         section[data-testid="stSidebar"] hr {
-            margin-top: -4px !important;
-            margin-bottom: 10px !important;
+            margin: 8px 0 !important;
             border-bottom: 1px solid #dfcdbb !important;
         }
 
-        /* Botão de Sair Compacto */
+        /* Botão de Sair com peso visual */
         div[data-testid="stSidebar"] button {
-            margin-top: -6px !important;
             border-radius: 8px !important;
-            font-size: 13px !important; font-weight: 700 !important;
+            font-size: 14px !important; font-weight: 700 !important;
             border: 1px solid #dfcdbb !important; background-color: #ffffff !important;
-            color: #c5221f !important; min-height: 40px !important;
+            color: #c5221f !important; min-height: 44px !important;
+            margin-top: 5px !important;
             transition: all 0.2s ease !important;
         }
         div[data-testid="stSidebar"] button:hover {
             background-color: #fce8e6 !important; border-color: #f5c6cb !important;
             box-shadow: 0 2px 4px rgba(197, 34, 31, 0.1) !important;
+            transform: translateY(-1px);
         }
 
         /* =========================================
-           CELULAR - AJUSTE FINO EXTREMO
+           CELULAR - AJUSTE FINO (MOBILE)
         ========================================== */
         @media (max-width: 768px) {
-            /* Puxa com mais força no celular porque o Streamlit injeta mais espaço */
-            div[data-testid="stPageLink"] { margin-top: -16px !important; }
+            /* No celular, os dedos precisam de área de clique, mas o visual continua limpo */
+            div[data-testid="stPageLink"] a { 
+                padding: 12px 14px !important; 
+                font-size: 15px !important; 
+            }
             
-            /* Área de toque maior para o dedo */
-            div[data-testid="stPageLink"] a { padding: 12px 14px !important; font-size: 15px !important; }
+            section[data-testid="stSidebar"] hr { 
+                margin: 10px 0 !important; 
+            }
             
-            section[data-testid="stSidebar"] hr { margin-top: -8px !important; margin-bottom: 12px !important; }
-            div[data-testid="stSidebar"] button { margin-top: -8px !important; min-height: 46px !important; font-size: 15px !important; }
+            div[data-testid="stSidebar"] button { 
+                min-height: 48px !important; 
+            }
         }
         </style>
         """,
