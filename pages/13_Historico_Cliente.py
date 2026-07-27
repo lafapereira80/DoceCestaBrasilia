@@ -1,316 +1,167 @@
 import streamlit as st
+import pandas as pd
+import re
+from datetime import datetime
+import urllib.parse
 
 from config.supabase import supabase
-
-from utils.menu import (
-    configurar_pagina,
-    menu_lateral
-)
-
-from utils.permissao import (
-    administrador_operador
-)
+from utils.menu import configurar_pagina, menu_lateral
+from utils.permissao import administrador_operador
 
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA
+# CONFIGURAÇÃO DA PÁGINA E CSS
 # =====================================================
-
-st.set_page_config(
-    page_title="Histórico do Cliente",
-    page_icon="👤",
-    layout="wide"
-)
-
-# CONTROLE DE ACESSO
+st.set_page_config(page_title="Ficha do Cliente", page_icon="📇", layout="wide")
 configurar_pagina()
 menu_lateral()
 administrador_operador()
 
-
-# =====================================================
-# CSS ULTRA COMPACTO E ISOLADO
-# =====================================================
-
 st.markdown(
 """
 <style>
-/* =========================================
-   CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
-========================================== */
-.block-container {
-    padding-top: 0.8rem !important;
-    padding-bottom: 1.5rem !important;
-    max-width: 1200px;
-}
+.block-container { padding-top: 1rem !important; padding-bottom: 2rem !important; max-width: 1000px; }
+h1 { font-size: 24px !important; font-weight: 700 !important; color: #5a3b28; margin-bottom: 2px !important; }
+.kpi-card { background: #fff8ef; border: 1px solid #e6d1bb; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 4px rgba(90,59,40,0.04); }
+.kpi-title { font-size: 13px; font-weight: 700; color: #775a46; text-transform: uppercase; letter-spacing: 0.5px; }
+.kpi-value { font-size: 24px; font-weight: 800; color: #2e7d32; margin-top: 4px; }
 
-div[data-testid="stVerticalBlock"] {
-    gap: 0.35rem !important;
-}
+div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1px solid #dfcdbb !important; border-radius: 12px !important; padding: 14px 16px !important; margin-bottom: 8px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.03); transition: all 0.2s ease; }
+div[data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: #c9b19c !important; box-shadow: 0 4px 8px rgba(90, 59, 40, 0.08); }
 
-h1 {
-    font-size: 22px !important;
-    font-weight: 700 !important;
-    color: #5a3b28;
-    margin-bottom: 2px !important;
-}
+.info-label { font-weight: 700; color: #775a46; font-size: 11px !important; text-transform: uppercase; letter-spacing: 0.5px; }
+.info-value { margin-bottom: 4px; color: #222; font-weight: 800; font-size: 15px !important; }
 
-h2, h3 {
-    font-size: 14px !important;
-    font-weight: 700 !important;
-    color: #5a3b28;
-    margin-top: 4px !important;
-    margin-bottom: 4px !important;
-}
-
-.block-container p, 
-.block-container label {
-    font-family: Arial, sans-serif !important;
-    font-size: 12px !important;
-}
-
-/* =========================================
-   CONTAINERS E CARDS COMPACTOS
-========================================== */
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #ffffff;
-    border: 1px solid #e8ddd3 !important;
-    border-radius: 12px !important;
-    padding: 10px 14px !important;
-    margin-bottom: 6px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-}
-
-.card-title {
-    font-size: 14px !important;
-    font-weight: 700 !important;
-    color: #5a3b28 !important;
-    margin-bottom: 6px !important;
-}
-
-.kpi-title {
-    font-size: 11px !important;
-    font-weight: 700;
-    color: #775a46;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    margin-bottom: 2px;
-}
-
-.kpi-value {
-    font-size: 16px !important;
-    font-weight: 700;
-    color: #2e7d32;
-}
-
-.kpi-value-neutral {
-    font-size: 16px !important;
-    font-weight: 700;
-    color: #5a3b28;
-}
-
-/* Ajustes direcionados para botões */
-div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button {
-    font-size: 13px !important;
-    border-radius: 8px !important;
-    min-height: 34px !important;
-}
+.status-badge { font-weight: 700; padding: 3px 8px; border-radius: 6px; font-size: 11px; text-transform: uppercase; display: inline-block;}
+div[data-testid="stButton"] button { font-size: 13px !important; border-radius: 8px !important; min-height: 36px !important; }
 </style>
 """,
 unsafe_allow_html=True
 )
 
-
 # =====================================================
-# VERIFICA CLIENTE SELECIONADO
+# VALIDAÇÃO DE SESSÃO
 # =====================================================
-
-if "cliente_cpf" not in st.session_state:
-    st.error("Nenhum cliente selecionado.")
-    if st.button("⬅ Voltar"):
+# Espera-se que a página de Clientes tenha salvo o CPF ou Telefone na sessão para buscar
+if "cliente_selecionado_doc" not in st.session_state:
+    st.warning("⚠️ Nenhum cliente selecionado. Volte para a tela de Clientes e selecione um.")
+    if st.button("⬅️ Voltar para Clientes", use_container_width=True):
         st.switch_page("pages/03_Clientes.py")
     st.stop()
 
-cpf = st.session_state["cliente_cpf"]
+doc_cliente = st.session_state["cliente_selecionado_doc"]
 
 
 # =====================================================
-# BUSCA PEDIDOS ENTREGUES
+# FUNÇÕES DE FORMATAÇÃO E STATUS
 # =====================================================
+def formatar_valor(valor):
+    try: return f"R$ {float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except: return "R$ 0,00"
 
+def formatar_data(data_str):
+    try: return datetime.strptime(str(data_str)[:10], "%Y-%m-%d").strftime("%d/%m/%Y")
+    except: return "-"
+
+def cor_status_html(status):
+    s = str(status).lower()
+    if s == "pago": return '<span class="status-badge" style="background: #e6f4ea; color: #137333; border: 1px solid #137333;">PAGO</span>'
+    if s == "enviado": return '<span class="status-badge" style="background: #e8f0fe; color: #1a73e8; border: 1px solid #1a73e8;">ENVIADO</span>'
+    if s == "entregue": return '<span class="status-badge" style="background: #f3e8fd; color: #6a1b9a; border: 1px solid #6a1b9a;">ENTREGUE</span>'
+    if "desist" in s: return '<span class="status-badge" style="background: #fce8e6; color: #c5221f; border: 1px solid #c5221f;">DESISTÊNCIA</span>'
+    return '<span class="status-badge" style="background: #fef7e0; color: #b06000; border: 1px solid #b06000;">RECEBIDO</span>'
+
+
+# =====================================================
+# BUSCA DE DADOS NO BANCO
+# =====================================================
 try:
-    resposta = (
-        supabase
-        .table("pedidos")
-        .select("*")
-        .eq("cliente_cpf", cpf)
-        .eq("status", "Entregue")
-        .order("created_at", desc=True)
-        .execute()
-    )
-    pedidos = resposta.data or []
-
-except Exception as erro:
-    st.error(f"Erro ao carregar histórico: {erro}")
+    # Tenta buscar primeiro por CPF, se não achar tenta por telefone
+    res = supabase.table("pedidos").select("*").eq("cliente_cpf", doc_cliente).order("created_at", desc=True).execute()
+    pedidos = res.data or []
+    
+    if not pedidos:
+        res = supabase.table("pedidos").select("*").eq("cliente_telefone", doc_cliente).order("created_at", desc=True).execute()
+        pedidos = res.data or []
+except Exception as e:
+    st.error("Erro ao comunicar com o banco de dados.")
     st.stop()
 
 if not pedidos:
-    st.warning("Cliente sem pedidos entregues.")
+    st.error("Cliente não encontrado ou sem pedidos.")
     st.stop()
 
-cliente = pedidos[0]
+
+# Extrai os dados do cliente do último pedido feito
+ultimo_pedido = pedidos[0]
+nome = ultimo_pedido.get("cliente_nome", "Não informado")
+telefone = ultimo_pedido.get("cliente_telefone", "")
+cpf = ultimo_pedido.get("cliente_cpf", "")
+
+pedidos_validos = [p for p in pedidos if str(p.get("status")).capitalize() not in ["Desistência", "Desistencia"]]
+total_gasto = sum(float(p.get("valor_total", 0) or 0) for p in pedidos_validos if str(p.get("status")).capitalize() in ["Pago", "Enviado", "Entregue"])
+ticket_medio = total_gasto / len(pedidos_validos) if len(pedidos_validos) > 0 else 0
 
 
 # =====================================================
-# FORMATAÇÃO DE MOEDA
+# CABEÇALHO E AÇÕES
 # =====================================================
-
-def moeda(valor):
-    try:
-        return (
-            f"R$ {float(valor):,.2f}"
-            .replace(",", "X")
-            .replace(".", ",")
-            .replace("X",".")
-        )
-    except:
-        return "R$ 0,00"
+col_t1, col_t2 = st.columns([3, 1])
+with col_t1:
+    st.title("📇 Ficha do Cliente")
+with col_t2:
+    if st.button("⬅️ Voltar para Clientes", use_container_width=True):
+        del st.session_state["cliente_selecionado_doc"]
+        st.switch_page("pages/03_Clientes.py")
 
 
 # =====================================================
-# TÍTULO
+# DADOS DO CLIENTE E KPIS
 # =====================================================
-
-st.title("👤 Histórico do Cliente")
-st.caption("Visão detalhada do perfil e compras entregues.")
-st.divider()
-
-
-# =====================================================
-# RESUMO DO CLIENTE & METRICAS (CARD INTEGRADO)
-# =====================================================
-
-total_pedidos = len(pedidos)
-valor_total = sum(float(p.get("valor_total") or 0) for p in pedidos)
-ticket_medio = valor_total / total_pedidos if total_pedidos > 0 else 0
-ultima_compra = pedidos[0].get("data_entrega", "-")
-
 with st.container(border=True):
-    col_info, col_kpis = st.columns([1.2, 2])
+    c1, c2, c3, c4 = st.columns([2, 1.5, 1.5, 1.5])
+    with c1: st.markdown(f'<div class="info-label">Nome Completo</div><div class="info-value">{nome}</div>', unsafe_allow_html=True)
+    with c2: st.markdown(f'<div class="info-label">Documento (CPF)</div><div class="info-value">{cpf if cpf else "N/A"}</div>', unsafe_allow_html=True)
+    with c3: st.markdown(f'<div class="info-label">Telefone</div><div class="info-value">+{telefone}</div>', unsafe_allow_html=True)
+    with c4:
+        st.markdown("<div style='margin-top: 5px;'></div>", unsafe_allow_html=True)
+        tel_wpp = f"55{telefone}" if len(str(telefone)) <= 11 else telefone
+        link_wpp = f"https://wa.me/{tel_wpp}"
+        st.link_button("💬 Chamar WhatsApp", url=link_wpp, use_container_width=True)
 
-    with col_info:
-        st.markdown('<div class="card-title">👤 Dados do Cliente (Comprador)</div>', unsafe_allow_html=True)
-        st.write(f"**Nome:** {cliente.get('cliente_nome', '-')}")
-        st.write(f"**CPF:** {cliente.get('cliente_cpf', '-')}")
-        st.write(f"**Telefone:** 📱 {cliente.get('cliente_telefone', '-')}")
-
-    with col_kpis:
-        st.markdown('<div class="card-title">📊 Resumo Financeiro</div>', unsafe_allow_html=True)
-        k1, k2, k3, k4 = st.columns(4)
-        with k1:
-            st.markdown('<div class="kpi-title">Pedidos</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="kpi-value-neutral">{total_pedidos}</div>', unsafe_allow_html=True)
-        with k2:
-            st.markdown('<div class="kpi-title">Valor Gasto</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="kpi-value">{moeda(valor_total)}</div>', unsafe_allow_html=True)
-        with k3:
-            st.markdown('<div class="kpi-title">Ticket Médio</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="kpi-value-neutral">{moeda(ticket_medio)}</div>', unsafe_allow_html=True)
-        with k4:
-            st.markdown('<div class="kpi-title">Última Compra</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="kpi-value-neutral">{str(ultima_compra)}</div>', unsafe_allow_html=True)
-
-
-st.divider()
+st.write("")
+k1, k2, k3 = st.columns(3)
+with k1: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Total de Pedidos</div><div class="kpi-value" style="color:#5a3b28;">{len(pedidos)}</div></div>', unsafe_allow_html=True)
+with k2: st.markdown(f'<div class="kpi-card"><div class="kpi-title">LTV (Total Gasto)</div><div class="kpi-value">{formatar_valor(total_gasto)}</div></div>', unsafe_allow_html=True)
+with k3: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Ticket Médio</div><div class="kpi-value">{formatar_valor(ticket_medio)}</div></div>', unsafe_allow_html=True)
 
 
 # =====================================================
-# HISTÓRICO DE COMPRAS (COMPACTO SIDE-BY-SIDE)
+# LINHA DO TEMPO DE PEDIDOS
 # =====================================================
+st.write("")
+st.subheader("🛍️ Linha do Tempo de Pedidos")
 
-st.subheader(f"📋 Histórico de Compras ({len(pedidos)})")
-
-for i, pedido in enumerate(pedidos):
+for ped in pedidos:
     with st.container(border=True):
-        st.markdown(
-            f'<div class="card-title">🎁 {pedido.get("cesta_nome","-")} <span style="font-size:12px; font-weight:normal; color:#775a46;">(Pedido #{i+1})</span></div>',
-            unsafe_allow_html=True
-        )
-
-        col_esq, col_dir = st.columns([1.1, 1])
-
-        # Coluna da Esquerda: Produtos e Adicionais
-        with col_esq:
-            st.markdown("**📦 Produtos da Cesta**")
-            produtos = pedido.get("produtos", "")
-            if produtos:
-                st.code(produtos, language=None)
-            else:
-                st.caption("Nenhum produto registrado.")
-
-            st.markdown("**🎀 Adicionais**")
-            adicionais = pedido.get("adicionais", "")
-            if adicionais:
-                st.success(adicionais)
-            else:
-                st.caption("Nenhum adicional.")
-
-        # Coluna da Direita: Detalhes, Homenageado, Mensagens, Endereço e Valores
-        with col_dir:
-            # Info Geral em linha
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                st.caption(f"🗓️ Entrega: **{pedido.get('data_entrega','-')}**")
-            with c2:
-                st.caption(f"📌 Status: **{pedido.get('status','-')}**")
-            with c3:
-                st.caption(f"💳 Pgto: **{pedido.get('pagamento','-')}**")
-
-            # NOVOS DADOS: Homenageado (Destinatário)
-            dest_nome = pedido.get("destinatario_nome")
-            dest_tel = pedido.get("destinatario_telefone")
-            motivo = pedido.get("motivo_homenagem")
+        p1, p2, p3, p4, p5 = st.columns([1, 2, 1.5, 1.5, 1])
+        
+        with p1:
+            st.caption(formatar_data(ped.get("created_at")))
+            st.markdown(f"**#{ped.get('id')}**")
             
-            if dest_nome or dest_tel or motivo:
-                st.markdown("**💝 Entregue para:**")
-                st.caption(f"**Nome:** {dest_nome or '-'} | **Tel:** {dest_tel or '-'} | **Motivo:** {motivo or '-'}")
-
-            # Mensagem
-            mensagem = pedido.get("mensagem", "")
-            if mensagem:
-                st.markdown("**💌 Mensagem:**")
-                st.text_area("", value=mensagem, disabled=True, height=50, key=f"msg_{pedido['id']}")
-
-            # Pedido Especial
-            especial = pedido.get("pedido_especial", "")
-            if especial:
-                st.markdown("**✨ Pedido Especial:**")
-                st.text_area("", value=especial, disabled=True, height=50, key=f"esp_{pedido['id']}")
-
-            # Endereço
-            st.markdown("**📍 Endereço:**")
-            st.text_area("", value=pedido.get("endereco", ""), disabled=True, height=50, key=f"end_{pedido['id']}")
-
-            # Frete e Total
-            v1, v2 = st.columns(2)
-            with v1:
-                st.caption(f"🚚 Frete: **{moeda(pedido.get('valor_frete') or 0)}**")
-            with v2:
-                st.markdown(f"💰 **Total:** <span class='kpi-value'>{moeda(pedido.get('valor_total') or 0)}</span>", unsafe_allow_html=True)
-
-            # Fotos
-            if pedido.get("foto_excluida"):
-                st.caption("📷 *Fotos removidas automaticamente após conclusão.*")
-            else:
-                st.caption("📷 *Fotos ainda disponíveis.*")
-
-
-# =====================================================
-# VOLTAR
-# =====================================================
-
-st.divider()
-
-if st.button("⬅ Voltar para Clientes", use_container_width=True, key="voltar_clientes"):
-    st.session_state.pop("cliente_cpf", None)
-    st.switch_page("pages/03_Clientes.py")
+        with p2:
+            st.markdown(f"**🎁 {ped.get('cesta_nome', 'Cesta Não Informada')}**")
+            st.caption(f"Homenageado: {ped.get('destinatario_nome', 'N/A')}")
+            
+        with p3:
+            st.markdown(f"**{formatar_valor(ped.get('valor_total'))}**")
+            st.caption(f"{ped.get('pagamento', 'N/A')}")
+            
+        with p4:
+            st.markdown(cor_status_html(ped.get("status")), unsafe_allow_html=True)
+            
+        with p5:
+            if st.button("👁️ Abrir", key=f"abrir_{ped.get('id')}", use_container_width=True):
+                st.session_state["pedido_aberto"] = ped.get("id")
+                st.switch_page("pages/09_Detalhes_Pedido.py")
