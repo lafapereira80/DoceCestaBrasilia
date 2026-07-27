@@ -3,7 +3,6 @@ import pandas as pd
 from datetime import datetime, timedelta, date
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
-from services.telegram_service import enviar_notificacao_telegram
 from utils.permissao import administrador_operador
 
 # =====================================================
@@ -77,49 +76,14 @@ def buscar_previsao_producao():
 
 dados_previsao = buscar_previsao_producao()
 
-
 # =====================================================
-# FUNÇÃO DE DISPARO DO TELEGRAM
-# =====================================================
-def disparar_alerta_telegram(dados):
-    if not dados:
-        enviar_notificacao_telegram("ℹ️ *PREVISÃO DE PRODUÇÃO*\nNenhum pedido pago pendente para os próximos dias.")
-        return
-        
-    texto = "⚠️ *ALERTA DE PRODUÇÃO - PRÓXIMOS DIAS* ⚠️\n\n"
-    
-    for data, info in dados.items():
-        texto += f"📅 *{info['label']}* - Total: {info['total']} cesta(s)\n"
-        for cesta, qtd in info["cestas"].items():
-            texto += f"   📦 {qtd}x {cesta}\n"
-        texto += "\n"
-        
-    texto += "Acesse o sistema para ver os detalhes."
-    enviar_notificacao_telegram(texto)
-
-
-# =====================================================
-# INTERFACE DE USUÁRIO
+# INTERFACE DE USUÁRIO (PAINEL DE PRODUÇÃO)
 # =====================================================
 if not dados_previsao:
     st.success("🎉 Não há pedidos pagos aguardando produção para os próximos dias.")
 else:
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        for data, info in dados_previsao.items():
-            with st.container(border=True):
-                st.markdown(f"<div class='data-titulo'>{info['label']} (Total: {info['total']})</div>", unsafe_allow_html=True)
-                for cesta, qtd in info["cestas"].items():
-                    st.markdown(f"<div class='cesta-item'><span>📦 {cesta}</span> <span class='cesta-qtd'>{qtd} un</span></div>", unsafe_allow_html=True)
-
-    with col2:
+    for data, info in dados_previsao.items():
         with st.container(border=True):
-            st.markdown("### ⚙️ Alertas Telegram")
-            st.write("O sistema compila todas as cestas com status **Pago** e organiza por data para a linha de produção.")
-            
-            st.write("")
-            if st.button("🚀 Enviar Resumo Agora", type="primary", use_container_width=True):
-                with st.spinner("Enviando para o Telegram..."):
-                    disparar_alerta_telegram(dados_previsao)
-                st.success("✅ Alerta enviado com sucesso!")
+            st.markdown(f"<div class='data-titulo'>{info['label']} (Total: {info['total']})</div>", unsafe_allow_html=True)
+            for cesta, qtd in info["cestas"].items():
+                st.markdown(f"<div class='cesta-item'><span>📦 {cesta}</span> <span class='cesta-qtd'>{qtd} un</span></div>", unsafe_allow_html=True)
