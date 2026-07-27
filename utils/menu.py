@@ -1,345 +1,235 @@
 import streamlit as st
-from datetime import datetime, date, timedelta
-from config.supabase import supabase
-from utils.menu import configurar_pagina, menu_lateral
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA E CSS PREMIUM (SEGURO)
+# CONFIGURA VISUAL DO STREAMLIT (DESIGNER PREMIUM E SEGURO)
 # =====================================================
-st.set_page_config(page_title="Administração", page_icon="🔒", layout="wide")
-configurar_pagina()
 
-st.markdown(
-"""
-<style>
-/* =========================================
-   ESPAÇAMENTOS GERAIS
-========================================== */
-.block-container { padding-top: 2rem !important; padding-bottom: 3rem !important; max-width: 1150px; }
-h1, h2, h3 { color: #5a3b28 !important; font-weight: 800 !important; margin-bottom: 0px !important; }
-.subtitle { color: #775a46; font-size: 16px; margin-bottom: 35px; font-weight: 500; }
+def configurar_pagina():
+    st.markdown(
+        """
+        <style>
+        /* =========================================
+            REMOÇÃO DE ELEMENTOS PADRÃO E CABEÇALHO
+        ========================================== */
+        #MainMenu { display: none !important; }
+        footer { display: none !important; }
+        [data-testid="stSidebarNav"] { display: none !important; }
+        
+        /* Deixa o cabeçalho invisível, mas PERMITE clicar nos botões dele */
+        header[data-testid="stHeader"] { 
+            background: transparent !important; 
+            box-shadow: none !important;
+        }
 
-/* =========================================
-   TELA DE LOGIN CENTRALIZADA
-========================================== */
-.login-box { 
-    background: #ffffff; padding: 40px; border-radius: 20px; 
-    border: 1px solid #dfcdbb; box-shadow: 0 12px 32px rgba(90, 59, 40, 0.08); 
-    text-align: center; margin: 5vh auto;
-}
-.login-logo { font-size: 54px; margin-bottom: 5px; line-height: 1; }
-.login-title { font-size: 24px; font-weight: 800; color: #5a3b28; margin-bottom: 25px; }
+        /* =========================================
+            BOTÕES DE MENU (ABRIR E FECHAR) - CORRIGIDO
+        ========================================== */
+        
+        /* Botão Sanduíche (Abrir Menu Mobile/Desktop) */
+        [data-testid="collapsedControl"] {
+            background-color: #ffffff !important; 
+            border: 1px solid #dfcdbb !important;
+            border-radius: 10px !important; 
+            box-shadow: 0 4px 10px rgba(90, 59, 40, 0.08) !important;
+            color: #5a3b28 !important; /* Cor do ícone nativo */
+            margin-top: 10px !important; margin-left: 10px !important;
+            transition: all 0.2s ease !important;
+            z-index: 100000 !important;
+        }
+        [data-testid="collapsedControl"]:hover { 
+            box-shadow: 0 6px 14px rgba(90, 59, 40, 0.15) !important; 
+            transform: translateY(-1px); 
+            color: #b06000 !important;
+        }
 
-/* =========================================
-   DASHBOARD: ESTILO INTERNO DOS CARTÕES
-========================================== */
-/* Efeito de destaque suave nos contêineres do Streamlit */
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    border-radius: 14px !important;
-    border-color: #e8ddd3 !important;
-    background-color: #ffffff;
-}
-div[data-testid="stVerticalBlockBorderWrapper"]:hover {
-    border-color: #c9b19c !important;
-    box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08) !important;
-    transform: translateY(-3px);
-}
+        /* Botão de Fechar (X) dentro da Sidebar */
+        [data-testid="stSidebarCollapseButton"] {
+            color: #5a3b28 !important;
+            transition: all 0.2s ease !important;
+        }
+        [data-testid="stSidebarCollapseButton"]:hover {
+            color: #c5221f !important;
+            background-color: #fce8e6 !important;
+            transform: scale(1.05);
+        }
 
-/* Conteúdo flexível dentro do cartão para manter alinhamento */
-.card-content {
-    display: flex;
-    flex-direction: column;
-    height: 125px; /* Altura fixa garante que o grid não quebre */
-}
-.c-icon { font-size: 34px; margin-bottom: 10px; line-height: 1; }
-.c-title { font-size: 16px; font-weight: 800; color: #333; margin-bottom: 6px; }
-.c-desc { font-size: 13px; color: #666; line-height: 1.4; flex-grow: 1; }
+        /* =========================================
+            SIDEBAR - FUNDO E CARTÃO DO USUÁRIO
+        ========================================== */
+        section[data-testid="stSidebar"] {
+            background-color: #faf7f3 !important;
+            border-right: 1px solid #e8ddd3 !important;
+        }
+        
+        .sidebar-brand {
+            font-size: 19px !important; font-weight: 800 !important; color: #5a3b28 !important;
+            margin-top: 5px !important; margin-bottom: 15px !important; text-align: center;
+        }
+        
+        .user-card {
+            background: #ffffff; border: 1px solid #dfcdbb; border-radius: 12px;
+            padding: 14px 10px !important; margin-bottom: 10px !important;
+            box-shadow: 0 2px 6px rgba(90,59,40,0.04); display: flex; flex-direction: column; align-items: center;
+        }
+        
+        .user-name { font-weight: 800; color: #333; font-size: 15px !important; margin-bottom: 4px; line-height: 1.2; text-align: center; }
+        
+        .user-role {
+            background-color: #f3ece6; color: #775a46; font-size: 10px !important;
+            font-weight: 800; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
 
-/* =========================================
-   BOTÕES DE AÇÃO DOS CARTÕES
-========================================== */
-div[data-testid="stPageLink"] { margin-top: 8px !important; margin-bottom: 0 !important; }
-div[data-testid="stPageLink"] a { 
-    background-color: #f3ece6 !important; color: #5a3b28 !important; 
-    border-radius: 10px !important; font-weight: 700 !important; font-size: 14px !important; 
-    padding: 10px 14px !important; display: flex !important; justify-content: center !important; 
-    transition: all 0.2s ease !important; border: 1px solid transparent !important;
-}
-div[data-testid="stPageLink"] a:hover { 
-    background-color: #5a3b28 !important; color: #ffffff !important; 
-    transform: translateY(-2px); box-shadow: 0 4px 10px rgba(90,59,40,0.2);
-}
+        /* =======================================================
+            ESPAÇAMENTO PERFEITO DOS LINKS (GAP)
+        ======================================================= */
+        
+        /* Controla a distância global entre os blocos sem usar margem negativa */
+        section[data-testid="stSidebar"] > div > div > div > div > div[data-testid="stVerticalBlock"] {
+            gap: 0.35rem !important; 
+        }
 
-/* =========================================
-   RESPONSIVIDADE (CELULARES)
-========================================== */
-@media (max-width: 768px) {
-    .block-container { padding: 1.5rem 1rem !important; }
-    .card-content { height: auto; margin-bottom: 12px; } /* Libera a altura no mobile */
-    .login-box { padding: 30px 20px; }
-}
-</style>
-""",
-unsafe_allow_html=True
-)
+        /* Zera margens externas apenas dos links */
+        div[data-testid="stPageLink"] { 
+            margin: 0 !important; 
+            padding: 0 !important;
+        }
+
+        /* Estiliza o botão do link com respiro interno agradável */
+        div[data-testid="stPageLink"] a {
+            border-radius: 8px !important;
+            padding: 10px 14px !important;  
+            color: #5a3b28 !important;
+            font-weight: 700 !important;
+            font-size: 14px !important;
+            background-color: transparent !important;
+            border: none !important;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+            display: flex !important;
+            align-items: center !important;
+            text-decoration: none !important;
+        }
+
+        /* Efeito Magnético: Hover */
+        div[data-testid="stPageLink"] a:hover {
+            background-color: #e8ddd3 !important;
+            color: #222 !important;
+            transform: translateX(4px);
+        }
+
+        /* =========================================
+            LINHAS DIVISÓRIAS E BOTÃO DE SAIR
+        ========================================== */
+        section[data-testid="stSidebar"] hr {
+            margin: 10px 0 !important;
+            border-bottom: 1px solid #dfcdbb !important;
+        }
+
+        div[data-testid="stSidebar"] button[kind="secondary"] {
+            border-radius: 8px !important;
+            font-size: 14px !important; font-weight: 700 !important;
+            border: 1px solid #dfcdbb !important; background-color: #ffffff !important;
+            color: #c5221f !important; min-height: 44px !important;
+            margin-top: 5px !important;
+            transition: all 0.2s ease !important;
+        }
+        div[data-testid="stSidebar"] button[kind="secondary"]:hover {
+            background-color: #fce8e6 !important; border-color: #f5c6cb !important;
+            box-shadow: 0 4px 10px rgba(197, 34, 31, 0.1) !important;
+            transform: translateY(-2px);
+        }
+
+        /* =========================================
+            CELULAR - AJUSTE FINO (MOBILE)
+        ========================================== */
+        @media (max-width: 768px) {
+            div[data-testid="stPageLink"] a { 
+                padding: 12px 14px !important; 
+                font-size: 15px !important; 
+            }
+            
+            section[data-testid="stSidebar"] hr { 
+                margin: 12px 0 !important; 
+            }
+            
+            div[data-testid="stSidebar"] button[kind="secondary"] { 
+                min-height: 48px !important; 
+                font-size: 15px !important;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
 # =====================================================
-# ROTINA DE LOGOUT (SEGURO)
+# MENU LATERAL PERSONALIZADO E BLOQUEIO DE ACESSO
 # =====================================================
-if st.session_state.get("fazer_logout"):
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    st.rerun()
 
-# =====================================================
-# TELA DE LOGIN BLINDADA
-# =====================================================
-if "usuario" not in st.session_state:
-    
-    col_vazia1, col_login, col_vazia2 = st.columns([1, 1.2, 1])
-    
-    with col_login:
+def menu_lateral():
+    usuario = st.session_state.get("usuario")
+
+    if not usuario:
+        return
+
+    perfil = usuario.get("perfil", "Operador")
+    nome_formatado = str(usuario.get("login", "Usuário")).capitalize()
+
+    with st.sidebar:
+        st.markdown('<div class="sidebar-brand">🎁 Doce Cesta Brasília</div>', unsafe_allow_html=True)
+
         st.markdown(
-            """
-            <div class="login-box">
-                <div class="login-logo">🎁</div>
-                <div class="login-title">Doce Cesta Brasília</div>
+            f"""
+            <div class="user-card">
+                <div class="user-name">👤 {nome_formatado}</div>
+                <div class="user-role">{perfil}</div>
             </div>
-            """, unsafe_allow_html=True
+            """,
+            unsafe_allow_html=True
         )
-        
-        with st.container(border=True):
-            st.markdown("<div style='text-align: center; color: #775a46; font-weight: 700; margin-bottom: 15px;'>🔒 ACESSO RESTRITO</div>", unsafe_allow_html=True)
-            login = st.text_input("Usuário", placeholder="Digite seu login")
-            senha = st.text_input("Senha", type="password", placeholder="••••••••")
-            
-            st.write("")
-            if st.button("Entrar no Sistema", use_container_width=True, type="primary"):
-                if login and senha:
-                    try:
-                        res = supabase.table("usuarios").select("*").eq("login", login).eq("senha", senha).execute()
-                        if res.data and len(res.data) > 0:
-                            st.session_state["usuario"] = res.data[0]
-                            st.rerun()
-                        else:
-                            st.error("❌ Usuário ou senha incorretos.")
-                    except Exception as e:
-                        st.error("❌ Erro ao conectar ao banco de dados.")
-                else:
-                    st.warning("⚠️ Preencha usuário e senha.")
-                    
-    st.stop()
 
+        st.divider()
 
-# =====================================================
-# CARREGA MENU, USUÁRIO E SAUDAÇÃO INTELIGENTE
-# =====================================================
-menu_lateral()
-usuario = st.session_state.usuario
-perfil = usuario.get("perfil", "Operador")
+        # Todos têm acesso à Home
+        st.page_link("pages/99_Admin.py", label="🏠 Administração")
 
-hora_atual = datetime.now().hour
-if hora_atual < 12: saudacao = "Bom dia"
-elif hora_atual < 18: saudacao = "Boa tarde"
-else: saudacao = "Boa noite"
+        # Sequência exata solicitada:
+        # 1. Gestão de Pedidos
+        if perfil in ["Administrador", "Operador"]:
+            st.page_link("pages/02_Pedidos.py", label="📦 Gestão de Pedidos")
 
-nome_formatado = str(usuario.get('login', 'Usuário')).capitalize()
+        # 2. Previsão de Produção
+        if perfil in ["Administrador", "Operador"]:
+            st.page_link("pages/16_Previsao.py", label="📅 Previsão de Produção")
 
-st.markdown(f"<h1>👋 {saudacao}, {nome_formatado}!</h1>", unsafe_allow_html=True)
-st.markdown(f"<div class='subtitle'>Bem-vindo ao Painel de Controle ({perfil}). O que vamos fazer hoje?</div>", unsafe_allow_html=True)
+        # 3. Rotas de Entrega
+        if perfil in ["Administrador", "Operador", "Entregador"]:
+            st.page_link("pages/08_Entregas.py", label="🛵 Rotas de Entrega")
 
+        # 4. Base de Clientes
+        if perfil in ["Administrador", "Operador"]:
+            st.page_link("pages/03_Clientes.py", label="👥 Base de Clientes")
 
-# =====================================================
-# GATILHO INTELIGENTE: ALERTA DIÁRIO DE PRODUÇÃO NO TELEGRAM
-# =====================================================
-if perfil in ["Administrador", "Operador"]:
-    hoje_str = str(date.today())
-    
-    # Verifica se já disparou hoje (usando a sessão do usuário)
-    if "alerta_producao_data" not in st.session_state or st.session_state["alerta_producao_data"] != hoje_str:
-        try:
-            from services.telegram_service import enviar_notificacao_telegram
-            
-            # Busca todas as cestas pagas no banco
-            res = supabase.table("pedidos").select("data_entrega").eq("status", "Pago").execute()
-            pagos = res.data or []
-            
-            amanha = (date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
-            depois = (date.today() + timedelta(days=2)).strftime("%Y-%m-%d")
-            
-            qtd_amanha = sum(1 for p in pagos if str(p.get("data_entrega"))[:10] == amanha)
-            qtd_depois = sum(1 for p in pagos if str(p.get("data_entrega"))[:10] == depois)
-            
-            # Se houver pedidos para amanhã ou depois, ele dispara silenciosamente
-            if qtd_amanha > 0 or qtd_depois > 0:
-                texto_auto = f"🤖 *RESUMO AUTOMÁTICO DE PRODUÇÃO*\n\nExistem cestas pagas aguardando montagem:\n"
-                if qtd_amanha > 0: texto_auto += f"📅 Amanhã: {qtd_amanha} cesta(s)\n"
-                if qtd_depois > 0: texto_auto += f"📅 Depois de amanhã: {qtd_depois} cesta(s)\n"
-                texto_auto += "\nAcesse o painel 'Previsão de Produção' no sistema para ver os detalhes."
-                
-                enviar_notificacao_telegram(texto_auto)
-                
-            # Salva que já verificou hoje
-            st.session_state["alerta_producao_data"] = hoje_str
-        except Exception:
-            pass # Ignora silenciosamente se o Telegram falhar
+        # 5. Cestas Base
+        if perfil in ["Administrador", "Operador"]:
+            st.page_link("pages/04_Cestas.py", label="🧺 Cestas Base")
 
+        # 6. Produtos & Extras
+        if perfil in ["Administrador", "Operador"]:
+            st.page_link("pages/05_Produtos.py", label="🍫 Produtos & Extras")
 
-# =====================================================
-# DASHBOARD DE ATALHOS (BASEADO NO PERFIL)
-# =====================================================
+        # Módulos extras de categorias e gestão avançada para manter integridade
+        if perfil in ["Administrador", "Operador"]:
+            st.page_link("pages/15_Categorias.py", label="📂 Categorias")
 
-# -----------------------------------------------------
-# VISAO DO ENTREGADOR (Apenas Logística)
-# -----------------------------------------------------
-if perfil == "Entregador":
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        with st.container(border=True):
-            st.markdown(
-                """
-                <div class="card-content">
-                    <div class="c-icon">🛵</div>
-                    <div class="c-title">Minhas Entregas</div>
-                    <div class="c-desc">Acesse suas rotas, utilize o GPS e confirme as entregas realizadas.</div>
-                </div>
-                """, unsafe_allow_html=True
-            )
-            st.page_link("pages/08_Entregas.py", label="Abrir Rota de Entrega")
+        # Módulo Financeiro e Configurações (Apenas Administrador)
+        if perfil == "Administrador":
+            st.divider()
+            st.page_link("pages/06_Financeiro.py", label="💰 Financeiro")
+            st.page_link("pages/07_Usuarios.py", label="🔐 Usuários")
 
-# -----------------------------------------------------
-# VISÃO DO OPERADOR E ADMINISTRADOR (Completo na nova sequência)
-# -----------------------------------------------------
-else:
-    # --- PRIMEIRA LINHA ---
-    c1, c2, c3 = st.columns(3)
-    
-    with c1:
-        with st.container(border=True):
-            st.markdown(
-                """
-                <div class="card-content">
-                    <div class="c-icon">📦</div>
-                    <div class="c-title">Gestão de Pedidos</div>
-                    <div class="c-desc">Administre as vendas, aprove pagamentos e crie pedidos manuais (WhatsApp).</div>
-                </div>
-                """, unsafe_allow_html=True
-            )
-            st.page_link("pages/02_Pedidos.py", label="Acessar Pedidos")
-            
-    with c2:
-        with st.container(border=True):
-            st.markdown(
-                """
-                <div class="card-content">
-                    <div class="c-icon">📅</div>
-                    <div class="c-title">Previsão de Produção</div>
-                    <div class="c-desc">Acompanhe diariamente o volume de cestas e pedidos que precisam ser montados.</div>
-                </div>
-                """, unsafe_allow_html=True
-            )
-            st.page_link("pages/16_Previsao.py", label="Acessar Previsão")
+        st.divider()
 
-    with c3:
-        with st.container(border=True):
-            st.markdown(
-                """
-                <div class="card-content">
-                    <div class="c-icon">🛵</div>
-                    <div class="c-title">Rotas de Entrega</div>
-                    <div class="c-desc">Painel logístico em tempo real para visualização e acompanhamento de entregas.</div>
-                </div>
-                """, unsafe_allow_html=True
-            )
-            st.page_link("pages/08_Entregas.py", label="Monitorar Entregas")
-
-
-    # --- SEGUNDA LINHA ---
-    st.write("")
-    c4, c5, c6 = st.columns(3)
-    
-    with c4:
-        with st.container(border=True):
-            st.markdown(
-                """
-                <div class="card-content">
-                    <div class="c-icon">👥</div>
-                    <div class="c-title">Base de Clientes</div>
-                    <div class="c-desc">Veja o histórico de compras, LTV e o ranking dos seus melhores clientes.</div>
-                </div>
-                """, unsafe_allow_html=True
-            )
-            st.page_link("pages/03_Clientes.py", label="Acessar Clientes")
-            
-    with c5:
-        with st.container(border=True):
-            st.markdown(
-                """
-                <div class="card-content">
-                    <div class="c-icon">🧺</div>
-                    <div class="c-title">Cestas Base</div>
-                    <div class="c-desc">Crie e edite as cestas e pacotes principais exibidos na vitrine da loja.</div>
-                </div>
-                """, unsafe_allow_html=True
-            )
-            st.page_link("pages/04_Cestas.py", label="Montar Cestas")
-
-    with c6:
-        with st.container(border=True):
-            st.markdown(
-                """
-                <div class="card-content">
-                    <div class="c-icon">🍫</div>
-                    <div class="c-title">Produtos & Extras</div>
-                    <div class="c-desc">Estoque de produtos internos, chocolates, vinhos e itens de adicionais.</div>
-                </div>
-                """, unsafe_allow_html=True
-            )
-            st.page_link("pages/05_Produtos.py", label="Estoque de Itens")
-
-
-    # --- TERCEIRA LINHA: EXCLUSIVA ADMINISTRADOR ---
-    if perfil == "Administrador":
-        st.write("")
-        st.markdown("### ⚙️ Gestão Avançada")
-        c7, c8, c9 = st.columns(3)
-        
-        with c7:
-            with st.container(border=True):
-                st.markdown(
-                    """
-                    <div class="card-content">
-                        <div class="c-icon">💰</div>
-                        <div class="c-title">Financeiro</div>
-                        <div class="c-desc">Relatórios detalhados, faturamento e balanço da empresa.</div>
-                    </div>
-                    """, unsafe_allow_html=True
-                )
-                st.page_link("pages/06_Financeiro.py", label="Painel Financeiro")
-                
-        with c8:
-            with st.container(border=True):
-                st.markdown(
-                    """
-                    <div class="card-content">
-                        <div class="c-icon">🔐</div>
-                        <div class="c-title">Usuários</div>
-                        <div class="c-desc">Cadastre operadores, entregadores e controle acessos.</div>
-                    </div>
-                    """, unsafe_allow_html=True
-                )
-                st.page_link("pages/07_Usuarios.py", label="Controle de Acessos")
-        
-        with c9:
-            with st.container(border=True):
-                st.markdown(
-                    """
-                    <div class="card-content">
-                        <div class="c-icon">📂</div>
-                        <div class="c-title">Categorias</div>
-                        <div class="c-desc">Estruture e organize perfeitamente os produtos dentro do seu catálogo.</div>
-                    </div>
-                    """, unsafe_allow_html=True
-                )
-                st.page_link("pages/15_Categorias.py", label="Gerir Categorias")
+        # Botão de Logout Seguro
+        if st.button("🚪 Sair da Conta", use_container_width=True):
+            st.session_state["fazer_logout"] = True
+            st.switch_page("pages/99_Admin.py")
