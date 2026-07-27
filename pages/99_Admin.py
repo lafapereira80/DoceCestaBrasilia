@@ -1,163 +1,180 @@
 import streamlit as st
-import base64
-import time
-from pathlib import Path
-from streamlit_cookies_controller import CookieController
-
-from services.usuario_service import autenticar_usuario
-from utils.menu import configurar_pagina
+from config.supabase import supabase
+from utils.menu import configurar_pagina, menu_lateral
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA
+# CONFIGURAÇÃO DA PÁGINA E CSS PREMIUM
 # =====================================================
-st.set_page_config(page_title="Área Administrativa", page_icon="🔒", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Administração", page_icon="🔒", layout="wide")
 configurar_pagina()
 
-# =====================================================
-# GERENCIADOR DE COOKIES (Único local do sistema)
-# =====================================================
-controller = CookieController()
-
-# =====================================================
-# TRATAMENTO DE LOGOUT SEGURO
-# =====================================================
-if st.session_state.get("fazer_logout"):
-    st.session_state.clear() # Limpa a memória toda
-    try:
-        controller.remove("doce_cesta_admin") # Apaga o cookie
-    except:
-        pass
-    time.sleep(0.5)
-    st.rerun()
-
-# =====================================================
-# CSS ULTRA COMPACTO E LOGO
-# =====================================================
 st.markdown(
 """
 <style>
-section[data-testid="stSidebar"] { display: none !important; }
-[data-testid="collapsedControl"] { display: none !important; }
-#MainMenu { display: none !important; }
-header { display: none !important; }
-footer { display: none !important; }
-.block-container { max-width: 650px !important; padding-top: 1.5rem !important; padding-bottom: 2rem !important; }
-div[data-testid="stVerticalBlock"] { gap: 0.8rem !important; }
-.admin-logo-banner { display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 8px; }
-.admin-logo-img { width: 100px; height: auto; object-fit: contain; }
-.titulo { text-align: center; font-size: 24px; font-weight: 700; color: #5a3b28; margin-top: 4px; }
-.subtitulo { text-align: center; font-size: 14px; color: #775a46; margin-bottom: 12px; }
-div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1px solid #e8ddd3 !important; border-radius: 12px !important; padding: 16px 20px !important; margin-bottom: 8px !important; box-shadow: 0 2px 6px rgba(90, 59, 40, 0.04); }
-.card-title { font-size: 15px !important; font-weight: 700 !important; color: #5a3b28 !important; margin-bottom: 10px !important; text-align: center; }
-div[data-baseweb="input"] { border-radius: 8px !important; }
-input { font-size: 13px !important; }
-.stButton button { background: #5a3b28 !important; color: white !important; border-radius: 8px !important; height: 38px !important; font-size: 13px !important; font-weight: 700 !important; border: none !important; transition: all 0.2s ease !important; }
-.stButton button:hover { background: #42291d !important; color: white !important; }
-div[data-testid="stPageLink"] { margin-bottom: 6px !important; }
-div[data-testid="stPageLink"] a { border-radius: 10px !important; background-color: #faf7f3 !important; border: 1px solid #dfcdbb !important; color: #5a3b28 !important; font-weight: 700 !important; font-size: 13px !important; padding: 10px !important; text-align: center !important; justify-content: center !important; transition: all 0.2s ease !important; display: flex !important; box-sizing: border-box !important; }
-div[data-testid="stPageLink"] a:hover { background-color: #f3ece6 !important; border-color: #5a3b28 !important; }
-.rodape { text-align: center; font-size: 12px; color: #888; margin-top: 15px; }
-@media (max-width: 640px) { .admin-logo-img { width: 50px !important; } .titulo { font-size: 20px !important; } .subtitulo { font-size: 12px !important; } }
+.block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; max-width: 1100px; }
+h1, h2, h3 { color: #5a3b28 !important; font-weight: 800 !important; }
+.subtitle { color: #775a46; font-size: 15px; margin-bottom: 30px; }
+
+/* Centralizador de Login */
+.login-container { max-width: 400px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 16px; border: 1px solid #dfcdbb; box-shadow: 0 8px 24px rgba(90, 59, 40, 0.08); text-align: center; }
+.login-logo { font-size: 40px; margin-bottom: 10px; }
+.login-title { font-size: 22px; font-weight: 800; color: #5a3b28; margin-bottom: 20px; }
+
+/* Grid do Dashboard */
+div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1px solid #dfcdbb !important; border-radius: 14px !important; padding: 16px !important; margin-bottom: 12px !important; box-shadow: 0 2px 6px rgba(90, 59, 40, 0.04); transition: all 0.2s ease; height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
+div[data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: #c9b19c !important; transform: translateY(-3px); box-shadow: 0 6px 12px rgba(90, 59, 40, 0.1); }
+
+.card-icon { font-size: 28px; margin-bottom: 8px; }
+.card-title { font-size: 16px; font-weight: 800; color: #333; margin-bottom: 4px; }
+.card-desc { font-size: 12px; color: #666; line-height: 1.4; margin-bottom: 16px; flex-grow: 1; }
+
+div[data-testid="stPageLink"] > a { background-color: #f3ece6 !important; color: #5a3b28 !important; border-radius: 8px !important; font-weight: 700 !important; font-size: 13px !important; padding: 10px !important; justify-content: center !important; transition: all 0.2s ease; border: 1px solid #dfcdbb !important; }
+div[data-testid="stPageLink"] > a:hover { background-color: #5a3b28 !important; color: #ffffff !important; border-color: #5a3b28 !important; }
+
+/* Botões Nativos */
+div[data-testid="stButton"] button { border-radius: 8px !important; font-weight: 700 !important; }
+
+@media (max-width: 768px) {
+    .block-container { padding-top: 1rem !important; padding-left: 1rem !important; padding-right: 1rem !important; }
+    .login-container { padding: 20px; }
+}
 </style>
-""", unsafe_allow_html=True)
-
-logo_path = Path("assets/logo.webp")
-logo_html = ""
-if logo_path.exists():
-    with open(logo_path, "rb") as img_file:
-        encoded_logo = base64.b64encode(img_file.read()).decode()
-    logo_html = f'<img src="data:image/webp;base64,{encoded_logo}" class="admin-logo-img" alt="Logo">'
-
-st.markdown(f'<div class="admin-logo-banner">{logo_html}</div>', unsafe_allow_html=True)
-st.markdown("<div class='titulo'>Painel Administrativo</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitulo'>Doce Cesta Brasília</div>", unsafe_allow_html=True)
-
+""",
+unsafe_allow_html=True
+)
 
 # =====================================================
-# AUTO-LOGIN MÁGICO (Com armadura contra erros)
+# ROTINA DE LOGOUT (SEGURO)
 # =====================================================
-if not st.session_state.get("usuario"):
-    if not st.session_state.get("aguardou_cookie"):
-        st.session_state["aguardou_cookie"] = True
-        time.sleep(0.5)
-        st.rerun()
+if st.session_state.get("fazer_logout"):
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.rerun()
+
+# =====================================================
+# TELA DE LOGIN
+# =====================================================
+if "usuario" not in st.session_state:
+    st.markdown("<div style='margin-top: 5vh;'></div>", unsafe_allow_html=True)
+    
+    col_l1, col_login, col_l3 = st.columns([1, 1.5, 1])
+    with col_login:
+        st.markdown(
+            """
+            <div class="login-container">
+                <div class="login-logo">🎁</div>
+                <div class="login-title">Doce Cesta Brasília</div>
+            </div>
+            """, unsafe_allow_html=True
+        )
         
-    cookie_user = None
-    try:
-        # Tenta ler o cookie protegido por Try/Except
-        cookie_user = controller.get("doce_cesta_admin")
-    except Exception:
-        pass
-        
-    if cookie_user:
-        st.session_state["usuario"] = cookie_user
-        st.rerun()
-
-
-# =====================================================
-# TELA DE LOGIN (Se realmente não tiver cookie)
-# =====================================================
-if not st.session_state.get("usuario"):
-    with st.container(border=True):
-        st.markdown("<div class='card-title'>🔐 Acesso Administrativo</div>", unsafe_allow_html=True)
-        login = st.text_input("Usuário", placeholder="Digite seu usuário")
-        senha = st.text_input("Senha", type="password", placeholder="Digite sua senha")
-        st.write("")
-        entrar = st.button("Entrar no Sistema", use_container_width=True)
-
-        if entrar:
-            usuario = autenticar_usuario(login, senha)
-            if usuario:
-                st.session_state["usuario"] = usuario
-                try:
-                    controller.set("doce_cesta_admin", usuario, max_age=2592000)
-                except:
-                    pass
-                time.sleep(0.6)
-                st.rerun()
-            else:
-                st.error("Usuário ou senha inválidos.")
+        with st.container(border=True):
+            st.write("🔒 **Acesso Restrito**")
+            login = st.text_input("Usuário", placeholder="Digite seu login")
+            senha = st.text_input("Senha", type="password", placeholder="••••••••")
+            
+            st.write("")
+            if st.button("Entrar no Sistema", use_container_width=True, type="primary"):
+                if login and senha:
+                    try:
+                        res = supabase.table("usuarios").select("*").eq("login", login).eq("senha", senha).execute()
+                        if res.data and len(res.data) > 0:
+                            st.session_state["usuario"] = res.data[0]
+                            st.rerun()
+                        else:
+                            st.error("❌ Usuário ou senha incorretos.")
+                    except Exception as e:
+                        st.error("❌ Erro ao conectar ao banco de dados.")
+                else:
+                    st.warning("⚠️ Preencha usuário e senha.")
+                    
     st.stop()
 
 
 # =====================================================
-# TELA PRINCIPAL (Painel de Módulos)
+# CARREGA MENU E DADOS DO USUÁRIO
 # =====================================================
+menu_lateral()
 usuario = st.session_state.usuario
+perfil = usuario.get("perfil", "Operador")
 
-with st.container(border=True):
-    col_u1, col_u2 = st.columns([3.5, 1])
-    with col_u1:
-        st.markdown(f"👤 **{usuario['login']}** | Perfil: **{usuario['perfil']}**")
-    with col_u2:
-        if st.button("🚪 Sair", use_container_width=True):
-            st.session_state["fazer_logout"] = True
-            st.rerun()
+st.markdown(f"<h1>👋 Olá, {usuario.get('login', 'Usuário')}!</h1>", unsafe_allow_html=True)
+st.markdown(f"<div class='subtitle'>Bem-vindo ao Painel de Controle ({perfil}). O que vamos fazer hoje?</div>", unsafe_allow_html=True)
 
-st.subheader("📂 Módulos do Sistema")
-st.caption("Selecione o módulo que deseja acessar.")
 
-col1, col2, col3 = st.columns(3)
-with col1: st.page_link("pages/02_Pedidos.py", label="📋 Pedidos", use_container_width=True)
-with col2: st.page_link("pages/03_Clientes.py", label="👥 Clientes", use_container_width=True)
-with col3: st.page_link("pages/04_Cestas.py", label="🎁 Cestas", use_container_width=True)
+# =====================================================
+# DASHBOARD DE ATALHOS (BASEADO NO PERFIL)
+# =====================================================
 
-col1, col2, col3 = st.columns(3)
-with col1: st.page_link("pages/05_Produtos.py", label="🛒 Produtos", use_container_width=True)
-with col2:
-    if usuario["perfil"] in ["Administrador", "Operador"]: st.page_link("pages/15_Categorias.py", label="📂 Categorias", use_container_width=True)
-    else: st.info("Sem acesso")
-with col3:
-    if usuario["perfil"] == "Administrador": st.page_link("pages/06_Financeiro.py", label="💰 Financeiro", use_container_width=True)
-    else: st.info("Sem acesso")
+# -----------------------------------------------------
+# VISAO DO ENTREGADOR (Apenas Logística)
+# -----------------------------------------------------
+if perfil == "Entregador":
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        with st.container(border=True):
+            st.markdown('<div class="card-icon">🛵</div>', unsafe_allow_html=True)
+            st.markdown('<div class="card-title">Minhas Entregas</div>', unsafe_allow_html=True)
+            st.markdown('<div class="card-desc">Acesse suas rotas, utilize o GPS e confirme as entregas realizadas.</div>', unsafe_allow_html=True)
+            st.page_link("pages/08_Entregas.py", label="Abrir Rota", use_container_width=True)
 
-col1, col2, col3 = st.columns(3)
-with col1:
-    if usuario["perfil"] == "Administrador": st.page_link("pages/07_Usuarios.py", label="👤 Usuários", use_container_width=True)
-    else: st.info("Sem acesso")
+# -----------------------------------------------------
+# VISÃO DO OPERADOR E ADMINISTRADOR (Completo)
+# -----------------------------------------------------
+else:
+    # Primeira Linha - Atendimento e Logística
+    c1, c2, c3 = st.columns(3)
+    
+    with c1:
+        with st.container(border=True):
+            st.markdown('<div class="card-icon">📦</div><div class="card-title">Pedidos</div><div class="card-desc">Gerencie novos pedidos, aprove pagamentos e crie pedidos manuais.</div>', unsafe_allow_html=True)
+            st.page_link("pages/02_Pedidos.py", label="Acessar Pedidos")
+            
+    with c2:
+        with st.container(border=True):
+            st.markdown('<div class="card-icon">🛵</div><div class="card-title">Rotas de Entrega</div><div class="card-desc">Painel logístico para visualização e acompanhamento dos Entregadores.</div>', unsafe_allow_html=True)
+            st.page_link("pages/08_Entregas.py", label="Monitorar Entregas")
 
-if usuario["perfil"] != "Administrador":
-    st.warning("⚠️ Perfil Operador: acesso limitado aos módulos operacionais.")
+    with c3:
+        with st.container(border=True):
+            st.markdown('<div class="card-icon">👥</div><div class="card-title">Clientes</div><div class="card-desc">Veja o histórico de compras, LTV e o ranking dos seus melhores clientes.</div>', unsafe_allow_html=True)
+            st.page_link("pages/03_Clientes.py", label="Base de Clientes")
 
-st.divider()
-st.markdown('<div class="rodape">Doce Cesta Brasília<br>Sistema Administrativo © 2026</div>', unsafe_allow_html=True)
+    # Segunda Linha - Catálogo
+    st.write("")
+    c4, c5, c6 = st.columns(3)
+    
+    with c4:
+        with st.container(border=True):
+            st.markdown('<div class="card-icon">🧺</div><div class="card-title">Cestas base</div><div class="card-desc">Crie e edite as cestas principais que serão exibidas na vitrine da loja.</div>', unsafe_allow_html=True)
+            st.page_link("pages/04_Cestas.py", label="Montar Cestas")
+            
+    with c5:
+        with st.container(border=True):
+            st.markdown('<div class="card-icon">🍫</div><div class="card-title">Produtos / Complementos</div><div class="card-desc">Estoque de produtos internos e itens adicionais (como Polaroid e Canecas).</div>', unsafe_allow_html=True)
+            st.page_link("pages/05_Produtos.py", label="Estoque de Itens")
+
+    with c6:
+        with st.container(border=True):
+            st.markdown('<div class="card-icon">📂</div><div class="card-title">Categorias</div><div class="card-desc">Organize as categorias para estruturar perfeitamente o seu catálogo.</div>', unsafe_allow_html=True)
+            st.page_link("pages/15_Categorias.py", label="Gerir Categorias")
+
+    # Terceira Linha - Apenas para Administradores (Financeiro e Permissões)
+    if perfil == "Administrador":
+        st.write("")
+        st.markdown("### ⚙️ Gestão Avançada")
+        c7, c8, c9 = st.columns(3)
+        
+        with c7:
+            with st.container(border=True):
+                st.markdown('<div class="card-icon">💰</div><div class="card-title">Financeiro</div><div class="card-desc">Relatórios detalhados, faturamento mensal e balanço geral da empresa.</div>', unsafe_allow_html=True)
+                st.page_link("pages/06_Financeiro.py", label="Painel Financeiro")
+                
+        with c8:
+            with st.container(border=True):
+                st.markdown('<div class="card-icon">🔐</div><div class="card-title">Usuários</div><div class="card-desc">Cadastre novos operadores ou entregadores e gerencie senhas de acesso.</div>', unsafe_allow_html=True)
+                st.page_link("pages/07_Usuarios.py", label="Controle de Acessos")
+        
+        with c9:
+            # Coluna vazia para alinhar o grid bonitinho
+            st.empty()
