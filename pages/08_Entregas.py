@@ -382,7 +382,6 @@ else:
             st.info("👇 Abaixo estão as cestas atribuídas à sua rota. Ajuste a ordem clicando nas setas e Inicie quando estiver pronto.")
             salvar_ordem(pedidos_ativos_driver)
             
-            # Exibe os cards idênticos à Fila de Despacho, sem número do pedido
             for i, ped in enumerate(pedidos_ativos_driver):
                 with st.container(border=True):
                     endereco_completo = ped.get('endereco', 'Endereço não informado')
