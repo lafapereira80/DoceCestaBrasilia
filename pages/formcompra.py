@@ -163,8 +163,6 @@ if logo_path.exists():
 if st.session_state["pedido_enviado_com_sucesso"]:
     dados = st.session_state["resumo_pedido_sucesso"]
     
-    # IMPORTANTE: As strings HTML abaixo NÃO podem ter espaços/tabs 
-    # no início de cada linha para evitar que o Streamlit as transforme em "Código"
     html_banner = f"""
 <div class="header-banner">
     {logo_html}
@@ -190,6 +188,7 @@ if st.session_state["pedido_enviado_com_sucesso"]:
         🎁 <b>Cesta:</b> {dados.get('cesta_nome')}<br>
         🛒 <b>Produtos/Personalização:</b><br>{dados.get('produtos').replace(chr(10), '<br>')}<br><br>
         🎀 <b>Complementos:</b> {dados.get('adicionais_str') if dados.get('adicionais_str') else 'Nenhum'}<br>
+        🚚 <b>Frete:</b> A calcular<br>
         📷 <b>Fotos Polaroid Enviadas:</b> {dados.get('qtd_fotos')} foto(s)<br>
         📅 <b>Data da Entrega:</b> {dados.get('data_entrega')}<br>
         🕘 <b>Turno da Entrega:</b> {dados.get('periodo_entrega')}<br>
@@ -200,7 +199,7 @@ if st.session_state["pedido_enviado_com_sucesso"]:
         </div>
         
         <hr style="border: 0; border-top: 1px dashed #dfcdbb; margin: 10px 0;">
-        💰 <b>Valor Total Estimado:</b> <span style="color: #2e7d32; font-size: 16px; font-weight: 800;">{dados.get('valor_total')}</span>
+        💰 <b>Valor Total Estimado (sem frete):</b> <span style="color: #2e7d32; font-size: 16px; font-weight: 800;">{dados.get('valor_total')}</span>
     </div>
 </div>
 """
@@ -504,17 +503,20 @@ valor_total_estimado = valor_base_cesta + valor_adicionais_calculado
 if cesta_obj:
     with st.container(border=True):
         st.markdown('<div class="secao-titulo">💰 Resumo do Pedido</div>', unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         with col1: 
             st.caption("🎁 Valor da cesta")
             st.markdown(f"**R$ {valor_base_cesta:,.2f}**".replace(",", "X").replace(".", ",").replace("X","."))
         with col2: 
             st.caption("🎀 Complementos")
             st.markdown(f"**R$ {valor_adicionais_calculado:,.2f}**".replace(",", "X").replace(".", ",").replace("X","."))
+        with col3:
+            st.caption("🚚 Frete")
+            st.markdown("**A calcular**")
         
         st.divider()
         val_total_fmt = f"R$ {valor_total_estimado:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
-        st.success(f"💝 Valor estimado: **{val_total_fmt}**")
+        st.success(f"💝 Valor estimado (sem frete): **{val_total_fmt}**")
         
         # Alerta reativo (Aparece instantaneamente se marcar um item sem preço configurado)
         if tem_adicional_consulta: 
