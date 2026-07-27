@@ -4,7 +4,6 @@ import urllib.parse
 from uuid import uuid4
 import re
 
-# Importando apenas o necessário
 from services.pedido_service import buscar_pedido
 from services.pedido_adicional_service import listar_adicionais_pedido
 from config.supabase import supabase
@@ -12,7 +11,6 @@ from services.cesta_service import buscar_cesta, listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
-
 
 # =====================================================
 # CONFIGURAÇÃO DA PÁGINA E CSS
@@ -51,9 +49,6 @@ div[data-testid="stLinkButton"] > a:hover { background-color: #128C7E !important
 unsafe_allow_html=True
 )
 
-# =====================================================
-# VALIDA PEDIDO ABERTO E BUSCA DADOS
-# =====================================================
 if "pedido_aberto" not in st.session_state:
     st.error("Nenhum pedido selecionado.")
     st.stop()
@@ -65,15 +60,10 @@ if not pedido:
     st.error("Pedido não encontrado.")
     st.stop()
 
-
-# -----------------------------------------------------
-# FILTRO ANTI-DUPLICIDADE DE ADICIONAIS
-# -----------------------------------------------------
 try:
     lista_bruta_adicionais = listar_adicionais_pedido(pedido["id"])
     adicionais_pedido = []
     nomes_vistos = set()
-    
     for ad in lista_bruta_adicionais:
         nome_ad = ad.get("nome_produto")
         if nome_ad and nome_ad not in nomes_vistos:
@@ -81,8 +71,6 @@ try:
             nomes_vistos.add(nome_ad)
 except: 
     adicionais_pedido = []
-# -----------------------------------------------------
-
 
 if "editar_pedido" not in st.session_state:
     st.session_state.editar_pedido = False
@@ -92,10 +80,6 @@ if isinstance(itens_consulta_salvos, str):
     try: itens_consulta_salvos = json.loads(itens_consulta_salvos)
     except: itens_consulta_salvos = {}
 
-
-# =====================================================
-# FUNÇÕES DE BANCO (LIMPAS E DIRETAS)
-# =====================================================
 def atualizar_pedido(pid, dados):
     try: supabase.table("pedidos").update(dados).eq("id", pid).execute(); return True
     except: return False
@@ -104,39 +88,23 @@ def atualizar_anotacao_pedido(pid, anotacao):
     try: supabase.table("pedidos").update({"anotacoes_internas": anotacao}).eq("id", pid).execute(); return True
     except: return False
 
-
-# =====================================================
-# FOTOS - INTEGRAÇÃO PURA COM A TABELA 'pedido_fotos'
-# =====================================================
 def salvar_fotos_local(pid, arquivos):
     if not arquivos: return True, ""
     if not isinstance(arquivos, list): arquivos = [arquivos]
     erros = []
     url_base = st.secrets.get("SUPABASE_URL", "").rstrip("/")
-    
     for arquivo in arquivos:
         try:
             extensao = arquivo.name.split(".")[-1]
             nome_arquivo = f"{pid}/{uuid4()}.{extensao}"
             conteudo = arquivo.getvalue()
-            
-            # 1. Faz o upload pro Bucket (Storage)
             supabase.storage.from_("pedido_fotos").upload(nome_arquivo, conteudo, {"content-type": arquivo.type})
-            
-            # 2. Cria a URL pública baseada no padrão do Supabase
             url_publica = f"{url_base}/storage/v1/object/public/pedido_fotos/{nome_arquivo}"
-            
-            # 3. Salva no banco de dados
             supabase.table("pedido_fotos").insert({
-                "pedido_id": pid,
-                "arquivo": nome_arquivo,
-                "nome_original": arquivo.name,
-                "url": url_publica
+                "pedido_id": pid, "arquivo": nome_arquivo, "nome_original": arquivo.name, "url": url_publica
             }).execute()
-            
         except Exception as e:
-            erros.append(f"Erro ao processar {arquivo.name}: {e}")
-            
+            erros.append(f"Erro {arquivo.name}: {e}")
     if erros: return False, " | ".join(erros)
     return True, ""
 
@@ -144,29 +112,22 @@ def listar_fotos_local(pid):
     try:
         resposta = supabase.table("pedido_fotos").select("*").eq("pedido_id", pid).order("created_at").execute()
         fotos = resposta.data or []
-        
         url_base = st.secrets.get("SUPABASE_URL", "").rstrip("/")
         for foto in fotos:
             if not foto.get("url") and foto.get("arquivo"):
                 foto["url"] = f"{url_base}/storage/v1/object/public/pedido_fotos/{foto['arquivo']}"
-                
         return fotos, ""
     except Exception as e:
         return [], str(e)
 
 def deletar_foto_local(foto_id, caminho_arquivo):
     try:
-        if caminho_arquivo:
-            supabase.storage.from_("pedido_fotos").remove([caminho_arquivo])
+        if caminho_arquivo: supabase.storage.from_("pedido_fotos").remove([caminho_arquivo])
         supabase.table("pedido_fotos").delete().eq("id", foto_id).execute()
         return True, ""
     except Exception as e:
         return False, str(e)
 
-
-# =====================================================
-# FUNÇÕES AUXILIARES E WHATSAPP
-# =====================================================
 def formatar_valor(valor):
     try: return f"R$ {float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
     except: return "R$ 0,00"
@@ -195,7 +156,6 @@ def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_atual, d
     dest_nome = (pedido.get("destinatario_nome") or "").strip()
     dest_tel = (pedido.get("destinatario_telefone") or "").strip()
     motivo = (pedido.get("motivo_homenagem") or "").strip()
-    
     texto_dest = ""
     if dest_nome or dest_tel or motivo:
         texto_dest = "💝 *Entrega Especial Para:*\n"
@@ -240,10 +200,6 @@ def obter_icone_pagamento(metodo):
     else:
         return f'<span class="pgto-badge">{metodo}</span>'
 
-
-# =====================================================
-# CABEÇALHO & EDIÇÃO DO PEDIDO
-# =====================================================
 col_t1, col_t2 = st.columns([3, 1])
 with col_t1:
     st.title("📋 Detalhes do Pedido")
@@ -287,7 +243,6 @@ if st.session_state.editar_pedido:
                         cat = grupo.get("categoria", "Sem categoria")
                         prods = grupo.get("produtos", [])
                         maximo = grupo.get("max_escolhas", 1)
-
                         if not prods: continue
 
                         with st.container(border=True):
@@ -332,11 +287,7 @@ if st.session_state.editar_pedido:
                     txt = f"{nome_prod} - R$ {float(preco_prod):.2f}".replace(".",",") if preco_prod else f"{nome_prod} (Consulta)"
                     with cols[i % 3]:
                         if st.checkbox(txt, value=selec, key=f"chk_ad_{prod.get('id')}"):
-                            adicionais_selecionados.append({
-                                "produto_id": prod.get("id"),
-                                "nome_produto": nome_prod, 
-                                "valor_unitario": float(preco_prod) if preco_prod else None
-                            })
+                            adicionais_selecionados.append({"produto_id": prod.get("id"), "nome_produto": nome_prod, "valor_unitario": float(preco_prod) if preco_prod else None})
             else: st.caption("Catálogo vazio.")
 
         st.divider()
@@ -346,48 +297,30 @@ if st.session_state.editar_pedido:
                 dados = {"cliente_nome": novo_nome, "cliente_telefone": novo_telefone, "destinatario_nome": novo_dest_nome, 
                          "destinatario_telefone": novo_dest_tel, "motivo_homenagem": novo_motivo, "cesta_nome": nova_cesta_nome, 
                          "produtos": novo_produtos, "mensagem": nova_mensagem, "pedido_especial": novo_especial, "endereco": novo_endereco}
-                
                 atualizar_pedido(pedido["id"], dados)
-
                 if "erro_admin" in st.session_state: del st.session_state["erro_admin"]
-                
                 try:
-                    try: 
-                        supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido["id"]).execute()
+                    try: supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido["id"]).execute()
                     except Exception as err_del:
-                        st.session_state["erro_admin"] = f"❌ O Supabase bloqueou a exclusão. Falta a política DELETE na tabela de adicionais! Detalhe: {err_del}"
-                        raise Exception("Parada Forçada - Falha no DELETE")
-                            
+                        st.session_state["erro_admin"] = f"❌ Erro ao deletar: {err_del}"
+                        raise Exception("Falha")
                     if adicionais_selecionados:
-                        for ad in adicionais_selecionados:
-                            ad["pedido_id"] = pedido["id"]
-                            
-                        try:
-                            supabase.table("pedido_adicionais").insert(adicionais_selecionados).execute()
+                        for ad in adicionais_selecionados: ad["pedido_id"] = pedido["id"]
+                        try: supabase.table("pedido_adicionais").insert(adicionais_selecionados).execute()
                         except Exception as err_ins:
-                            st.session_state["erro_admin"] = f"❌ O Supabase bloqueou a inserção de adicionais. Detalhe: {err_ins}"
-                            raise Exception("Parada Forçada - Falha no INSERT")
-                                
-                except Exception:
-                    pass 
-                
-                if "erro_admin" not in st.session_state:
-                    st.session_state.editar_pedido = False
-                    
+                            st.session_state["erro_admin"] = f"❌ Erro ao inserir: {err_ins}"
+                            raise Exception("Falha")
+                except: pass 
+                if "erro_admin" not in st.session_state: st.session_state.editar_pedido = False
                 st.rerun()
 
         with cs2:
             if st.button("❌ Cancelar", use_container_width=True):
                 st.session_state.editar_pedido = False
                 st.rerun()
-
-        if "erro_admin" in st.session_state:
-            st.error(st.session_state["erro_admin"])
+        if "erro_admin" in st.session_state: st.error(st.session_state["erro_admin"])
 
 
-# =====================================================
-# LAYOUT PRINCIPAL (VISUALIZAÇÃO)
-# =====================================================
 col_esquerda, col_direita = st.columns([1.2, 1])
 
 with col_esquerda:
@@ -409,9 +342,7 @@ with col_esquerda:
         st.markdown('<div class="card-title">🎁 Pedido</div>', unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns(4)
         with c1: st.markdown(f'<div class="info-label">Cesta</div><div class="info-value">{pedido.get("cesta_nome","-")}</div>', unsafe_allow_html=True)
-        
         with c2: st.markdown(f'<div class="info-label">Pagamento</div><div class="info-value">{obter_icone_pagamento(pedido.get("pagamento", "-"))}</div>', unsafe_allow_html=True)
-        
         with c3: st.markdown(f'<div class="info-label">Entrega</div><div class="info-value">{formatar_data(pedido.get("data_entrega"))}</div>', unsafe_allow_html=True)
         with c4: st.markdown(f'<div class="info-label">Período</div><div class="info-value">{pedido.get("periodo_entrega","-")}</div>', unsafe_allow_html=True)
 
@@ -456,24 +387,16 @@ with col_esquerda:
             st.markdown('<div class="card-title">✨ Pedido Especial</div>', unsafe_allow_html=True)
             st.text_area("", value=pedido.get("pedido_especial") or "", disabled=True, height=60, key="esp_vis")
 
-    # =====================================================
-    # ENDEREÇO DE ENTREGA COM BOTÕES DE MAPAS (GOOGLE MAPS & WAZE)
-    # =====================================================
     with st.container(border=True):
         st.markdown('<div class="card-title">📍 Endereço de Entrega & Rotas</div>', unsafe_allow_html=True)
         endereco_pedido = pedido.get("endereco", "")
-        
         st.text_area("", value=endereco_pedido if endereco_pedido else "Endereço não informado.", disabled=True, height=65, key="end_vis")
-        
         if endereco_pedido:
             endereco_limpo_gps = re.sub(r'\(CEP:.*?\)', '', endereco_pedido).strip()
             endereco_encoded = urllib.parse.quote(endereco_limpo_gps)
-            
             col_map1, col_map2 = st.columns(2)
-            with col_map1:
-                st.link_button("🗺️ Abrir no Google Maps", url=f"https://www.google.com/maps/search/?api=1&query={endereco_encoded}", use_container_width=True)
-            with col_map2:
-                st.link_button("🚗 Abrir no Waze", url=f"https://waze.com/ul?q={endereco_encoded}&navigate=yes", use_container_width=True)
+            with col_map1: st.link_button("🗺️ Abrir no Google Maps", url=f"https://www.google.com/maps/search/?api=1&query={endereco_encoded}", use_container_width=True)
+            with col_map2: st.link_button("🚗 Abrir no Waze", url=f"https://waze.com/ul?q={endereco_encoded}&navigate=yes", use_container_width=True)
 
 with col_direita:
     valor_cesta = 0.0
@@ -491,26 +414,10 @@ with col_direita:
         with cf3: desconto = st.number_input("🏷️ Desconto", min_value=0.0, value=float(pedido.get("desconto") or 0), step=1.0, key="desconto")
         
         with cf4:
-            # ----------------------------------------------------
-            # ATRIBUIÇÃO DE STATUS E ENTREGADOR LOGO ABAIXO
-            # ----------------------------------------------------
+            # APENAS O SELETOR DE STATUS AQUI (O entregador é escolhido na tela de Rota)
             status_op = ["Recebido", "Pago", "Enviado", "Entregue", "Desistência"]
             status_atual = pedido.get("status", "Recebido")
             status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0)
-            
-            entregador_selecionado = pedido.get("entregador_login", "")
-            
-            # Se for Enviado e for Admin/Operador, habilita o combo de escolha
-            if status == "Enviado" and usuario.get("perfil") in ["Administrador", "Operador"]:
-                try:
-                    res_ent = supabase.table("usuarios").select("login").eq("perfil", "Entregador").execute()
-                    lista_entregadores = [e["login"] for e in (res_ent.data or [])]
-                except:
-                    lista_entregadores = []
-                
-                opcoes_ent = [""] + lista_entregadores
-                idx_ent = opcoes_ent.index(entregador_selecionado) if entregador_selecionado in opcoes_ent else 0
-                entregador_selecionado = st.selectbox("Atribuir Entregador 🛵", opcoes_ent, index=idx_ent)
 
         horario_combinado = st.text_input("🕒 Horário Combinado de Entrega", value=pedido.get("horario_combinado") or "", placeholder="Ex: 15:30")
 
@@ -539,34 +446,24 @@ with col_direita:
             st.session_state['msg_geral'] = "✅ Anotação salva!"
             st.rerun()
 
-    # =====================================================
-    # MOTOR DE FOTOS BLINDADO COM FEEDBACK VISUAL
-    # =====================================================
     with st.container(border=True):
         st.markdown('<div class="card-title">📷 Gestão de Fotos Polaroid</div>', unsafe_allow_html=True)
-        
         if "msg_foto" in st.session_state:
             if "❌" in st.session_state['msg_foto']: st.error(st.session_state['msg_foto'])
             else: st.success(st.session_state['msg_foto'])
             del st.session_state['msg_foto']
-        
         novas_fotos = st.file_uploader("Adicionar fotos", type=["jpg", "jpeg", "png", "webp"], accept_multiple_files=True, key="up_fotos_multi")
-        
         if novas_fotos:
             if st.button("📤 Salvar Novas Fotos", use_container_width=True):
                 with st.spinner("Processando..."):
                     sucesso, erro_msg = salvar_fotos_local(pedido["id"], novas_fotos)
-                
                 if sucesso: st.session_state['msg_foto'] = "✅ Foto salva!"
                 else: st.session_state['msg_foto'] = f"❌ Erro Supabase: {erro_msg}"
                 st.rerun()
 
         st.divider()
-
         fotos, erro_listar = listar_fotos_local(pedido["id"])
-        
-        if erro_listar:
-            st.error(f"❌ Erro ao buscar: {erro_listar}")
+        if erro_listar: st.error(f"❌ Erro ao buscar: {erro_listar}")
         elif fotos:
             colunas = st.columns(2)
             for i, foto in enumerate(fotos):
@@ -579,24 +476,17 @@ with col_direita:
                             if suc: st.session_state['msg_foto'] = "✅ Foto deletada!"
                             else: st.session_state['msg_foto'] = f"❌ Erro ao deletar: {err_del}"
                             st.rerun()
-                    else: st.caption("⚠️ Link da foto indisponível.")
-        else:
-            st.caption("Nenhuma foto anexada ao pedido.")
-
+                    else: st.caption("⚠️ Link indisponível.")
+        else: st.caption("Nenhuma foto anexada.")
 
 if "msg_geral" in st.session_state:
     st.success(st.session_state['msg_geral'])
     del st.session_state['msg_geral']
 
-
-# =====================================================
-# RODAPÉ DE AÇÕES (SALVAR E WHATSAPP)
-# =====================================================
 col_bot1, col_bot2, col_bot3 = st.columns(3)
-
 with col_bot1:
     if st.button("💾 Salvar Atendimento Completo", use_container_width=True, type="primary"):
-        # Inclui o entregador selecionado no banco
+        # Mantém o entregador atual inalterado caso já exista, não reescreve nem pede aqui.
         dados = {
             "status": status, 
             "valor_frete": valor_frete, 
@@ -604,8 +494,7 @@ with col_bot1:
             "desconto": desconto, 
             "valor_total": valor_total_calculado, 
             "horario_combinado": horario_combinado, 
-            "itens_consulta": itens_consulta,
-            "entregador_login": entregador_selecionado if status == "Enviado" else pedido.get("entregador_login")
+            "itens_consulta": itens_consulta
         }
         atualizar_pedido(pedido["id"], dados)
         st.session_state['msg_geral'] = "✅ Atendimento financeiro salvo com sucesso!"
