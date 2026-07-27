@@ -4,8 +4,6 @@ import re
 from datetime import datetime
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
-
-# Importando o serviço do Telegram
 from services.telegram_service import enviar_notificacao_telegram
 
 # =====================================================
@@ -15,14 +13,9 @@ st.set_page_config(page_title="Gestão de Entregas", page_icon="🛵", layout="w
 configurar_pagina()
 menu_lateral()
 
-# =====================================================
-# BLINDAGEM DE SESSÃO
-# =====================================================
 usuario = st.session_state.get("usuario")
-
 if not usuario:
     st.warning("⚠️ Você precisa fazer login para acessar esta página.")
-    st.info("Vá para a página inicial (Administração) e digite seu usuário e senha.")
     st.stop()
 
 # =====================================================
@@ -51,8 +44,10 @@ div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1
 div[data-testid="stLinkButton"] > a { font-weight: 700 !important; font-size: 14px !important; border-radius: 10px !important; padding: 8px !important;}
 .btn-waze > a { background-color: #33ccff !important; color: #004d66 !important; }
 .btn-maps > a { background-color: #fce8e6 !important; color: #c5221f !important; }
-
 .entregue-box { opacity: 0.7; background-color: #f0f7f4; border: 1px solid #c8e6c9 !important; }
+
+/* Estiliza o selectbox de atribuição para não ficar gigantesco */
+div[data-baseweb="select"] { margin-top: 5px; }
 
 @media (max-width: 768px) {
     .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
@@ -62,18 +57,20 @@ div[data-testid="stLinkButton"] > a { font-weight: 700 !important; font-size: 14
 </style>
 """, unsafe_allow_html=True)
 
-# Controle de Estado da Rota
-if "modo_entrega_ativa" not in st.session_state:
-    st.session_state.modo_entrega_ativa = False
+if "modo_entrega_ativa" not in st.session_state: st.session_state.modo_entrega_ativa = False
 
 # =====================================================
-# BANCO DE DADOS - BUSCAR E ATUALIZAR
+# BUSCA DE ENTREGADORES E FUNÇÕES DE BANCO
 # =====================================================
+lista_entregadores = []
+if usuario.get("perfil") in ["Administrador", "Operador"]:
+    try:
+        res_ent = supabase.table("usuarios").select("login").eq("perfil", "Entregador").execute()
+        lista_entregadores = [e["login"] for e in (res_ent.data or [])]
+    except: pass
+
 def buscar_entregas_dia():
-    """Busca as entregas ativas e as que já foram concluídas no dia de hoje."""
     data_hoje = datetime.now().strftime("%d/%m/%Y")
-    
-    # Busca Enviados (Fila de Entrega)
     query_env = supabase.table("pedidos").select("*").eq("status", "Enviado")
     if usuario.get("perfil") == "Entregador":
         query_env = query_env.eq("entregador_login", usuario.get("login"))
@@ -82,15 +79,12 @@ def buscar_entregas_dia():
     enviados = res_env.data or []
     enviados.sort(key=lambda x: (x.get('ordem_entrega') if x.get('ordem_entrega') is not None else 999, x.get('created_at')))
     
-    # Busca Entregues (Para exibir o histórico diário travado no fim)
     query_ent = supabase.table("pedidos").select("*").eq("status", "Entregue")
     if usuario.get("perfil") == "Entregador":
         query_ent = query_ent.eq("entregador_login", usuario.get("login"))
         
     res_ent = query_ent.execute()
     entregues = res_ent.data or []
-    
-    # Filtra apenas os que foram entregues HOJE (olhando a string de hora salva)
     entregues_hoje = [p for p in entregues if p.get('hora_entrega_realizada') and data_hoje in p.get('hora_entrega_realizada')]
     entregues_hoje.sort(key=lambda x: x.get('hora_entrega_realizada', ''), reverse=True)
     
@@ -99,60 +93,47 @@ def buscar_entregas_dia():
 def salvar_ordem(pedidos_ordenados):
     for i, p in enumerate(pedidos_ordenados):
         if p.get("ordem_entrega") != i:
-            try:
-                supabase.table("pedidos").update({"ordem_entrega": i}).eq("id", p["id"]).execute()
-            except Exception:
-                pass 
+            try: supabase.table("pedidos").update({"ordem_entrega": i}).eq("id", p["id"]).execute()
+            except: pass 
+
+def atualizar_entregador(pedido_id, widget_key):
+    novo_entregador = st.session_state[widget_key]
+    val = None if novo_entregador == "Não atribuído" else novo_entregador
+    try:
+        supabase.table("pedidos").update({"entregador_login": val}).eq("id", pedido_id).execute()
+    except Exception as e:
+        st.error(f"Erro ao atribuir: {e}")
 
 def marcar_como_entregue(pedido):
     try:
-        # Pega a data e hora exata do momento da entrega
         agora = datetime.now()
         hora_formatada = agora.strftime("%d/%m/%Y %H:%M")
         apenas_hora = agora.strftime("%H:%M")
         
-        # 1. Atualiza no Banco de Dados
-        supabase.table("pedidos").update({
-            "status": "Entregue", 
-            "ordem_entrega": 999,
-            "hora_entrega_realizada": hora_formatada
-        }).eq("id", pedido["id"]).execute()
+        supabase.table("pedidos").update({"status": "Entregue", "ordem_entrega": 999, "hora_entrega_realizada": hora_formatada}).eq("id", pedido["id"]).execute()
         
-        # 2. Dispara a notificação pro Telegram
-        texto_telegram = f"""✅ *ENTREGA REALIZADA!* ✅
-
-🛵 *Entregador:* {usuario.get('login', 'Não identificado')}
-📦 *Cesta:* {pedido.get('cesta_nome', '-')}
-💝 *Destinatário:* {pedido.get('destinatario_nome', '-')}
-📍 *Local:* {str(pedido.get('endereco', '')).split(',')[-1].split('(')[0].strip()}
-⏰ *Horário da Entrega:* {apenas_hora}"""
-        
+        texto_telegram = f"""✅ *ENTREGA REALIZADA!* ✅\n\n🛵 *Entregador:* {usuario.get('login', 'Não identificado')}\n📦 *Cesta:* {pedido.get('cesta_nome', '-')}\n💝 *Destinatário:* {pedido.get('destinatario_nome', '-')}\n📍 *Local:* {str(pedido.get('endereco', '')).split(',')[-1].split('(')[0].strip()}\n⏰ *Horário da Entrega:* {apenas_hora}"""
         enviar_notificacao_telegram(texto_telegram)
-        
     except Exception as e:
         st.error(f"Erro ao finalizar entrega: {e}")
 
 # =====================================================
-# CARREGA OS DADOS
+# CARREGAMENTO DA PÁGINA E ROTAS
 # =====================================================
 pedidos_ativos, pedidos_concluidos = buscar_entregas_dia()
-
 st.title(f"🛵 Rota de Entregas")
 
 if not pedidos_ativos and not pedidos_concluidos:
-    st.success("🎉 Você não tem entregas no momento.")
+    st.success("🎉 Nenhuma entrega pendente. A rota está limpa!")
     st.session_state.modo_entrega_ativa = False
     st.stop()
 
-
 # =====================================================
-# MODO 1: ORGANIZAÇÃO (FILA DE ENTREGA)
+# MODO 1: ORGANIZAÇÃO E DISTRIBUIÇÃO (FILA)
 # =====================================================
 if not st.session_state.modo_entrega_ativa:
-    
-    # --- FILA ATIVA ---
     if pedidos_ativos:
-        st.info("👇 Ajuste a ordem clicando nas setas e inicie a rota quando estiver pronto.")
+        st.info("👇 Ajuste a ordem clicando nas setas. Administradores podem atribuir quem fará a entrega.")
         salvar_ordem(pedidos_ativos)
         
         for i, ped in enumerate(pedidos_ativos):
@@ -161,7 +142,8 @@ if not st.session_state.modo_entrega_ativa:
                 
                 with col_info:
                     bairro = str(ped.get('endereco', '')).split(',')[-1].split('(')[0].strip() or "Endereço incompleto"
-                    horario = ped.get('horario_combinado', '') or ped.get('periodo_entrega', 'Horário Livre')
+                    horario = ped.get('horario_combinado', '') or ped.get('periodo_entrega', 'Livre')
+                    entregador_atual = ped.get("entregador_login", "")
                     
                     st.markdown(f"""
                         <div class="card-info">
@@ -170,6 +152,21 @@ if not st.session_state.modo_entrega_ativa:
                             <div class="hora-destaque">🕒 {horario}</div>
                         </div>
                     """, unsafe_allow_html=True)
+                    
+                    # SELETOR DE ATRIBUIÇÃO (Apenas Admin e Operador)
+                    if usuario.get("perfil") in ["Administrador", "Operador"]:
+                        opcoes_select = ["Não atribuído"] + lista_entregadores
+                        idx_atual = opcoes_select.index(entregador_atual) if entregador_atual in opcoes_select else 0
+                        chave_widget = f"ent_{ped['id']}"
+                        
+                        st.selectbox(
+                            "Atribuir p/:", 
+                            opcoes_select, 
+                            index=idx_atual, 
+                            key=chave_widget, 
+                            on_change=atualizar_entregador, 
+                            args=(ped["id"], chave_widget)
+                        )
 
                 with col_up:
                     if i > 0:
@@ -202,45 +199,29 @@ if not st.session_state.modo_entrega_ativa:
 # =====================================================
 else:
     if pedidos_ativos:
-        pedido_atual = pedidos_ativos[0] # Puxa o topo da fila
-        
+        pedido_atual = pedidos_ativos[0] 
         st.warning("⚠️ **Atenção:** Você está com a rota iniciada. Entregue este pedido antes de ir para o próximo.")
         
         with st.container(border=True):
             st.markdown(f'<div class="bairro-destaque" style="font-size:20px; text-align:center;">Próxima Parada</div>', unsafe_allow_html=True)
             st.divider()
-            
             st.markdown(f"""
                 <div class="ficha-entrega">
                     <div><strong>Comprador:</strong> {pedido_atual.get('cliente_nome')} (📞 +{pedido_atual.get('cliente_telefone')})</div>
-                    <div class="ficha-secao">
-                        <strong>Homenageado (Quem Recebe):</strong><br>
-                        {pedido_atual.get('destinatario_nome')}<br>
-                        📞 {pedido_atual.get('destinatario_telefone') or 'Sem telefone'}
-                    </div>
-                    <div class="ficha-secao">
-                        <strong>Pacote:</strong> 🎁 {pedido_atual.get('cesta_nome')}
-                    </div>
-                    <div class="ficha-secao">
-                        <strong>Endereço Completo:</strong><br>
-                        📍 {pedido_atual.get('endereco')}
-                    </div>
-                    <div class="ficha-secao">
-                        <strong>Horário Combinado:</strong><br>
-                        🕒 {pedido_atual.get('horario_combinado') or pedido_atual.get('periodo_entrega', 'Livre')}
-                    </div>
+                    <div class="ficha-secao"><strong>Homenageado (Quem Recebe):</strong><br>{pedido_atual.get('destinatario_nome')}<br>📞 {pedido_atual.get('destinatario_telefone') or 'Sem telefone'}</div>
+                    <div class="ficha-secao"><strong>Pacote:</strong> 🎁 {pedido_atual.get('cesta_nome')}</div>
+                    <div class="ficha-secao"><strong>Endereço Completo:</strong><br>📍 {pedido_atual.get('endereco')}</div>
+                    <div class="ficha-secao"><strong>Horário Combinado:</strong><br>🕒 {pedido_atual.get('horario_combinado') or pedido_atual.get('periodo_entrega', 'Livre')}</div>
                 </div>
             """, unsafe_allow_html=True)
             
             st.write("")
             endereco_gps = urllib.parse.quote(re.sub(r'\(CEP:.*?\)', '', pedido_atual.get('endereco', '')).strip())
-            
             c_maps, c_waze = st.columns(2)
             with c_maps:
                 st.markdown('<div class="btn-maps">', unsafe_allow_html=True)
                 st.link_button("🗺️ Google Maps", url=f"https://www.google.com/maps/search/?api=1&query={endereco_gps}", use_container_width=True)
                 st.markdown('</div>', unsafe_allow_html=True)
-                
             with c_waze:
                 st.markdown('<div class="btn-waze">', unsafe_allow_html=True)
                 st.link_button("🚗 Waze", url=f"https://waze.com/ul?q={endereco_gps}&navigate=yes", use_container_width=True)
@@ -268,9 +249,8 @@ if pedidos_concluidos and not st.session_state.modo_entrega_ativa:
     st.markdown("### ✅ Entregas Concluídas Hoje")
     
     for ped in pedidos_concluidos:
-        hora_extraida = ped.get('hora_entrega_realizada', '')[-5:] # Pega só o HH:MM final da string
+        hora_extraida = ped.get('hora_entrega_realizada', '')[-5:] 
         bairro_concluido = str(ped.get('endereco', '')).split(',')[-1].split('(')[0].strip()
-        
         st.markdown(f"""
         <div data-testid="stVerticalBlockBorderWrapper" class="entregue-box">
             <div class="bairro-destaque" style="color: #137333;">✅ Entregue às {hora_extraida}</div>
