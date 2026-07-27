@@ -65,6 +65,24 @@ if not pedido:
     st.error("Pedido não encontrado.")
     st.stop()
 
+
+# =====================================================
+# LÓGICA DE BLOQUEIO DE EDIÇÃO (SEGURANÇA)
+# =====================================================
+status_atual_pedido = str(pedido.get("status", "")).strip().capitalize()
+perfil_usuario = usuario.get("perfil", "Operador")
+
+# Bloqueia a edição se já foi enviado/entregue E o usuário não for o Administrador
+bloquear_edicao = (status_atual_pedido in ["Enviado", "Entregue"]) and (perfil_usuario != "Administrador")
+
+if bloquear_edicao:
+    st.session_state.editar_pedido = False
+    st.session_state.modo_montagem = False
+
+
+# -----------------------------------------------------
+# FILTRO ANTI-DUPLICIDADE DE ADICIONAIS
+# -----------------------------------------------------
 try:
     lista_bruta_adicionais = listar_adicionais_pedido(pedido["id"])
     adicionais_pedido = []
@@ -198,6 +216,13 @@ def obter_icone_pagamento(metodo):
 
 
 # =====================================================
+# AVISO DE BLOQUEIO (SE APLICÁVEL)
+# =====================================================
+if bloquear_edicao:
+    st.warning("🔒 **Pedido Bloqueado:** Como o status já é 'Enviado' ou 'Entregue', apenas o Administrador pode fazer alterações neste pedido.")
+
+
+# =====================================================
 # CABEÇALHO E BOTOES SUPERIORES
 # =====================================================
 col_t1, col_t2, col_t3 = st.columns([2.5, 1, 1])
@@ -209,12 +234,12 @@ with col_t1:
     st.markdown(f"Pedido #{pedido.get('id')} | Status: **{pedido.get('status','-')}** {badge_montada}", unsafe_allow_html=True)
     
 with col_t2:
-    if st.button("🧺 Montar Cesta", use_container_width=True):
+    if st.button("🧺 Montar Cesta", use_container_width=True, disabled=bloquear_edicao):
         st.session_state.modo_montagem = not st.session_state.modo_montagem
         st.session_state.editar_pedido = False
 
 with col_t3:
-    if st.button("✏️ Alterar Pedido", use_container_width=True):
+    if st.button("✏️ Alterar Pedido", use_container_width=True, disabled=bloquear_edicao):
         st.session_state.editar_pedido = not st.session_state.editar_pedido
         st.session_state.modo_montagem = False
 
@@ -267,26 +292,10 @@ if st.session_state.modo_montagem:
         
         # --- ATRIBUIÇÃO E FINALIZAÇÃO ---
         st.markdown("**🛵 Despachar Pedido**")
-        st.caption("Selecione quem fará a entrega para enviar o pedido direto para a Rota de Entregas.")
-        
-        lista_entregadores = []
-        try:
-            res_ent = supabase.table("usuarios").select("login").eq("perfil", "Entregador").execute()
-            lista_entregadores = [e["login"] for e in (res_ent.data or [])]
-        except: pass
-        
-        opcoes_ent = ["Não atribuído"] + lista_entregadores
-        ent_atual = pedido.get("entregador_login") or "Não atribuído"
-        idx_ent = opcoes_ent.index(ent_atual) if ent_atual in opcoes_ent else 0
-        
-        ent_selecionado = st.selectbox("Entregador responsável:", opcoes_ent, index=idx_ent)
+        st.caption("Ao concluir, o status mudará para Enviado e ele aparecerá na fila da página de Entregas.")
         
         if st.button("✅ Concluir Montagem e Enviar para Rota", type="primary", use_container_width=True):
-            novo_ent = None if ent_selecionado == "Não atribuído" else ent_selecionado
-            
-            # Muda para Enviado E marca que a cesta foi fisicamente montada
             atualizar_pedido(pedido["id"], {
-                "entregador_login": novo_ent,
                 "status": "Enviado",
                 "cesta_montada": True 
             })
@@ -456,7 +465,7 @@ with col_esquerda:
                     else:
                         st.write(f"• {nome}")
                         val_salvo = float(itens_consulta_salvos.get(nome, 0) or 0)
-                        val_dig = st.number_input("Definir valor", min_value=0.0, value=val_salvo, step=1.0, key=f"cons_{nome}_{idx_ad}")
+                        val_dig = st.number_input("Definir valor", min_value=0.0, value=val_salvo, step=1.0, key=f"cons_{nome}_{idx_ad}", disabled=bloquear_edicao)
                         itens_consulta[nome] = val_dig
                         if val_dig > 0: valor_consulta += val_dig; valor_adicionais += val_dig
             else: st.caption("Nenhum adicional selecionado.")
@@ -492,22 +501,21 @@ with col_direita:
 
     with st.container(border=True):
         st.markdown('<div class="card-title">💰 Fechamento Financeiro</div>', unsafe_allow_html=True)
-        cf1, cf2, cf3 = st.columns(3)
-        with cf1: valor_frete = st.number_input("🚚 Frete", min_value=0.0, value=float(pedido.get("valor_frete") or 0), step=1.0, key="frete")
-        with cf2: valor_extras = st.number_input("➕ Extras", min_value=0.0, value=float(pedido.get("valor_extras") or 0), step=1.0, key="extras")
-        with cf3: desconto = st.number_input("🏷️ Desconto", min_value=0.0, value=float(pedido.get("desconto") or 0), step=1.0, key="desconto")
+        cf1, cf2, cf3, cf4 = st.columns(4)
+        with cf1: valor_frete = st.number_input("🚚 Frete", min_value=0.0, value=float(pedido.get("valor_frete") or 0), step=1.0, key="frete", disabled=bloquear_edicao)
+        with cf2: valor_extras = st.number_input("➕ Extras", min_value=0.0, value=float(pedido.get("valor_extras") or 0), step=1.0, key="extras", disabled=bloquear_edicao)
+        with cf3: desconto = st.number_input("🏷️ Desconto", min_value=0.0, value=float(pedido.get("desconto") or 0), step=1.0, key="desconto", disabled=bloquear_edicao)
         
         c_status1, c_status2 = st.columns(2)
         with c_status1:
             status_op = ["Recebido", "Pago", "Enviado", "Entregue", "Desistência"]
             status_atual = pedido.get("status", "Recebido")
-            status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0)
+            status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0, disabled=bloquear_edicao)
         with c_status2:
             st.markdown("<div style='margin-top: 32px;'></div>", unsafe_allow_html=True)
-            # Permite marcar/desmarcar a cesta manualmente no fechamento caso precisem
-            chk_montada = st.checkbox("🧺 Cesta Pronta", value=bool(pedido.get("cesta_montada")))
+            chk_montada = st.checkbox("🧺 Cesta Pronta", value=bool(pedido.get("cesta_montada")), disabled=bloquear_edicao)
 
-        horario_combinado = st.text_input("🕒 Horário Combinado de Entrega", value=pedido.get("horario_combinado") or "", placeholder="Ex: 15:30")
+        horario_combinado = st.text_input("🕒 Horário Combinado de Entrega", value=pedido.get("horario_combinado") or "", placeholder="Ex: 15:30", disabled=bloquear_edicao)
 
     valor_total_calculado = max(0, valor_cesta + valor_adicionais + valor_frete + valor_extras - desconto)
 
@@ -573,10 +581,10 @@ if "msg_geral" in st.session_state:
 
 col_bot1, col_bot2, col_bot3 = st.columns(3)
 with col_bot1:
-    if st.button("💾 Salvar Atendimento Completo", use_container_width=True, type="primary"):
+    if st.button("💾 Salvar Atendimento Completo", use_container_width=True, type="primary", disabled=bloquear_edicao):
         dados = {
             "status": status, 
-            "cesta_montada": chk_montada, # Salva se foi montada ou desmontada manualmente
+            "cesta_montada": chk_montada,
             "valor_frete": valor_frete, 
             "valor_extras": valor_extras, 
             "desconto": desconto, 
