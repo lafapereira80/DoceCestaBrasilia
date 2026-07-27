@@ -281,7 +281,7 @@ st.divider()
 
 
 # =====================================================
-# LISTAGEM E RENDERIZAÇÃO DAS ABAS LIMPAS
+# LISTAGEM COM EXPURGO DE FINALIZADOS
 # =====================================================
 try: pedidos = listar_pedidos_ativos()
 except Exception as erro:
@@ -289,6 +289,12 @@ except Exception as erro:
     pedidos = []
 
 df = pd.DataFrame(pedidos) if pedidos else pd.DataFrame(columns=["id", "cliente_nome", "status", "created_at", "cesta_montada"])
+
+# REMOVE COMPLETAMENTE QUALQUER PEDIDO ENTREGUE DA MEMÓRIA DESTA TELA
+if not df.empty and "status" in df.columns:
+    df["status_limpo"] = df["status"].astype(str).str.strip().str.capitalize()
+    df = df[df["status_limpo"] != "Entregue"]
+    
 if not df.empty and "created_at" in df.columns:
     df["created_at"] = pd.to_datetime(df["created_at"])
     df = df.sort_values("created_at", ascending=False)
@@ -301,15 +307,13 @@ def status_visual_html(status):
     elif status_str == "Desistência" or status_str == "Desistencia": return '<span class="badge-status badge-desistencia">🔴 Desistência</span>'
     return f'<span class="badge-status">{status}</span>'
 
-# Alteramos status_filtro_lista para aceitar uma lista de palavras
 def mostrar_lista(titulo, status_filtro_lista, eh_pago=False, permitir_exclusao=False):
-    if df.empty or "status" not in df.columns:
+    if df.empty or "status_limpo" not in df.columns:
         st.info(f"Nenhum pedido registrado em '{titulo}'.")
         return
 
-    # Filtra por múltiplos status (ex: ["Pago", "Enviado"])
     status_formatados = [s.capitalize() for s in status_filtro_lista]
-    pedidos_status = df[df["status"].astype(str).str.strip().str.capitalize().isin(status_formatados)]
+    pedidos_status = df[df["status_limpo"].isin(status_formatados)]
     
     if pedidos_status.empty:
         st.info(f"Nenhum pedido nesta etapa no momento.")
@@ -329,7 +333,6 @@ def mostrar_lista(titulo, status_filtro_lista, eh_pago=False, permitir_exclusao=
         except: pass
 
         with st.container(border=True):
-            # Layout Dinâmico
             if eh_pago: 
                 col_check, col_info1, col_info2, col_status, col_valor, col_acoes = st.columns([1.2, 3.2, 2.5, 1.8, 1.8, 2.5])
                 with col_check:
@@ -367,12 +370,11 @@ def mostrar_lista(titulo, status_filtro_lista, eh_pago=False, permitir_exclusao=
                 if eh_pago:
                     sub_p1, sub_p2 = st.columns(2)
                     with sub_p1:
-                        if st.button("👁️", key=f"abrir_{pedido['id']}", help="Abrir pedido (Detalhe Cesta Montada)", use_container_width=True):
+                        if st.button("👁️", key=f"abrir_{pedido['id']}", help="Abrir Ficha Técnica", use_container_width=True):
                             st.session_state["pedido_aberto"] = pedido["id"]
                             st.switch_page("pages/09_Detalhes_Pedido.py")
                     
                     with sub_p2:
-                        # Se já estiver enviado, tira o botão e coloca o ícone de caminhão
                         if status_atual == "Enviado":
                             st.markdown('<div style="text-align:center; padding-top: 5px; font-size: 18px;" title="Já está na Rota de Entregas">🚚</div>', unsafe_allow_html=True)
                         else:
@@ -398,8 +400,8 @@ def mostrar_lista(titulo, status_filtro_lista, eh_pago=False, permitir_exclusao=
 # =====================================================
 # ABAS DO PAINEL (LIMPAS E DIRETAS)
 # =====================================================
-if not df.empty and "status" in df.columns:
-    df_status = df["status"].astype(str).str.strip().str.capitalize()
+if not df.empty and "status_limpo" in df.columns:
+    df_status = df["status_limpo"]
     qtd_rec = len(df_status[df_status == "Recebido"])
     qtd_pag = len(df_status[df_status.isin(["Pago", "Enviado"])])
     qtd_des = len(df_status[df_status.isin(["Desistência", "Desistencia"])])
@@ -416,7 +418,7 @@ with aba_pagos: mostrar_lista("Fila de Produção", ["Pago", "Enviado"], eh_pago
 with aba_desistencias: mostrar_lista("Desistências", ["Desistência", "Desistencia"], eh_pago=False, permitir_exclusao=(usuario.get("perfil") == "Administrador"))
 
 # =====================================================
-# IMPRESSÃO (VINCULADA SOMENTE À ABA DE PAGOS)
+# IMPRESSÃO
 # =====================================================
 if st.session_state["pedidos_impressao"]:
     st.divider()
