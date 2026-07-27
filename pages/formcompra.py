@@ -376,7 +376,7 @@ def render_homenageado_entrega():
         # 1. Grid: CEP e Cidade
         col_cep, col_cid = st.columns([1, 1.5])
         with col_cep:
-            cep_input = st.text_input("CEP *", max_chars=8, placeholder="Somente números", key="input_cep")
+            cep_input = st.text_input("CEP (Opcional)", max_chars=8, placeholder="Somente números", key="input_cep")
         
         # Lógica de Busca do CEP (Atualiza as keys da sessão para preencher os campos abaixo automaticamente)
         cep_limpo = re.sub(r'\D', '', cep_input)
@@ -471,7 +471,10 @@ if enviar:
     num = st.session_state.get("input_numero", "")
     bairro = st.session_state.get("input_bairro", "")
     cidade = st.session_state.get("input_cidade", "")
-    endereco_completo = f"{rua}, {num} - {bairro}, {cidade} (CEP: {cep})"
+    
+    # Adiciona a tag de CEP apenas se ele foi preenchido
+    cep_str = f" (CEP: {cep})" if cep.strip() else ""
+    endereco_completo = f"{rua}, {num} - {bairro}, {cidade}{cep_str}"
 
     dt_ent = st.session_state.get("input_data_entrega")
     data_entrega_str = dt_ent.strftime("%Y-%m-%d") if dt_ent else str(date.today())
