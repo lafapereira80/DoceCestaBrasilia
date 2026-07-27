@@ -11,7 +11,8 @@ from services.pedido_service import (
     listar_pedidos_ativos,
     excluir_pedido_completo,
     buscar_pedido,
-    salvar_pedido
+    salvar_pedido,
+    atualizar_status_pedido
 )
 from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
@@ -30,7 +31,7 @@ from utils.impressao_pedido import (
 )
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA
+# CONFIGURAÇÃO DA PÁGINA E CSS
 # =====================================================
 st.set_page_config(page_title="Pedidos", page_icon="📋", layout="wide")
 configurar_pagina()
@@ -58,6 +59,16 @@ def formatar_data(data_str):
         if pd.isna(dt): return str(data_str)
         return dt.strftime("%d/%m/%Y")
     except: return str(data_str)
+
+# Função para mudar status sem abrir detalhes
+def alterar_para_enviado(pedido_id):
+    sucesso, msg = atualizar_status_pedido(pedido_id, "Enviado")
+    if sucesso:
+        st.success("🛵 Pedido enviado para a Rota de Entregas com sucesso!")
+        time.sleep(1)
+        st.rerun()
+    else:
+        st.error(f"Erro: {msg}")
 
 st.markdown(
 """
@@ -99,8 +110,11 @@ div[data-testid="stCheckbox"] { margin-top: 4px; }
 
 
 st.title("📋 Gestão de Pedidos")
-st.caption("Acompanhamento do fluxo completo de compras.")
+st.caption("Acompanhamento visual (Aguardando Pagamento e Fila de Produção).")
 
+# =====================================================
+# CRIAR NOVO PEDIDO MANUAL
+# =====================================================
 @st.fragment
 def render_criar_pedido_manual():
     with st.expander("➕ CRIAR NOVO PEDIDO MANUALMENTE", expanded=False):
@@ -223,7 +237,7 @@ def render_criar_pedido_manual():
         st.markdown("#### 💰 Fechamento")
         cf1, cf2, cf3 = st.columns(3)
         with cf1: pag = st.selectbox("Forma de Pagamento", ["Pix", "Cartão de Crédito", "Dinheiro", "Transferência"], key="man_pag")
-        with cf2: status = st.selectbox("Status Inicial", ["Recebido", "Pago", "Enviado", "Entregue"], key="man_status")
+        with cf2: status = st.selectbox("Status Inicial", ["Recebido", "Pago"], key="man_status")
         with cf3: frete = st.number_input("Frete (R$)", min_value=0.0, step=1.0, key="man_frete")
         valor_c = float(cesta_sel.get("preco", 0)) if cesta_sel and cesta_sel.get("id") else 0
         valor_a = sum([a["preco"] for a in adicionais_selecionados])
@@ -264,6 +278,10 @@ def render_criar_pedido_manual():
 render_criar_pedido_manual()
 st.divider()
 
+
+# =====================================================
+# LISTAGEM E RENDERIZAÇÃO DAS ABAS LIMPAS
+# =====================================================
 try: pedidos = listar_pedidos_ativos()
 except Exception as erro:
     st.error(f"Erro ao carregar pedidos: {erro}")
@@ -278,12 +296,10 @@ def status_visual_html(status):
     status_str = str(status).strip().capitalize()
     if status_str == "Pago": return '<span class="badge-status badge-pago">🟢 Pago</span>'
     elif status_str == "Recebido": return '<span class="badge-status badge-recebido">🟡 Recebido</span>'
-    elif status_str == "Enviado": return '<span class="badge-status" style="background-color: #e8f0fe; color: #1a73e8;">🛵 Enviado</span>'
-    elif status_str == "Entregue": return '<span class="badge-status" style="background-color: #f3e8fd; color: #6a1b9a;">✅ Entregue</span>'
     elif status_str == "Desistência" or status_str == "Desistencia": return '<span class="badge-status badge-desistencia">🔴 Desistência</span>'
     return f'<span class="badge-status">{status}</span>'
 
-def mostrar_lista(titulo, status_filtro, permitir_exclusao=False, permitir_impressao=False):
+def mostrar_lista(titulo, status_filtro, eh_pago=False, permitir_exclusao=False):
     if df.empty or "status" not in df.columns:
         st.info(f"Nenhum pedido registrado em '{titulo}'.")
         return
@@ -307,22 +323,30 @@ def mostrar_lista(titulo, status_filtro, permitir_exclusao=False, permitir_impre
         except: pass
 
         with st.container(border=True):
-            if permitir_impressao: col_check, col_info1, col_info2, col_status, col_valor, col_acoes = st.columns([1.2, 3.2, 2.8, 1.8, 1.8, 1.5])
-            else: col_info1, col_info2, col_status, col_valor, col_acoes = st.columns([3.8, 3.0, 2.0, 2.0, 1.5])
-
-            if permitir_impressao:
+            # Layout Dinâmico
+            if eh_pago: 
+                col_check, col_info1, col_info2, col_status, col_valor, col_acoes = st.columns([1.2, 3.2, 2.5, 1.8, 1.8, 2.5])
                 with col_check:
                     esta_marcado = pedido["id"] in st.session_state["pedidos_impressao"]
                     st.checkbox("🖨️", value=esta_marcado, key=f"imprimir_{pedido['id']}", on_change=atualizar_selecao_impressao, args=(pedido["id"],), help="Selecionar para impressão")
+            else: 
+                col_info1, col_info2, col_status, col_valor, col_acoes = st.columns([3.8, 3.0, 2.0, 2.0, 1.5])
 
             with col_info1:
                 nome_cliente = " ".join(str(pedido.get("cliente_nome", "-")).strip().split())
                 st.markdown(f'<div class="cliente-nome">{nome_cliente}</div>', unsafe_allow_html=True)
-                st.caption(f"📱 +{pedido.get('cliente_telefone', '-')}")
+                
+                # Ajuste visual para exibir "PIX" ou "Cartão" de forma limpa em texto, já que a imagem estava falhando no painel principal
+                txt_pagamento = str(pedido.get('pagamento', 'N/I'))
+                icone_pag = "💳" if "Cartão" in txt_pagamento or "Cartao" in txt_pagamento else "⚡" if "Pix" in txt_pagamento else "💵"
+                st.caption(f"📱 +{pedido.get('cliente_telefone', '-')} | {icone_pag} {txt_pagamento}")
 
             with col_info2:
-                # SE O PEDIDO ESTIVER MONTADO, MOSTRA A TAG AQUI
-                tag_montada = '<span class="badge-montada">🧺 MONTADA</span>' if pedido.get("cesta_montada") else ''
+                # Na aba de "Pagos", mostramos se já está montada
+                tag_montada = ""
+                if eh_pago and pedido.get("cesta_montada"):
+                    tag_montada = '<span class="badge-montada">🧺 MONTADA</span>'
+                
                 st.markdown(f"🎁 **{pedido.get('cesta_nome','-')}** {tag_montada}", unsafe_allow_html=True)
                 st.caption(f"🗓️ Entrega: {formatar_data(pedido.get('data_entrega'))}")
 
@@ -334,7 +358,19 @@ def mostrar_lista(titulo, status_filtro, permitir_exclusao=False, permitir_impre
                 st.markdown(f'<div class="valor-pedido">R$ {valor:,.2f}</div>'.replace(",", "X").replace(".", ",").replace("X","."), unsafe_allow_html=True)
 
             with col_acoes:
-                if permitir_exclusao:
+                if eh_pago:
+                    # EM PAGOS: Botões de Ação Completa (Ver Detalhe Montagem + Botão de Envio para a Rota)
+                    sub_p1, sub_p2 = st.columns(2)
+                    with sub_p1:
+                        if st.button("👁️", key=f"abrir_{pedido['id']}", help="Abrir pedido (Detalhe Cesta Montada)", use_container_width=True):
+                            st.session_state["pedido_aberto"] = pedido["id"]
+                            st.switch_page("pages/09_Detalhes_Pedido.py")
+                    with sub_p2:
+                        if st.button("🛵", key=f"enviar_{pedido['id']}", help="Mandar para Rotas de Entrega", use_container_width=True):
+                            alterar_para_enviado(pedido["id"])
+                
+                elif permitir_exclusao:
+                    # EM DESISTÊNCIAS: Ver + Excluir (Só Admin)
                     sub_col1, sub_col2 = st.columns(2)
                     with sub_col1:
                         if st.button("👁️", key=f"abrir_{pedido['id']}", help="Abrir pedido", use_container_width=True):
@@ -346,30 +382,38 @@ def mostrar_lista(titulo, status_filtro, permitir_exclusao=False, permitir_impre
                             if sucesso: st.success(mensagem); st.rerun()
                             else: st.error(mensagem)
                 else:
-                    if st.button("👁️", key=f"abrir_{pedido['id']}", help="Abrir pedido", use_container_width=True):
+                    # EM RECEBIDOS: Somente abrir (Sem ação extra de montar)
+                    if st.button("👁️ Abrir", key=f"abrir_{pedido['id']}", help="Abrir para Conferência", use_container_width=True):
                         st.session_state["pedido_aberto"] = pedido["id"]
                         st.switch_page("pages/09_Detalhes_Pedido.py")
 
+# =====================================================
+# ABAS DO PAINEL (LIMPAS E DIRETAS)
+# =====================================================
 if not df.empty and "status" in df.columns:
     df_status = df["status"].astype(str).str.strip().str.capitalize()
     qtd_rec = len(df_status[df_status == "Recebido"])
     qtd_pag = len(df_status[df_status == "Pago"])
-    qtd_env = len(df_status[df_status == "Enviado"])
-    qtd_ent = len(df_status[df_status == "Entregue"])
     qtd_des = len(df_status[df_status.isin(["Desistência", "Desistencia"])])
-else: qtd_rec = qtd_pag = qtd_env = qtd_ent = qtd_des = 0
+else: qtd_rec = qtd_pag = qtd_des = 0
 
-aba_recebidos, aba_pagos, aba_enviados, aba_entregues, aba_desistencias = st.tabs([f"📥 Recebidos ({qtd_rec})", f"💰 Pagos ({qtd_pag})", f"🛵 Enviados ({qtd_env})", f"✅ Entregues ({qtd_ent})", f"❌ Desistências ({qtd_des})"])
-with aba_recebidos: mostrar_lista("Pedidos Recebidos", "Recebido")
-with aba_pagos: mostrar_lista("Pedidos Pagos", "Pago")
-with aba_enviados: mostrar_lista("Pedidos Enviados", "Enviado", permitir_impressao=True)
-with aba_entregues: mostrar_lista("Pedidos Entregues", "Entregue")
-with aba_desistencias: mostrar_lista("Desistências", "Desistência", permitir_exclusao=(usuario.get("perfil") == "Administrador"))
+aba_recebidos, aba_pagos, aba_desistencias = st.tabs([
+    f"📥 Recebidos ({qtd_rec})", 
+    f"💰 Pagos / Produção ({qtd_pag})", 
+    f"❌ Desistências ({qtd_des})"
+])
 
+with aba_recebidos: mostrar_lista("Aguardando Pagamento", "Recebido", eh_pago=False)
+with aba_pagos: mostrar_lista("Fila de Produção", "Pago", eh_pago=True)
+with aba_desistencias: mostrar_lista("Desistências", "Desistência", eh_pago=False, permitir_exclusao=(usuario.get("perfil") == "Administrador"))
+
+# =====================================================
+# IMPRESSÃO (VINCULADA SOMENTE À ABA DE PAGOS)
+# =====================================================
 if st.session_state["pedidos_impressao"]:
     st.divider()
     col_t_imp1, col_t_imp2 = st.columns([3, 1])
-    with col_t_imp1: st.subheader("🖨️ Impressão de Pedidos")
+    with col_t_imp1: st.subheader("🖨️ Fila de Impressão (Fichas de Produção)")
     with col_t_imp2:
         if st.button("🧹 Limpar Fila", use_container_width=True):
             st.session_state["pedidos_impressao"] = []
@@ -429,4 +473,4 @@ if st.session_state["pedidos_impressao"]:
             st.download_button("⬇️ Baixar PDF", st.session_state["pdf_gerado"], file_name=f"pedidos_producao_{datetime.now().strftime('%d%m%H%M')}.pdf", mime="application/pdf", use_container_width=True)
 
 st.divider()
-st.caption(f"Total de pedidos ativos no painel: {len(df)}")
+st.caption("Doce Cesta Brasília - Painel de Gestão")
