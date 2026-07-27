@@ -192,19 +192,22 @@ def menu_lateral():
         # Todos têm acesso à Home
         st.page_link("pages/99_Admin.py", label="🏠 Administração")
 
-        # Entregador, Operador e Admin têm acesso à Rota de Entregas
+        # 1. Primeiro aparece "Pedidos" (Apenas para Admin e Operador)
+        if perfil in ["Administrador", "Operador"]:
+            st.page_link("pages/02_Pedidos.py", label="📦 Pedidos")
+
+        # 2. Em seguida aparece "Rotas e Entregas" (Para Admin, Operador E Entregador)
         if perfil in ["Administrador", "Operador", "Entregador"]:
             st.page_link("pages/08_Entregas.py", label="🛵 Rotas e Entregas")
 
-        # Apenas Admin e Operador veem o módulo operacional e catálogo
+        # 3. Restante do catálogo (Apenas Admin e Operador)
         if perfil in ["Administrador", "Operador"]:
-            st.page_link("pages/02_Pedidos.py", label="📦 Pedidos")
             st.page_link("pages/03_Clientes.py", label="👥 Clientes")
             st.page_link("pages/04_Cestas.py", label="🧺 Cestas")
             st.page_link("pages/05_Produtos.py", label="🍫 Produtos")
             st.page_link("pages/15_Categorias.py", label="📂 Categorias")
 
-        # Apenas Administrador vê o módulo avançado
+        # 4. Módulo Financeiro e Configurações (Apenas Administrador)
         if perfil == "Administrador":
             st.divider()
             st.page_link("pages/06_Financeiro.py", label="💰 Financeiro")
