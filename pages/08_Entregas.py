@@ -1,5 +1,6 @@
 import streamlit as st
 import urllib.parse
+import re
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
 
@@ -10,7 +11,15 @@ st.set_page_config(page_title="Gestão de Entregas", page_icon="🛵", layout="w
 configurar_pagina()
 menu_lateral()
 
-usuario = st.session_state.usuario
+# =====================================================
+# BLINDAGEM DE SESSÃO (CORREÇÃO DO ERRO)
+# =====================================================
+usuario = st.session_state.get("usuario")
+
+if not usuario:
+    st.warning("⚠️ Você precisa fazer login para acessar esta página.")
+    st.info("Vá para a página inicial (Administração) e digite seu usuário e senha.")
+    st.stop()
 
 # =====================================================
 # ESTILOS MOBILE-FIRST (APLICATIVO)
@@ -54,8 +63,10 @@ if "modo_entrega_ativa" not in st.session_state:
 # =====================================================
 def buscar_entregas():
     query = supabase.table("pedidos").select("*").eq("status", "Enviado")
-    if usuario["perfil"] == "Entregador":
-        query = query.eq("entregador_login", usuario["login"])
+    
+    # Se for Entregador, mostra apenas as atribuídas a ele. Se for Admin/Operador, mostra todas.
+    if usuario.get("perfil") == "Entregador":
+        query = query.eq("entregador_login", usuario.get("login"))
     
     res = query.execute()
     pedidos = res.data or []
@@ -66,10 +77,16 @@ def buscar_entregas():
 def salvar_ordem(pedidos_ordenados):
     for i, p in enumerate(pedidos_ordenados):
         if p.get("ordem_entrega") != i:
-            supabase.table("pedidos").update({"ordem_entrega": i}).eq("id", p["id"]).execute()
+            try:
+                supabase.table("pedidos").update({"ordem_entrega": i}).eq("id", p["id"]).execute()
+            except Exception:
+                pass # Evita travar se houver lentidão na rede
 
 def marcar_como_entregue(pedido_id):
-    supabase.table("pedidos").update({"status": "Entregue", "ordem_entrega": 999}).eq("id", pedido_id).execute()
+    try:
+        supabase.table("pedidos").update({"status": "Entregue", "ordem_entrega": 999}).eq("id", pedido_id).execute()
+    except Exception as e:
+        st.error(f"Erro ao finalizar: {e}")
 
 # Carrega os pedidos dinamicamente
 pedidos = buscar_entregas()
@@ -168,7 +185,7 @@ else:
         """, unsafe_allow_html=True)
         
         st.write("")
-        # Botões de GPS
+        # Botões de GPS (limpando o CEP e arredondamentos para não confundir o Maps)
         endereco_gps = urllib.parse.quote(re.sub(r'\(CEP:.*?\)', '', pedido_atual.get('endereco', '')).strip())
         
         c_maps, c_waze = st.columns(2)
