@@ -117,6 +117,16 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     font-size: 11px !important;
 }
 
+.badge-entregador {
+    display: inline-block;
+    background-color: #f3e8fd;
+    color: #6a1b9a;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px !important;
+}
+
 .badge-self {
     display: inline-block;
     background-color: #e6f4ea;
@@ -171,7 +181,7 @@ with st.container(border=True):
         nova_senha = st.text_input("Senha", type="password", key="nova_senha", placeholder="••••••••")
 
     with col3:
-        novo_perfil = st.selectbox("Perfil", ["Administrador", "Operador"], key="novo_perfil")
+        novo_perfil = st.selectbox("Perfil", ["Administrador", "Operador", "Entregador"], key="novo_perfil")
 
     if st.button("💾 Salvar Usuário", use_container_width=True, type="primary"):
         if not novo_login:
@@ -219,6 +229,8 @@ if not usuarios:
 # LISTAGEM DE USUÁRIOS
 # =====================================================
 
+perfis_disponiveis = ["Administrador", "Operador", "Entregador"]
+
 for usuario in usuarios:
     with st.container(border=True):
         col_u1, col_u2, col_u3, col_u4 = st.columns([3, 2, 2, 2])
@@ -231,6 +243,8 @@ for usuario in usuarios:
         with col_u2:
             if usuario["perfil"] == "Administrador":
                 st.markdown('<span class="badge-admin">👑 Administrador</span>', unsafe_allow_html=True)
+            elif usuario["perfil"] == "Entregador":
+                st.markdown('<span class="badge-entregador">🛵 Entregador</span>', unsafe_allow_html=True)
             else:
                 st.markdown('<span class="badge-operador">👤 Operador</span>', unsafe_allow_html=True)
 
@@ -257,10 +271,13 @@ for usuario in usuarios:
                 editar_senha = st.text_input("Nova senha (deixe vazio para manter)", type="password", key=f"senha_{usuario['id']}")
 
             with col_ed2:
+                # Localiza a posição do perfil atual na lista, default é 1 (Operador) se não achar
+                index_perfil = perfis_disponiveis.index(usuario["perfil"]) if usuario["perfil"] in perfis_disponiveis else 1
+                
                 editar_perfil = st.selectbox(
                     "Perfil",
-                    ["Administrador", "Operador"],
-                    index=0 if usuario["perfil"] == "Administrador" else 1,
+                    perfis_disponiveis,
+                    index=index_perfil,
                     key=f"perfil_{usuario['id']}"
                 )
 
