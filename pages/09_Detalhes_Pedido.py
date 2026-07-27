@@ -39,14 +39,13 @@ div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1
 .resumo-val { font-weight: 700; color: #222; }
 .resumo-total-val { font-size: 20px !important; font-weight: 800 !important; color: #2e7d32 !important; }
 .pgto-badge { background: #f3ece6; color: #5a3b28; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid #dfcdbb; }
-div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button,
-div[data-testid="stColumn"] > div > div > div > div[data-testid="stLinkButton"] > a { font-size: 12px !important; padding: 2px 6px !important; border-radius: 8px !important; min-height: 34px !important; display: flex !important; align-items: center !important; justify-content: center !important; }
-div[data-testid="stLinkButton"] > a { background-color: #25D366 !important; color: white !important; font-weight: 700 !important; border: none !important; }
-div[data-testid="stLinkButton"] > a:hover { background-color: #128C7E !important; color: white !important; }
-@media (max-width: 768px) { .block-container { padding-top: 0.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; } h1 { font-size: 18px !important; } div[data-testid="stVerticalBlockBorderWrapper"] { padding: 8px !important; } .info-value { font-size: 12px !important; } .resumo-total-val { font-size: 17px !important; } .resumo-container { padding: 8px 10px; } }
 
-/* Checkbox da Montagem da Cesta */
-.montagem-item label { font-size: 14px !important; font-weight: 600 !important; color: #333 !important; }
+/* Botões Corrigidos */
+div[data-testid="stButton"] > button { width: 100% !important; border-radius: 8px !important; min-height: 38px !important; font-weight: 700 !important; }
+div[data-testid="stLinkButton"] > a { width: 100% !important; border-radius: 8px !important; min-height: 38px !important; font-weight: 700 !important; display: flex !important; align-items: center !important; justify-content: center !important; background-color: #25D366 !important; color: white !important; border: none !important; }
+div[data-testid="stLinkButton"] > a:hover { background-color: #128C7E !important; color: white !important; }
+
+@media (max-width: 768px) { .block-container { padding-top: 0.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; } h1 { font-size: 18px !important; } div[data-testid="stVerticalBlockBorderWrapper"] { padding: 8px !important; } .info-value { font-size: 12px !important; } .resumo-total-val { font-size: 17px !important; } .resumo-container { padding: 8px 10px; } }
 .badge-montada { background-color: #e6f4ea; color: #137333; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 800; border: 1px solid #137333; margin-left: 10px; display: inline-block; }
 </style>
 """,
@@ -71,23 +70,18 @@ if not pedido:
 status_atual_pedido = str(pedido.get("status", "")).strip().capitalize()
 perfil_usuario = usuario.get("perfil", "Operador")
 
-# Bloqueia a edição se já foi enviado/entregue E o usuário não for o Administrador
 bloquear_edicao = (status_atual_pedido in ["Enviado", "Entregue"]) and (perfil_usuario != "Administrador")
 
-# Flag para ocultar opções de montagem se o pedido não estiver Pago
+# Esconde a checkbox de 'Cesta Pronta' se o pedido não estiver pago
 pode_montar = status_atual_pedido not in ["Recebido", "Desistência", "Desistencia"]
 
 if "editar_pedido" not in st.session_state: st.session_state.editar_pedido = False
-if "modo_montagem" not in st.session_state: st.session_state.modo_montagem = False
 
-# Se a página rodar bloqueada, desliga a força
-if bloquear_edicao or not pode_montar:
-    st.session_state.modo_montagem = False
 if bloquear_edicao:
     st.session_state.editar_pedido = False
 
 # -----------------------------------------------------
-# FILTRO ANTI-DUPLICIDADE DE ADICIONAIS
+# FILTRO ANTI-DUPLICIDADE DE ADICIONAIS E LEITURA
 # -----------------------------------------------------
 try:
     lista_bruta_adicionais = listar_adicionais_pedido(pedido["id"])
@@ -100,7 +94,6 @@ try:
             nomes_vistos.add(nome_ad)
 except: 
     adicionais_pedido = []
-
 
 itens_consulta_salvos = pedido.get("itens_consulta") or {}
 if isinstance(itens_consulta_salvos, str):
@@ -222,111 +215,26 @@ def obter_icone_pagamento(metodo):
         return f'<span class="pgto-badge">{metodo}</span>'
 
 # =====================================================
-# AVISO DE BLOQUEIO (SE APLICÁVEL)
+# AVISO DE BLOQUEIO E CABEÇALHO
 # =====================================================
 if bloquear_edicao:
     st.warning("🔒 **Pedido Bloqueado:** Como o status já é 'Enviado' ou 'Entregue', apenas o Administrador pode fazer alterações neste pedido.")
 
-
-# =====================================================
-# CABEÇALHO E BOTOES SUPERIORES
-# =====================================================
-col_t1, col_t2, col_t3 = st.columns([2.5, 1, 1])
-
+col_t1, col_t2 = st.columns([3.5, 1])
 with col_t1:
-    st.title("📋 Detalhes do Pedido")
+    st.title("📋 Detalhes da Ficha Técnica")
     badge_montada = '<span class="badge-montada">🧺 Cesta Montada</span>' if pedido.get("cesta_montada") else ''
     st.markdown(f"Pedido #{pedido.get('id')} | Status: **{pedido.get('status','-')}** {badge_montada}", unsafe_allow_html=True)
-    
 with col_t2:
-    if pode_montar and not bloquear_edicao:
-        if st.button("🧺 Montar Cesta", use_container_width=True):
-            st.session_state.modo_montagem = True
-            st.session_state.editar_pedido = False
-            st.rerun()
-
-with col_t3:
     if not bloquear_edicao:
         if st.button("✏️ Alterar Pedido", use_container_width=True):
             st.session_state.editar_pedido = True
-            st.session_state.modo_montagem = False
             st.rerun()
 
-
 # =====================================================
-# BLOCO 1: CHECKLIST DE MONTAGEM
+# BLOCO DE EDIÇÃO AVANÇADA
 # =====================================================
-if st.session_state.modo_montagem:
-    with st.container(border=True):
-        st.markdown('<div class="card-title" style="color: #b06000 !important; font-size: 18px !important;">🧺 Checklist de Montagem da Cesta</div>', unsafe_allow_html=True)
-        st.caption("Marque os itens conforme for colocando na cesta para garantir que nada foi esquecido.")
-        
-        # --- DESCRIÇÃO DA CESTA (LIMPO) ---
-        st.markdown(f"**🎁 Cesta Base:** {pedido.get('cesta_nome', '')}")
-        cesta_obj = buscar_cesta(pedido.get("cesta_id")) if pedido.get("cesta_id") else {}
-        descricao_cesta = cesta_obj.get("descricao", "") if cesta_obj else ""
-        
-        if descricao_cesta:
-            # Puxa apenas o que está depois de "Inclusos:"
-            bloco_inclusos = descricao_cesta
-            if "Inclusos:" in descricao_cesta:
-                bloco_inclusos = descricao_cesta.split("Inclusos:")[1]
-            elif "inclusos:" in descricao_cesta.lower():
-                bloco_inclusos = descricao_cesta.lower().split("inclusos:")[1]
-            
-            # Limpa tudo que vier depois de uma quebra de linha dupla (evitando puxar textos de observação)
-            bloco_inclusos = bloco_inclusos.split("\n\n")[0]
-            
-            st.markdown("<div style='margin-top: 10px; margin-bottom: 5px; color:#5a3b28; font-weight:bold;'>Itens Padrão da Cesta:</div>", unsafe_allow_html=True)
-            itens_desc = [i.strip() for i in bloco_inclusos.split(";") if i.strip()]
-            for idx, item in enumerate(itens_desc):
-                st.checkbox(f"📦 {item}", key=f"chk_desc_{idx}")
-        
-        # --- PRODUTOS SELECIONADOS ---
-        produtos = pedido.get("produtos", "")
-        if produtos:
-            st.markdown("<div style='margin-top: 15px; margin-bottom: 5px; color:#5a3b28; font-weight:bold;'>🍓 Personalização do Cliente:</div>", unsafe_allow_html=True)
-            for idx, prod in enumerate(produtos.split("\n")):
-                prod_limpo = prod.replace('•', '').strip()
-                if prod_limpo:
-                    st.checkbox(f"✔️ {prod_limpo}", key=f"chk_prod_{idx}")
-        
-        # --- ADICIONAIS E EXTRAS ---
-        valor_extras = float(pedido.get("valor_extras", 0))
-        if adicionais_pedido or valor_extras > 0:
-            st.markdown("<div style='margin-top: 15px; margin-bottom: 5px; color:#5a3b28; font-weight:bold;'>🎀 Complementos e Extras:</div>", unsafe_allow_html=True)
-            for idx, ad in enumerate(adicionais_pedido):
-                st.checkbox(f"➕ {ad.get('nome_produto', '')}", key=f"chk_ad_{idx}")
-            if valor_extras > 0:
-                st.checkbox(f"💲 Acréscimo Cobrado (Extras): {formatar_valor(valor_extras)} (Verificar o que é)", key="chk_extra")
-        
-        # --- MENSAGEM DO CARTÃO ---
-        mensagem = pedido.get("mensagem", "")
-        if mensagem:
-            st.markdown("<div style='margin-top: 15px; margin-bottom: 5px; color:#5a3b28; font-weight:bold;'>💌 Mensagem do Cartão:</div>", unsafe_allow_html=True)
-            st.info(f"_{mensagem}_")
-            st.checkbox("✅ Cartão impresso/escrito e anexado à cesta", key="chk_msg")
-            
-        st.divider()
-        
-        # --- ATRIBUIÇÃO E FINALIZAÇÃO ---
-        col_m_btn1, col_m_btn2 = st.columns(2)
-        with col_m_btn1:
-            if st.button("💾 Salvar Montagem", type="primary", use_container_width=True):
-                atualizar_pedido(pedido["id"], {"cesta_montada": True})
-                st.session_state.modo_montagem = False
-                st.session_state['msg_geral'] = "✅ Montagem salva! A cesta está pronta."
-                st.rerun()
-        with col_m_btn2:
-            if st.button("❌ Voltar aos Detalhes", use_container_width=True):
-                st.session_state.modo_montagem = False
-                st.rerun()
-
-
-# =====================================================
-# BLOCO 2: EDIÇÃO AVANÇADA
-# =====================================================
-elif st.session_state.editar_pedido:
+if st.session_state.editar_pedido:
     with st.container(border=True):
         st.markdown('<div class="card-title">✏️ Painel de Edição Avançada</div>', unsafe_allow_html=True)
         aba_dados, aba_cesta, aba_adicionais = st.tabs(["👤 Dados", "🎁 Cesta e Produtos", "🎀 Adicionais"])
@@ -527,18 +435,18 @@ else:
             
             c_status1, c_status2 = st.columns(2)
             with c_status1:
-                # REMOVIDO "Entregue" do dropdown para garantir que só seja finalizado pelo entregador
-                status_op = ["Recebido", "Pago", "Enviado", "Desistência"]
+                # Retirado "Enviado" das opções normais
+                status_op = ["Recebido", "Pago", "Desistência"]
                 status_atual = pedido.get("status", "Recebido")
                 
-                # Se já estiver como "Entregue", adicionamos só pra não quebrar a visualização atual
+                # Garante visualização se já estiver em status oculto
                 if status_atual == "Entregue": status_op.append("Entregue")
+                if status_atual == "Enviado": status_op.append("Enviado")
                     
                 status = st.selectbox("Status", status_op, index=status_op.index(status_atual) if status_atual in status_op else 0, disabled=bloquear_edicao)
+            
             with c_status2:
                 st.markdown("<div style='margin-top: 32px;'></div>", unsafe_allow_html=True)
-                
-                # Só exibe o checkbox da cesta se for permitido montar
                 if pode_montar:
                     chk_montada = st.checkbox("🧺 Cesta Pronta", value=bool(pedido.get("cesta_montada")), disabled=bloquear_edicao)
                 else:
