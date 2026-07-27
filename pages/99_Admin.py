@@ -209,10 +209,10 @@ if perfil == "Entregador":
             st.page_link("pages/08_Entregas.py", label="Abrir Rota de Entrega")
 
 # -----------------------------------------------------
-# VISÃO DO OPERADOR E ADMINISTRADOR (Completo)
+# VISÃO DO OPERADOR E ADMINISTRADOR (Completo na nova sequência)
 # -----------------------------------------------------
 else:
-    # --- PRIMEIRA LINHA: ATENDIMENTO E LOGÍSTICA ---
+    # --- PRIMEIRA LINHA ---
     c1, c2, c3 = st.columns(3)
     
     with c1:
@@ -233,19 +233,6 @@ else:
             st.markdown(
                 """
                 <div class="card-content">
-                    <div class="c-icon">🛵</div>
-                    <div class="c-title">Rotas de Entrega</div>
-                    <div class="c-desc">Painel logístico em tempo real para visualização e acompanhamento de entregas.</div>
-                </div>
-                """, unsafe_allow_html=True
-            )
-            st.page_link("pages/08_Entregas.py", label="Monitorar Entregas")
-
-    with c3:
-        with st.container(border=True):
-            st.markdown(
-                """
-                <div class="card-content">
                     <div class="c-icon">📅</div>
                     <div class="c-title">Previsão de Produção</div>
                     <div class="c-desc">Acompanhe diariamente o volume de cestas e pedidos que precisam ser montados.</div>
@@ -254,38 +241,25 @@ else:
             )
             st.page_link("pages/16_Previsao.py", label="Acessar Previsão")
 
+    with c3:
+        with st.container(border=True):
+            st.markdown(
+                """
+                <div class="card-content">
+                    <div class="c-icon">🛵</div>
+                    <div class="c-title">Rotas de Entrega</div>
+                    <div class="c-desc">Painel logístico em tempo real para visualização e acompanhamento de entregas.</div>
+                </div>
+                """, unsafe_allow_html=True
+            )
+            st.page_link("pages/08_Entregas.py", label="Monitorar Entregas")
 
-    # --- SEGUNDA LINHA: CATÁLOGO ---
+
+    # --- SEGUNDA LINHA ---
     st.write("")
     c4, c5, c6 = st.columns(3)
     
     with c4:
-        with st.container(border=True):
-            st.markdown(
-                """
-                <div class="card-content">
-                    <div class="c-icon">🧺</div>
-                    <div class="c-title">Cestas Base</div>
-                    <div class="c-desc">Crie e edite as cestas e pacotes principais exibidos na vitrine da loja.</div>
-                </div>
-                """, unsafe_allow_html=True
-            )
-            st.page_link("pages/04_Cestas.py", label="Montar Cestas")
-            
-    with c5:
-        with st.container(border=True):
-            st.markdown(
-                """
-                <div class="card-content">
-                    <div class="c-icon">🍫</div>
-                    <div class="c-title">Produtos & Extras</div>
-                    <div class="c-desc">Estoque de produtos internos, chocolates, vinhos e itens de adicionais.</div>
-                </div>
-                """, unsafe_allow_html=True
-            )
-            st.page_link("pages/05_Produtos.py", label="Estoque de Itens")
-
-    with c6:
         with st.container(border=True):
             st.markdown(
                 """
@@ -297,6 +271,32 @@ else:
                 """, unsafe_allow_html=True
             )
             st.page_link("pages/03_Clientes.py", label="Acessar Clientes")
+            
+    with c5:
+        with st.container(border=True):
+            st.markdown(
+                """
+                <div class="card-content">
+                    <div class="c-icon">🧺</div>
+                    <div class="c-title">Cestas Base</div>
+                    <div class="c-desc">Crie e edite as cestas e pacotes principais exibidos na vitrine da loja.</div>
+                </div>
+                """, unsafe_allow_html=True
+            )
+            st.page_link("pages/04_Cestas.py", label="Montar Cestas")
+
+    with c6:
+        with st.container(border=True):
+            st.markdown(
+                """
+                <div class="card-content">
+                    <div class="c-icon">🍫</div>
+                    <div class="c-title">Produtos & Extras</div>
+                    <div class="c-desc">Estoque de produtos internos, chocolates, vinhos e itens de adicionais.</div>
+                </div>
+                """, unsafe_allow_html=True
+            )
+            st.page_link("pages/05_Produtos.py", label="Estoque de Itens")
 
 
     # --- TERCEIRA LINHA: EXCLUSIVA ADMINISTRADOR ---
