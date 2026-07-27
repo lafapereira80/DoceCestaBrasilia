@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import json
+import time
 
 from config.supabase import supabase
 from services.pedido_service import excluir_pedido_completo
@@ -151,7 +152,11 @@ with st.container(border=True):
         st.write("")
         with st.expander("⚙️ Zona de Perigo - Deletar Cliente e Histórico Completo", expanded=False):
             st.error("⚠️ Atenção: Esta ação é irreversível. Ao deletar o comprador, **todos os pedidos e históricos** associados a ele serão permanentemente apagados do banco de dados.")
-            confirmar_texto = st.text_input("Digite 'DELETAR' para confirmar a exclusão completa do cliente:", key=f"conf_del_cli_{cliente_atual['cpf']}")
+            
+            # Chave de estado dedicada para capturar o texto digitado sem perder foco
+            chave_input_del = f"conf_del_cli_{cliente_atual['cpf']}"
+            confirmar_texto = st.text_input("Digite 'DELETAR' para confirmar a exclusão completa do cliente:", key=chave_input_del)
+            
             if st.button("🗑️ Deletar Comprador e Todas as Compras", type="primary", use_container_width=True):
                 if confirmar_texto.strip().upper() == "DELETAR":
                     erros_exclusao = 0
@@ -162,11 +167,14 @@ with st.container(border=True):
                     
                     if erros_exclusao == 0:
                         st.success("✅ Comprador e todas as suas compras foram apagados com sucesso! Atualizando...")
+                        # Limpa cache para atualizar a base de dados
+                        st.cache_data.clear()
+                        time.sleep(1)
                         st.rerun()
                     else:
                         st.error("❌ Ocorreu um erro ao apagar alguns registros no banco.")
                 else:
-                    st.warning("⚠️ Digite exatamente a palavra 'DELETAR' para habilitar o botão.")
+                    st.warning("⚠️ Digite exatamente a palavra 'DELETAR' no campo acima para habilitar a exclusão.")
 
 st.write("")
 st.subheader(f"📦 Histórico de Compras ({qtd_compras_cli} registros)")
@@ -220,6 +228,8 @@ for compra in compras_cliente:
                     sucesso_del, msg_del = excluir_pedido_completo(c_id)
                     if sucesso_del:
                         st.success("✅ Compra apagada com sucesso!")
+                        st.cache_data.clear()
+                        time.sleep(0.5)
                         st.rerun()
                     else:
                         st.error(f"❌ {msg_del}")
