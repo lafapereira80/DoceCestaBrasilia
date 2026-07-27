@@ -11,7 +11,8 @@ from services.pedido_service import (
     listar_pedidos_ativos,
     excluir_pedido_completo,
     buscar_pedido,
-    salvar_pedido
+    salvar_pedido,
+    atualizar_status_pedido
 )
 from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
@@ -111,7 +112,7 @@ div[data-testid="stCheckbox"] { margin-top: 4px; }
 
 
 st.title("📋 Gestão de Pedidos")
-st.caption("Acompanhamento visual (Aguardando Pagamento e Fila de Produção).")
+st.caption("Acompanhamento visual (Aguardando Pagamento e Fila de Produção/Envio).")
 
 # =====================================================
 # CRIAR NOVO PEDIDO MANUAL
@@ -297,20 +298,25 @@ def status_visual_html(status):
     status_str = str(status).strip().capitalize()
     if status_str == "Pago": return '<span class="badge-status badge-pago">🟢 Pago</span>'
     elif status_str == "Recebido": return '<span class="badge-status badge-recebido">🟡 Recebido</span>'
+    elif status_str == "Enviado": return '<span class="badge-status" style="background-color: #e8f0fe; color: #1a73e8;">🛵 Enviado (Rota)</span>'
     elif status_str == "Desistência" or status_str == "Desistencia": return '<span class="badge-status badge-desistencia">🔴 Desistência</span>'
     return f'<span class="badge-status">{status}</span>'
 
-def mostrar_lista(titulo, status_filtro, eh_pago=False, permitir_exclusao=False):
+# Alteramos status_filtro_lista para aceitar uma lista de palavras
+def mostrar_lista(titulo, status_filtro_lista, eh_pago=False, permitir_exclusao=False):
     if df.empty or "status" not in df.columns:
         st.info(f"Nenhum pedido registrado em '{titulo}'.")
         return
 
-    pedidos_status = df[df["status"].astype(str).str.strip().str.capitalize() == status_filtro.capitalize()]
+    # Filtra por múltiplos status (ex: ["Pago", "Enviado"])
+    status_formatados = [s.capitalize() for s in status_filtro_lista]
+    pedidos_status = df[df["status"].astype(str).str.strip().str.capitalize().isin(status_formatados)]
+    
     if pedidos_status.empty:
         st.info(f"Nenhum pedido nesta etapa no momento.")
         return
         
-    pesquisa_local = st.text_input("🔍 Buscar cliente:", placeholder="Digite o nome...", key=f"pesquisa_{status_filtro}")
+    pesquisa_local = st.text_input("🔍 Buscar cliente:", placeholder="Digite o nome...", key=f"pesquisa_{status_filtro_lista[0]}")
     if pesquisa_local.strip():
         pedidos_status = pedidos_status[pedidos_status["cliente_nome"].fillna("").str.contains(pesquisa_local, case=False)]
         if pedidos_status.empty:
@@ -357,15 +363,22 @@ def mostrar_lista(titulo, status_filtro, eh_pago=False, permitir_exclusao=False)
                 st.markdown(f'<div class="valor-pedido">R$ {valor:,.2f}</div>'.replace(",", "X").replace(".", ",").replace("X","."), unsafe_allow_html=True)
 
             with col_acoes:
+                status_atual = str(pedido.get("status", "")).strip().capitalize()
+                
                 if eh_pago:
                     sub_p1, sub_p2 = st.columns(2)
                     with sub_p1:
                         if st.button("👁️", key=f"abrir_{pedido['id']}", help="Abrir pedido (Detalhe Cesta Montada)", use_container_width=True):
                             st.session_state["pedido_aberto"] = pedido["id"]
                             st.switch_page("pages/09_Detalhes_Pedido.py")
+                    
                     with sub_p2:
-                        if st.button("🛵", key=f"enviar_{pedido['id']}", help="Mandar para Rotas de Entrega", use_container_width=True):
-                            alterar_para_enviado(pedido["id"])
+                        # Se já estiver enviado, tira o botão e coloca o ícone de caminhão
+                        if status_atual == "Enviado":
+                            st.markdown('<div style="text-align:center; padding-top: 5px; font-size: 18px;" title="Já está na Rota de Entregas">🚚</div>', unsafe_allow_html=True)
+                        else:
+                            if st.button("🛵", key=f"enviar_{pedido['id']}", help="Mandar para Rotas de Entrega", use_container_width=True):
+                                alterar_para_enviado(pedido["id"])
                 
                 elif permitir_exclusao:
                     sub_col1, sub_col2 = st.columns(2)
@@ -389,7 +402,7 @@ def mostrar_lista(titulo, status_filtro, eh_pago=False, permitir_exclusao=False)
 if not df.empty and "status" in df.columns:
     df_status = df["status"].astype(str).str.strip().str.capitalize()
     qtd_rec = len(df_status[df_status == "Recebido"])
-    qtd_pag = len(df_status[df_status == "Pago"])
+    qtd_pag = len(df_status[df_status.isin(["Pago", "Enviado"])])
     qtd_des = len(df_status[df_status.isin(["Desistência", "Desistencia"])])
 else: qtd_rec = qtd_pag = qtd_des = 0
 
@@ -399,9 +412,9 @@ aba_recebidos, aba_pagos, aba_desistencias = st.tabs([
     f"❌ Desistências ({qtd_des})"
 ])
 
-with aba_recebidos: mostrar_lista("Aguardando Pagamento", "Recebido", eh_pago=False)
-with aba_pagos: mostrar_lista("Fila de Produção", "Pago", eh_pago=True)
-with aba_desistencias: mostrar_lista("Desistências", "Desistência", eh_pago=False, permitir_exclusao=(usuario.get("perfil") == "Administrador"))
+with aba_recebidos: mostrar_lista("Aguardando Pagamento", ["Recebido"], eh_pago=False)
+with aba_pagos: mostrar_lista("Fila de Produção", ["Pago", "Enviado"], eh_pago=True)
+with aba_desistencias: mostrar_lista("Desistências", ["Desistência", "Desistencia"], eh_pago=False, permitir_exclusao=(usuario.get("perfil") == "Administrador"))
 
 # =====================================================
 # IMPRESSÃO (VINCULADA SOMENTE À ABA DE PAGOS)
