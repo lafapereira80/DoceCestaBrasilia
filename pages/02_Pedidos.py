@@ -326,7 +326,7 @@ def render_criar_pedido_manual():
         st.markdown("#### 💰 Fechamento")
         cf1, cf2, cf3 = st.columns(3)
         with cf1: pag = st.selectbox("Forma de Pagamento", ["Pix", "Cartão de Crédito", "Dinheiro", "Transferência"], key="man_pag")
-        with cf2: status = st.selectbox("Status Inicial", ["Recebido", "Pago"], key="man_status")
+        with cf2: status = st.selectbox("Status Inicial", ["Recebido", "Pago", "Enviado", "Entregue"], key="man_status")
         with cf3: frete = st.number_input("Frete (R$)", min_value=0.0, step=1.0, key="man_frete")
         
         valor_c = float(cesta_sel.get("preco", 0)) if cesta_sel and cesta_sel.get("id") else 0
@@ -345,7 +345,6 @@ def render_criar_pedido_manual():
             prod_text = "\n".join([f"{c}: {i['nome']}" for c, itens in selecoes_admin.items() for i in itens])
             add_text = ", ".join([a["nome"] for a in adicionais_selecionados])
             
-            # Formata o endereço final dinamicamente, ocultando o "(CEP: )" se o campo estiver vazio
             cep_str = f" (CEP: {cep_in})" if cep_in.strip() else ""
             end_comp = f"{rua}, {num} - {bairro}, {cidade}{cep_str}"
             
@@ -423,6 +422,10 @@ def status_visual_html(status):
         return '<span class="badge-status badge-pago">🟢 Pago</span>'
     elif status_str == "Recebido":
         return '<span class="badge-status badge-recebido">🟡 Recebido</span>'
+    elif status_str == "Enviado":
+        return '<span class="badge-status" style="background-color: #e8f0fe; color: #1a73e8;">🛵 Enviado</span>'
+    elif status_str == "Entregue":
+        return '<span class="badge-status" style="background-color: #f3e8fd; color: #6a1b9a;">✅ Entregue</span>'
     elif status_str == "Desistência" or status_str == "Desistencia":
         return '<span class="badge-status badge-desistencia">🔴 Desistência</span>'
     return f'<span class="badge-status">{status}</span>'
@@ -480,7 +483,7 @@ def mostrar_lista(titulo, status_filtro, permitir_exclusao=False, permitir_impre
                 nome_cliente = str(pedido.get("cliente_nome", "-")).strip()
                 nome_cliente = " ".join(nome_cliente.split())
                 st.markdown(f'<div class="cliente-nome">{nome_cliente}</div>', unsafe_allow_html=True)
-                st.caption(f"📱 {pedido.get('cliente_telefone', '-')}")
+                st.caption(f"📱 +{pedido.get('cliente_telefone', '-')}")
 
             with col_info2:
                 st.write(f"🎁 **{pedido.get('cesta_nome','-')}**")
@@ -517,16 +520,43 @@ def mostrar_lista(titulo, status_filtro, permitir_exclusao=False, permitir_impre
 
 
 # =====================================================
-# FLUXO COMPLETO DE PEDIDOS NA TELA (EM ABAS)
+# CONTAGEM DE PEDIDOS
 # =====================================================
 
-aba_recebidos, aba_pagos, aba_desistencias = st.tabs(["📥 Recebidos", "💰 Pagos", "❌ Desistências"])
+if not df.empty and "status" in df.columns:
+    df_status = df["status"].astype(str).str.strip().str.capitalize()
+    qtd_rec = len(df_status[df_status == "Recebido"])
+    qtd_pag = len(df_status[df_status == "Pago"])
+    qtd_env = len(df_status[df_status == "Enviado"])
+    qtd_ent = len(df_status[df_status == "Entregue"])
+    qtd_des = len(df_status[df_status.isin(["Desistência", "Desistencia"])])
+else:
+    qtd_rec = qtd_pag = qtd_env = qtd_ent = qtd_des = 0
+
+
+# =====================================================
+# FLUXO COMPLETO DE PEDIDOS NA TELA (EM ABAS COM CONTAGEM)
+# =====================================================
+
+aba_recebidos, aba_pagos, aba_enviados, aba_entregues, aba_desistencias = st.tabs([
+    f"📥 Recebidos ({qtd_rec})", 
+    f"💰 Pagos ({qtd_pag})", 
+    f"🛵 Enviados ({qtd_env})",
+    f"✅ Entregues ({qtd_ent})",
+    f"❌ Desistências ({qtd_des})"
+])
 
 with aba_recebidos:
     mostrar_lista("Pedidos Recebidos", "Recebido")
 
 with aba_pagos:
     mostrar_lista("Pedidos Pagos", "Pago", permitir_impressao=True)
+    
+with aba_enviados:
+    mostrar_lista("Pedidos Enviados", "Enviado", permitir_impressao=True)
+    
+with aba_entregues:
+    mostrar_lista("Pedidos Entregues", "Entregue")
 
 with aba_desistencias:
     mostrar_lista("Desistências", "Desistência", permitir_exclusao=(usuario.get("perfil") == "Administrador"))
