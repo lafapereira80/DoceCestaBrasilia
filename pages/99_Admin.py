@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
 
@@ -151,6 +151,42 @@ st.markdown(f"<div class='subtitle'>Bem-vindo ao Painel de Controle ({perfil}). 
 
 
 # =====================================================
+# GATILHO INTELIGENTE: ALERTA DIÁRIO DE PRODUÇÃO NO TELEGRAM
+# =====================================================
+if perfil in ["Administrador", "Operador"]:
+    hoje_str = str(date.today())
+    
+    # Verifica se já disparou hoje (usando a sessão do usuário)
+    if "alerta_producao_data" not in st.session_state or st.session_state["alerta_producao_data"] != hoje_str:
+        try:
+            from services.telegram_service import enviar_notificacao_telegram
+            
+            # Busca todas as cestas pagas no banco
+            res = supabase.table("pedidos").select("data_entrega").eq("status", "Pago").execute()
+            pagos = res.data or []
+            
+            amanha = (date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
+            depois = (date.today() + timedelta(days=2)).strftime("%Y-%m-%d")
+            
+            qtd_amanha = sum(1 for p in pagos if str(p.get("data_entrega"))[:10] == amanha)
+            qtd_depois = sum(1 for p in pagos if str(p.get("data_entrega"))[:10] == depois)
+            
+            # Se houver pedidos para amanhã ou depois, ele dispara silenciosamente
+            if qtd_amanha > 0 or qtd_depois > 0:
+                texto_auto = f"🤖 *RESUMO AUTOMÁTICO DE PRODUÇÃO*\n\nExistem cestas pagas aguardando montagem:\n"
+                if qtd_amanha > 0: texto_auto += f"📅 Amanhã: {qtd_amanha} cesta(s)\n"
+                if qtd_depois > 0: texto_auto += f"📅 Depois de amanhã: {qtd_depois} cesta(s)\n"
+                texto_auto += "\nAcesse o painel 'Previsão de Produção' no sistema para ver os detalhes."
+                
+                enviar_notificacao_telegram(texto_auto)
+                
+            # Salva que já verificou hoje
+            st.session_state["alerta_producao_data"] = hoje_str
+        except Exception:
+            pass # Ignora silenciosamente se o Telegram falhar
+
+
+# =====================================================
 # DASHBOARD DE ATALHOS (BASEADO NO PERFIL)
 # =====================================================
 
@@ -210,13 +246,13 @@ else:
             st.markdown(
                 """
                 <div class="card-content">
-                    <div class="c-icon">👥</div>
-                    <div class="c-title">Base de Clientes</div>
-                    <div class="c-desc">Veja o histórico de compras, LTV e o ranking dos seus melhores clientes.</div>
+                    <div class="c-icon">📅</div>
+                    <div class="c-title">Previsão de Produção</div>
+                    <div class="c-desc">Acompanhe diariamente o volume de cestas e pedidos que precisam ser montados.</div>
                 </div>
                 """, unsafe_allow_html=True
             )
-            st.page_link("pages/03_Clientes.py", label="Acessar Clientes")
+            st.page_link("pages/16_Previsao.py", label="Acessar Previsão")
 
 
     # --- SEGUNDA LINHA: CATÁLOGO ---
@@ -254,13 +290,13 @@ else:
             st.markdown(
                 """
                 <div class="card-content">
-                    <div class="c-icon">📂</div>
-                    <div class="c-title">Categorias</div>
-                    <div class="c-desc">Estruture e organize perfeitamente os produtos dentro do seu catálogo.</div>
+                    <div class="c-icon">👥</div>
+                    <div class="c-title">Base de Clientes</div>
+                    <div class="c-desc">Veja o histórico de compras, LTV e o ranking dos seus melhores clientes.</div>
                 </div>
                 """, unsafe_allow_html=True
             )
-            st.page_link("pages/15_Categorias.py", label="Gerir Categorias")
+            st.page_link("pages/03_Clientes.py", label="Acessar Clientes")
 
 
     # --- TERCEIRA LINHA: EXCLUSIVA ADMINISTRADOR ---
@@ -296,4 +332,14 @@ else:
                 st.page_link("pages/07_Usuarios.py", label="Controle de Acessos")
         
         with c9:
-            st.empty() # Mantém o grid alinhado vazio
+            with st.container(border=True):
+                st.markdown(
+                    """
+                    <div class="card-content">
+                        <div class="c-icon">📂</div>
+                        <div class="c-title">Categorias</div>
+                        <div class="c-desc">Estruture e organize perfeitamente os produtos dentro do seu catálogo.</div>
+                    </div>
+                    """, unsafe_allow_html=True
+                )
+                st.page_link("pages/15_Categorias.py", label="Gerir Categorias")
