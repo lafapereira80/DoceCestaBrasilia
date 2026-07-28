@@ -57,7 +57,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS PREMIUM E LIGHTBOX PADRÃO UNIFICADO
+# CSS PREMIUM E LIGHTBOX PADRÃO
 # ==========================================================
 
 st.markdown(
@@ -229,7 +229,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX UNIFICADO (TELA INTEIRA REAL)
+   LIGHTBOX PADRÃO UNIFICADO (TELA INTEIRA)
 ========================================= */
 .lightbox-wrapper { text-align: center; margin-bottom: 10px; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 .lightbox-toggle { display: none !important; }
@@ -245,7 +245,7 @@ div[data-testid="stButton"] button:hover {
 .lightbox-image:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(90, 59, 40, 0.15); }
 .imagem-legenda { text-align: center; font-size: 12px; color: #888; margin-top: 10px; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-/* MODAL GLOBAL FIXO COBRINDO A TELA INTEIRA */
+/* O MODAL DEVE SER POSITION FIXED GLOBAL */
 .lightbox-modal {
     position: fixed; 
     top: 0; 
@@ -253,7 +253,7 @@ div[data-testid="stButton"] button:hover {
     width: 100vw; 
     height: 100vh;
     background-color: rgba(0, 0, 0, 0.85); 
-    z-index: 9999999;
+    z-index: 99999999;
     display: flex; 
     align-items: center; 
     justify-content: center;
@@ -300,6 +300,7 @@ div[data-testid="stButton"] button:hover {
     justify-content: space-between;
     align-items: center;
     transition: all 0.3s ease;
+    position: relative; /* Garante posicionamento base limpo */
 }
 .adicional-item-box:hover {
     border-color: #d2bfae;
@@ -491,7 +492,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (GRID PREMIUM COM LIGHTBOX IDÊNTICO)
+# APRESENTAÇÃO DOS ADICIONAIS (COM MODAL RENDERIZADO FORA DA GRID)
 # ==========================================================
 
 produtos_adicionais = []
@@ -507,7 +508,7 @@ except Exception as erro:
 
 if produtos_adicionais:
     cards_html = ""
-    for prod in produtos_adicionais:
+    for idx_add, prod in enumerate(produtos_adicionais):
         nome_p = prod.get("nome", "")
         preco_p = prod.get("preco")
         imagem_p = prod.get("imagem")
@@ -524,12 +525,13 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            # Aplicando exatamente a mesma estrutura de label + input checkbox + modal do lightbox das cestas
+            # Para evitar que o modal seja confinado ao container grid, renderizamos o input/label 
+            # e posicionamos o modal fora do card (logo abaixo), garantindo posicionamento em tela cheia idêntico.
             img_html = f'''
-                <label style="cursor: zoom-in; display: inline-block; margin-bottom: 6px;">
+                <label style="cursor: zoom-in; display: inline-block; margin-bottom: 6px; position: static;">
                     <input type="checkbox" class="lightbox-toggle">
                     <img src="{img_src}" class="adicional-img-small" title="Clique para ampliar">
-                    <div class="lightbox-modal">
+                    <div class="lightbox-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;">
                         <img src="{img_src}">
                     </div>
                 </label>
