@@ -57,7 +57,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS PREMIUM E LIGHTBOX PADRÃO
+# CSS PREMIUM E LIGHTBOX PADRÃO UNIFICADO
 # ==========================================================
 
 st.markdown(
@@ -229,7 +229,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX PADRÃO DAS CESTAS
+   LIGHTBOX UNIFICADO (TELA INTEIRA REAL)
 ========================================= */
 .lightbox-wrapper { text-align: center; margin-bottom: 10px; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 .lightbox-toggle { display: none !important; }
@@ -244,17 +244,38 @@ div[data-testid="stButton"] button:hover {
 }
 .lightbox-image:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(90, 59, 40, 0.15); }
 .imagem-legenda { text-align: center; font-size: 12px; color: #888; margin-top: 10px; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* MODAL GLOBAL FIXO COBRINDO A TELA INTEIRA */
 .lightbox-modal {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background-color: rgba(0, 0, 0, 0.85); z-index: 99999999;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; visibility: hidden; transition: opacity 0.3s ease; cursor: zoom-out;
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85); 
+    z-index: 9999999;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    opacity: 0; 
+    visibility: hidden; 
+    transition: opacity 0.3s ease; 
+    cursor: zoom-out;
 }
-.lightbox-modal img { max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); object-fit: contain; }
-.lightbox-toggle:checked ~ .lightbox-modal { opacity: 1; visibility: visible; }
+.lightbox-modal img { 
+    max-width: 90vw; 
+    max-height: 90vh; 
+    border-radius: 12px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
+    object-fit: contain;
+}
+.lightbox-toggle:checked ~ .lightbox-modal { 
+    opacity: 1; 
+    visibility: visible; 
+}
 
 /* =========================================
-   GRID CSS DE ADICIONAIS
+   GRID CSS DE ADICIONAIS (EXTRAS AVULSOS)
 ========================================= */
 .adicionais-hero-card {
     background: linear-gradient(135deg, #ffffff 0%, #faf7f3 100%);
@@ -302,25 +323,6 @@ div[data-testid="stButton"] button:hover {
 .adicional-nome { font-size: 12.5px; font-weight: 700; color: #4a2e1b; margin-top: 10px; margin-bottom: 6px; min-height: 32px; line-height: 1.3; }
 .adicional-preco-fixo { color: #137333; font-weight: 800; font-size: 14px; }
 .adicional-preco-consulta { color: #c5721f; font-weight: 800; background: #fff8ef; padding: 4px 8px; border-radius: 8px; font-size: 10px; text-transform: uppercase; border: 1px solid #fce8b2; display: inline-block; }
-
-/* MODAL GLOBAL PARA OS ADICIONAIS */
-#global-zoom-modal {
-    position: fixed;
-    top: 0; left: 0; width: 100vw; height: 100vh;
-    background-color: rgba(0, 0, 0, 0.85);
-    z-index: 999999999;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    cursor: zoom-out;
-}
-#global-zoom-modal img {
-    max-width: 90vw;
-    max-height: 90vh;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-    object-fit: contain;
-}
 
 /* RODAPÉ */
 .footer-container {
@@ -402,7 +404,7 @@ st.markdown(
 # ==========================================================
 
 st.markdown(
-    """<div class="info-grid"><div class="info-card"><div class="info-title">Bem-vindo(a)</div><div class="info-text"><div style="text-align: center; margin-bottom: 12px;">É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.</div>Nossas cestas são cuidadosamente montadas no estilo <strong>grazing</strong> e proporcionam não apenas sabores únicos e envolventes, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br><div style="text-align: center;">Desfrute o melhor da vida com um bom café e uma excelente companhia!</div></div></div><div class="info-card"><div class="info-title">Como fazer o pedido</div><ul class="como-pedir-list"><li>✨ Defina através do nosso catálogo abaixo a opção desejada e clique em <b>"Monte sua Cesta"</b>.</li><li>⏳ Peça sua Doce Cesta com no mínimo <b>24h de antecedência</b> (ou <b>72h</b> caso possua mini bolo).</li><li>🕒 <b>Atendimento:</b> Segunda a sexta de 7h às 19h | Sábado de 8h às 12h.</li><li>🚗 A entrega poderá ser realizada via <b>Uber Flash / 99 Entrega</b> ou retirada em mãos.</li><li>💌 Toutes as cestas contêm um <b>cartão personalizável</b> para o homenageado.</li><li>💳 <b>Pagamento:</b> PIX ou link de Cartão de Crédito.</li></ul></div></div>""",
+    """<div class="info-grid"><div class="info-card"><div class="info-title">Bem-vindo(a)</div><div class="info-text"><div style="text-align: center; margin-bottom: 12px;">É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.</div>Nossas cestas são cuidadosamente montadas no estilo <strong>grazing</strong> e proporcionam não apenas sabores únicos e envolventes, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br><div style="text-align: center;">Desfrute o melhor da vida com um bom café e uma excelente companhia!</div></div></div><div class="info-card"><div class="info-title">Como fazer o pedido</div><ul class="como-pedir-list"><li>✨ Defina através do nosso catálogo abaixo a opção desejada e clique em <b>"Monte sua Cesta"</b>.</li><li>⏳ Peça sua Doce Cesta com no mínimo <b>24h de antecedência</b> (ou <b>72h</b> caso possua mini bolo).</li><li>🕒 <b>Atendimento:</b> Segunda a sexta de 7h às 19h | Sábado de 8h às 12h.</li><li>🚗 A entrega poderá ser realizada via <b>Uber Flash / 99 Entrega</b> ou retirada em mãos.</li><li>💌 Todas as cestas contêm um <b>cartão personalizável</b> para o homenageado.</li><li>💳 <b>Pagamento:</b> PIX ou link de Cartão de Crédito.</li></ul></div></div>""",
     unsafe_allow_html=True
 )
 
@@ -489,7 +491,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (COM JS SEGURO E CORRIGIDO)
+# APRESENTAÇÃO DOS ADICIONAIS (GRID PREMIUM COM LIGHTBOX IDÊNTICO)
 # ==========================================================
 
 produtos_adicionais = []
@@ -522,34 +524,20 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            img_html = f'<img src="{img_src}" class="adicional-img-small trigger-zoom" data-img="{img_src}" title="Clique para ampliar">'
+            # Aplicando exatamente a mesma estrutura de label + input checkbox + modal do lightbox das cestas
+            img_html = f'''
+                <label style="cursor: zoom-in; display: inline-block; margin-bottom: 6px;">
+                    <input type="checkbox" class="lightbox-toggle">
+                    <img src="{img_src}" class="adicional-img-small" title="Clique para ampliar">
+                    <div class="lightbox-modal">
+                        <img src="{img_src}">
+                    </div>
+                </label>
+            '''
         else:
             img_html = f'<div class="adicional-img-placeholder" style="margin-bottom: 6px;">🎀</div>'
 
         cards_html += f'<div class="adicional-item-box">{img_html}<div class="adicional-nome">{nome_p}</div><div>{span_preco}</div></div>'
-
-    # Injeção segura do HTML e do Script JS sem quebras de sintaxe Python
-    js_script = """
-    <div id="global-zoom-modal">
-        <img id="global-zoom-img" src="">
-    </div>
-    <script>
-    (function() {
-        const modal = document.getElementById("global-zoom-modal");
-        const modalImg = document.getElementById("global-zoom-img");
-        
-        document.addEventListener("click", function(e) {
-            if (e.target.classList.contains("trigger-zoom")) {
-                e.stopPropagation();
-                modalImg.src = e.target.getAttribute("data-img");
-                modal.style.display = "flex";
-            } else if (modal && modal.style.display === "flex" && (e.target === modal || e.target === modalImg)) {
-                modal.style.display = "none";
-            }
-        });
-    })();
-    </script>
-    """
 
     st.markdown(
         f"""
@@ -564,7 +552,6 @@ if produtos_adicionais:
                 {cards_html}
             </div>
         </div>
-        {js_script}
         """,
         unsafe_allow_html=True
     )
