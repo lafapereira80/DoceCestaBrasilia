@@ -164,6 +164,34 @@ div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > bu
     min-height: 32px !important;
 }
 .stImage img { border-radius: 6px; object-fit: cover; }
+
+/* =========================================
+   RESPONSIVIDADE MOBILE E BOTÕES LADO A LADO
+========================================== */
+@media (max-width: 768px) {
+    /* Identifica especificamente o bloco horizontal interno que possui os botões e força layout em linha */
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+        margin-top: 12px !important;
+    }
+
+    /* Cada coluna do botão assume 1/3 do espaço disponível (33%) */
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) > div[data-testid="stColumn"] {
+        width: 33.33% !important;
+        flex: 1 1 0% !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* O botão preenche totalmente o espaço e compacta o padding */
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) button {
+        width: 100% !important;
+        padding: 4px 0px !important;
+    }
+}
 </style>
 """,
 unsafe_allow_html=True
@@ -355,7 +383,7 @@ except Exception as erro:
     produtos = []
 
 if not produtos:
-    st.info("Nenum produto cadastrado.")
+    st.info("Nenhum produto cadastrado.")
     st.stop()
 
 
