@@ -22,30 +22,33 @@ def configurar_pagina():
         }
 
         /* =========================================
-            BOTÕES DE MENU (ABRIR E FECHAR) - CORRIGIDO
+            BOTÕES DE MENU (ABRIR E FECHAR) - PREMIUM
         ========================================== */
         
         /* Botão Sanduíche (Abrir Menu Mobile/Desktop) */
         [data-testid="collapsedControl"] {
             background-color: #ffffff !important; 
-            border: 1px solid #dfcdbb !important;
-            border-radius: 10px !important; 
-            box-shadow: 0 4px 10px rgba(90, 59, 40, 0.08) !important;
+            border: 1px solid #e8ddd3 !important;
+            border-radius: 12px !important; 
+            box-shadow: 0 4px 12px rgba(90, 59, 40, 0.05) !important;
             color: #5a3b28 !important; /* Cor do ícone nativo */
-            margin-top: 10px !important; margin-left: 10px !important;
-            transition: all 0.2s ease !important;
+            margin-top: 14px !important; margin-left: 14px !important;
+            transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
             z-index: 100000 !important;
         }
         [data-testid="collapsedControl"]:hover { 
-            box-shadow: 0 6px 14px rgba(90, 59, 40, 0.15) !important; 
-            transform: translateY(-1px); 
-            color: #b06000 !important;
+            box-shadow: 0 6px 16px rgba(90, 59, 40, 0.12) !important; 
+            transform: translateY(-2px); 
+            color: #c5721f !important;
+            border-color: #d2bfae !important;
         }
 
         /* Botão de Fechar (X) dentro da Sidebar */
         [data-testid="stSidebarCollapseButton"] {
             color: #5a3b28 !important;
             transition: all 0.2s ease !important;
+            background-color: #faf7f3 !important;
+            border-radius: 8px !important;
         }
         [data-testid="stSidebarCollapseButton"]:hover {
             color: #c5221f !important;
@@ -62,21 +65,30 @@ def configurar_pagina():
         }
         
         .sidebar-brand {
-            font-size: 19px !important; font-weight: 800 !important; color: #5a3b28 !important;
-            margin-top: 5px !important; margin-bottom: 15px !important; text-align: center;
+            font-size: 20px !important; 
+            font-weight: 800 !important; 
+            color: #4a2e1b !important;
+            margin-top: 5px !important; 
+            margin-bottom: 20px !important; 
+            text-align: center;
+            letter-spacing: -0.5px;
         }
         
         .user-card {
-            background: #ffffff; border: 1px solid #dfcdbb; border-radius: 12px;
-            padding: 14px 10px !important; margin-bottom: 10px !important;
-            box-shadow: 0 2px 6px rgba(90,59,40,0.04); display: flex; flex-direction: column; align-items: center;
+            background: linear-gradient(145deg, #ffffff 0%, #fdfcfb 100%); 
+            border: 1px solid #dfcdbb; 
+            border-radius: 14px;
+            padding: 16px 12px !important; 
+            margin-bottom: 12px !important;
+            box-shadow: 0 4px 10px rgba(90,59,40,0.03); 
+            display: flex; flex-direction: column; align-items: center;
         }
         
-        .user-name { font-weight: 800; color: #333; font-size: 15px !important; margin-bottom: 4px; line-height: 1.2; text-align: center; }
+        .user-name { font-weight: 800; color: #2c1e14; font-size: 16px !important; margin-bottom: 6px; line-height: 1.2; text-align: center; }
         
         .user-role {
             background-color: #f3ece6; color: #775a46; font-size: 10px !important;
-            font-weight: 800; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+            font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;
         }
 
         /* =======================================================
@@ -85,7 +97,7 @@ def configurar_pagina():
         
         /* Controla a distância global entre os blocos sem usar margem negativa */
         section[data-testid="stSidebar"] > div > div > div > div > div[data-testid="stVerticalBlock"] {
-            gap: 0.35rem !important; 
+            gap: 0.4rem !important; 
         }
 
         /* Zera margens externas apenas dos links */
@@ -96,14 +108,14 @@ def configurar_pagina():
 
         /* Estiliza o botão do link com respiro interno agradável */
         div[data-testid="stPageLink"] a {
-            border-radius: 8px !important;
-            padding: 10px 14px !important;  
+            border-radius: 10px !important;
+            padding: 12px 14px !important;  
             color: #5a3b28 !important;
             font-weight: 700 !important;
             font-size: 14px !important;
             background-color: transparent !important;
-            border: none !important;
-            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+            border: 1px solid transparent !important;
+            transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
             display: flex !important;
             align-items: center !important;
             text-decoration: none !important;
@@ -111,8 +123,10 @@ def configurar_pagina():
 
         /* Efeito Magnético: Hover */
         div[data-testid="stPageLink"] a:hover {
-            background-color: #e8ddd3 !important;
-            color: #222 !important;
+            background-color: #ffffff !important;
+            color: #c5721f !important;
+            border-color: #e8ddd3 !important;
+            box-shadow: 0 4px 10px rgba(90, 59, 40, 0.04) !important;
             transform: translateX(4px);
         }
 
@@ -120,21 +134,22 @@ def configurar_pagina():
             LINHAS DIVISÓRIAS E BOTÃO DE SAIR
         ========================================== */
         section[data-testid="stSidebar"] hr {
-            margin: 10px 0 !important;
-            border-bottom: 1px solid #dfcdbb !important;
+            margin: 12px 0 !important;
+            border-bottom: 1px dashed #dfcdbb !important;
         }
 
         div[data-testid="stSidebar"] button[kind="secondary"] {
-            border-radius: 8px !important;
-            font-size: 14px !important; font-weight: 700 !important;
+            border-radius: 10px !important;
+            font-size: 14px !important; font-weight: 800 !important;
             border: 1px solid #dfcdbb !important; background-color: #ffffff !important;
-            color: #c5221f !important; min-height: 44px !important;
+            color: #c5221f !important; min-height: 46px !important;
             margin-top: 5px !important;
             transition: all 0.2s ease !important;
+            display: flex !important; justify-content: center !important;
         }
         div[data-testid="stSidebar"] button[kind="secondary"]:hover {
-            background-color: #fce8e6 !important; border-color: #f5c6cb !important;
-            box-shadow: 0 4px 10px rgba(197, 34, 31, 0.1) !important;
+            background-color: #fce8e6 !important; border-color: #fce8e6 !important;
+            box-shadow: 0 4px 12px rgba(197, 34, 31, 0.15) !important;
             transform: translateY(-2px);
         }
 
@@ -143,16 +158,16 @@ def configurar_pagina():
         ========================================== */
         @media (max-width: 768px) {
             div[data-testid="stPageLink"] a { 
-                padding: 12px 14px !important; 
+                padding: 14px 16px !important; 
                 font-size: 15px !important; 
             }
             
             section[data-testid="stSidebar"] hr { 
-                margin: 12px 0 !important; 
+                margin: 16px 0 !important; 
             }
             
             div[data-testid="stSidebar"] button[kind="secondary"] { 
-                min-height: 48px !important; 
+                min-height: 50px !important; 
                 font-size: 15px !important;
             }
         }
