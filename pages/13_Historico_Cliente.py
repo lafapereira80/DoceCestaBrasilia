@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import json
 import time
 
 from config.supabase import supabase
@@ -85,7 +84,6 @@ div[data-testid="stColumn"] div[data-testid="stButton"] button:hover { backgroun
 @media (max-width: 768px) {
     h1 { font-size: 24px !important; }
     
-    /* Força os botões de ação a ficarem na horizontal no mobile */
     div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) {
         display: flex !important;
         flex-direction: row !important;
@@ -113,8 +111,12 @@ unsafe_allow_html=True
 
 col_t1, col_t2 = st.columns([3, 1])
 with col_t1:
-    st.title("👥 Consulta de Clientes")
-    st.caption("Pesquise clientes para acessar o perfil, histórico de compras e volume financeiro (LTV).")
+    st.title("👥 Histórico Detalhado do Cliente")
+    st.caption("Acompanhe o perfil, o LTV e todas as compras registradas para este cliente.")
+with col_t2:
+    st.write("")
+    if st.button("⬅ Voltar para Base", use_container_width=True):
+        st.switch_page("pages/03_Clientes.py")
 
 
 # =====================================================
@@ -137,7 +139,6 @@ if not pedidos_brutos:
 # Agrupa por CPF ou Telefone / Nome do Comprador
 clientes_dict = {}
 for p in pedidos_brutos:
-    # Identificador único do cliente (prioriza CPF, senão Telefone, senão Nome)
     chave_cli = str(p.get("cliente_cpf") or p.get("cliente_telefone") or p.get("cliente_nome")).strip().lower()
     if not chave_cli or chave_cli == "none":
         continue
@@ -151,21 +152,27 @@ for p in pedidos_brutos:
         }
     clientes_dict[chave_cli]["compras"].append(p)
 
-# Ordena clientes por nome
 lista_clientes = sorted(list(clientes_dict.values()), key=lambda x: x["nome"])
 
 # =====================================================
-# SELETOR DE CLIENTES
+# SELETOR DE CLIENTES (COM SUPORTE A ESTADO)
 # =====================================================
 st.write("")
 opcoes_select = ["🔍 Selecione ou digite o nome do cliente..."] + [f"{c['nome']} (CPF: {c['cpf']})" if c['cpf'] != '-' else f"{c['nome']} (Tel: {c['telefone']})" for c in lista_clientes]
 
-cliente_selecionado_str = st.selectbox("Pesquisar Cliente na Base:", opcoes_select)
+indice_inicial = 0
+alvo_session = st.session_state.get("cliente_historico_alvo")
+if alvo_session:
+    for idx, c in enumerate(lista_clientes):
+        if c['cpf'] == alvo_session or c['telefone'] == alvo_session:
+            indice_inicial = idx + 1
+            break
+
+cliente_selecionado_str = st.selectbox("Pesquisar Cliente na Base:", opcoes_select, index=indice_inicial)
 
 if cliente_selecionado_str == "🔍 Selecione ou digite o nome do cliente...":
     st.stop()
 
-# Identifica o cliente escolhido
 idx_escolhido = opcoes_select.index(cliente_selecionado_str) - 1
 cliente_atual = lista_clientes[idx_escolhido]
 
@@ -173,7 +180,6 @@ cliente_atual = lista_clientes[idx_escolhido]
 # EXIBIÇÃO DO PERFIL DO CLIENTE ESCOLHIDO
 # =====================================================
 compras_cliente = cliente_atual["compras"]
-# Ordena compras por data decrescente
 compras_cliente.sort(key=lambda x: x.get("created_at", ""), reverse=True)
 
 total_gasto = sum([float(c.get("valor_total", 0) or 0) for c in compras_cliente if str(c.get("status")).capitalize() != "Desistência"])
@@ -184,7 +190,7 @@ with st.container(border=True):
     col_inf1, col_inf2, col_inf3, col_inf4 = st.columns([2.5, 1.5, 2, 1.5])
     with col_inf1:
         st.markdown(f"<div class='cliente-header'>👤 {cliente_atual['nome']}</div>", unsafe_allow_html=True)
-        st.caption(f"Perfil Cadastrado Oficial")
+        st.caption("Perfil Cadastrado Oficial")
     with col_inf2:
         st.markdown(f'<div class="info-label">CPF</div><div class="info-value">{cliente_atual["cpf"]}</div>', unsafe_allow_html=True)
     with col_inf3:
@@ -193,12 +199,11 @@ with st.container(border=True):
     with col_inf4:
         st.markdown(f'<div class="info-label">Total Gasto (LTV)</div><div class="info-value" style="color: #137333; font-size: 16px !important;">R$ {total_gasto:,.2f}</div>'.replace(",", "X").replace(".", ",").replace("X", "."), unsafe_allow_html=True)
 
-    # --- BOTÃO EXCLUSIVO DO ADMIN PARA DELETAR O COMPRADOR COMPLETO ---
+    # --- BOTÃO EXCLUSIVO DO ADMIN PARA DELETAR O COMPRADOR ---
     if perfil_usuario == "Administrador":
         with st.expander("⚙️ Zona de Perigo - Excluir Cliente Permanentemente", expanded=False):
             st.error("⚠️ Atenção: Ao deletar o comprador, **todos os pedidos e históricos** associados a ele serão apagados do banco de dados para sempre.")
             
-            # Chave de estado dedicada para capturar o texto digitado sem perder foco
             chave_input_del = f"conf_del_cli_{cliente_atual['cpf']}"
             confirmar_texto = st.text_input("Digite 'DELETAR' abaixo para confirmar a exclusão:", key=chave_input_del)
             
@@ -222,7 +227,7 @@ with st.container(border=True):
 
 
 # =====================================================
-# HISTÓRICO DE COMPRAS (CARDS PREMIUM)
+# HISTÓRICO DE COMPRAS (CARDS PREMIUM - LEITURA SEGURA)
 # =====================================================
 st.write("")
 st.subheader(f"📦 Histórico de Compras ({qtd_compras} pedidos)")
@@ -232,7 +237,6 @@ for compra in compras_cliente:
         c_id = compra.get("id")
         status = str(compra.get("status", "Recebido")).strip().capitalize()
         
-        # Estilo do badge de status
         classe_badge = "badge-recebido"
         if status == "Pago": classe_badge = "badge-pago"
         elif status == "Enviado": classe_badge = "badge-enviado"
@@ -263,13 +267,13 @@ for compra in compras_cliente:
         with col_c5:
             st.markdown(f'<div class="info-label">Status</div><div><span class="badge-status {classe_badge}">{status}</span></div>', unsafe_allow_html=True)
 
-        # Ações extras da compra (Ver Detalhes ou Deletar se for Admin)
+        # Botão de Ação: Direciona para a nova página de VISUALIZAÇÃO (Travada)
         st.write("")
         cc_acao1, cc_acao2 = st.columns([1, 1])
         with cc_acao1:
             if st.button("👁️ Abrir Ficha do Pedido", key=f"abrir_pedido_{c_id}", use_container_width=True):
                 st.session_state["pedido_aberto"] = c_id
-                st.switch_page("pages/09_Detalhes_Pedido.py")
+                st.switch_page("pages/17_Visualizar_Pedido.py")
                 
         with cc_acao2:
             if perfil_usuario == "Administrador":
