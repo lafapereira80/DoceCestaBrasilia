@@ -57,7 +57,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS PREMIUM E LIGHTBOX GLOBAL (TELA INTEIRA REAL)
+# CSS PREMIUM E LIGHTBOX VIA JAVASCRIPT (ZERO PISCAR)
 # ==========================================================
 
 st.markdown(
@@ -229,10 +229,10 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX GLOBAL 100% ESTÁVEL (CORRIGIDO)
+   LIGHTBOX JS ESTÁVEL (TELA INTEIRA REAL)
 ========================================= */
 .lightbox-wrapper { text-align: center; margin-bottom: 10px; }
-.lightbox-image {
+.zoomable-img {
     width: 65%; 
     border-radius: 14px;
     cursor: zoom-in;
@@ -241,31 +241,20 @@ div[data-testid="stButton"] button:hover {
     object-fit: cover;
     border: 1px solid #e8ddd3;
 }
-.lightbox-image:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(90, 59, 40, 0.15); }
+.zoomable-img:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(90, 59, 40, 0.15); }
 .imagem-legenda { text-align: center; font-size: 12px; color: #888; margin-top: 10px; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-/* O input checkbox fica oculto fora do fluxo de cards para evitar confinamento */
-.lightbox-checkbox {
-    display: none !important;
-}
-
-/* O modal fixo agora cobre a tela inteira globalmente via viewport */
-.lightbox-modal {
+/* Modal Global Gerenciado por JS */
+#custom-lightbox-modal {
     position: fixed;
     top: 0; left: 0; width: 100vw; height: 100vh;
     background-color: rgba(0, 0, 0, 0.85);
     z-index: 9999999;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; visibility: hidden; transition: opacity 0.3s ease;
+    display: none;
+    align-items: center; justify-content: center;
     cursor: zoom-out;
 }
-
-/* Ativa o modal globalmente quando o checkbox correspondente for marcado */
-.lightbox-checkbox:checked ~ .lightbox-modal {
-    opacity: 1;
-    visibility: visible;
-}
-.lightbox-modal img {
+#custom-lightbox-modal img {
     max-width: 90vw;
     max-height: 90vh;
     border-radius: 12px;
@@ -350,13 +339,42 @@ div[data-testid="stButton"] button:hover {
     .info-title { font-size: 34px !important; }
     .card-cesta-titulo { font-size: 32px !important; text-align: center; }
     .card-cesta-preco { font-size: 24px !important; text-align: center; }
-    .lightbox-image { width: 85%; }
+    .zoomable-img { width: 85%; }
     
     .adicionais-grid-css { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
 }
 </style>
 """,
 unsafe_allow_html=True
+)
+
+
+# ==========================================================
+# SCRIPT JS GLOBAL PARA ABRIR O ZOOM SEM PISCAR
+# ==========================================================
+st.markdown(
+    """
+    <div id="custom-lightbox-modal">
+        <img id="custom-lightbox-img" src="">
+    </div>
+    <script>
+    document.addEventListener("click", function(e) {
+        var modal = document.getElementById("custom-lightbox-modal");
+        var modalImg = document.getElementById("custom-lightbox-img");
+        
+        // Se clicar em qualquer imagem com a classe zoomable-img ou adicional-img-small
+        if (e.target.classList.contains("zoomable-img") || e.target.classList.contains("adicional-img-small")) {
+            modalImg.src = e.target.src;
+            modal.style.display = "flex";
+        } 
+        // Se clicar no modal escuro, fecha
+        else if (modal.style.display === "flex") {
+            modal.style.display = "none";
+        }
+    });
+    </script>
+    """,
+    unsafe_allow_html=True
 )
 
 
@@ -433,19 +451,10 @@ else:
                 imagem_url = cesta.get("imagem")
                 if imagem_url and str(imagem_url).strip():
                     img_src = image_to_base64(imagem_url)
-                    c_id_cesta = f"cesta_zoom_{cesta['id']}"
                     st.markdown(
                         f"""
                         <div class="lightbox-wrapper">
-                            <input type="checkbox" id="{c_id_cesta}" class="lightbox-checkbox">
-                            <label for="{c_id_cesta}" style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
-                                <img src="{img_src}" class="lightbox-image" title="Clique para ampliar a foto da cesta">
-                            </label>
-                            <div class="lightbox-modal">
-                                <label for="{c_id_cesta}" style="width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: zoom-out;">
-                                    <img src="{img_src}">
-                                </label>
-                            </div>
+                            <img src="{img_src}" class="zoomable-img" title="Clique para ampliar a foto da cesta">
                             <div class="imagem-legenda">👆 Toque na foto para ampliar</div>
                         </div>
                         """,
@@ -501,7 +510,6 @@ if produtos_adicionais:
         nome_p = prod.get("nome", "")
         preco_p = prod.get("preco")
         imagem_p = prod.get("imagem")
-        c_id_add = f"add_zoom_{prod.get('id', idx_add)}"
 
         if preco_p is not None and str(preco_p).strip() != "":
             try:
@@ -515,17 +523,7 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            img_html = f'''
-                <input type="checkbox" id="{c_id_add}" class="lightbox-checkbox">
-                <label for="{c_id_add}" style="cursor: zoom-in; display: inline-block; margin-bottom: 6px;">
-                    <img src="{img_src}" class="adicional-img-small" title="Clique para ampliar">
-                </label>
-                <div class="lightbox-modal">
-                    <label for="{c_id_add}" style="width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: zoom-out;">
-                        <img src="{img_src}">
-                    </label>
-                </div>
-            '''
+            img_html = f'<img src="{img_src}" class="adicional-img-small" title="Clique para ampliar">'
         else:
             img_html = f'<div class="adicional-img-placeholder" style="margin-bottom: 6px;">🎀</div>'
 
