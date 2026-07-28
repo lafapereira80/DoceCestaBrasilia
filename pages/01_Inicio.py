@@ -188,7 +188,7 @@ if "fotos_polaroid_cliente" not in st.session_state: st.session_state["fotos_pol
 if st.session_state["pedido_enviado_com_sucesso"]:
     dados = st.session_state.get("resumo_pedido_sucesso", {})
     
-    st.markdown(f'<div class="header-banner">{carregar_logo_base64()}<div class="header-text"><h1 class="header-title">Doce Cesta Brasília</h1><p class="header-subtitle">Pedido Registrado! 💝</p></div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="header-banner">{carregar_logo_base64()}<div class="header-text"><h1 class="header-title">Doce Cesta Brasília</h1></div></div>', unsafe_allow_html=True)
     
     st.markdown(f"""
     <div class="sucesso-container">
