@@ -11,9 +11,9 @@ from services.cesta_service import buscar_cesta
 from services.pedido_adicional_service import listar_adicionais_pedido
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA E DESIGN SYSTEM
+# CONFIGURAÇÃO DA PÁGINA E DESIGN PREMIUM
 # =====================================================
-st.set_page_config(page_title="Chão de Fábrica", page_icon="🏭", layout="wide")
+st.set_page_config(page_title="Painel de Produção", page_icon="🏭", layout="wide")
 configurar_pagina()
 menu_lateral()
 administrador_operador()
@@ -21,85 +21,135 @@ administrador_operador()
 st.markdown(
 """
 <style>
-.block-container { padding-top: 1.5rem !important; padding-bottom: 2.5rem !important; max-width: 1200px; }
-h1 { font-size: 26px !important; font-weight: 800 !important; color: #5a3b28; margin-bottom: 5px !important;}
+/* =========================================
+   CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
+========================================== */
+.block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; max-width: 1200px; }
+h1 { font-size: 28px !important; font-weight: 800 !important; color: #4a2e1b !important; margin-bottom: 2px !important; letter-spacing: -0.5px; }
+h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-top: 15px !important; margin-bottom: 10px !important; }
+p, label { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; font-size: 13px !important; }
 
-/* Barra de Resumo (Pills) */
+/* =========================================
+   BARRA DE RESUMO DAS METAS (PILLS)
+========================================== */
 .resumo-bar {
-    background: linear-gradient(135deg, #fffbf7, #f7efe6);
-    border: 1px solid #dfcdbb;
-    border-radius: 14px;
-    padding: 16px 20px;
+    background: linear-gradient(145deg, #ffffff 0%, #fdfcfb 100%);
+    border: 1px solid #e8ddd3;
+    border-radius: 16px;
+    padding: 20px 24px;
     margin-bottom: 24px;
-    box-shadow: 0 4px 12px rgba(90,59,40,0.04);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
 }
-.resumo-header { font-size: 12px; font-weight: 800; color: #9d7d65; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+.resumo-header { font-size: 13px; font-weight: 800; color: #775a46; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
 .pills-container { display: flex; flex-wrap: wrap; gap: 10px; }
 .cesta-pill {
-    background: #ffffff; border: 1px solid #dfcdbb; padding: 6px 14px; border-radius: 20px; 
-    font-size: 14px; font-weight: 700; color: #5a3b28; display: flex; align-items: center; gap: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    background: #faf7f3; border: 1px solid #e8ddd3; padding: 6px 14px; border-radius: 20px; 
+    font-size: 14px; font-weight: 800; color: #5a3b28; display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.2s ease;
 }
-.cesta-pill-qtd { background: #b06000; color: #ffffff; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 800; }
+.cesta-pill:hover { border-color: #d2bfae; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(90,59,40,0.08); }
+.cesta-pill-qtd { background: #b06000; color: #ffffff; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 800; }
 
-/* Cards de Pedido Modernos (Estilo Kanban) */
+/* =========================================
+   CARDS KANBAN (PEDIDOS NA FILA)
+========================================== */
 .pedido-card {
     background: #ffffff;
     border: 1px solid #e8ddd3;
     border-radius: 14px;
-    padding: 16px;
+    padding: 18px 20px;
     margin-bottom: 12px;
-    box-shadow: 0 2px 6px rgba(90,59,40,0.03);
-    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 .pedido-card:hover {
-    border-color: #dfcdbb;
-    box-shadow: 0 6px 16px rgba(90,59,40,0.08);
+    border-color: #d2bfae;
+    box-shadow: 0 8px 20px rgba(90,59,40,0.08);
+    transform: translateY(-2px);
 }
-.card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.pedido-id { font-size: 13px; font-weight: 800; color: #9d7d65; }
-.badge-status-pendente { background: #fef7e0; color: #b06000; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; }
-.badge-status-pronta { background: #e6f4ea; color: #137333; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; }
+.card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #f3ece6; padding-bottom: 6px; }
+.pedido-id { font-size: 13px; font-weight: 800; color: #9d7d65; text-transform: uppercase; letter-spacing: 0.5px; }
 
-.cliente-titulo { font-size: 16px; font-weight: 800; color: #333; margin-bottom: 2px; }
-.cesta-subtitulo { font-size: 14px; font-weight: 700; color: #b06000; margin-bottom: 8px; }
-.info-linha-card { font-size: 13px; color: #555; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+/* Badges Status Kanban */
+.badge-status-pendente { background: #fef7e0; color: #b06000; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid #fce8b2; }
+.badge-status-pronta { background: #e6f4ea; color: #137333; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid #ceead6; }
+
+/* Textos do Card Kanban */
+.cliente-titulo { font-size: 17px; font-weight: 800; color: #2c1e14; margin-bottom: 2px; }
+.cesta-subtitulo { font-size: 15px; font-weight: 800; color: #b06000; margin-bottom: 10px; }
+.info-linha-card { font-size: 13px; color: #555; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; font-weight: 500; }
 
 /* Barra de Progresso Customizada */
-.progresso-container { background: #f3ece6; border-radius: 6px; height: 8px; width: 100%; margin: 12px 0; overflow: hidden; }
-.progresso-barra { background: linear-gradient(90deg, #b06000, #137333); height: 100%; border-radius: 6px; transition: width 0.3s ease; }
+.progresso-container { background: #f3ece6; border-radius: 8px; height: 8px; width: 100%; margin: 14px 0 6px 0; overflow: hidden; }
+.progresso-barra { background: linear-gradient(90deg, #b06000, #137333); height: 100%; border-radius: 8px; transition: width 0.4s ease; }
 
-/* Estilização da Gaveta de Montagem */
-.montagem-header { background: #f9f4ef; border: 1px solid #dfcdbb; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-.secao-titulo { font-size: 13px; font-weight: 800; color: #775a46; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 14px; margin-bottom: 6px; border-bottom: 2px solid #f3ece6; padding-bottom: 3px; }
+/* =========================================
+   ESTILIZAÇÃO DA GAVETA DE MONTAGEM (CHECKLIST)
+========================================== */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #ffffff;
+    border: 1px solid #e8ddd3 !important;
+    border-radius: 14px !important;
+    padding: 20px 24px !important;
+    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.05);
+}
 
-/* Ajustes finos nos checkboxes para parecerem blocos táteis no mobile */
+.montagem-header { background: #faf7f3; border: 1px solid #e8ddd3; border-radius: 12px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #b06000; }
+.secao-titulo { font-size: 14px; font-weight: 800; color: #775a46; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 15px; margin-bottom: 10px; border-bottom: 1px dashed #dfcdbb; padding-bottom: 4px; }
+
+/* Checkboxes (Pílulas Clicáveis) */
 div[data-testid="stCheckbox"] {
     background: #faf7f3;
     border: 1px solid #e8ddd3;
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: 10px;
     margin-bottom: 6px;
-    transition: background 0.2s;
+    transition: all 0.2s ease;
 }
 div[data-testid="stCheckbox"]:hover {
-    background: #f3ece6;
-    border-color: #dfcdbb;
+    background: #fdfcfb;
+    border-color: #d2bfae;
+    transform: translateX(2px);
 }
 
-/* Responsividade Mobile */
+/* =========================================
+   BOTÕES DE AÇÃO
+========================================== */
+div[data-testid="stButton"] > button { font-size: 14px !important; font-weight: 800 !important; border-radius: 10px !important; min-height: 40px !important; transition: all 0.2s ease; }
+div[data-testid="stButton"] > button:hover { transform: scale(1.02); }
+
+/* =========================================
+   RESPONSIVIDADE MOBILE E BOTÕES (LADO A LADO)
+========================================== */
 @media (max-width: 768px) {
-    .block-container { padding-top: 1rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
-    h1 { font-size: 22px !important; }
+    .block-container { padding: 1rem 0.5rem !important; }
+    h1 { font-size: 24px !important; }
     .cesta-pill { font-size: 13px; padding: 5px 12px; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 14px 16px !important; }
+
+    /* Força os botões da gaveta a ficarem na horizontal no mobile */
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        margin-top: 10px !important;
+        justify-content: space-between;
+    }
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) > div[data-testid="stColumn"] {
+        flex: 1 1 0% !important; min-width: 0 !important; padding: 0 !important;
+    }
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) button {
+        width: 100% !important; padding: 6px 0px !important;
+    }
 }
 </style>
 """,
 unsafe_allow_html=True
 )
 
-st.title("🏭 Chão de Fábrica (Fila de Produção)")
-st.caption("Acompanhe o andamento das cestas em cards interativos e compactos.")
+st.title("🏭 Painel de Produção (Chão de Fábrica)")
+st.caption("Acompanhe o volume diário, abra a gaveta de montagem e valide os itens via checklist.")
 
 # =====================================================
 # GERENCIAMENTO DE ESTADO PARA O "MODO MONTAGEM"
@@ -117,7 +167,7 @@ def buscar_pedidos_pagos():
 pedidos = buscar_pedidos_pagos()
 
 if not pedidos:
-    st.success("🎉 Excelente trabalho! Não há pedidos pagos aguardando produção para os próximos dias.")
+    st.success("🎉 Excelente trabalho! A fila de produção está limpa. Não há pedidos pagos aguardando montagem.")
     st.stop()
 
 # =====================================================
@@ -155,18 +205,19 @@ dados_previsao = dict(sorted(resumo.items()))
 
 
 # =====================================================
-# TELA DE CHECKLIST EM MODO "GAVETA" (COMPACTO E ORGANIZADO)
+# TELA DE CHECKLIST EM MODO "GAVETA" (COMPACTO E PREMIUM)
 # =====================================================
 if st.session_state.pedido_em_montagem:
     p_ativo = next((p for p in pedidos if p["id"] == st.session_state.pedido_em_montagem), None)
     
     if p_ativo:
+        st.write("")
         with st.container(border=True):
-            col_tit, col_fechar = st.columns([5, 1])
+            col_tit, col_fechar = st.columns([4, 1])
             with col_tit:
-                st.markdown(f"### 🛠️ Montagem do Pedido #{p_ativo['id']}")
+                st.markdown(f"### 🛠️ Montagem da Cesta (Pedido #{p_ativo['id']})")
             with col_fechar:
-                if st.button("❌ Fechar", use_container_width=True):
+                if st.button("❌ Fechar Painel", use_container_width=True):
                     st.session_state.pedido_em_montagem = None
                     st.rerun()
             
@@ -174,18 +225,18 @@ if st.session_state.pedido_em_montagem:
             st.markdown(
                 f"""
                 <div class="montagem-header">
-                    <div style="font-size: 16px; font-weight: 800; color: #5a3b28;">👤 {p_ativo.get('cliente_nome')}</div>
-                    <div style="font-size: 14px; font-weight: 700; color: #b06000; margin-top: 2px;">🎁 {p_ativo.get('cesta_nome')}</div>
-                    <div style="font-size: 12px; color: #555; margin-top: 6px;">📍 <strong>Endereço:</strong> {p_ativo.get('endereco', 'N/I')}</div>
-                    <div style="font-size: 12px; color: #555;">🕒 <strong>Turno:</strong> {p_ativo.get('periodo_entrega', '')} ({p_ativo.get('horario_combinado', 'Livre')})</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #2c1e14;">👤 {p_ativo.get('cliente_nome')}</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #b06000; margin-top: 4px; margin-bottom: 8px;">🎁 {p_ativo.get('cesta_nome')}</div>
+                    <div style="font-size: 13px; color: #444; margin-top: 4px;">📍 <strong>Endereço:</strong> {p_ativo.get('endereco', 'N/I')}</div>
+                    <div style="font-size: 13px; color: #444; margin-top: 2px;">🕒 <strong>Turno Ideal:</strong> {p_ativo.get('periodo_entrega', '')} ({p_ativo.get('horario_combinado', 'Livre')})</div>
                 </div>
                 """, unsafe_allow_html=True
             )
             
             if p_ativo.get('pedido_especial'):
-                st.warning(f"✨ **Solicitação Especial:** {p_ativo.get('pedido_especial')}")
+                st.warning(f"✨ **Atenção - Solicitação Especial:** {p_ativo.get('pedido_especial')}")
             
-            st.markdown("#### 📦 Checklist de Verificação")
+            st.markdown("#### 📋 Checklist de Verificação Oficial")
             checklist_salvo = p_ativo.get("checklist") or {}
             if isinstance(checklist_salvo, str):
                 try: checklist_salvo = json.loads(checklist_salvo)
@@ -204,8 +255,7 @@ if st.session_state.pedido_em_montagem:
                 
                 itens_desc = [i.strip() for i in bloco_inclusos.split(";") if i.strip()]
                 if itens_desc:
-                    st.markdown("<div class='secao-titulo'>📦 Itens Padrão</div>", unsafe_allow_html=True)
-                    # Organiza em grade de 2 colunas para economizar espaço vertical
+                    st.markdown("<div class='secao-titulo'>📦 Itens Padrão do Catálogo</div>", unsafe_allow_html=True)
                     cols_padrao = st.columns(2)
                     for idx, item in enumerate(itens_desc):
                         chave_chk = f"📦 {item}"
@@ -215,7 +265,7 @@ if st.session_state.pedido_em_montagem:
             # --- 2. PERSONALIZAÇÃO DO CLIENTE ---
             produtos = p_ativo.get("produtos", "")
             if produtos:
-                st.markdown("<div class='secao-titulo'>🍓 Personalização Escolhida</div>", unsafe_allow_html=True)
+                st.markdown("<div class='secao-titulo'>🍓 Personalização Escolhida no Fechamento</div>", unsafe_allow_html=True)
                 prods_lista = [p.replace('•', '').strip() for p in produtos.split("\n") if p.replace('•', '').strip()]
                 cols_pers = st.columns(2)
                 for idx, prod_limpo in enumerate(prods_lista):
@@ -237,7 +287,7 @@ if st.session_state.pedido_em_montagem:
             
             valor_extras = float(p_ativo.get("valor_extras", 0))
             if adicionais_bd or valor_extras > 0:
-                st.markdown("<div class='secao-titulo'>🎀 Adicionais e Extras</div>", unsafe_allow_html=True)
+                st.markdown("<div class='secao-titulo'>🎀 Adicionais Avulsos e Extras</div>", unsafe_allow_html=True)
                 cols_add = st.columns(2)
                 contador_add = 0
                 for ad in adicionais_bd:
@@ -246,7 +296,7 @@ if st.session_state.pedido_em_montagem:
                         novo_checklist[chave_chk] = st.checkbox(chave_chk, value=checklist_salvo.get(chave_chk, False), key=f"chk_ad_{p_ativo['id']}_{contador_add}")
                     contador_add += 1
                 if valor_extras > 0:
-                    chave_chk = "💲 Acréscimo Cobrado (Extras)"
+                    chave_chk = "💲 O cliente pagou por acréscimos especiais extras"
                     with cols_add[contador_add % 2]:
                         novo_checklist[chave_chk] = st.checkbox(chave_chk, value=checklist_salvo.get(chave_chk, False), key=f"chk_extra_{p_ativo['id']}")
             
@@ -255,7 +305,7 @@ if st.session_state.pedido_em_montagem:
             if mensagem:
                 st.markdown("<div class='secao-titulo'>💌 Mensagem do Cartão</div>", unsafe_allow_html=True)
                 st.info(f"_{mensagem}_")
-                chave_chk = "✅ Cartão impresso e anexado"
+                chave_chk = "✅ Cartão impresso e posicionado"
                 novo_checklist[chave_chk] = st.checkbox(chave_chk, value=checklist_salvo.get(chave_chk, False), key=f"chk_msg_{p_ativo['id']}")
                 
             st.write("")
@@ -264,29 +314,29 @@ if st.session_state.pedido_em_montagem:
             # --- BOTÕES DE AÇÃO INFERIORES ---
             col_b1, col_b2 = st.columns(2)
             with col_b1:
-                if st.button("💾 Salvar Progresso", use_container_width=True):
+                if st.button("💾 Salvar Checklist (Progresso)", use_container_width=True):
                     tudo_pronto = len(novo_checklist) > 0 and all(novo_checklist.values())
                     try:
                         supabase.table("pedidos").update({
                             "checklist": novo_checklist,
                             "cesta_montada": tudo_pronto
                         }).eq("id", p_ativo['id']).execute()
-                        st.toast("✅ Progresso salvo com sucesso!")
+                        st.toast("✅ Progresso da montagem salvo!")
                         time.sleep(0.5)
                         st.rerun(scope="app")
                     except Exception as e:
                         st.error(f"❌ Erro ao salvar: {e}")
             with col_b2:
-                if st.button("🚚 Concluir e Enviar p/ Rota", type="primary", use_container_width=True):
+                if st.button("🚚 Finalizar e Despachar para Rota", type="primary", use_container_width=True):
                     try:
                         supabase.table("pedidos").update({
                             "checklist": novo_checklist,
                             "cesta_montada": True,
                             "status": "Enviado"
                         }).eq("id", p_ativo['id']).execute()
-                        st.success("Cesta pronta e despachada para a rota de entregas!")
+                        st.success("✅ Excelente! Cesta pronta e despachada para a equipe de rotas/entregas.")
                         st.session_state.pedido_em_montagem = None
-                        time.sleep(1)
+                        time.sleep(1.5)
                         st.rerun(scope="app")
                     except Exception as e:
                         st.error(f"❌ Erro ao despachar: {e}")
@@ -294,7 +344,7 @@ if st.session_state.pedido_em_montagem:
 
 
 # =====================================================
-# INTERFACE PRINCIPAL (ABAS POR DATA + CARDS COMPACTOS)
+# INTERFACE PRINCIPAL (ABAS POR DATA + CARDS KANBAN)
 # =====================================================
 if dados_previsao:
     nomes_abas = [info["label"] for data, info in dados_previsao.items()]
@@ -311,7 +361,7 @@ if dados_previsao:
             st.markdown(
                 f"""
                 <div class='resumo-bar'>
-                    <div class='resumo-header'>📊 Metas do Dia (Total: {info['total']} cestas)</div>
+                    <div class='resumo-header'>📊 Resumo de Metas do Dia (Total Fila: {info['total']} cestas)</div>
                     <div class='pills-container'>
                         {html_pills}
                     </div>
@@ -319,7 +369,7 @@ if dados_previsao:
                 """, unsafe_allow_html=True
             )
             
-            # --- GRID DE CARDS (2 COLUNAS) ---
+            # --- GRID DE CARDS KANBAN (2 COLUNAS) ---
             pedidos_lista = info["pedidos_lista"]
             col_esq, col_dir = st.columns(2)
             
@@ -343,17 +393,17 @@ if dados_previsao:
                 card_html = f"""
                 <div class="pedido-card">
                     <div class="card-top">
-                        <span class="pedido-id">#{pid}</span>
+                        <span class="pedido-id">Pedido #{pid}</span>
                         {status_badge}
                     </div>
                     <div class="cliente-titulo">{p.get('cliente_nome', '-')}</div>
                     <div class="cesta-subtitulo">🎁 {p.get('cesta_nome', '-')}</div>
-                    <div class="info-linha-card">📍 <strong>Local:</strong> {bairro}</div>
-                    <div class="info-linha-card">🕒 <strong>Turno:</strong> {p.get('periodo_entrega', 'Livre')} ({p.get('horario_combinado', 'Flexível')})</div>
+                    <div class="info-linha-card">📍 <strong>Localização:</strong> {bairro}</div>
+                    <div class="info-linha-card">🕒 <strong>Turno Ideal:</strong> {p.get('periodo_entrega', 'Livre')} ({p.get('horario_combinado', 'Flexível')})</div>
                     <div class="progresso-container">
                         <div class="progresso-barra" style="width: {porcentagem}%;"></div>
                     </div>
-                    <div style="font-size: 11px; color: #775a46; text-align: right; font-weight: 700;">{itens_marcados}/{total_itens} itens verificados ({porcentagem}%)</div>
+                    <div style="font-size: 11px; color: #775a46; text-align: right; font-weight: 800;">Verificação: {itens_marcados}/{total_itens} ({porcentagem}%)</div>
                 </div>
                 """
                 
@@ -361,6 +411,10 @@ if dados_previsao:
                 
                 with col_alvo:
                     st.markdown(card_html, unsafe_allow_html=True)
-                    if st.button("🔍 Abrir Montagem", key=f"abrir_montagem_{pid}", use_container_width=True):
+                    if st.button("🔍 Abrir Gaveta de Montagem", key=f"abrir_montagem_{pid}", use_container_width=True):
                         st.session_state.pedido_em_montagem = pid
                         st.rerun()
+
+st.write("")
+st.divider()
+st.caption("🏭 Controle Oficial de Produção - Doce Cesta Brasília")
