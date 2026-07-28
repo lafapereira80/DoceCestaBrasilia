@@ -22,7 +22,7 @@ from utils.permissao import (
 # =====================================================
 
 st.set_page_config(
-    page_title="Usuários",
+    page_title="Gestão de Usuários",
     page_icon="👤",
     layout="wide"
 )
@@ -35,7 +35,15 @@ usuario_logado = st.session_state.usuario
 
 
 # =====================================================
-# CSS ISOLADO E ULTRA COMPACTO
+# CONTROLE DE EDIÇÃO / EXCLUSÃO
+# =====================================================
+
+if "usuario_editando" not in st.session_state:
+    st.session_state["usuario_editando"] = None
+
+
+# =====================================================
+# CSS PREMIUM E RESPONSIVIDADE MOBILE
 # =====================================================
 
 st.markdown(
@@ -45,110 +53,152 @@ st.markdown(
    CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
 ========================================== */
 .block-container {
-    padding-top: 1rem !important;
-    padding-bottom: 2rem !important;
-    max-width: 1100px;
+    padding-top: 1.5rem !important;
+    padding-bottom: 3rem !important;
+    max-width: 1150px;
 }
 
 h1 {
-    font-size: 24px !important;
-    font-weight: 700 !important;
-    color: #5a3b28;
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    color: #4a2e1b;
     margin-bottom: 2px !important;
-}
-
-h2, h3 {
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    color: #5a3b28;
-    margin-top: 10px !important;
-    margin-bottom: 8px !important;
+    letter-spacing: -0.5px;
 }
 
 .block-container p, 
 .block-container label {
-    font-family: Arial, sans-serif !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
     font-size: 13px !important;
 }
 
 /* =========================================
-   CARDS DE USUÁRIOS (LINHAS COMPACTAS)
+   ACORDEÃO (EXPANDER) "NOVO USUÁRIO"
+========================================== */
+div[data-testid="stExpander"] {
+    background: #ffffff;
+    border: 1px solid #e8ddd3 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.05) !important;
+    overflow: hidden;
+    margin-bottom: 25px;
+}
+div[data-testid="stExpander"] summary {
+    background: #faf7f3;
+    padding: 15px 20px !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #5a3b28 !important;
+    transition: all 0.3s ease;
+}
+div[data-testid="stExpander"] summary:hover {
+    background: #f3ece6;
+}
+div[data-testid="stExpanderDetails"] {
+    padding: 20px !important;
+}
+
+/* =========================================
+   CARDS DE USUÁRIOS
 ========================================== */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff;
     border: 1px solid #e8ddd3 !important;
-    border-radius: 12px !important;
-    padding: 8px 12px !important;
-    margin-bottom: 6px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-    transition: all 0.2s ease;
+    border-radius: 14px !important;
+    padding: 12px 16px !important;
+    margin-bottom: 10px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 div[data-testid="stVerticalBlockBorderWrapper"]:hover {
-    border-color: #dfcdbb !important;
+    border-color: #d2bfae !important;
+    box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
+    transform: translateY(-2px);
+}
+
+/* Alinhamento vertical Desktop */
+@media (min-width: 641px) {
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
+        align-items: center !important;
+    }
 }
 
 /* =========================================
-   ELEMENTOS VISUAIS & BADGES
+   ELEMENTOS DE TEXTO & BADGES
 ========================================== */
 .user-title {
-    font-weight: 700;
-    color: #333;
-    font-size: 14px !important;
+    font-weight: 800;
+    color: #2c1e14;
+    font-size: 16px !important;
+    margin-bottom: 2px;
 }
 
-.badge-admin {
+.badge-admin { background-color: #fef7e0; color: #b06000; border: 1px solid #fce8b2; }
+.badge-operador { background-color: #e8f0fe; color: #1a73e8; border: 1px solid #d2e3fc; }
+.badge-entregador { background-color: #f3e8fd; color: #6a1b9a; border: 1px solid #e9d2fd; }
+.badge-self { background-color: #e6f4ea; color: #137333; border: 1px solid #ceead6; }
+
+.badge-admin, .badge-operador, .badge-entregador, .badge-self {
     display: inline-block;
-    background-color: #fef7e0;
-    color: #b06000;
     font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 12px;
+    padding: 3px 10px;
+    border-radius: 20px;
     font-size: 11px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
 }
 
-.badge-operador {
-    display: inline-block;
-    background-color: #e8f0fe;
-    color: #1a73e8;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px !important;
+.user-date {
+    font-size: 12px;
+    color: #666;
+    font-weight: 600;
 }
 
-.badge-entregador {
-    display: inline-block;
-    background-color: #f3e8fd;
-    color: #6a1b9a;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px !important;
+/* =========================================
+   BOTÕES DE AÇÃO NA TABELA
+========================================== */
+div[data-testid="stColumn"] div[data-testid="stButton"] button {
+    font-size: 15px !important;
+    padding: 4px 6px !important;
+    border-radius: 10px !important;
+    min-height: 38px !important;
+    border: 1px solid #e8ddd3 !important;
+    background: #faf7f3 !important;
+    transition: all 0.2s ease;
+}
+div[data-testid="stColumn"] div[data-testid="stButton"] button:hover {
+    background: #e8ddd3 !important;
+    transform: scale(1.05);
 }
 
-.badge-self {
-    display: inline-block;
-    background-color: #e6f4ea;
-    color: #137333;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px !important;
-}
+/* =========================================
+   RESPONSIVIDADE MOBILE E BOTÕES (LADO A LADO)
+========================================== */
+@media (max-width: 768px) {
+    h1 { font-size: 24px !important; }
+    
+    /* Força os botões a ficarem na horizontal no mobile dividindo o espaço */
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        margin-top: 10px !important;
+        justify-content: space-between;
+    }
 
-/* Ajustes direcionados para botões */
-div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button {
-    font-size: 13px !important;
-    padding: 2px 8px !important;
-    border-radius: 8px !important;
-    min-height: 32px !important;
-}
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) > div[data-testid="stColumn"] {
+        flex: 1 1 0% !important; 
+        min-width: 0 !important;
+        padding: 0 !important;
+    }
 
-div[data-testid="stExpander"] {
-    border: none !important;
-    box-shadow: none !important;
-    margin-top: 4px !important;
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) button {
+        width: 100% !important;
+        padding: 6px 0px !important;
+    }
 }
 </style>
 """,
@@ -160,30 +210,30 @@ unsafe_allow_html=True
 # TÍTULO E CABEÇALHO
 # =====================================================
 
-st.title("👤 Usuários do Sistema")
-st.caption("Gerencie os acessos administrativos da Doce Cesta Brasília.")
-st.divider()
+col_t1, col_t2 = st.columns([3, 1])
+with col_t1:
+    st.title("👤 Gestão de Usuários")
+    st.caption("Administre as contas de acesso da equipe e defina o perfil de permissões de cada um.")
 
 
 # =====================================================
-# NOVO USUÁRIO
+# NOVO USUÁRIO (MODELO EXPANDER)
 # =====================================================
 
-st.subheader("➕ Novo Usuário")
+with st.expander("✨ Cadastrar Novo Usuário", expanded=False):
+    col_n1, col_n2, col_n3 = st.columns([1.5, 1.5, 1])
 
-with st.container(border=True):
-    col1, col2, col3 = st.columns([1.5, 1.5, 1])
+    with col_n1:
+        novo_login = st.text_input("Login de Acesso", key="novo_login", placeholder="Ex: joao.silva")
 
-    with col1:
-        novo_login = st.text_input("Login", key="novo_login", placeholder="Ex: joao.silva")
-
-    with col2:
+    with col_n2:
         nova_senha = st.text_input("Senha", type="password", key="nova_senha", placeholder="••••••••")
 
-    with col3:
-        novo_perfil = st.selectbox("Perfil", ["Administrador", "Operador", "Entregador"], key="novo_perfil")
+    with col_n3:
+        novo_perfil = st.selectbox("Perfil de Permissão", ["Administrador", "Operador", "Entregador"], key="novo_perfil")
 
-    if st.button("💾 Salvar Usuário", use_container_width=True, type="primary"):
+    st.write("")
+    if st.button("💾 Adicionar Usuário ao Sistema", use_container_width=True, type="primary"):
         if not novo_login:
             st.error("Informe o login.")
             st.stop()
@@ -199,19 +249,17 @@ with st.container(border=True):
         )
 
         if sucesso:
-            st.success("Usuário cadastrado com sucesso!")
+            st.success("✅ Usuário cadastrado com sucesso!")
             st.rerun()
         else:
             st.error(mensagem)
 
 
-st.divider()
-
-
 # =====================================================
-# LISTAGEM
+# LISTAGEM DE USUÁRIOS (CARDS PREMIUM)
 # =====================================================
 
+st.write("")
 st.subheader("📋 Usuários Cadastrados")
 
 try:
@@ -225,103 +273,147 @@ if not usuarios:
     st.stop()
 
 
-# =====================================================
-# LISTAGEM DE USUÁRIOS
-# =====================================================
-
 perfis_disponiveis = ["Administrador", "Operador", "Entregador"]
 
 for usuario in usuarios:
+    usuario_id = usuario["id"]
+    login = usuario["login"]
+    perfil = usuario["perfil"]
+    data_criacao = str(usuario.get("created_at", "-"))[:10]
+    
+    eh_conta_atual = (login == usuario_logado["login"])
+
     with st.container(border=True):
-        col_u1, col_u2, col_u3, col_u4 = st.columns([3, 2, 2, 2])
+        # Separação clara de colunas
+        col_info, col_perfil, col_data, col_acoes = st.columns([3, 2.5, 2, 1.5])
 
-        # Login e identificação do usuário atual
-        with col_u1:
-            st.markdown(f'<div class="user-title">👤 {usuario["login"]}</div>', unsafe_allow_html=True)
+        # Coluna 1: Login e Tag de Conta Atual
+        with col_info:
+            st.markdown(f'<div class="user-title">👤 {login}</div>', unsafe_allow_html=True)
+            if eh_conta_atual:
+                st.markdown('<span class="badge-self">🔒 Conta Atual</span>', unsafe_allow_html=True)
 
-        # Perfil (Badge Visual)
-        with col_u2:
-            if usuario["perfil"] == "Administrador":
+        # Coluna 2: Perfil (Badge Visual)
+        with col_perfil:
+            if perfil == "Administrador":
                 st.markdown('<span class="badge-admin">👑 Administrador</span>', unsafe_allow_html=True)
-            elif usuario["perfil"] == "Entregador":
+            elif perfil == "Entregador":
                 st.markdown('<span class="badge-entregador">🛵 Entregador</span>', unsafe_allow_html=True)
             else:
                 st.markdown('<span class="badge-operador">👤 Operador</span>', unsafe_allow_html=True)
 
-        # Data de Criação
-        with col_u3:
-            data_criacao = str(usuario.get("created_at", "-"))[:10]
-            st.caption(f"🗓️ Criado: {data_criacao}")
+        # Coluna 3: Data
+        with col_data:
+            if data_criacao != "-":
+                data_fmt = f"{data_criacao[8:10]}/{data_criacao[5:7]}/{data_criacao[0:4]}"
+                st.markdown(f'<div class="user-date">🗓️ Criado em: {data_fmt}</div>', unsafe_allow_html=True)
 
-        # Indicador de Conta Conectada
-        with col_u4:
-            if usuario["login"] == usuario_logado["login"]:
-                st.markdown('<span class="badge-self">🔒 Conta Atual</span>', unsafe_allow_html=True)
-            else:
-                st.caption("⚙️ Gerenciável")
+        # Coluna 4: Botões de Ação (Linha)
+        with col_acoes:
+            col_b1, col_b2 = st.columns(2)
 
-        # =================================================
-        # EDITAR / EXCLUIR EXPANSIBLE
-        # =================================================
-        with st.expander("✏️ Editar ou Excluir", expanded=False):
-            col_ed1, col_ed2 = st.columns(2)
+            with col_b1:
+                if st.button("✏️", key=f"btn_edit_{usuario_id}", help="Editar Usuário", use_container_width=True):
+                    st.session_state["usuario_editando"] = usuario_id
+                    st.rerun()
 
-            with col_ed1:
-                editar_login = st.text_input("Login", value=usuario["login"], key=f"login_{usuario['id']}")
-                editar_senha = st.text_input("Nova senha (deixe vazio para manter)", type="password", key=f"senha_{usuario['id']}")
+            with col_b2:
+                # Impede abrir exclusão da conta atual
+                desabilitar_exclusao = eh_conta_atual
+                if st.button("🗑️", key=f"btn_del_{usuario_id}", help="Excluir Usuário", disabled=desabilitar_exclusao, use_container_width=True):
+                    st.session_state["usuario_editando"] = f"del_{usuario_id}"
+                    st.rerun()
 
-            with col_ed2:
-                # Localiza a posição do perfil atual na lista, default é 1 (Operador) se não achar
-                index_perfil = perfis_disponiveis.index(usuario["perfil"]) if usuario["perfil"] in perfis_disponiveis else 1
-                
-                editar_perfil = st.selectbox(
-                    "Perfil",
-                    perfis_disponiveis,
-                    index=index_perfil,
-                    key=f"perfil_{usuario['id']}"
-                )
+        # =====================================================
+        # FORMULÁRIO DE EDIÇÃO INLINE
+        # =====================================================
+        if st.session_state["usuario_editando"] == usuario_id:
+            st.write("")
+            with st.container(border=True):
+                st.markdown("<div style='font-size: 14px; font-weight: 800; color: #5a3b28; margin-bottom: 10px;'>✏️ Editando Usuário</div>", unsafe_allow_html=True)
 
-                if st.button("💾 Atualizar Dados", key=f"update_{usuario['id']}", use_container_width=True, type="primary"):
-                    sucesso, mensagem = atualizar_usuario(
-                        usuario["id"],
-                        editar_login,
-                        editar_senha,
-                        editar_perfil
-                    )
+                with st.form(key=f"form_edicao_{usuario_id}"):
+                    col_e1, col_e2, col_e3 = st.columns([1.5, 1.5, 1])
 
-                    if sucesso:
-                        st.success("Usuário atualizado!")
+                    with col_e1:
+                        editar_login = st.text_input("Login", value=login)
+
+                    with col_e2:
+                        editar_senha = st.text_input("Nova senha (deixe vazio para manter atual)", type="password")
+
+                    with col_e3:
+                        index_perfil = perfis_disponiveis.index(perfil) if perfil in perfis_disponiveis else 1
+                        editar_perfil = st.selectbox("Perfil", perfis_disponiveis, index=index_perfil)
+
+                    st.write("")
+                    col_salvar, col_cancelar = st.columns(2)
+
+                    with col_salvar:
+                        salvar = st.form_submit_button("💾 Salvar Alterações", use_container_width=True)
+
+                    with col_cancelar:
+                        cancelar = st.form_submit_button("❌ Cancelar", use_container_width=True)
+
+                    if salvar:
+                        if not editar_login.strip():
+                            st.error("Informe o login.")
+                        else:
+                            try:
+                                sucesso, mensagem = atualizar_usuario(
+                                    usuario_id,
+                                    editar_login.strip(),
+                                    editar_senha,
+                                    editar_perfil
+                                )
+                                if sucesso:
+                                    st.session_state["usuario_editando"] = None
+                                    st.success("✅ Usuário atualizado!")
+                                    st.rerun()
+                                else:
+                                    st.error(mensagem)
+                            except Exception as erro:
+                                st.error(f"Erro ao atualizar: {erro}")
+
+                    if cancelar:
+                        st.session_state["usuario_editando"] = None
                         st.rerun()
-                    else:
-                        st.error(mensagem)
 
-            st.divider()
+        # =====================================================
+        # CONFIRMAÇÃO DE EXCLUSÃO INLINE
+        # =====================================================
+        elif st.session_state["usuario_editando"] == f"del_{usuario_id}":
+            st.write("")
+            with st.container(border=True):
+                st.error(f"⚠️ Atenção! Deseja realmente excluir o usuário **{login}**?")
+                col_confirmar, col_cancelar = st.columns(2)
 
-            # Área de Exclusão
-            if usuario["login"] != usuario_logado["login"]:
-                col_del1, col_del2 = st.columns([2, 1])
-                with col_del1:
-                    confirmar = st.checkbox("Confirmar exclusão deste usuário", key=f"confirm_{usuario['id']}")
+                with col_confirmar:
+                    if st.button("✅ Sim, Excluir", key=f"confirmar_excluir_{usuario_id}", use_container_width=True, type="primary"):
+                        sucesso, mensagem = excluir_usuario(usuario_id)
+                        if sucesso:
+                            st.toast("✅ Usuário excluído com sucesso!")
+                            st.session_state["usuario_editando"] = None
+                            st.rerun()
+                        else:
+                            st.error(mensagem)
 
-                with col_del2:
-                    if confirmar:
-                        if st.button("🗑️ Excluir definitivamente", key=f"delete_{usuario['id']}", use_container_width=True):
-                            sucesso, mensagem = excluir_usuario(usuario["id"])
-                            if sucesso:
-                                st.success("Usuário excluído com sucesso!")
-                                st.rerun()
-                            else:
-                                st.error(mensagem)
-            else:
-                st.info("🔒 O usuário atualmente conectado não pode ser excluído.")
+                with col_cancelar:
+                    if st.button("❌ Cancelar", key=f"cancelar_excluir_{usuario_id}", use_container_width=True):
+                        st.session_state["usuario_editando"] = None
+                        st.rerun()
 
 
+# =====================================================
+# RODAPÉ E BOTÃO DE VOLTAR
+# =====================================================
+
+st.write("")
 st.divider()
 
+col_v1, col_v2, col_v3 = st.columns([1, 2, 1])
+with col_v2:
+    if st.button("⬅ Voltar ao Painel Administrativo", use_container_width=True):
+        st.switch_page("pages/99_Admin.py")
 
-# =====================================================
-# VOLTAR
-# =====================================================
-
-if st.button("⬅ Voltar ao Início", use_container_width=True):
-    st.switch_page("pages/99_Admin.py")
+st.write("")
+st.caption("👥 Controle de Acessos - Doce Cesta Brasília")
