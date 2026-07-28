@@ -57,7 +57,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS PREMIUM E LIGHTBOX PADRÃO
+# CSS PREMIUM E LIGHTBOX PADRÃO UNIFICADO
 # ==========================================================
 
 st.markdown(
@@ -228,7 +228,9 @@ div[data-testid="stButton"] button:hover {
     background: linear-gradient(135deg, #b56210 0%, #874609 100%) !important;
 }
 
-/* LIGHTBOX PADRÃO */
+/* =========================================
+   LIGHTBOX UNIFICADO (TELA INTEIRA REAL)
+========================================= */
 .lightbox-wrapper { text-align: center; margin-bottom: 10px; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 .lightbox-toggle { display: none !important; }
 .lightbox-image {
@@ -242,16 +244,39 @@ div[data-testid="stButton"] button:hover {
 }
 .lightbox-image:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(90, 59, 40, 0.15); }
 .imagem-legenda { text-align: center; font-size: 12px; color: #888; margin-top: 10px; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-.lightbox-modal {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background-color: rgba(0, 0, 0, 0.85); z-index: 999999;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; visibility: hidden; transition: opacity 0.3s ease; cursor: zoom-out;
-}
-.lightbox-modal img { max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
-.lightbox-toggle:checked ~ .lightbox-modal { opacity: 1; visibility: visible; }
 
-/* GRID DE ADICIONAIS */
+/* MODAL GLOBAL FIXO COBRINDO A TELA INTEIRA */
+.lightbox-modal {
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85); 
+    z-index: 9999999;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    opacity: 0; 
+    visibility: hidden; 
+    transition: opacity 0.3s ease; 
+    cursor: zoom-out;
+}
+.lightbox-modal img { 
+    max-width: 90vw; 
+    max-height: 90vh; 
+    border-radius: 12px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
+    object-fit: contain;
+}
+.lightbox-toggle:checked ~ .lightbox-modal { 
+    opacity: 1; 
+    visibility: visible; 
+}
+
+/* =========================================
+   GRID CSS DE ADICIONAIS (EXTRAS AVULSOS)
+========================================= */
 .adicionais-hero-card {
     background: linear-gradient(135deg, #ffffff 0%, #faf7f3 100%);
     border: 1px solid #e8ddd3;
@@ -281,7 +306,19 @@ div[data-testid="stButton"] button:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
 }
-.adicional-img-small { width: 70px; height: 70px; object-fit: cover; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); cursor: zoom-in; display: block; margin: 0 auto; border: 1px solid #f0e6dc; }
+.adicional-img-small { 
+    width: 70px; 
+    height: 70px; 
+    object-fit: cover; 
+    border-radius: 10px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06); 
+    cursor: zoom-in; 
+    display: block; 
+    margin: 0 auto; 
+    border: 1px solid #f0e6dc;
+    transition: transform 0.2s ease;
+}
+.adicional-img-small:hover { transform: scale(1.05); }
 .adicional-img-placeholder { width: 70px; height: 70px; background: linear-gradient(135deg, #fdfbf8 0%, #f5eee6 100%); display: flex; align-items: center; justify-content: center; font-size: 26px; border-radius: 10px; border: 1px dashed #dfcdbb; margin: 0 auto; }
 .adicional-nome { font-size: 12.5px; font-weight: 700; color: #4a2e1b; margin-top: 10px; margin-bottom: 6px; min-height: 32px; line-height: 1.3; }
 .adicional-preco-fixo { color: #137333; font-weight: 800; font-size: 14px; }
@@ -454,7 +491,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (GRID PREMIUM)
+# APRESENTAÇÃO DOS ADICIONAIS (GRID PREMIUM COM LIGHTBOX IDÊNTICO)
 # ==========================================================
 
 produtos_adicionais = []
@@ -487,7 +524,16 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            img_html = f'<label style="cursor: zoom-in; display: inline-block; margin-bottom: 6px;"><input type="checkbox" class="lightbox-toggle"><img src="{img_src}" class="adicional-img-small" title="Clique para ampliar"><div class="lightbox-modal"><img src="{img_src}"></div></label>'
+            # Aplicando exatamente a mesma estrutura de label + input checkbox + modal do lightbox das cestas
+            img_html = f'''
+                <label style="cursor: zoom-in; display: inline-block; margin-bottom: 6px;">
+                    <input type="checkbox" class="lightbox-toggle">
+                    <img src="{img_src}" class="adicional-img-small" title="Clique para ampliar">
+                    <div class="lightbox-modal">
+                        <img src="{img_src}">
+                    </div>
+                </label>
+            '''
         else:
             img_html = f'<div class="adicional-img-placeholder" style="margin-bottom: 6px;">🎀</div>'
 
