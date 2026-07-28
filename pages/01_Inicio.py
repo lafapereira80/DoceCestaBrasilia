@@ -415,7 +415,10 @@ if cesta_obj:
 # ==========================================================
 # PROCESSAMENTO DO BOTÃO DE ENVIO
 # ==========================================================
-if st.button("🎁 CONFIRMAR E ENVIAR PEDIDO", use_container_width=True):
+st.write("")
+enviar = st.button("🎁 CONFIRMAR E ENVIAR PEDIDO", use_container_width=True, type="primary")
+
+if enviar:
     
     # 1. Coleta de Dados Pessoais
     nome = st.session_state.get("input_nome_comprador", "")
