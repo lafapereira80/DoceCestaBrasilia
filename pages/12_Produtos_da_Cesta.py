@@ -5,6 +5,10 @@ from services.produto_service import (
     listar_categorias
 )
 
+from services.cesta_service import (
+    buscar_cesta
+)
+
 from services.cesta_produto_service import (
     listar_produtos_da_cesta,
     salvar_produtos_da_cesta
@@ -72,6 +76,31 @@ h2, h3, h4 {
 .block-container label {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
     font-size: 13px !important;
+}
+
+/* =========================================
+   CARD DE IDENTIFICAÇÃO DA CESTA NO TOPO
+========================================== */
+.cesta-alvo-card {
+    background: linear-gradient(145deg, #ffffff 0%, #fdfcfb 100%);
+    border: 1px solid #d2bfae;
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(90, 59, 40, 0.04);
+}
+.cesta-alvo-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #9d7d65;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+.cesta-alvo-name {
+    font-size: 20px;
+    font-weight: 800;
+    color: #4a2e1b;
 }
 
 /* =========================================
@@ -182,10 +211,11 @@ if "cesta_produtos" not in st.session_state or not st.session_state["cesta_produ
     st.stop()
 
 cesta_id = st.session_state["cesta_produtos"]
+cesta_atual = buscar_cesta(cesta_id) or {}
 
 
 # =====================================================
-# TÍTULO E CABEÇALHO
+# TÍTULO E CABEÇALHO COM DESTAQUE PARA A CESTA ALVO
 # =====================================================
 
 col_t1, col_t2 = st.columns([3, 1])
@@ -193,19 +223,40 @@ with col_t1:
     st.title("📦 Composição da Cesta")
     st.caption("Selecione todos os produtos que fazem parte do pacote oficial desta cesta.")
 
+st.write("")
+
+# Bloco de destaque topo da página com a cesta sendo configurada
+nome_cesta_vitrine = cesta_atual.get("nome", "Cesta Selecionada")
+preco_cesta_vitrine = cesta_atual.get("preco", 0.0)
+try:
+    preco_fmt = f"R$ {float(preco_cesta_vitrine):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+except:
+    preco_fmt = "R$ 0,00"
+
+st.markdown(
+    f"""
+    <div class="cesta-alvo-card">
+        <div class="cesta-alvo-title">🎯 Você está configurando os itens de:</div>
+        <div class="cesta-alvo-name">🎁 {nome_cesta_vitrine} &nbsp;|&nbsp; <span style="color: #137333; font-size: 18px;">{preco_fmt}</span></div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 
 # =====================================================
-# CARREGA DADOS (FILTRANDO A CATEGORIA ADICIONAIS)
+# CARREGA DADOS (FILTRANDO RIGOROSAMENTE A CATEGORIA ADICIONAIS)
 # =====================================================
 
 try:
     categorias_brutas = listar_categorias()
     
-    # REQUISITO: Filtra e remove a categoria "Adicionais" (ela vai em todas as cestas e não precisa ser selecionada aqui)
-    categorias = [
-        cat for cat in categorias_brutas 
-        if "adicional" not in str(cat.get("nome", "")).strip().lower()
-    ]
+    # REQUISITO: Filtro rígido para barrar qualquer variação de "Adicionais" ou "Adicional"
+    categorias = []
+    for cat in categorias_brutas:
+        nome_cat = str(cat.get("nome", "")).strip().lower()
+        if "adic" not in nome_cat:
+            categorias.append(cat)
 
     produtos = listar_produtos()
     produtos_da_cesta = listar_produtos_da_cesta(cesta_id)
@@ -237,7 +288,6 @@ for produto in produtos:
         produto.get("categoria_id")
     )
 
-    # Se o produto pertencer a uma categoria válida (que não seja adicionais)
     if nome_categoria in produtos_por_categoria:
         produtos_por_categoria[nome_categoria].append(produto)
 
