@@ -30,9 +30,9 @@ from utils.impressao_pedido import (
 )
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA E CSS
+# CONFIGURAÇÃO DA PÁGINA E CSS PREMIUM
 # =====================================================
-st.set_page_config(page_title="Pedidos", page_icon="📋", layout="wide")
+st.set_page_config(page_title="Gestão de Pedidos", page_icon="📋", layout="wide")
 configurar_pagina()
 menu_lateral()
 administrador_operador()
@@ -65,7 +65,7 @@ def formatar_data(data_str):
 def alterar_para_enviado(pedido_id):
     try:
         supabase.table("pedidos").update({"status": "Enviado"}).eq("id", pedido_id).execute()
-        st.success("🛵 Pedido enviado para a Rota de Entregas com sucesso!")
+        st.toast("🛵 Pedido enviado para a Rota de Entregas!")
         time.sleep(1)
         st.rerun()
     except Exception as e:
@@ -74,71 +74,112 @@ def alterar_para_enviado(pedido_id):
 st.markdown(
 """
 <style>
-.block-container { padding-top: 1rem !important; padding-bottom: 2rem !important; max-width: 1200px; }
-h1 { font-size: 24px !important; font-weight: 700 !important; color: #5a3b28; margin-bottom: 2px !important; }
-h2, h3 { font-size: 16px !important; font-weight: 700 !important; color: #5a3b28; margin-top: 15px !important; margin-bottom: 8px !important; }
-.block-container p, .block-container label { font-family: Arial, sans-serif !important; font-size: 13px !important; }
+/* =========================================
+   CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
+========================================== */
+.block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; max-width: 1200px; }
+h1 { font-size: 28px !important; font-weight: 800 !important; color: #4a2e1b; margin-bottom: 2px !important; letter-spacing: -0.5px; }
+h2, h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-top: 15px !important; margin-bottom: 10px !important; }
+p, label { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; font-size: 13px !important; }
 
-div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1px solid #e8ddd3 !important; border-radius: 12px !important; padding: 10px 16px !important; margin-bottom: 8px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.03); transition: all 0.2s ease; }
-div[data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: #dfcdbb !important; box-shadow: 0 2px 6px rgba(90, 59, 40, 0.08); }
+/* =========================================
+   ACORDEÃO (EXPANDER) "NOVO PEDIDO"
+========================================== */
+div[data-testid="stExpander"] { background: #ffffff; border: 1px solid #e8ddd3 !important; border-radius: 16px !important; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.05) !important; overflow: hidden; margin-bottom: 20px; }
+div[data-testid="stExpander"] summary { background: #faf7f3; padding: 15px 20px !important; font-size: 16px !important; font-weight: 800 !important; color: #5a3b28 !important; transition: all 0.3s ease; }
+div[data-testid="stExpander"] summary:hover { background: #f3ece6; }
+div[data-testid="stExpanderDetails"] { padding: 20px !important; }
 
-.preview-impressao { background-color: #fffbf7; border-left: 4px solid #b06000 !important; }
-.badge-status { display: inline-block; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 12px !important; text-align: center; }
-.badge-pago { background-color: #e6f4ea; color: #137333; }
-.badge-recebido { background-color: #fef7e0; color: #b06000; }
-.badge-desistencia { background-color: #fce8e6; color: #c5221f; }
-.badge-montada { background-color: #e6f4ea; color: #137333; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 800; border: 1px solid #137333; margin-left: 6px; }
+/* =========================================
+   CARDS DE PEDIDOS
+========================================== */
+div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1px solid #e8ddd3 !important; border-radius: 14px !important; padding: 12px 16px !important; margin-bottom: 10px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1); }
+div[data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: #d2bfae !important; box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08); transform: translateY(-2px); }
 
+/* TEXTOS INTERNOS DO CARD */
+.cliente-nome { font-weight: 800; color: #2c1e14; font-size: 15px !important; margin-bottom: 2px; }
+.valor-pedido { font-weight: 800; color: #2e7d32; font-size: 16px !important; }
 .info-label { font-weight: 800; color: #9d7d65; font-size: 10px !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-.cliente-nome { font-weight: 700; color: #333; font-size: 14px !important; }
-.valor-pedido { font-weight: 700; color: #2e7d32; font-size: 14px !important; }
+.preview-impressao { background-color: #faf7f3 !important; border-left: 4px solid #b06000 !important; border-radius: 8px !important; padding: 15px !important; }
 
-div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button { font-size: 14px !important; padding: 2px !important; border-radius: 8px !important; min-height: 36px !important; display: flex !important; align-items: center !important; justify-content: center !important; }
-div[data-testid="stCheckbox"] { margin-top: 4px; }
+/* =========================================
+   BADGES DE STATUS E INFORMAÇÕES
+========================================== */
+.badge-status { display: inline-block; padding: 4px 10px; border-radius: 20px; font-weight: 700; font-size: 11px !important; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; }
+.badge-pago { background-color: #e6f4ea; color: #137333; border: 1px solid #ceead6; }
+.badge-recebido { background-color: #fef7e0; color: #b06000; border: 1px solid #fce8b2; }
+.badge-enviado { background-color: #e8f0fe; color: #1a73e8; border: 1px solid #d2e3fc; }
+.badge-desistencia { background-color: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; }
+.badge-montada { background-color: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 800; border: 1px solid #ceead6; margin-left: 6px; vertical-align: middle; }
 
+/* =========================================
+   BOTÕES DENTRO DO CARD (AÇÕES) E CHECKBOX
+========================================== */
+div[data-testid="stColumn"] div[data-testid="stButton"] button { font-size: 15px !important; padding: 4px 6px !important; border-radius: 10px !important; min-height: 38px !important; border: 1px solid #e8ddd3 !important; background: #faf7f3 !important; transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; }
+div[data-testid="stColumn"] div[data-testid="stButton"] button:hover { background: #e8ddd3 !important; transform: scale(1.05); }
+div[data-testid="stCheckbox"] { margin-top: 6px; }
+
+/* =========================================
+   RESPONSIVIDADE MOBILE E BOTÕES (LADO A LADO)
+========================================== */
 @media (max-width: 768px) {
-    .block-container { padding-top: 0.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
-    h1 { font-size: 20px !important; }
-    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 10px 12px !important; }
-    div[data-testid="stHorizontalBlock"] div[data-testid="stHorizontalBlock"] { flex-wrap: nowrap !important; flex-direction: row !important; display: flex !important; gap: 8px !important; margin-top: 6px !important; }
-    div[data-testid="stHorizontalBlock"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] { width: 50% !important; min-width: 0 !important; flex: 1 1 0% !important; }
-    .cliente-nome { font-size: 15px !important; margin-bottom: 2px; }
-    .info-label { font-size: 11px !important; margin-top: 4px; }
-    .valor-pedido { font-size: 16px !important; margin-top: 4px; }
+    h1 { font-size: 24px !important; }
+    .cliente-nome { font-size: 16px !important; }
+    
+    /* Força os botões de ação a ficarem na horizontal no mobile */
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        margin-top: 10px !important;
+        justify-content: space-between;
+    }
+
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) > div[data-testid="stColumn"] {
+        flex: 1 1 0% !important; 
+        min-width: 0 !important;
+        padding: 0 !important;
+    }
+
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) button {
+        width: 100% !important;
+        padding: 6px 0px !important;
+    }
 }
 </style>
 """, unsafe_allow_html=True)
 
 
 st.title("📋 Gestão de Pedidos")
-st.caption("Acompanhamento visual (Aguardando Pagamento e Fila de Produção/Envio).")
+st.caption("Central de acompanhamento de vendas, pagamentos e fila de produção.")
 
 # =====================================================
-# CRIAR NOVO PEDIDO MANUAL
+# CRIAR NOVO PEDIDO MANUAL (EXPANDER PREMIUM)
 # =====================================================
 @st.fragment
 def render_criar_pedido_manual():
-    with st.expander("➕ CRIAR NOVO PEDIDO MANUALMENTE", expanded=False):
-        st.info("Registre aqui os pedidos feitos por WhatsApp ou telefone. Este registro é interno e não notifica o Telegram.")
+    with st.expander("✨ Cadastrar Novo Pedido Manual", expanded=False):
+        st.info("💡 Registre aqui pedidos feitos por WhatsApp ou Telefone. Este registro é apenas para controle interno e não dispara notificações automáticas no Telegram.")
         if "man_nome" not in st.session_state: st.session_state.man_nome = ""
         if "man_cpf" not in st.session_state: st.session_state.man_cpf = ""
         if "man_tel" not in st.session_state: st.session_state.man_tel = ""
         if "modo_busca_cli" not in st.session_state: st.session_state.modo_busca_cli = False
 
-        st.markdown("#### 👤 Comprador")
+        st.markdown("#### 👤 Dados do Comprador")
         cc1, cc_btn, cc2, cc3 = st.columns([3, 1, 2, 2])
         with cc1: nome_comp = st.text_input("Nome *", key="man_nome")
         with cc_btn:
             st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
-            if st.button("🔍 Buscar", use_container_width=True, help="Pesquisar cliente cadastrado"):
+            if st.button("🔍 Buscar", use_container_width=True, help="Pesquisar cliente já cadastrado no sistema"):
                 st.session_state.modo_busca_cli = not st.session_state.modo_busca_cli
                 st.rerun(scope="fragment")
         with cc2: cpf_comp = st.text_input("CPF *", key="man_cpf")
-        with cc3: tel_comp = st.text_input("Telefone *", key="man_tel")
+        with cc3: tel_comp = st.text_input("Telefone / WhatsApp *", key="man_tel")
 
         if st.session_state.modo_busca_cli:
             with st.container(border=True):
-                st.markdown("**🔍 Pesquisar Cliente**")
+                st.markdown("<div style='font-size: 14px; font-weight: 800; color: #5a3b28; margin-bottom: 8px;'>🔍 Pesquisar na Base de Clientes</div>", unsafe_allow_html=True)
                 termo_busca = st.text_input("Digite o Nome ou CPF para filtrar a lista:", key="man_termo_busca")
                 try:
                     res_cli = supabase.table("pedidos").select("cliente_nome, cliente_cpf, cliente_telefone").execute()
@@ -159,7 +200,7 @@ def render_criar_pedido_manual():
                     st.session_state.modo_busca_cli = False
                     st.rerun(scope="fragment")
         
-        st.markdown("#### 🎁 Cesta e Produtos")
+        st.markdown("#### 🎁 Seleção da Cesta e Montagem")
         try: cestas = [c for c in listar_cestas() if c.get("ativa", True)]
         except: cestas = []
         cesta_sel = st.selectbox("Selecione a Cesta Base *", [{"id": None, "nome": "Selecione..."}] + cestas, format_func=lambda x: x["nome"], key="man_sel_cesta")
@@ -174,13 +215,13 @@ def render_criar_pedido_manual():
                     if not prods: continue
                     with st.container(border=True):
                         if maximo == 1:
-                            esc = st.radio(cat, prods, format_func=lambda p: p["nome"], key=f"man_rad_{cat}")
+                            esc = st.radio(f"Opções de {cat}", prods, format_func=lambda p: p["nome"], key=f"man_rad_{cat}")
                             if esc: selecoes_admin[cat] = [esc]
                         else:
-                            escs = st.multiselect(cat, prods, format_func=lambda p: p["nome"], max_selections=maximo, key=f"man_mul_{cat}")
+                            escs = st.multiselect(f"Opções de {cat}", prods, format_func=lambda p: p["nome"], max_selections=maximo, key=f"man_mul_{cat}")
                             selecoes_admin[cat] = escs
 
-        st.markdown("#### 🎀 Complementos")
+        st.markdown("#### 🎀 Adicionais e Extras")
         adicionais_selecionados = []
         try:
             cat_add_id = None
@@ -196,17 +237,19 @@ def render_criar_pedido_manual():
                         if chk: adicionais_selecionados.append({"produto_id": p_ad["id"], "nome": p_ad["nome"], "preco": float(p_ad.get("preco") or 0)})
         except: pass
         
-        st.markdown("#### 💝 Homenageado e Entrega")
+        st.markdown("#### 💝 Informações de Entrega e Homenageado")
         cd1, cd2 = st.columns(2)
-        with cd1: dest_nome = st.text_input("Nome do Homenageado *", key="man_dest_nome")
+        with cd1: dest_nome = st.text_input("Nome de quem vai receber (Homenageado) *", key="man_dest_nome")
         with cd2: dest_tel = st.text_input("Telefone do Homenageado", key="man_dest_tel")
+        
         cm1, cm2 = st.columns(2)
-        with cm1: motivo = st.text_input("Motivo da Homenagem", key="man_motivo")
+        with cm1: motivo = st.text_input("Motivo (Ex: Aniversário, Aniversário de Casamento)", key="man_motivo")
         with cm2: mensagem = st.text_area("Mensagem do Cartão", height=68, key="man_msg")
+        
         with st.container(border=True):
-            st.markdown("**📍 Endereço de Entrega**")
+            st.markdown("<div style='font-size: 13px; font-weight: 800; color: #5a3b28; margin-bottom: 8px;'>📍 Endereço de Entrega</div>", unsafe_allow_html=True)
             cx1, cx2 = st.columns([1, 2])
-            with cx1: cep_in = st.text_input("CEP (Opcional)", max_chars=8, key="man_cep")
+            with cx1: cep_in = st.text_input("CEP (Opcional - Preenche Automático)", max_chars=8, key="man_cep")
             if "man_rua" not in st.session_state: st.session_state.man_rua = ""
             if "man_bairro" not in st.session_state: st.session_state.man_bairro = ""
             if "man_cidade" not in st.session_state: st.session_state.man_cidade = ""
@@ -227,25 +270,31 @@ def render_criar_pedido_manual():
                 
             with cx2: cidade = st.text_input("Cidade-UF", value=st.session_state.man_cidade, key="man_cid_in")
             rua = st.text_input("Rua/Logradouro *", value=st.session_state.man_rua, key="man_rua_in")
+            
             cn1, cn2 = st.columns(2)
             with cn1: num = st.text_input("Número/Compl. *", key="man_num")
             with cn2: bairro = st.text_input("Bairro *", value=st.session_state.man_bairro, key="man_bairro_in")
+            
             ce1, ce2 = st.columns(2)
-            with ce1: dt_ent = st.date_input("Data de Entrega", key="man_dt")
-            with ce2: per_ent = st.selectbox("Período", ["Manhã", "Tarde", "Noite"], key="man_per")
-            pedido_esp = st.text_input("Solicitação Especial (Horário, etc)", key="man_esp")
+            with ce1: dt_ent = st.date_input("Data da Entrega", key="man_dt")
+            with ce2: per_ent = st.selectbox("Período Desejado", ["Manhã", "Tarde", "Noite"], key="man_per")
+            pedido_esp = st.text_input("Solicitações Especiais (Ex: Entregar exatamente às 08h)", key="man_esp")
 
-        st.markdown("#### 💰 Fechamento")
+        st.markdown("#### 💰 Configuração de Fechamento")
         cf1, cf2, cf3 = st.columns(3)
         with cf1: pag = st.selectbox("Forma de Pagamento", ["Pix", "Cartão de Crédito", "Dinheiro", "Transferência"], key="man_pag")
-        with cf2: status = st.selectbox("Status Inicial", ["Recebido", "Pago"], key="man_status")
-        with cf3: frete = st.number_input("Frete (R$)", min_value=0.0, step=1.0, key="man_frete")
+        with cf2: status = st.selectbox("Status Inicial do Pedido", ["Recebido", "Pago"], key="man_status")
+        with cf3: frete = st.number_input("Valor do Frete (R$)", min_value=0.0, step=1.0, key="man_frete")
+        
         valor_c = float(cesta_sel.get("preco", 0)) if cesta_sel and cesta_sel.get("id") else 0
         valor_a = sum([a["preco"] for a in adicionais_selecionados])
         total = valor_c + valor_a + frete
-        st.success(f"**Total do Pedido:** R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
         
-        if st.button("✅ Salvar Pedido Manual", type="primary", use_container_width=True):
+        st.write("")
+        st.success(f"**Total Final do Pedido:** R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        
+        st.write("")
+        if st.button("✅ Confirmar e Salvar Pedido", type="primary", use_container_width=True):
             if not nome_comp: st.error("Informe o nome do comprador."); st.stop()
             if not cpf_comp: st.error("Informe o CPF do comprador."); st.stop()
             if not cesta_sel or not cesta_sel.get("id"): st.error("Selecione uma Cesta."); st.stop()
@@ -268,7 +317,7 @@ def render_criar_pedido_manual():
             suc, p_id = salvar_pedido(dados_ped)
             if suc:
                 if adicionais_selecionados: salvar_adicionais_pedido(p_id, adicionais_selecionados)
-                st.success("✅ Pedido criado com sucesso! O painel será atualizado...")
+                st.success("✅ Pedido criado com sucesso! Atualizando...")
                 for key in ["man_nome", "man_cpf", "man_tel", "man_rua", "man_bairro", "man_cidade", "man_cep", "ultimo_cep_man", "man_termo_busca"]:
                     if key in st.session_state: del st.session_state[key]
                 st.session_state.modo_busca_cli = False
@@ -277,7 +326,7 @@ def render_criar_pedido_manual():
             else: st.error("Erro ao registrar.")
 
 render_criar_pedido_manual()
-st.divider()
+st.write("")
 
 
 # =====================================================
@@ -303,7 +352,7 @@ def status_visual_html(status):
     status_str = str(status).strip().capitalize()
     if status_str == "Pago": return '<span class="badge-status badge-pago">🟢 Pago</span>'
     elif status_str == "Recebido": return '<span class="badge-status badge-recebido">🟡 Recebido</span>'
-    elif status_str == "Enviado": return '<span class="badge-status" style="background-color: #e8f0fe; color: #1a73e8;">🛵 Enviado (Rota)</span>'
+    elif status_str == "Enviado": return '<span class="badge-status badge-enviado">🛵 Enviado (Rota)</span>'
     elif status_str == "Desistência" or status_str == "Desistencia": return '<span class="badge-status badge-desistencia">🔴 Desistência</span>'
     return f'<span class="badge-status">{status}</span>'
 
@@ -319,7 +368,7 @@ def mostrar_lista(titulo, status_filtro_lista, eh_pago=False, permitir_exclusao=
         st.info(f"Nenhum pedido nesta etapa no momento.")
         return
         
-    pesquisa_local = st.text_input("🔍 Buscar cliente:", placeholder="Digite o nome...", key=f"pesquisa_{status_filtro_lista[0]}")
+    pesquisa_local = st.text_input(f"🔍 Buscar cliente em {titulo}:", placeholder="Digite o nome...", key=f"pesquisa_{status_filtro_lista[0]}")
     if pesquisa_local.strip():
         pedidos_status = pedidos_status[pedidos_status["cliente_nome"].fillna("").str.contains(pesquisa_local, case=False)]
         if pedidos_status.empty:
@@ -334,12 +383,12 @@ def mostrar_lista(titulo, status_filtro_lista, eh_pago=False, permitir_exclusao=
 
         with st.container(border=True):
             if eh_pago: 
-                col_check, col_info1, col_info2, col_status, col_valor, col_acoes = st.columns([1.2, 3.2, 2.5, 1.8, 1.8, 2.5])
+                col_check, col_info1, col_info2, col_status, col_valor, col_acoes = st.columns([0.8, 3.8, 2.5, 1.8, 1.8, 1.8])
                 with col_check:
                     esta_marcado = pedido["id"] in st.session_state["pedidos_impressao"]
                     st.checkbox("🖨️", value=esta_marcado, key=f"imprimir_{pedido['id']}", on_change=atualizar_selecao_impressao, args=(pedido["id"],), help="Selecionar para impressão")
             else: 
-                col_info1, col_info2, col_status, col_valor, col_acoes = st.columns([3.8, 3.0, 2.0, 2.0, 1.5])
+                col_info1, col_info2, col_status, col_valor, col_acoes = st.columns([4.0, 3.2, 2.0, 2.0, 1.5])
 
             with col_info1:
                 nome_cliente = " ".join(str(pedido.get("cliente_nome", "-")).strip().split())
@@ -388,9 +437,9 @@ def mostrar_lista(titulo, status_filtro_lista, eh_pago=False, permitir_exclusao=
                             st.session_state["pedido_aberto"] = pedido["id"]
                             st.switch_page("pages/09_Detalhes_Pedido.py")
                     with sub_col2:
-                        if st.button("🗑️", key=f"excluir_{pedido['id']}", help="Excluir pedido", use_container_width=True):
+                        if st.button("🗑️", key=f"excluir_{pedido['id']}", help="Excluir pedido permanentemente", use_container_width=True):
                             sucesso, mensagem = excluir_pedido_completo(pedido["id"])
-                            if sucesso: st.success(mensagem); st.rerun()
+                            if sucesso: st.toast("✅ " + mensagem); st.rerun()
                             else: st.error(mensagem)
                 else:
                     if st.button("👁️ Abrir", key=f"abrir_{pedido['id']}", help="Abrir para Conferência", use_container_width=True):
@@ -423,7 +472,7 @@ with aba_desistencias: mostrar_lista("Desistências", ["Desistência", "Desisten
 if st.session_state["pedidos_impressao"]:
     st.divider()
     col_t_imp1, col_t_imp2 = st.columns([3, 1])
-    with col_t_imp1: st.subheader("🖨️ Fila de Impressão (Fichas de Produção)")
+    with col_t_imp1: st.markdown("### 🖨️ Fila de Impressão (Fichas de Produção)")
     with col_t_imp2:
         if st.button("🧹 Limpar Fila", use_container_width=True):
             st.session_state["pedidos_impressao"] = []
@@ -445,27 +494,28 @@ if st.session_state["pedidos_impressao"]:
     quantidade = len(pedidos_selecionados_dados)
     if quantidade > 0:
         st.success(f"✅ {quantidade} pedido(s) selecionado(s) e pronto(s) para impressão.")
-        st.markdown("#### 🛒 Revisão dos Pedidos Selecionados")
+        st.write("")
+        st.markdown("<div style='font-size: 15px; font-weight: 800; color: #5a3b28; margin-bottom: 8px;'>🛒 Revisão dos Pedidos Selecionados</div>", unsafe_allow_html=True)
         for ped in pedidos_selecionados_dados:
             horario = ped.get('horario_combinado', '')
             horario_str = f" ({horario})" if horario else ""
             st.markdown(
                 f"""
-                <div data-testid="stVerticalBlockBorderWrapper" class="preview-impressao">
+                <div class="preview-impressao" style="margin-bottom: 8px;">
                     <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
                         <div style="flex: 1; min-width: 200px;">
                             <div class="info-label">👤 Comprador</div>
-                            <div style="font-weight: 600; color: #333;">{ped.get('cliente_nome', '-')}</div>
+                            <div style="font-weight: 800; color: #333; font-size: 14px;">{ped.get('cliente_nome', '-')}</div>
                             <div style="font-size: 12px; color: #666;">📱 {ped.get('cliente_telefone', '-')}</div>
                         </div>
                         <div style="flex: 1; min-width: 200px;">
                             <div class="info-label">💝 Homenageado</div>
-                            <div style="font-weight: 600; color: #333;">{ped.get('destinatario_nome', '-')}</div>
+                            <div style="font-weight: 800; color: #333; font-size: 14px;">{ped.get('destinatario_nome', '-')}</div>
                             <div style="font-size: 12px; color: #666;">📱 {ped.get('destinatario_telefone', '-')}</div>
                         </div>
                         <div style="flex: 1.5; min-width: 250px;">
                             <div class="info-label">🚚 Cesta e Entrega</div>
-                            <div style="font-weight: 600; color: #333;">🎁 {ped.get('cesta_nome', '-')}</div>
+                            <div style="font-weight: 800; color: #333; font-size: 14px;">🎁 {ped.get('cesta_nome', '-')}</div>
                             <div style="font-size: 12px; color: #666;">🗓️ {formatar_data(ped.get('data_entrega'))} | 🕒 {ped.get('periodo_entrega', '-')}{horario_str}</div>
                         </div>
                     </div>
@@ -474,13 +524,17 @@ if st.session_state["pedidos_impressao"]:
             )
 
         st.write("") 
-        formato_impressao = st.radio("Formato do PDF", ["📄 Folha A4 - 12 pedidos por página", "🧾 Individual 7x10 cm"], horizontal=True)
+        formato_impressao = st.radio("Formato de Exportação do PDF", ["📄 Folha A4 - 12 pedidos por página", "🧾 Individual 7x10 cm"], horizontal=True)
+        
+        st.write("")
         if st.button("📄 Gerar PDF Definitivo", use_container_width=True, type="primary"):
             pdf = gerar_pdf_pedidos(pedidos_selecionados_dados, formato_impressao)
             st.session_state["pdf_gerado"] = pdf
             st.success("✅ PDF gerado com sucesso! Clique no botão abaixo para salvar o arquivo.")
+            
         if st.session_state.get("pdf_gerado"):
             st.download_button("⬇️ Baixar PDF", st.session_state["pdf_gerado"], file_name=f"pedidos_producao_{datetime.now().strftime('%d%m%H%M')}.pdf", mime="application/pdf", use_container_width=True)
 
+st.write("")
 st.divider()
-st.caption("Doce Cesta Brasília - Painel de Gestão")
+st.caption("📦 Gerenciamento de Pedidos - Doce Cesta Brasília")
