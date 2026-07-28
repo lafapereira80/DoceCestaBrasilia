@@ -242,6 +242,12 @@ if st.session_state.pedido_em_montagem:
                 try: checklist_salvo = json.loads(checklist_salvo)
                 except: checklist_salvo = {}
 
+            # Tratamento seguro para itens_consulta do banco (onde ficam salvos os extras dinâmicos e manuais)
+            itens_consulta_salvos = p_ativo.get("itens_consulta") or {}
+            if isinstance(itens_consulta_salvos, str):
+                try: itens_consulta_salvos = json.loads(itens_consulta_salvos)
+                except: itens_consulta_salvos = {}
+
             # Descobre antecipadamente todas as chaves de itens que compõem este pedido específico
             chaves_itens_pedido = []
             
@@ -262,20 +268,33 @@ if st.session_state.pedido_em_montagem:
                 for prod_limpo in [p.replace('•', '').strip() for p in produtos.split("\n") if p.replace('•', '').strip()]:
                     chaves_itens_pedido.append(f"✔️ {prod_limpo}")
             
-            # 3. Adicionais e Extras
+            # 3. Adicionais de Catálogo
+            adicionais_bd = []
             try:
-                for ad in listar_adicionais_pedido(p_ativo['id']):
+                lista_bruta = listar_adicionais_pedido(p_ativo['id'])
+                nomes_vistos = set()
+                for ad in lista_bruta:
                     nome_ad = ad.get("nome_produto")
-                    if nome_ad:
-                        chave_ad = f"➕ {nome_ad}"
-                        if chave_ad not in chaves_itens_pedido:
-                            chaves_itens_pedido.append(chave_ad)
+                    if nome_ad and nome_ad not in nomes_vistos:
+                        adicionais_bd.append(ad)
+                        nomes_vistos.add(nome_ad)
             except: pass
+
+            for ad in adicionais_bd:
+                nome_ad = ad.get("nome_produto", "")
+                if nome_ad:
+                    chave_ad = f"➕ {nome_ad}"
+                    if chave_ad not in chaves_itens_pedido:
+                        chaves_itens_pedido.append(chave_ad)
+
+            # 4. Extras Dinâmicos / Personalizados salvos no JSON do pedido
+            for k, v in itens_consulta_salvos.items():
+                if "Valor Manual de" not in k and not k.startswith("Valor de "):
+                    chave_extra = f"🔹 {k}"
+                    if chave_extra not in chaves_itens_pedido:
+                        chaves_itens_pedido.append(chave_extra)
             
-            if float(p_ativo.get("valor_extras", 0)) > 0:
-                chaves_itens_pedido.append("💲 O cliente pagou por acréscimos especiais extras")
-            
-            # 4. Cartão
+            # 5. Cartão
             if p_ativo.get("mensagem", ""):
                 chaves_itens_pedido.append("✅ Cartão impresso e posicionado")
 
@@ -334,43 +353,38 @@ if st.session_state.pedido_em_montagem:
                     with cols_pers[idx % 2]:
                         novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
 
-            # --- RENDERIZAÇÃO DOS ADICIONAIS E EXTRAS ---
-            adicionais_bd = []
-            try:
-                lista_bruta = listar_adicionais_pedido(p_ativo['id'])
-                nomes_vistos = set()
-                for ad in lista_bruta:
-                    nome_ad = ad.get("nome_produto")
-                    if nome_ad and nome_ad not in nomes_vistos:
-                        adicionais_bd.append(ad)
-                        nomes_vistos.add(nome_ad)
-            except: pass
-            
-            valor_extras = float(p_ativo.get("valor_extras", 0))
-            if adicionais_bd or valor_extras > 0:
-                st.markdown("<div class='secao-titulo'>🎀 Adicionais Avulsos e Extras</div>", unsafe_allow_html=True)
+            # --- RENDERIZAÇÃO DOS ADICIONAIS DE CATÁLOGO E EXTRAS DINÂMICOS ---
+            if adicionais_bd or itens_consulta_salvos:
+                st.markdown("<div class='secao-titulo'>🎀 Adicionais e Extras do Pedido</div>", unsafe_allow_html=True)
                 cols_add = st.columns(2)
                 contador_add = 0
-                for ad in adicionais_bd:
-                    chave_chk = f"➕ {ad.get('nome_produto', '')}"
-                    val_padrao = checklist_salvo.get(chave_chk, False)
-                    session_key = f"chk_item_{p_ativo['id']}_{chave_chk}"
-                    if session_key in st.session_state:
-                        val_padrao = st.session_state[session_key]
-
-                    with cols_add[contador_add % 2]:
-                        novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
-                    contador_add += 1
                 
-                if valor_extras > 0:
-                    chave_chk = "💲 O cliente pagou por acréscimos especiais extras"
-                    val_padrao = checklist_salvo.get(chave_chk, False)
-                    session_key = f"chk_item_{p_ativo['id']}_{chave_chk}"
-                    if session_key in st.session_state:
-                        val_padrao = st.session_state[session_key]
+                # Adicionais de Catálogo
+                for ad in adicionais_bd:
+                    nome_ad = ad.get('nome_produto', '')
+                    if nome_ad:
+                        chave_chk = f"➕ {nome_ad}"
+                        val_padrao = checklist_salvo.get(chave_chk, False)
+                        session_key = f"chk_item_{p_ativo['id']}_{chave_chk}"
+                        if session_key in st.session_state:
+                            val_padrao = st.session_state[session_key]
 
-                    with cols_add[contador_add % 2]:
-                        novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
+                        with cols_add[contador_add % 2]:
+                            novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
+                        contador_add += 1
+
+                # Extras Dinâmicos / Personalizados
+                for k, v in itens_consulta_salvos.items():
+                    if "Valor Manual de" not in k and not k.startswith("Valor de "):
+                        chave_chk = f"🔹 {k}"
+                        val_padrao = checklist_salvo.get(chave_chk, False)
+                        session_key = f"chk_item_{p_ativo['id']}_{chave_chk}"
+                        if session_key in st.session_state:
+                            val_padrao = st.session_state[session_key]
+
+                        with cols_add[contador_add % 2]:
+                            novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
+                        contador_add += 1
             
             # --- RENDERIZAÇÃO DA MENSAGEM DO CARTÃO ---
             mensagem = p_ativo.get("mensagem", "")
