@@ -57,7 +57,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS PREMIUM E LIGHTBOX VIA JAVASCRIPT (ZERO PISCAR)
+# CSS PREMIUM E LIGHTBOX SEGURO (ISOLADO POR ELEMENTO)
 # ==========================================================
 
 st.markdown(
@@ -229,7 +229,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX JS ESTÁVEL (TELA INTEIRA REAL)
+   LIGHTBOX LIMPO E ISOLADO (SEM CONFLITOS)
 ========================================= */
 .lightbox-wrapper { text-align: center; margin-bottom: 10px; }
 .zoomable-img {
@@ -244,8 +244,8 @@ div[data-testid="stButton"] button:hover {
 .zoomable-img:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(90, 59, 40, 0.15); }
 .imagem-legenda { text-align: center; font-size: 12px; color: #888; margin-top: 10px; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-/* Modal Global Gerenciado por JS */
-#custom-lightbox-modal {
+/* Modal Global Fixo */
+.custom-modal {
     position: fixed;
     top: 0; left: 0; width: 100vw; height: 100vh;
     background-color: rgba(0, 0, 0, 0.85);
@@ -254,7 +254,7 @@ div[data-testid="stButton"] button:hover {
     align-items: center; justify-content: center;
     cursor: zoom-out;
 }
-#custom-lightbox-modal img {
+.custom-modal img {
     max-width: 90vw;
     max-height: 90vh;
     border-radius: 12px;
@@ -350,35 +350,6 @@ unsafe_allow_html=True
 
 
 # ==========================================================
-# SCRIPT JS GLOBAL PARA ABRIR O ZOOM SEM PISCAR
-# ==========================================================
-st.markdown(
-    """
-    <div id="custom-lightbox-modal">
-        <img id="custom-lightbox-img" src="">
-    </div>
-    <script>
-    document.addEventListener("click", function(e) {
-        var modal = document.getElementById("custom-lightbox-modal");
-        var modalImg = document.getElementById("custom-lightbox-img");
-        
-        // Se clicar em qualquer imagem com a classe zoomable-img ou adicional-img-small
-        if (e.target.classList.contains("zoomable-img") || e.target.classList.contains("adicional-img-small")) {
-            modalImg.src = e.target.src;
-            modal.style.display = "flex";
-        } 
-        // Se clicar no modal escuro, fecha
-        else if (modal.style.display === "flex") {
-            modal.style.display = "none";
-        }
-    });
-    </script>
-    """,
-    unsafe_allow_html=True
-)
-
-
-# ==========================================================
 # CABEÇALHO / LOGO DA MARCA
 # ==========================================================
 
@@ -451,12 +422,33 @@ else:
                 imagem_url = cesta.get("imagem")
                 if imagem_url and str(imagem_url).strip():
                     img_src = image_to_base64(imagem_url)
+                    modal_id = f"modal_cesta_{cesta['id']}"
+                    img_id = f"img_cesta_{cesta['id']}"
+                    
                     st.markdown(
                         f"""
                         <div class="lightbox-wrapper">
-                            <img src="{img_src}" class="zoomable-img" title="Clique para ampliar a foto da cesta">
+                            <img src="{img_src}" id="{img_id}" class="zoomable-img" title="Clique para ampliar a foto da cesta">
                             <div class="imagem-legenda">👆 Toque na foto para ampliar</div>
                         </div>
+                        <div id="{modal_id}" class="custom-modal">
+                            <img src="{img_src}">
+                        </div>
+                        <script>
+                        (function(){
+                            const img = document.getElementById("{img_id}");
+                            const modal = document.getElementById("{modal_id}");
+                            if(img && modal) {
+                                img.onclick = function(e) {
+                                    e.stopPropagation();
+                                    modal.style.display = "flex";
+                                };
+                                modal.onclick = function() {
+                                    modal.style.display = "none";
+                                };
+                            }
+                        })();
+                        </script>
                         """,
                         unsafe_allow_html=True
                     )
@@ -510,6 +502,7 @@ if produtos_adicionais:
         nome_p = prod.get("nome", "")
         preco_p = prod.get("preco")
         imagem_p = prod.get("imagem")
+        prod_uuid = prod.get("id", idx_add)
 
         if preco_p is not None and str(preco_p).strip() != "":
             try:
@@ -523,7 +516,30 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            img_html = f'<img src="{img_src}" class="adicional-img-small" title="Clique para ampliar">'
+            m_id = f"modal_add_{prod_uuid}"
+            i_id = f"img_add_{prod_uuid}"
+            
+            img_html = f"""
+                <img src="{img_src}" id="{i_id}" class="adicional-img-small" title="Clique para ampliar">
+                <div id="{m_id}" class="custom-modal">
+                    <img src="{img_src}">
+                </div>
+                <script>
+                (function(){
+                    const img = document.getElementById("{i_id}");
+                    const modal = document.getElementById("{m_id}");
+                    if(img && modal) {
+                        img.onclick = function(e) {
+                            e.stopPropagation();
+                            modal.style.display = "flex";
+                        };
+                        modal.onclick = function() {
+                            modal.style.display = "none";
+                        };
+                    }
+                })();
+                </script>
+            """
         else:
             img_html = f'<div class="adicional-img-placeholder" style="margin-bottom: 6px;">🎀</div>'
 
