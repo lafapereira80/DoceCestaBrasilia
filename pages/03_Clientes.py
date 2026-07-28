@@ -87,10 +87,10 @@ unsafe_allow_html=True
 )
 
 st.title("👥 Base de Clientes")
-st.caption("Visão geral dos clientes cadastrados, indicadores da base e acesso rápido ao histórico.")
+st.caption("Consulte os clientes cadastrados por Nome, CPF ou Celular e acesse o histórico de compras.")
 
 # =====================================================
-# BUSCA E PROCESSAMENTO DE DADOS
+# BUSCA E PROCESSAMENTO DE DADOS (FILTRANDO STATUS)
 # =====================================================
 @st.cache_data(ttl=30)
 def carregar_dados_clientes():
@@ -103,12 +103,23 @@ def carregar_dados_clientes():
 pedidos_brutos = carregar_dados_clientes()
 
 if not pedidos_brutos:
-    st.info("Nenhum pedido ou cliente registrado no sistema.")
+    st.info("Nenhum pedido registrado no sistema.")
+    st.stop()
+
+# REQUISITO: Ignora pedidos com status "Recebido" ou "Desistência"
+pedidos_filtrados = []
+for p in pedidos_brutos:
+    st_p = str(p.get("status", "")).strip().capitalize()
+    if st_p not in ["Recebido", "Desistência"]:
+        pedidos_filtrados.append(p)
+
+if not pedidos_filtrados:
+    st.info("Nenhum cliente com pedidos válidos (Pago, Enviado ou Entregue) na base.")
     st.stop()
 
 # Agrupa por identificador único (CPF, senão Telefone, senão Nome)
 clientes_dict = {}
-for p in pedidos_brutos:
+for p in pedidos_filtrados:
     chave_cli = str(p.get("cliente_cpf") or p.get("cliente_telefone") or p.get("cliente_nome")).strip().lower()
     if not chave_cli or chave_cli == "none":
         continue
@@ -128,9 +139,8 @@ lista_clientes = sorted(list(clientes_dict.values()), key=lambda x: x["nome"])
 # INDICADORES GERAIS (KPIS)
 # =====================================================
 total_clientes = len(lista_clientes)
-todos_pedidos_validos = [p for p in pedidos_brutos if str(p.get("status")).capitalize() != "Desistência"]
-faturamento_total = sum([float(p.get("valor_total", 0) or 0) for p in todos_pedidos_validos])
-ticket_medio = faturamento_total / len(todos_pedidos_validos) if todos_pedidos_validos else 0
+faturamento_total = sum([float(p.get("valor_total", 0) or 0) for p in pedidos_filtrados])
+ticket_medio = faturamento_total / len(pedidos_filtrados) if pedidos_filtrados else 0
 
 col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
 with col_kpi1:
@@ -143,16 +153,35 @@ with col_kpi3:
     st.markdown(f'<div class="metric-card"><div class="metric-title">📊 Ticket Médio</div><div class="metric-value">{tkt_str}</div></div>', unsafe_allow_html=True)
 
 st.write("")
-st.subheader("📋 Lista de Clientes Cadastrados")
-st.caption("Clique em 'Ver Histórico Completo' para gerenciar as compras e o perfil do cliente.")
+st.subheader("📋 Pesquisa de Clientes")
+
+# =====================================================
+# CAMPO DE PESQUISA FLEXÍVEL (NOME, CPF OU CELULAR)
+# =====================================================
+termo_busca = st.text_input("🔍 Buscar cliente por Nome, CPF ou Celular:", placeholder="Digite parte do nome, CPF ou número de WhatsApp...")
+
+# Aplica o filtro com base no termo digitado
+lista_exibicao = lista_clientes
+if termo_busca.strip():
+    termo = termo_busca.strip().lower()
+    lista_exibicao = [
+        c for c in lista_clientes 
+        if termo in c['nome'].lower() or termo in str(c['cpf']).lower() or termo in str(c['telefone']).lower()
+    ]
+
+if not lista_exibicao:
+    st.warning("⚠️ Nenhum cliente encontrado com os dados informados.")
+    st.stop()
+
+st.caption(f"Exibindo {len(lista_exibicao)} cliente(s) encontrado(s).")
 
 # =====================================================
 # LISTAGEM EM CARDS DA BASE DE CLIENTES
 # =====================================================
-for cliente in lista_clientes:
+for cliente in lista_exibicao:
     compras_cli = cliente["compras"]
     qtd_pedidos = len(compras_cli)
-    ltv_cli = sum([float(c.get("valor_total", 0) or 0) for c in compras_cli if str(c.get("status")).capitalize() != "Desistência"])
+    ltv_cli = sum([float(c.get("valor_total", 0) or 0) for c in compras_cli])
     ltv_str = f"R$ {ltv_cli:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
     with st.container(border=True):
@@ -160,7 +189,7 @@ for cliente in lista_clientes:
         with col_c1:
             st.markdown(f"<div class='cliente-header'>👤 {cliente['nome']}</div>", unsafe_allow_html=True)
         with col_c2:
-            st.markdown(f'<div class="info-label">CPF</div><div class="info-value">{cliente["cpf"]}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-label">CPF / Tel</div><div class="info-value">{cliente["cpf"] if cliente["cpf"] != "-" else cliente["telefone"]}</div>', unsafe_allow_html=True)
         with col_c3:
             st.markdown(f'<div class="info-label">Total de Pedidos</div><div class="info-value">📦 {qtd_pedidos} pedido(s)</div>', unsafe_allow_html=True)
         with col_c4:
