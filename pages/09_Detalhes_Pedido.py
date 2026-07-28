@@ -118,7 +118,7 @@ if not pedido:
 
 
 # =====================================================
-# FUNÇÕES E LÓGICAS DE CONTROLE
+# TRATAMENTO DE JSON E DADOS SALVOS
 # =====================================================
 status_atual_pedido = str(pedido.get("status", "")).strip().capitalize()
 perfil_usuario = usuario.get("perfil", "Operador")
@@ -144,16 +144,17 @@ for ad in lista_bruta_adicionais:
         adicionais_pedido.append(ad)
         nomes_vistos.add(nome_ad)
 
+# Tratamento seguro para itens_consulta do banco
+itens_consulta_salvos = pedido.get("itens_consulta") or {}
+if isinstance(itens_consulta_salvos, str):
+    try: itens_consulta_salvos = json.loads(itens_consulta_salvos)
+    except: itens_consulta_salvos = {}
+
 # Gerenciamento de Extras Dinâmicos
 if "lista_extras_dinamicos" not in st.session_state:
-    itens_salvos = pedido.get("itens_consulta") or {}
-    if isinstance(itens_salvos, str):
-        try: itens_salvos = json.loads(itens_salvos)
-        except: itens_salvos = {}
-    
     lista_temp = []
-    for nome, val in itens_salvos.items():
-        if "Valor Manual de" not in nome:
+    for nome, val in itens_consulta_salvos.items():
+        if "Valor Manual de" not in nome and not nome.startswith("Valor de "):
             lista_temp.append({"nome": nome, "valor": float(val)})
     st.session_state["lista_extras_dinamicos"] = lista_temp
 
@@ -213,7 +214,6 @@ def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_dinamico
         if valor is not None: 
             lista_adicionais.append(f"• {nome} - {formatar_valor(valor)}")
         else:
-            # Verifica se foi preenchido o valor sob consulta
             val_manual = itens_consulta_catalogo.get(nome, 0)
             if val_manual > 0:
                 lista_adicionais.append(f"• {nome} - {formatar_valor(val_manual)}")
@@ -657,7 +657,7 @@ else:
                                         if suc: st.session_state['msg_foto'] = "✅ Foto apagada!"
                                         else: st.session_state['msg_foto'] = f"❌ Erro: {err_del}"
                                         st.rerun()
-                            else: st.caption("⚠️ Link quebrado.")
+                        else: st.caption("⚠️ Link quebrado.")
                 else: st.caption("Nenhum anexo ou Polaroid neste pedido.")
 
     # =====================================================
@@ -678,7 +678,7 @@ else:
                 for extra in st.session_state["lista_extras_dinamicos"]:
                     json_extras_salvar[extra["nome"]] = extra["valor"]
                 
-                # Adiciona também os valores de consulta do catálogo salvos no input
+                # Salva também os valores manuais preenchidos nos adicionais "Sob Consulta"
                 for k, v in itens_consulta.items():
                     if v > 0: json_extras_salvar[f"Valor de {k}"] = v
 
