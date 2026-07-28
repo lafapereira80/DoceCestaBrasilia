@@ -18,7 +18,7 @@ from utils.permissao import (
 # =====================================================
 
 st.set_page_config(
-    page_title="Financeiro",
+    page_title="Painel Financeiro",
     page_icon="💰",
     layout="wide"
 )
@@ -31,88 +31,114 @@ usuario = st.session_state.usuario
 
 
 # =====================================================
-# CSS ULTRA COMPACTO E ISOLADO
+# CSS PREMIUM E ANIMAÇÕES
 # =====================================================
 
 st.markdown(
 """
 <style>
 /* =========================================
-   CONFIGURAÇÃO GERAL E REDUÇÃO DE ESPAÇOS
+   CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
 ========================================== */
 .block-container {
-    padding-top: 0.8rem !important;
-    padding-bottom: 1.5rem !important;
-    max-width: 1250px;
+    padding-top: 1.5rem !important;
+    padding-bottom: 3rem !important;
+    max-width: 1200px;
 }
 
 div[data-testid="stVerticalBlock"] {
-    gap: 0.4rem !important;
+    gap: 0.6rem !important;
 }
 
 h1 {
-    font-size: 22px !important;
-    font-weight: 700 !important;
-    color: #5a3b28;
-    margin-bottom: 0px !important;
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    color: #4a2e1b !important;
+    margin-bottom: 2px !important;
+    letter-spacing: -0.5px;
 }
 
-h2, h3 {
-    font-size: 14px !important;
-    font-weight: 700 !important;
-    color: #5a3b28;
-    margin-top: 6px !important;
-    margin-bottom: 4px !important;
+h2, h3, h4 {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #5a3b28 !important;
+    margin-top: 10px !important;
+    margin-bottom: 8px !important;
 }
 
 .block-container p, 
 .block-container label {
-    font-family: Arial, sans-serif !important;
-    font-size: 12px !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    font-size: 13px !important;
 }
 
 /* =========================================
-   CARDS DE RESUMO FINANCEIRO (KPIs)
+   CARDS DE MÉTRICAS (KPIs) PREMIUM
+========================================== */
+.metric-card {
+    background: linear-gradient(145deg, #ffffff 0%, #fdfcfb 100%);
+    border: 1px solid #e8ddd3;
+    border-radius: 16px;
+    padding: 22px 16px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    margin-bottom: 10px;
+}
+.metric-card:hover {
+    border-color: #d2bfae;
+    box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
+    transform: translateY(-3px);
+}
+.kpi-title {
+    font-size: 12px !important;
+    font-weight: 800;
+    color: #775a46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+.kpi-value {
+    font-size: 26px !important;
+    font-weight: 800;
+    color: #137333;
+}
+.kpi-value-neutral {
+    font-size: 26px !important;
+    font-weight: 800;
+    color: #4a2e1b;
+}
+
+/* =========================================
+   CARDS GERAIS / CONTAINERS
 ========================================== */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff;
     border: 1px solid #e8ddd3 !important;
-    border-radius: 10px !important;
-    padding: 6px 10px !important;
-    margin-bottom: 2px !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    border-radius: 14px !important;
+    padding: 16px 20px !important;
+    margin-bottom: 10px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+    border-color: #d2bfae !important;
+    box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
 }
 
-.kpi-title {
-    font-size: 11px !important;
-    font-weight: 700;
-    color: #775a46;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    margin-bottom: 2px;
-}
-
-.kpi-value {
-    font-size: 17px !important;
-    font-weight: 700;
-    color: #2e7d32;
-}
-
-.kpi-value-neutral {
-    font-size: 17px !important;
-    font-weight: 700;
-    color: #5a3b28;
-}
-
-/* Redução das tabelas e seletores */
+/* =========================================
+   ESTILIZAÇÃO DE DATAFRAME NATIVO
+========================================== */
 div[data-testid="stDataFrame"] {
     border: 1px solid #e8ddd3 !important;
-    border-radius: 8px !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
 }
 
-hr {
-    margin-top: 6px !important;
-    margin-bottom: 6px !important;
+@media (max-width: 768px) {
+    h1 { font-size: 24px !important; }
+    .metric-card { padding: 16px 10px; }
+    .kpi-value, .kpi-value-neutral { font-size: 22px !important; }
 }
 </style>
 """,
@@ -124,8 +150,8 @@ unsafe_allow_html=True
 # TÍTULO E CABEÇALHO
 # =====================================================
 
-st.title("💰 Financeiro")
-st.caption("Controle de faturamento, vendas e resultados.")
+st.title("💰 Painel Financeiro")
+st.caption("Acompanhe o faturamento, volume de vendas e desempenho do negócio de forma analítica.")
 
 
 # =====================================================
@@ -173,7 +199,7 @@ except Exception as erro:
     st.stop()
 
 if not pedidos:
-    st.warning("Nenhum pedido encontrado.")
+    st.warning("Nenhum pedido encontrado no banco de dados.")
     st.stop()
 
 df = pd.DataFrame(pedidos)
@@ -199,7 +225,7 @@ if "status" in df.columns:
 else:
     df["status"] = "Desconhecido"
 
-# EXCLUI os pedidos com status "Recebido" ou "Desistência/Desistencia"
+# EXCLUI os pedidos com status "Recebido" ou "Desistência/Desistencia" do cálculo oficial de faturamento
 status_excluir = ["Recebido", "Desistência", "Desistencia"]
 df = df[~df["status"].isin(status_excluir)]
 
@@ -232,11 +258,12 @@ def moeda(valor):
 # =====================================================
 
 with st.container(border=True):
+    st.markdown("<div style='font-size: 14px; font-weight: 800; color: #5a3b28; margin-bottom: 8px;'>🔍 Filtros de Período</div>", unsafe_allow_html=True)
     col_f1, col_f2 = st.columns(2)
 
     with col_f1:
         anos = sorted(df["ano"].dropna().unique(), reverse=True)
-        ano_selecionado = st.selectbox("Ano (Data da Compra)", ["Todos"] + list(anos))
+        ano_selecionado = st.selectbox("Ano de Apuração", ["Todos"] + list(anos))
 
     with col_f2:
         # Filtra os meses disponíveis com base estricta no ano selecionado
@@ -246,7 +273,7 @@ with st.container(border=True):
             meses_disponiveis_nums = sorted(df["mes"].dropna().unique())
             
         meses_disponiveis_nomes = [meses_dict[m] for m in meses_disponiveis_nums if m in meses_dict]
-        mes_selecionado = st.selectbox("Mês (Data da Compra)", ["Todos"] + meses_disponiveis_nomes)
+        mes_selecionado = st.selectbox("Mês Específico", ["Todos"] + meses_disponiveis_nomes)
 
 
 # =====================================================
@@ -264,9 +291,10 @@ if mes_selecionado != "Todos":
 
 
 # =====================================================
-# RESUMO FINANCEIRO (KPIs EM 1 LINHA)
+# RESUMO FINANCEIRO (KPIs PREMIUM)
 # =====================================================
 
+st.write("")
 col1, col2, col3, col4 = st.columns(4)
 
 faturamento = df_filtrado["valor_total"].sum()
@@ -275,25 +303,19 @@ quantidade_pedidos = len(df_filtrado)
 ticket_medio = faturamento / quantidade_pedidos if quantidade_pedidos > 0 else 0
 
 with col1:
-    with st.container(border=True):
-        st.markdown('<div class="kpi-title">💰 Faturamento</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="kpi-value">{moeda(faturamento)}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><div class="kpi-title">💰 Faturamento</div><div class="kpi-value">{moeda(faturamento)}</div></div>', unsafe_allow_html=True)
 
 with col2:
-    with st.container(border=True):
-        st.markdown('<div class="kpi-title">🚚 Fretes</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="kpi-value-neutral">{moeda(total_fretes)}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><div class="kpi-title">🚚 Total de Fretes</div><div class="kpi-value-neutral">{moeda(total_fretes)}</div></div>', unsafe_allow_html=True)
 
 with col3:
-    with st.container(border=True):
-        st.markdown('<div class="kpi-title">📋 Pedidos</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="kpi-value-neutral">{quantidade_pedidos}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><div class="kpi-title">📋 Pedidos Concluídos</div><div class="kpi-value-neutral">{quantidade_pedidos}</div></div>', unsafe_allow_html=True)
 
 with col4:
-    with st.container(border=True):
-        st.markdown('<div class="kpi-title">🎯 Ticket Médio</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="kpi-value-neutral">{moeda(ticket_medio)}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><div class="kpi-title">🎯 Ticket Médio</div><div class="kpi-value-neutral">{moeda(ticket_medio)}</div></div>', unsafe_allow_html=True)
 
+
+st.write("")
 
 # =====================================================
 # BLOCO DE VISÃO GERAL (SIDES BY SIDE)
@@ -301,123 +323,135 @@ with col4:
 
 col_left, col_right = st.columns(2)
 
-# Coluna 1: Faturamento Mensal + Resumo por Status
+# Coluna Esquerda: Faturamento Mensal + Resumo por Status
 with col_left:
-    st.subheader("📅 Faturamento Mensal")
-    if not df_filtrado.empty:
-        faturamento_mes = (
-            df_filtrado
-            .groupby(df_filtrado["created_at"].dt.strftime("%m/%Y"))["valor_total"]
-            .sum()
-            .reset_index()
-        )
-        faturamento_mes.columns = ["Mês", "Faturamento"]
-        faturamento_mes["Faturamento"] = faturamento_mes["Faturamento"].apply(moeda)
-        st.dataframe(faturamento_mes, use_container_width=True, hide_index=True, height=160)
-    else:
-        st.info("Nenhum dado para o período.")
-
-    st.subheader("📌 Resumo por Status")
-    if "status" in df_filtrado.columns and not df_filtrado.empty:
-        resumo_status = (
-            df_filtrado
-            .groupby("status")
-            .agg(Quantidade=("id", "count"), Valor=("valor_total", "sum"))
-            .reset_index()
-        )
-        resumo_status.columns = ["Status", "Qtd", "Valor Total"]
-        resumo_status["Valor Total"] = resumo_status["Valor Total"].apply(moeda)
-        st.dataframe(resumo_status, use_container_width=True, hide_index=True, height=140)
-
-# Coluna 2: Cestas Vendidas + Adicionais Vendidos
-with col_right:
-    st.subheader("🧺 Cestas Vendidas")
-    if "cesta_nome" in df_filtrado.columns and not df_filtrado.empty:
-        cestas = (
-            df_filtrado
-            .groupby("cesta_nome")
-            .size()
-            .reset_index(name="Vendas")
-            .sort_values("Vendas", ascending=False)
-        )
-        cestas.columns = ["Cesta", "Vendas"]
-        st.dataframe(cestas, use_container_width=True, hide_index=True, height=160)
-    else:
-        st.info("Nenhuma cesta encontrada.")
-
-    st.subheader("🎀 Adicionais Vendidos")
-    if not df_adicionais.empty and not df_filtrado.empty:
-        pedidos_filtrados_ids = df_filtrado["id"].tolist()
-        adicionais_filtrados = df_adicionais[df_adicionais["pedido_id"].isin(pedidos_filtrados_ids)].copy()
-
-        if not adicionais_filtrados.empty:
-            adicionais_filtrados["quantidade"] = pd.to_numeric(adicionais_filtrados["quantidade"], errors="coerce").fillna(1)
-            adicionais_filtrados["valor_unitario"] = pd.to_numeric(adicionais_filtrados["valor_unitario"], errors="coerce").fillna(0)
-            adicionais_filtrados["total"] = adicionais_filtrados["quantidade"] * adicionais_filtrados["valor_unitario"]
-
-            resumo_adicionais = (
-                adicionais_filtrados
-                .groupby("nome_produto")
-                .agg(Quantidade=("quantidade", "sum"), Faturamento=("total", "sum"))
+    with st.container(border=True):
+        st.markdown("#### 📅 Desempenho Mensal")
+        if not df_filtrado.empty:
+            faturamento_mes = (
+                df_filtrado
+                .groupby(df_filtrado["created_at"].dt.strftime("%m/%Y"))["valor_total"]
+                .sum()
                 .reset_index()
             )
-            resumo_adicionais.columns = ["Adicional", "Qtd", "Total"]
-            resumo_adicionais["Total"] = resumo_adicionais["Total"].apply(moeda)
-            resumo_adicionais = resumo_adicionais.sort_values("Qtd", ascending=False)
-
-            st.dataframe(resumo_adicionais, use_container_width=True, hide_index=True, height=140)
+            faturamento_mes.columns = ["Mês/Ano", "Faturamento"]
+            faturamento_mes["Faturamento"] = faturamento_mes["Faturamento"].apply(moeda)
+            st.dataframe(faturamento_mes, use_container_width=True, hide_index=True, height=180)
         else:
-            st.info("Nenhum adicional no período.")
-    else:
-        st.info("Nenhum adicional vendido.")
+            st.info("Nenhum dado para o período.")
+
+    with st.container(border=True):
+        st.markdown("#### 📌 Faturamento por Status")
+        if "status" in df_filtrado.columns and not df_filtrado.empty:
+            resumo_status = (
+                df_filtrado
+                .groupby("status")
+                .agg(Quantidade=("id", "count"), Valor=("valor_total", "sum"))
+                .reset_index()
+            )
+            resumo_status.columns = ["Status", "Pedidos", "Valor Arrecadado"]
+            resumo_status["Valor Arrecadado"] = resumo_status["Valor Arrecadado"].apply(moeda)
+            st.dataframe(resumo_status, use_container_width=True, hide_index=True, height=160)
+
+
+# Coluna Direita: Cestas Vendidas + Adicionais Vendidos
+with col_right:
+    with st.container(border=True):
+        st.markdown("#### 🧺 Ranking de Cestas")
+        if "cesta_nome" in df_filtrado.columns and not df_filtrado.empty:
+            cestas = (
+                df_filtrado
+                .groupby("cesta_nome")
+                .size()
+                .reset_index(name="Volume de Vendas")
+                .sort_values("Volume de Vendas", ascending=False)
+            )
+            cestas.columns = ["Nome do Pacote / Cesta", "Volume de Vendas"]
+            st.dataframe(cestas, use_container_width=True, hide_index=True, height=180)
+        else:
+            st.info("Nenhuma cesta encontrada no período.")
+
+    with st.container(border=True):
+        st.markdown("#### 🎀 Extras e Adicionais")
+        if not df_adicionais.empty and not df_filtrado.empty:
+            pedidos_filtrados_ids = df_filtrado["id"].tolist()
+            adicionais_filtrados = df_adicionais[df_adicionais["pedido_id"].isin(pedidos_filtrados_ids)].copy()
+
+            if not adicionais_filtrados.empty:
+                adicionais_filtrados["quantidade"] = pd.to_numeric(adicionais_filtrados["quantidade"], errors="coerce").fillna(1)
+                adicionais_filtrados["valor_unitario"] = pd.to_numeric(adicionais_filtrados["valor_unitario"], errors="coerce").fillna(0)
+                adicionais_filtrados["total"] = adicionais_filtrados["quantidade"] * adicionais_filtrados["valor_unitario"]
+
+                resumo_adicionais = (
+                    adicionais_filtrados
+                    .groupby("nome_produto")
+                    .agg(Quantidade=("quantidade", "sum"), Faturamento=("total", "sum"))
+                    .reset_index()
+                )
+                resumo_adicionais.columns = ["Adicional", "Vendas", "Receita Gerada"]
+                resumo_adicionais["Receita Gerada"] = resumo_adicionais["Receita Gerada"].apply(moeda)
+                resumo_adicionais = resumo_adicionais.sort_values("Vendas", ascending=False)
+
+                st.dataframe(resumo_adicionais, use_container_width=True, hide_index=True, height=160)
+            else:
+                st.info("Nenhum item extra faturado neste período.")
+        else:
+            st.info("Nenhum item extra faturado neste período.")
 
 
 # =====================================================
 # DETALHAMENTO FINANCEIRO COMPACTO
 # =====================================================
 
-st.subheader("📋 Detalhamento dos Pedidos")
+st.write("")
+with st.container(border=True):
+    st.markdown("#### 📋 Detalhamento de Transações")
 
-colunas_detalhamento = [
-    "created_at", "cliente_nome", "cliente_telefone",
-    "cesta_nome", "status", "valor_frete", "desconto", "valor_total"
-]
+    colunas_detalhamento = [
+        "created_at", "cliente_nome", "cliente_telefone",
+        "cesta_nome", "status", "valor_frete", "desconto", "valor_total"
+    ]
 
-colunas_existentes = [coluna for coluna in colunas_detalhamento if coluna in df_filtrado.columns]
+    colunas_existentes = [coluna for coluna in colunas_detalhamento if coluna in df_filtrado.columns]
 
-detalhamento = (
-    df_filtrado[colunas_existentes]
-    .sort_values("created_at", ascending=False)
-    .copy()
-)
+    detalhamento = (
+        df_filtrado[colunas_existentes]
+        .sort_values("created_at", ascending=False)
+        .copy()
+    )
 
-if "created_at" in detalhamento.columns:
-    detalhamento["created_at"] = detalhamento["created_at"].dt.strftime("%d/%m/%Y %H:%M")
+    if "created_at" in detalhamento.columns:
+        detalhamento["created_at"] = detalhamento["created_at"].dt.strftime("%d/%m/%Y %H:%M")
 
-for coluna in ["valor_frete", "desconto", "valor_total"]:
-    if coluna in detalhamento.columns:
-        detalhamento[coluna] = detalhamento[coluna].apply(moeda)
+    for coluna in ["valor_frete", "desconto", "valor_total"]:
+        if coluna in detalhamento.columns:
+            detalhamento[coluna] = detalhamento[coluna].apply(moeda)
 
-detalhamento = detalhamento.rename(
-    columns={
-        "created_at": "Data",
-        "cliente_nome": "Cliente",
-        "cliente_telefone": "Telefone",
-        "cesta_nome": "Cesta",
-        "status": "Status",
-        "valor_frete": "Frete",
-        "desconto": "Desconto",
-        "valor_total": "Valor Total"
-    }
-)
+    detalhamento = detalhamento.rename(
+        columns={
+            "created_at": "Data/Hora",
+            "cliente_nome": "Cliente",
+            "cliente_telefone": "Contato",
+            "cesta_nome": "Pacote",
+            "status": "Status",
+            "valor_frete": "Frete",
+            "desconto": "Desconto",
+            "valor_total": "Total Gasto"
+        }
+    )
 
-st.dataframe(detalhamento, use_container_width=True, hide_index=True, height=220)
+    st.dataframe(detalhamento, use_container_width=True, hide_index=True, height=300)
 
 
 # =====================================================
 # AVISOS E ALERTAS (RODAPÉ INTEGRADO)
 # =====================================================
 
+st.write("")
+st.divider()
+
 pedidos_sem_valor = df_filtrado[df_filtrado["valor_total"] <= 0]
 if not pedidos_sem_valor.empty:
-    st.warning(f"⚠️ Existem {len(pedidos_sem_valor)} pedido(s) sem valor total definido.")
+    st.warning(f"⚠️ Atenção para auditoria: Existem **{len(pedidos_sem_valor)} pedido(s)** contabilizados sem valor total definido (R$ 0,00).")
+
+st.caption("📊 Relatórios Financeiros Oficiais - Doce Cesta Brasília")
