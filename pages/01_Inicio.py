@@ -134,6 +134,9 @@ div[data-testid="stFileUploader"] section button { background-color: #ffffff !im
 .sucesso-titulo { font-size: 26px; font-weight: 800; color: #137333; margin-bottom: 10px; }
 .sucesso-texto { font-size: 15px; color: #333; line-height: 1.6; margin-bottom: 20px; font-weight: 500; }
 
+/* Estilização para imagens */
+.stImage img { border-radius: 12px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+
 @media (max-width: 640px) {
     .block-container { padding: 1rem 0.6rem !important; }
     .header-banner { flex-direction: column; text-align: center; padding: 20px 16px; gap: 12px; }
@@ -255,7 +258,8 @@ if cestas:
             col_img, col_txt = st.columns([1, 2])
             with col_img:
                 if cesta_obj.get("imagem"):
-                    st.image(cesta_obj["imagem"], use_container_width=True, style={"border-radius": "12px"})
+                    # O style={"border-radius": "12px"} foi removido e tratado no CSS acima (.stImage img)
+                    st.image(cesta_obj["imagem"], use_container_width=True)
             with col_txt:
                 if cesta_obj.get("descricao"): st.caption(cesta_obj["descricao"])
                 valor = float(cesta_obj.get("preco", 0))
