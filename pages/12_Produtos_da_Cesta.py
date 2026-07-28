@@ -145,7 +145,6 @@ div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > bu
     h1 { font-size: 24px !important; }
     div[data-testid="stVerticalBlockBorderWrapper"] { padding: 14px 16px !important; }
     
-    /* Força os botões da base a ficarem na horizontal no mobile */
     div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) {
         display: flex !important;
         flex-direction: row !important;
@@ -196,11 +195,18 @@ with col_t1:
 
 
 # =====================================================
-# CARREGA DADOS
+# CARREGA DADOS (FILTRANDO A CATEGORIA ADICIONAIS)
 # =====================================================
 
 try:
-    categorias = listar_categorias()
+    categorias_brutas = listar_categorias()
+    
+    # REQUISITO: Filtra e remove a categoria "Adicionais" (ela vai em todas as cestas e não precisa ser selecionada aqui)
+    categorias = [
+        cat for cat in categorias_brutas 
+        if "adicional" not in str(cat.get("nome", "")).strip().lower()
+    ]
+
     produtos = listar_produtos()
     produtos_da_cesta = listar_produtos_da_cesta(cesta_id)
 except Exception as erro:
@@ -228,14 +234,12 @@ for produto in produtos:
         continue
 
     nome_categoria = categorias_dict.get(
-        produto.get("categoria_id"),
-        "Sem Categoria"
+        produto.get("categoria_id")
     )
 
-    produtos_por_categoria.setdefault(
-        nome_categoria,
-        []
-    ).append(produto)
+    # Se o produto pertencer a uma categoria válida (que não seja adicionais)
+    if nome_categoria in produtos_por_categoria:
+        produtos_por_categoria[nome_categoria].append(produto)
 
 
 # Remove categorias sem produtos
@@ -270,38 +274,41 @@ produtos_marcados = [
 selecionados = []
 st.write("")
 
-for categoria in categorias_ordenadas:
-    produtos_lista = produtos_por_categoria[categoria]
+if not categorias_ordenadas:
+    st.info("Nenhuma categoria de produtos cadastrada (a categoria Adicionais foi ocultada desta tela).")
+else:
+    for categoria in categorias_ordenadas:
+        produtos_lista = produtos_por_categoria[categoria]
 
-    with st.container(border=True):
-        st.markdown(
-            f'<div class="categoria-title">📁 {categoria}</div>',
-            unsafe_allow_html=True
-        )
+        with st.container(border=True):
+            st.markdown(
+                f'<div class="categoria-title">📁 {categoria}</div>',
+                unsafe_allow_html=True
+            )
 
-        # Usando 3 colunas para aproveitar melhor o espaço horizontal
-        col1, col2, col3 = st.columns(3)
+            # Usando 3 colunas para aproveitar melhor o espaço horizontal
+            col1, col2, col3 = st.columns(3)
 
-        for index, produto in enumerate(produtos_lista):
-            marcado = produto["id"] in produtos_marcados
+            for index, produto in enumerate(produtos_lista):
+                marcado = produto["id"] in produtos_marcados
 
-            # Distribuição balanceada dos produtos entre as 3 colunas
-            if index % 3 == 0:
-                coluna_atual = col1
-            elif index % 3 == 1:
-                coluna_atual = col2
-            else:
-                coluna_atual = col3
+                # Distribuição balanceada dos produtos entre as 3 colunas
+                if index % 3 == 0:
+                    coluna_atual = col1
+                elif index % 3 == 1:
+                    coluna_atual = col2
+                else:
+                    coluna_atual = col3
 
-            with coluna_atual:
-                escolhido = st.checkbox(
-                    produto["nome"],
-                    value=marcado,
-                    key=f"produto_{produto['id']}"
-                )
+                with coluna_atual:
+                    escolhido = st.checkbox(
+                        produto["nome"],
+                        value=marcado,
+                        key=f"produto_{produto['id']}"
+                    )
 
-                if escolhido:
-                    selecionados.append(produto["id"])
+                    if escolhido:
+                        selecionados.append(produto["id"])
 
 
 # =====================================================
