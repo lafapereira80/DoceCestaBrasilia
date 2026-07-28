@@ -57,7 +57,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS PREMIUM E LIGHTBOX GLOBAL (ESTÁVEL E SEM ERROS)
+# CSS PREMIUM E LIGHTBOX PADRÃO
 # ==========================================================
 
 st.markdown(
@@ -228,11 +228,10 @@ div[data-testid="stButton"] button:hover {
     background: linear-gradient(135deg, #b56210 0%, #874609 100%) !important;
 }
 
-/* =========================================
-   LIGHTBOX GLOBAL 
-========================================= */
-.lightbox-wrapper { text-align: center; margin-bottom: 10px; }
-.zoomable-img {
+/* LIGHTBOX PADRÃO */
+.lightbox-wrapper { text-align: center; margin-bottom: 10px; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.lightbox-toggle { display: none !important; }
+.lightbox-image {
     width: 65%; 
     border-radius: 14px;
     cursor: zoom-in;
@@ -241,30 +240,18 @@ div[data-testid="stButton"] button:hover {
     object-fit: cover;
     border: 1px solid #e8ddd3;
 }
-.zoomable-img:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(90, 59, 40, 0.15); }
+.lightbox-image:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(90, 59, 40, 0.15); }
 .imagem-legenda { text-align: center; font-size: 12px; color: #888; margin-top: 10px; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-
-/* Modal Global Fixo */
-#global-lightbox-modal {
-    position: fixed;
-    top: 0; left: 0; width: 100vw; height: 100vh;
-    background-color: rgba(0, 0, 0, 0.85);
-    z-index: 9999999;
-    display: none;
-    align-items: center; justify-content: center;
-    cursor: zoom-out;
+.lightbox-modal {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85); z-index: 999999;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; transition: opacity 0.3s ease; cursor: zoom-out;
 }
-#global-lightbox-modal img {
-    max-width: 90vw;
-    max-height: 90vh;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-    object-fit: contain;
-}
+.lightbox-modal img { max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+.lightbox-toggle:checked ~ .lightbox-modal { opacity: 1; visibility: visible; }
 
-/* =========================================
-   GRID CSS DE ADICIONAIS (EXTRAS AVULSOS)
-========================================= */
+/* GRID DE ADICIONAIS */
 .adicionais-hero-card {
     background: linear-gradient(135deg, #ffffff 0%, #faf7f3 100%);
     border: 1px solid #e8ddd3;
@@ -339,7 +326,7 @@ div[data-testid="stButton"] button:hover {
     .info-title { font-size: 34px !important; }
     .card-cesta-titulo { font-size: 32px !important; text-align: center; }
     .card-cesta-preco { font-size: 24px !important; text-align: center; }
-    .zoomable-img { width: 85%; }
+    .lightbox-image { width: 85%; }
     
     .adicionais-grid-css { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
 }
@@ -425,7 +412,13 @@ else:
                     st.markdown(
                         f"""
                         <div class="lightbox-wrapper">
-                            <img src="{img_src}" class="zoomable-img" data-full="{img_src}" title="Clique para ampliar a foto da cesta">
+                            <label style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                                <input type="checkbox" class="lightbox-toggle">
+                                <img src="{img_src}" class="lightbox-image" title="Clique para ampliar a foto da cesta">
+                                <div class="lightbox-modal">
+                                    <img src="{img_src}">
+                                </div>
+                            </label>
                             <div class="imagem-legenda">👆 Toque na foto para ampliar</div>
                         </div>
                         """,
@@ -439,13 +432,7 @@ else:
                     for f_idx, f_url in enumerate(fotos_extras[:3]):
                         if f_url and str(f_url).strip():
                             with cols_extras[f_idx]:
-                                f_src = image_to_base64(str(f_url).strip())
-                                st.markdown(
-                                    f"""
-                                    <img src="{f_src}" class="zoomable-img" data-full="{f_src}" style="width: 100%; height: 60px; border-radius: 8px; object-fit: cover; cursor: zoom-in;" title="Clique para ampliar">
-                                    """,
-                                    unsafe_allow_html=True
-                                )
+                                st.image(str(f_url).strip(), use_container_width=True)
 
             with col_text:
                 st.markdown(f'<div class="card-cesta-titulo">{cesta["nome"]}</div>', unsafe_allow_html=True)
@@ -483,7 +470,7 @@ except Exception as erro:
 
 if produtos_adicionais:
     cards_html = ""
-    for idx_add, prod in enumerate(produtos_adicionais):
+    for prod in produtos_adicionais:
         nome_p = prod.get("nome", "")
         preco_p = prod.get("preco")
         imagem_p = prod.get("imagem")
@@ -500,7 +487,7 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            img_html = f'<img src="{img_src}" class="adicional-img-small zoomable-img" data-full="{img_src}" title="Clique para ampliar">'
+            img_html = f'<label style="cursor: zoom-in; display: inline-block; margin-bottom: 6px;"><input type="checkbox" class="lightbox-toggle"><img src="{img_src}" class="adicional-img-small" title="Clique para ampliar"><div class="lightbox-modal"><img src="{img_src}"></div></label>'
         else:
             img_html = f'<div class="adicional-img-placeholder" style="margin-bottom: 6px;">🎀</div>'
 
@@ -522,42 +509,6 @@ if produtos_adicionais:
         """,
         unsafe_allow_html=True
     )
-
-
-# ==========================================================
-# MODAL ÚNICO GLOBAL E SCRIPT DE CONTROLE ESTÁVEL
-# ==========================================================
-
-st.markdown(
-    """
-    <div id="global-lightbox-modal" class="custom-modal">
-        <img id="global-lightbox-img" src="">
-    </div>
-    <script>
-    (function() {
-        // Garante que o script rode após o DOM carregar
-        document.addEventListener("click", function(e) {
-            const modal = document.getElementById("global-lightbox-modal");
-            const modalImg = document.getElementById("global-lightbox-img");
-            
-            if (!modal || !modalImg) return;
-
-            // Se clicou em qualquer imagem com a classe zoomable-img
-            if (e.target.classList.contains("zoomable-img")) {
-                const fullSrc = e.target.getAttribute("data-full") || e.target.src;
-                modalImg.src = fullSrc;
-                modal.style.display = "flex";
-            } 
-            // Se clicou dentro do modal escuro para fechar
-            else if (modal.style.display === "flex" && (e.target === modal || e.target === modalImg)) {
-                modal.style.display = "none";
-            }
-        });
-    })();
-    </script>
-    """,
-    unsafe_allow_html=True
-)
 
 
 # ==========================================================
