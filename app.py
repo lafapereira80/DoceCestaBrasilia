@@ -57,7 +57,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS PREMIUM E LIGHTBOX PADRÃO
+# CSS PREMIUM E LIGHTBOX PADRÃO DAS CESTAS
 # ==========================================================
 
 st.markdown(
@@ -303,6 +303,36 @@ div[data-testid="stButton"] button:hover {
 .adicional-preco-fixo { color: #137333; font-weight: 800; font-size: 14px; }
 .adicional-preco-consulta { color: #c5721f; font-weight: 800; background: #fff8ef; padding: 4px 8px; border-radius: 8px; font-size: 10px; text-transform: uppercase; border: 1px solid #fce8b2; display: inline-block; }
 
+/* LIGHTBOX GLOBAL FLUTUANTE PARA OS ADICIONAIS (FORA DO GRID) */
+.global-add-lightbox-toggle { display: none !important; }
+.global-add-lightbox-modal {
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85); 
+    z-index: 999999999;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    opacity: 0; 
+    visibility: hidden; 
+    transition: opacity 0.3s ease; 
+    cursor: zoom-out;
+}
+.global-add-lightbox-modal img { 
+    max-width: 90vw; 
+    max-height: 90vh; 
+    border-radius: 12px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
+    object-fit: contain;
+}
+.global-add-lightbox-toggle:checked ~ .global-add-lightbox-modal { 
+    opacity: 1; 
+    visibility: visible; 
+}
+
 /* RODAPÉ */
 .footer-container {
     background: #ffffff;
@@ -349,27 +379,6 @@ div[data-testid="stButton"] button:hover {
 </style>
 """,
 unsafe_allow_html=True
-)
-
-
-# ==========================================================
-# SCRIPT JS GLOBAL PARA MOVER O MODAL PARA O BODY RAIZ
-# ==========================================================
-st.markdown(
-    """
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Move todos os modais de adicionais para fora do container grid, direto para o body da página
-        setTimeout(function() {
-            const modals = document.querySelectorAll('.adicional-item-box .lightbox-modal');
-            modals.forEach(modal => {
-                document.body.appendChild(modal);
-            });
-        }, 500);
-    });
-    </script>
-    """,
-    unsafe_allow_html=True
 )
 
 
@@ -491,7 +500,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (COM SCRIPT DE ELEVAÇÃO DE DOM)
+# APRESENTAÇÃO DOS ADICIONAIS (COM MODAL RENDERIZADO FORA DA GRID)
 # ==========================================================
 
 produtos_adicionais = []
@@ -502,15 +511,18 @@ try:
     if cat_adicionais:
         produtos_adicionais = listar_produtos_por_categoria_id(cat_adicionais["id"])
 except Exception as erro:
-    st.error(f"Não foi possível carregar os itens adicionais: {erro}")
+    st.error(f"Not possible to load additional items: {erro}")
     produtos_adicionais = []
 
 if produtos_adicionais:
     cards_html = ""
-    for prod in produtos_adicionais:
+    modals_html = "" # Renderiza os modais de zoom globalmente no final, fora da grid
+    
+    for idx_add, prod in enumerate(produtos_adicionais):
         nome_p = prod.get("nome", "")
         preco_p = prod.get("preco")
         imagem_p = prod.get("imagem")
+        add_uid = f"add_{prod.get('id', idx_add)}"
 
         if preco_p is not None and str(preco_p).strip() != "":
             try:
@@ -524,15 +536,18 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            # Reutiliza exatamente a mesma classe de lightbox das cestas
+            # O input e o label ficam dentro do card, mas o modal é gerado separado em modals_html
             img_html = f'''
-                <div class="lightbox-wrapper" style="margin-bottom: 0px; height: auto;">
-                    <label style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
-                        <input type="checkbox" class="lightbox-toggle">
-                        <img src="{img_src}" class="adicional-img-small" title="Clique para ampliar">
-                        <div class="lightbox-modal">
-                            <img src="{img_src}">
-                        </div>
+                <label style="cursor: zoom-in; display: inline-block; margin-bottom: 6px;">
+                    <input type="checkbox" id="chk_{add_uid}" class="global-add-lightbox-toggle">
+                    <img src="{img_src}" class="adicional-img-small" title="Clique para ampliar">
+                </label>
+            '''
+            modals_html += f'''
+                <input type="checkbox" id="chk_{add_uid}" class="global-add-lightbox-toggle">
+                <div class="global-add-lightbox-modal">
+                    <label for="chk_{add_uid}" style="width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: zoom-out;">
+                        <img src="{img_src}">
                     </label>
                 </div>
             '''
@@ -554,6 +569,7 @@ if produtos_adicionais:
                 {cards_html}
             </div>
         </div>
+        {modals_html}
         """,
         unsafe_allow_html=True
     )
