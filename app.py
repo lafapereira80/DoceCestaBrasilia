@@ -57,7 +57,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS PREMIUM E LIGHTBOX SEGURO (ISOLADO POR ELEMENTO)
+# CSS PREMIUM E LIGHTBOX GLOBAL (ESTÁVEL E SEM ERROS)
 # ==========================================================
 
 st.markdown(
@@ -229,7 +229,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX LIMPO E ISOLADO (SEM CONFLITOS)
+   LIGHTBOX GLOBAL 
 ========================================= */
 .lightbox-wrapper { text-align: center; margin-bottom: 10px; }
 .zoomable-img {
@@ -245,7 +245,7 @@ div[data-testid="stButton"] button:hover {
 .imagem-legenda { text-align: center; font-size: 12px; color: #888; margin-top: 10px; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
 /* Modal Global Fixo */
-.custom-modal {
+#global-lightbox-modal {
     position: fixed;
     top: 0; left: 0; width: 100vw; height: 100vh;
     background-color: rgba(0, 0, 0, 0.85);
@@ -254,7 +254,7 @@ div[data-testid="stButton"] button:hover {
     align-items: center; justify-content: center;
     cursor: zoom-out;
 }
-.custom-modal img {
+#global-lightbox-modal img {
     max-width: 90vw;
     max-height: 90vh;
     border-radius: 12px;
@@ -422,33 +422,12 @@ else:
                 imagem_url = cesta.get("imagem")
                 if imagem_url and str(imagem_url).strip():
                     img_src = image_to_base64(imagem_url)
-                    modal_id = f"modal_cesta_{cesta['id']}"
-                    img_id = f"img_cesta_{cesta['id']}"
-                    
                     st.markdown(
                         f"""
                         <div class="lightbox-wrapper">
-                            <img src="{img_src}" id="{img_id}" class="zoomable-img" title="Clique para ampliar a foto da cesta">
+                            <img src="{img_src}" class="zoomable-img" data-full="{img_src}" title="Clique para ampliar a foto da cesta">
                             <div class="imagem-legenda">👆 Toque na foto para ampliar</div>
                         </div>
-                        <div id="{modal_id}" class="custom-modal">
-                            <img src="{img_src}">
-                        </div>
-                        <script>
-                        (function(){
-                            const img = document.getElementById("{img_id}");
-                            const modal = document.getElementById("{modal_id}");
-                            if(img && modal) {
-                                img.onclick = function(e) {
-                                    e.stopPropagation();
-                                    modal.style.display = "flex";
-                                };
-                                modal.onclick = function() {
-                                    modal.style.display = "none";
-                                };
-                            }
-                        })();
-                        </script>
                         """,
                         unsafe_allow_html=True
                     )
@@ -460,7 +439,13 @@ else:
                     for f_idx, f_url in enumerate(fotos_extras[:3]):
                         if f_url and str(f_url).strip():
                             with cols_extras[f_idx]:
-                                st.image(str(f_url).strip(), use_container_width=True)
+                                f_src = image_to_base64(str(f_url).strip())
+                                st.markdown(
+                                    f"""
+                                    <img src="{f_src}" class="zoomable-img" data-full="{f_src}" style="width: 100%; height: 60px; border-radius: 8px; object-fit: cover; cursor: zoom-in;" title="Clique para ampliar">
+                                    """,
+                                    unsafe_allow_html=True
+                                )
 
             with col_text:
                 st.markdown(f'<div class="card-cesta-titulo">{cesta["nome"]}</div>', unsafe_allow_html=True)
@@ -502,7 +487,6 @@ if produtos_adicionais:
         nome_p = prod.get("nome", "")
         preco_p = prod.get("preco")
         imagem_p = prod.get("imagem")
-        prod_uuid = prod.get("id", idx_add)
 
         if preco_p is not None and str(preco_p).strip() != "":
             try:
@@ -516,30 +500,7 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            m_id = f"modal_add_{prod_uuid}"
-            i_id = f"img_add_{prod_uuid}"
-            
-            img_html = f"""
-                <img src="{img_src}" id="{i_id}" class="adicional-img-small" title="Clique para ampliar">
-                <div id="{m_id}" class="custom-modal">
-                    <img src="{img_src}">
-                </div>
-                <script>
-                (function(){
-                    const img = document.getElementById("{i_id}");
-                    const modal = document.getElementById("{m_id}");
-                    if(img && modal) {
-                        img.onclick = function(e) {
-                            e.stopPropagation();
-                            modal.style.display = "flex";
-                        };
-                        modal.onclick = function() {
-                            modal.style.display = "none";
-                        };
-                    }
-                })();
-                </script>
-            """
+            img_html = f'<img src="{img_src}" class="adicional-img-small zoomable-img" data-full="{img_src}" title="Clique para ampliar">'
         else:
             img_html = f'<div class="adicional-img-placeholder" style="margin-bottom: 6px;">🎀</div>'
 
@@ -561,6 +522,42 @@ if produtos_adicionais:
         """,
         unsafe_allow_html=True
     )
+
+
+# ==========================================================
+# MODAL ÚNICO GLOBAL E SCRIPT DE CONTROLE ESTÁVEL
+# ==========================================================
+
+st.markdown(
+    """
+    <div id="global-lightbox-modal" class="custom-modal">
+        <img id="global-lightbox-img" src="">
+    </div>
+    <script>
+    (function() {
+        // Garante que o script rode após o DOM carregar
+        document.addEventListener("click", function(e) {
+            const modal = document.getElementById("global-lightbox-modal");
+            const modalImg = document.getElementById("global-lightbox-img");
+            
+            if (!modal || !modalImg) return;
+
+            // Se clicou em qualquer imagem com a classe zoomable-img
+            if (e.target.classList.contains("zoomable-img")) {
+                const fullSrc = e.target.getAttribute("data-full") || e.target.src;
+                modalImg.src = fullSrc;
+                modal.style.display = "flex";
+            } 
+            // Se clicou dentro do modal escuro para fechar
+            else if (modal.style.display === "flex" && (e.target === modal || e.target === modalImg)) {
+                modal.style.display = "none";
+            }
+        });
+    })();
+    </script>
+    """,
+    unsafe_allow_html=True
+)
 
 
 # ==========================================================
