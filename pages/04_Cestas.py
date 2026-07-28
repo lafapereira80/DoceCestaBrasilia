@@ -22,7 +22,7 @@ from utils.permissao import (
 # =====================================================
 
 st.set_page_config(
-    page_title="Cestas",
+    page_title="Gestão de Cestas",
     page_icon="🎁",
     layout="wide"
 )
@@ -35,7 +35,7 @@ usuario = st.session_state.usuario
 
 
 # =====================================================
-# CSS COMPACTO, RESPONSIVO E AJUSTE DE CABEÇALHO
+# CSS PREMIUM E ANIMAÇÕES
 # =====================================================
 
 st.markdown(
@@ -45,172 +45,163 @@ st.markdown(
    CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
 ========================================== */
 .block-container {
-    padding-top: 1rem !important;
-    padding-bottom: 2rem !important;
-    max-width: 1100px;
+    padding-top: 1.5rem !important;
+    padding-bottom: 3rem !important;
+    max-width: 1150px;
 }
 
 h1 {
-    font-size: 24px !important;
-    font-weight: 700 !important;
-    color: #5a3b28;
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    color: #4a2e1b;
     margin-bottom: 2px !important;
-}
-
-h2, h3 {
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    color: #5a3b28;
-    margin-top: 10px !important;
-    margin-bottom: 8px !important;
+    letter-spacing: -0.5px;
 }
 
 .block-container p, 
 .block-container label {
-    font-family: Arial, sans-serif !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
     font-size: 13px !important;
 }
 
 /* =========================================
-   CUSTOMIZAÇÃO DO UPLOADER MODERNO (DROPZONE)
+   ACORDEÃO (EXPANDER) "NOVA CESTA"
 ========================================== */
-div[data-testid="stFileUploader"] {
-    width: 100% !important;
+div[data-testid="stExpander"] {
+    background: #ffffff;
+    border: 1px solid #e8ddd3 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.05) !important;
+    overflow: hidden;
+    margin-bottom: 25px;
 }
-
-div[data-testid="stFileUploader"] section {
-    background-color: #faf7f3 !important;
-    border: 2px dashed #dfcdbb !important;
-    border-radius: 12px !important;
-    padding: 12px !important;
-    text-align: center !important;
-    transition: all 0.3s ease !important;
-}
-
-div[data-testid="stFileUploader"] section:hover {
-    border-color: #a87b57 !important;
-    background-color: #f5eee6 !important;
-}
-
-div[data-testid="stFileUploader"] section button {
-    background-color: #ffffff !important;
-    border: 1px solid #dfcdbb !important;
+div[data-testid="stExpander"] summary {
+    background: #faf7f3;
+    padding: 15px 20px !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
     color: #5a3b28 !important;
-    font-weight: 600 !important;
-    border-radius: 8px !important;
-    padding: 4px 12px !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.03) !important;
-    transition: all 0.2s ease !important;
+    transition: all 0.3s ease;
 }
-
-div[data-testid="stFileUploader"] section button span {
-    display: none !important;
+div[data-testid="stExpander"] summary:hover {
+    background: #f3ece6;
 }
-
-div[data-testid="stFileUploader"] section button::after {
-    content: "📁 Selecionar Foto" !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-}
-
-div[data-testid="stFileUploader"] section button:hover {
-    background-color: #5a3b28 !important;
-    color: #ffffff !important;
-    border-color: #5a3b28 !important;
+div[data-testid="stExpanderDetails"] {
+    padding: 20px !important;
 }
 
 /* =========================================
-   CONTAINERS DAS CESTAS (CARDS LINHA)
+   CARDS DE CESTAS
 ========================================== */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff;
     border: 1px solid #e8ddd3 !important;
-    border-radius: 12px !important;
-    padding: 10px 14px !important;
-    margin-bottom: 8px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    border-radius: 14px !important;
+    padding: 12px 16px !important;
+    margin-bottom: 10px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 div[data-testid="stVerticalBlockBorderWrapper"]:hover {
-    border-color: #dfcdbb !important;
+    border-color: #d2bfae !important;
+    box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
+    transform: translateY(-2px);
+}
+
+/* Alinhamento vertical Desktop */
+@media (min-width: 641px) {
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
+        align-items: center !important;
+    }
 }
 
 /* =========================================
    ELEMENTOS DE TEXTO & BADGES
 ========================================== */
 .cesta-nome {
-    font-weight: 700;
-    color: #333;
-    font-size: 15px !important;
+    font-weight: 800;
+    color: #2c1e14;
+    font-size: 16px !important;
+    margin-bottom: 2px;
 }
 
 .cesta-preco {
-    font-weight: 700;
+    font-weight: 800;
     color: #2e7d32;
-    font-size: 14px !important;
+    font-size: 16px !important;
 }
 
-.badge-ativa {
-    display: inline-block;
-    background-color: #e6f4ea;
-    color: #137333;
-    font-weight: 700;
+.posicao-badge {
+    background: #f3ece6;
+    color: #5a3b28;
     padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px !important;
-}
-
-.badge-inativa {
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 11px;
     display: inline-block;
-    background-color: #fce8e6;
-    color: #c5221f;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px !important;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
 }
 
-.cabecalho-tabela {
+.badge-ativa, .badge-inativa {
+    display: inline-block;
     font-weight: 700;
-    color: #775a46;
-    font-size: 12px !important;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px !important;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 4px;
 }
+.badge-ativa { background-color: #e6f4ea; color: #137333; border: 1px solid #ceead6; }
+.badge-inativa { background-color: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; }
 
 /* =========================================
-   CORREÇÃO DOS BOTÕES E ENCAIXE DE ÍCONES
+   BOTÕES DE AÇÃO NA TABELA
 ========================================== */
-div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+div[data-testid="stColumn"] div[data-testid="stButton"] button {
     font-size: 15px !important;
     padding: 4px 6px !important;
-    border-radius: 8px !important;
-    min-height: 36px !important;
-    height: 36px !important;
-    width: 100% !important;
-    line-height: 1 !important;
-    overflow: hidden !important;
+    border-radius: 10px !important;
+    min-height: 38px !important;
+    border: 1px solid #e8ddd3 !important;
+    background: #faf7f3 !important;
+    transition: all 0.2s ease;
+}
+div[data-testid="stColumn"] div[data-testid="stButton"] button:hover {
+    background: #e8ddd3 !important;
+    transform: scale(1.05);
 }
 
-.stImage img {
-    border-radius: 8px;
-    object-fit: cover;
-}
+.stImage img { border-radius: 8px; object-fit: cover; border: 1px solid #e8ddd3; }
 
 /* =========================================
-   OCULTA CABEÇALHO NO MOBILE (MEDIAS QUERIES)
+   RESPONSIVIDADE MOBILE E BOTÕES (4 LADO A LADO)
 ========================================== */
 @media (max-width: 768px) {
-    div.element-container:has(.cabecalho-tabela) {
-        display: none !important;
-    }
+    h1 { font-size: 24px !important; }
     
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-        padding: 10px !important;
+    /* Força os botões a ficarem na horizontal no mobile */
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+        margin-top: 15px !important;
+        justify-content: space-between;
+    }
+
+    /* Como são 4 botões nas cestas, cada um assume 25% do espaço */
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) > div[data-testid="stColumn"] {
+        width: 25% !important;
+        flex: 1 1 0% !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+    }
+
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) button {
+        width: 100% !important;
+        padding: 6px 0px !important;
     }
 }
 </style>
@@ -223,20 +214,20 @@ unsafe_allow_html=True
 # TÍTULO E CABEÇALHO
 # =====================================================
 
-st.title("🎁 Gestão de Cestas")
-st.caption("Cadastre e gerencie os modelos de cestas disponíveis e suas ordens de exibição.")
-st.divider()
+col_t1, col_t2 = st.columns([3, 1])
+with col_t1:
+    st.title("🎁 Gestão de Cestas")
+    st.caption("Cadastre e gerencie os pacotes de cestas e suas ordens de exibição na vitrine.")
 
 
 # =====================================================
-# CARREGA CESTAS ANTES DO CADASTRO (PARA SABER QUANTAS EXISTEM)
+# CARREGA CESTAS ANTES DO CADASTRO
 # =====================================================
 
 try:
     cestas = listar_cestas()
     
-    # Tratamento para garantir a ordenação via Python (caso a query do banco falhe nisso)
-    # Define como ordem "999" (ou final da lista) aquelas cestas que não possuem ordem cadastrada
+    # Tratamento para garantir a ordenação via Python
     for cesta in cestas:
         if "ordem" not in cesta or cesta["ordem"] is None:
             cesta["ordem"] = 999 
@@ -253,117 +244,111 @@ proxima_ordem = total_cestas + 1
 
 
 # =====================================================
-# NOVA CESTA
+# NOVA CESTA (NOVO MODELO COM EXPANDER)
 # =====================================================
+
+salvar = False
 
 if usuario.get("perfil") == "Administrador":
-    st.subheader("➕ Cadastrar Nova Cesta")
+    # Expander de Cadastro, começa fechado para manter a interface premium
+    with st.expander("✨ Cadastrar Nova Cesta", expanded=False):
+        col_f1, col_f2 = st.columns([1.5, 1])
 
-    with st.container(border=True):
-        with st.form("nova_cesta_form"):
-            col_f1, col_f2 = st.columns([1.4, 1])
+        with col_f1:
+            nome = st.text_input("Nome da Cesta", placeholder="Ex: Cesta Café da Manhã Premium")
+            descricao = st.text_area("Descrição", height=105, placeholder="Descreva os itens principais que acompanham a cesta...")
 
-            with col_f1:
-                nome = st.text_input("Nome da Cesta", placeholder="Ex: Cesta Café da Manhã Premium")
-                descricao = st.text_area("Descrição", height=105, placeholder="Descreva os itens principais que acompanham a cesta...")
+        with col_f2:
+            col_p1, col_p2 = st.columns(2)
+            with col_p1:
+                preco = st.number_input("Preço de Venda (R$)", min_value=0.0, value=0.0, step=1.0, format="%.2f")
+            with col_p2:
+                ordem_escolhida = st.number_input("Ordem na Vitrine", min_value=1, value=proxima_ordem, step=1)
+            
+            imagem_arquivo = st.file_uploader("📷 Foto da Cesta", type=["jpg", "jpeg", "png", "webp"])
 
-            with col_f2:
-                col_p1, col_p2 = st.columns(2)
-                with col_p1:
-                    preco = st.number_input("Preço (R$)", min_value=0.0, value=0.0, step=1.0, format="%.2f")
-                with col_p2:
-                    # Campo para definir a ordem desejada da nova cesta
-                    ordem_escolhida = st.number_input("Ordem / Posição", min_value=1, value=proxima_ordem, step=1)
-                
-                imagem_arquivo = st.file_uploader("📷 Foto da Cesta", type=["jpg", "jpeg", "png", "webp"])
+            if imagem_arquivo:
+                st.image(imagem_arquivo, width=90, caption="Pré-visualização")
 
-                if imagem_arquivo:
-                    st.image(imagem_arquivo, width=90, caption="Pré-visualização")
+        st.write("")
+        salvar = st.button("💾 Cadastrar Cesta no Catálogo", use_container_width=True, type="primary")
 
-            salvar = st.form_submit_button("💾 Cadastrar Cesta", use_container_width=True, type="primary")
-
-        if salvar:
-            if not nome.strip():
-                st.error("Informe o nome da cesta.")
-            else:
-                try:
-                    imagem_url = None
-                    if imagem_arquivo:
-                        imagem_url = upload_imagem_cesta(imagem_arquivo)
-
-                    # Passamos a ordem escolhida para a service tratar a reordenação em cascata
-                    cadastrar_cesta(
-                        nome=nome.strip(), 
-                        descricao=descricao.strip(), 
-                        preco=preco, 
-                        imagem=imagem_url, 
-                        ordem=int(ordem_escolhida)
-                    )
-                    st.success("Cesta cadastrada e reordenada com sucesso!")
-                    st.rerun()
-
-                except TypeError as erro_tipo:
-                    if "ordem" in str(erro_tipo):
-                        st.error("⚠️ Erro de Cache: A função 'cadastrar_cesta' não está recebendo a 'ordem'. Apague o __pycache__ e reinicie o app.")
-                    else:
-                        st.error(f"Erro ao cadastrar: {erro_tipo}")
-                except Exception as erro:
-                    st.error(f"Erro ao cadastrar cesta: {erro}")
-
-    st.divider()
 else:
-    st.info("Modo consulta. Apenas Administradores podem cadastrar novas cestas.")
+    st.info("Modo consulta ativo. Apenas Administradores podem cadastrar novas cestas.")
 
 
 # =====================================================
-# LISTAGEM
+# SALVAR CESTA
 # =====================================================
 
-st.subheader("📋 Cestas Cadastradas")
+if salvar:
+    if not nome.strip():
+        st.error("Informe o nome da cesta.")
+    else:
+        try:
+            with st.spinner("Registrando cesta e ajustando posições..."):
+                imagem_url = None
+                if imagem_arquivo:
+                    imagem_url = upload_imagem_cesta(imagem_arquivo)
+
+                cadastrar_cesta(
+                    nome=nome.strip(), 
+                    descricao=descricao.strip(), 
+                    preco=preco, 
+                    imagem=imagem_url, 
+                    ordem=int(ordem_escolhida)
+                )
+            st.success("✅ Cesta cadastrada e reordenada com sucesso!")
+            st.rerun()
+
+        except TypeError as erro_tipo:
+            if "ordem" in str(erro_tipo):
+                st.error("⚠️ Erro de Cache. Apague o __pycache__ e reinicie o app.")
+            else:
+                st.error(f"Erro ao cadastrar: {erro_tipo}")
+        except Exception as erro:
+            st.error(f"Erro ao cadastrar cesta: {erro}")
+
+
+# =====================================================
+# LISTAGEM DE CESTAS (CARDS PREMIUM)
+# =====================================================
+
+st.write("")
+st.subheader(f"📋 Catálogo de Cestas ({total_cestas})")
 
 if not cestas:
-    st.info("Nenhuma cesta cadastrada.")
+    st.info("Nenhuma cesta cadastrada. Utilize o botão acima para começar.")
 else:
-    # Cabeçalho da Tabela (Apenas Desktop)
-    col_h1, col_h2, col_h3, col_h4 = st.columns([4.5, 1.8, 1.4, 2.3])
-    with col_h1:
-        st.markdown('<div class="cabecalho-tabela">Cesta & Posição</div>', unsafe_allow_html=True)
-    with col_h2:
-        st.markdown('<div class="cabecalho-tabela">Preço</div>', unsafe_allow_html=True)
-    with col_h3:
-        st.markdown('<div class="cabecalho-tabela">Status</div>', unsafe_allow_html=True)
-    with col_h4:
-        st.markdown('<div class="cabecalho-tabela">Ações</div>', unsafe_allow_html=True)
-
     for cesta in cestas:
         ativa = cesta.get("ativa", True)
-        
-        # Mostra "-" em vez de "999" se a cesta ainda não tiver ordem definida no banco
         posicao_atual_num = cesta.get("ordem", 999)
         posicao_display = str(posicao_atual_num) if posicao_atual_num != 999 else "-"
 
         with st.container(border=True):
-            col1, col2, col3, col4 = st.columns([4.5, 1.8, 1.4, 2.3])
+            # Layout de colunas sutilmente reajustado para caberem 4 botões na direita
+            col1, col2, col3, col4 = st.columns([4.2, 2.0, 1.3, 2.5])
 
-            # Coluna 1: Imagem, Ordem e Nome
+            # Coluna 1: Imagem, Posição, Nome e Descrição
             with col1:
-                if cesta.get("imagem"):
-                    img_col, txt_col = st.columns([1, 4])
+                imagem_url = cesta.get("imagem")
+                if imagem_url:
+                    img_col, txt_col = st.columns([1.2, 4])
                     with img_col:
-                        st.image(cesta["imagem"], width=60)
+                        st.image(imagem_url, width=65)
                     with txt_col:
-                        st.markdown(f'<div class="cesta-nome">#{posicao_display} - {cesta["nome"]}</div>', unsafe_allow_html=True)
+                        st.markdown(f'<span class="posicao-badge">Posição #{posicao_display}</span>', unsafe_allow_html=True)
+                        st.markdown(f'<div class="cesta-nome">{cesta["nome"]}</div>', unsafe_allow_html=True)
                         if cesta.get("descricao"):
                             desc = cesta["descricao"]
-                            if len(desc) > 85:
-                                desc = desc[:85] + "..."
+                            if len(desc) > 80: desc = desc[:80] + "..."
                             st.caption(desc)
                 else:
-                    st.markdown(f'<div class="cesta-nome">#{posicao_display} - {cesta["nome"]}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<span class="posicao-badge">Posição #{posicao_display}</span>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="cesta-nome">{cesta["nome"]}</div>', unsafe_allow_html=True)
                     if cesta.get("descricao"):
                         desc = cesta["descricao"]
-                        if len(desc) > 85:
-                            desc = desc[:85] + "..."
+                        if len(desc) > 90: desc = desc[:90] + "..."
                         st.caption(desc)
 
             # Coluna 2: Preço
@@ -373,31 +358,31 @@ else:
                     valor_fmt = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
                     st.markdown(f'<div class="cesta-preco">{valor_fmt}</div>', unsafe_allow_html=True)
                 except:
-                    st.caption("Sem preço")
+                    st.caption("Sob consulta")
 
             # Coluna 3: Status
             with col3:
                 if ativa:
-                    st.markdown('<span class="badge-ativa">✓ Ativa</span>', unsafe_allow_html=True)
+                    st.markdown('<span class="badge-ativa">Ativa</span>', unsafe_allow_html=True)
                 else:
-                    st.markdown('<span class="badge-inativa">✕ Inativa</span>', unsafe_allow_html=True)
+                    st.markdown('<span class="badge-inativa">Inativa</span>', unsafe_allow_html=True)
 
-            # Coluna 4: Botões de Ação
+            # Coluna 4: Ações (4 botões em linha)
             with col4:
                 b1, b2, b3, b4 = st.columns(4)
 
                 with b1:
-                    if st.button("✏️", key=f"editar_{cesta['id']}", help="Editar Cesta", use_container_width=True):
+                    if st.button("✏️", key=f"editar_{cesta['id']}", help="Editar Informações", use_container_width=True):
                         st.session_state["cesta_editar"] = cesta["id"]
                         st.switch_page("pages/11_Editar_Cesta.py")
 
                 with b2:
-                    if st.button("📦", key=f"produtos_{cesta['id']}", help="Produtos da Cesta", use_container_width=True):
+                    if st.button("📦", key=f"produtos_{cesta['id']}", help="Gerenciar Itens da Cesta", use_container_width=True):
                         st.session_state["cesta_produtos"] = cesta["id"]
                         st.switch_page("pages/12_Produtos_da_Cesta.py")
 
                 with b3:
-                    if st.button("⚙️", key=f"config_{cesta['id']}", help="Configurar Cesta", use_container_width=True):
+                    if st.button("⚙️", key=f"config_{cesta['id']}", help="Configurações Avançadas", use_container_width=True):
                         st.session_state["cesta_configurar"] = cesta["id"]
                         st.switch_page("pages/14_Configurar_Cesta.py")
 
@@ -405,7 +390,7 @@ else:
                     if st.button("🗑️", key=f"excluir_{cesta['id']}", help="Excluir Cesta", use_container_width=True):
                         try:
                             excluir_cesta(cesta["id"])
-                            st.success("Cesta excluída.")
+                            st.toast("✅ Cesta excluída com sucesso!")
                             st.rerun()
                         except Exception as erro:
                             st.error(f"Erro: {erro}")
@@ -415,5 +400,6 @@ else:
 # RODAPÉ
 # =====================================================
 
+st.write("")
 st.divider()
-st.caption("Doce Cesta Brasília - Cadastro de Cestas")
+st.caption("📦 Gerenciamento Oficial de Cestas - Doce Cesta Brasília")
