@@ -120,11 +120,37 @@ div[data-testid="stVerticalBlockBorderWrapper"]:focus-within { border-color: #cb
 div[data-testid="stCheckbox"] { background: #faf7f3; border: 1px solid #e8ddd3; padding: 10px 14px; border-radius: 12px; margin-bottom: 6px; transition: all 0.2s ease; }
 div[data-testid="stCheckbox"]:hover { background: #fdfcfb; border-color: #d2bfae; transform: translateX(2px); }
 
-/* Uploader Dropzone */
-div[data-testid="stFileUploader"] section { background-color: #faf7f3 !important; border: 2px dashed #dfcdbb !important; border-radius: 14px !important; padding: 16px !important; text-align: center !important; }
-div[data-testid="stFileUploader"] section button { background-color: #ffffff !important; border: 1px solid #dfcdbb !important; color: #5a3b28 !important; font-weight: 800 !important; border-radius: 10px !important; }
+/* =========================================
+   UPLOADER DROPZONE (CORRIGIDO PARA POLAROID)
+========================================== */
+div[data-testid="stFileUploader"] { width: 100% !important; }
+div[data-testid="stFileUploader"] section { 
+    background-color: #faf7f3 !important; border: 2px dashed #dfcdbb !important; 
+    border-radius: 14px !important; padding: 16px !important; text-align: center !important; 
+    transition: all 0.3s ease !important; 
+}
+div[data-testid="stFileUploader"] section:hover { border-color: #a87b57 !important; background-color: #fdfcfb !important; }
 
-/* Resumo e Botão de Envio */
+div[data-testid="stFileUploader"] section button { 
+    background-color: #ffffff !important; border: 1px solid #dfcdbb !important; 
+    color: #5a3b28 !important; font-weight: 800 !important; border-radius: 10px !important; 
+    padding: 6px 16px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.03) !important; 
+    transition: all 0.2s ease !important; 
+}
+div[data-testid="stFileUploader"] section button:hover { transform: scale(1.02); }
+
+/* Esconde o texto nativo "Browse Files" do Streamlit e adiciona o nosso customizado */
+div[data-testid="stFileUploader"] section button span { display: none !important; }
+div[data-testid="stFileUploader"] section button::after { 
+    content: "📷 Anexar Fotos" !important; 
+    font-size: 14px !important; 
+    font-weight: 800 !important; 
+    display: block; 
+}
+
+/* =========================================
+   RESUMO E BOTÃO DE ENVIO
+========================================== */
 .resumo-box { background: linear-gradient(145deg, #ffffff 0%, #fdfcfb 100%); border: 1px solid #dfcdbb; border-radius: 14px; padding: 18px; text-align: left; }
 .stButton button { background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%) !important; color: white !important; border-radius: 14px !important; height: 54px !important; font-size: 16px !important; font-weight: 800 !important; border: none !important; box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3) !important; transition: all 0.3s ease !important; text-transform: uppercase; letter-spacing: 1px; margin-top: 15px; }
 .stButton button:hover { transform: translateY(-3px) !important; box-shadow: 0 8px 20px rgba(46, 125, 50, 0.4) !important; }
@@ -258,7 +284,6 @@ if cestas:
             col_img, col_txt = st.columns([1, 2])
             with col_img:
                 if cesta_obj.get("imagem"):
-                    # O style={"border-radius": "12px"} foi removido e tratado no CSS acima (.stImage img)
                     st.image(cesta_obj["imagem"], use_container_width=True)
             with col_txt:
                 if cesta_obj.get("descricao"): st.caption(cesta_obj["descricao"])
