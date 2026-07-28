@@ -12,6 +12,7 @@ from services.produto_service import listar_produtos_por_categoria_id
 # BUSCA INTELIGENTE DE CATEGORIAS (INFALÍVEL)
 # ==========================================================
 def obter_categorias():
+    # 1. Tenta encontrar a função automaticamente no arquivo
     try:
         cat_service = importlib.import_module("services.categoria_service")
         for nome_funcao in dir(cat_service):
@@ -19,8 +20,9 @@ def obter_categorias():
                 funcao_encontrada = getattr(cat_service, nome_funcao)
                 return funcao_encontrada()
     except:
-        pass
+        pass # Se der erro no arquivo, segue para o plano B
         
+    # 2. Se falhar, conecta direto no banco de dados para os adicionais não sumirem
     try:
         from config.supabase import supabase
         resposta = supabase.table("categorias").select("*").execute()
@@ -41,6 +43,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Função auxiliar para garantir que o Lightbox leia qualquer tipo de imagem
 def image_to_base64(img_path):
     img_path = str(img_path).strip()
     if img_path.startswith("http") or img_path.startswith("data:image"):
@@ -57,31 +60,37 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS PREMIUM E LIGHTBOX PADRÃO UNIFICADO
+# CSS PREMIUM E LIGHTBOX (VITRINE DO CLIENTE)
 # ==========================================================
 
 st.markdown(
 """
 <style>
+/* Importação de Fontes Elegantes */
 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Montserrat:wght@400;500;600;700;800&display=swap');
 
+/* Remoção de elementos padrão do Streamlit (Modo Vitrine) */
 section[data-testid="stSidebar"] { display: none !important; }
 [data-testid="collapsedControl"] { display: none !important; }
 header { visibility: hidden !important; height: 0px !important; }
 footer { visibility: hidden !important; }
 #MainMenu { visibility: hidden !important; }
 
+/* Fontes Globais */
 html, body, [class*="css"]  {
     font-family: 'Montserrat', sans-serif !important;
 }
 
+/* Container Principal */
 .block-container {
     max-width: 1150px !important;
     padding-top: 1.5rem !important;
     padding-bottom: 3rem !important;
 }
 
-/* BANNER / CABEÇALHO */
+/* =========================================
+   BANNER / CABEÇALHO PRINCIPAL
+========================================= */
 .header-banner {
     display: flex;
     align-items: center;
@@ -117,7 +126,9 @@ html, body, [class*="css"]  {
     letter-spacing: 0.5px;
 }
 
-/* CARDS INSTITUCIONAIS */
+/* =========================================
+   GRID PARA OS CARDS INSTITUCIONAIS
+========================================= */
 .info-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -158,11 +169,15 @@ html, body, [class*="css"]  {
 }
 .info-text strong { color: #2e7d32 !important; font-weight: 700 !important; }
 
+/* Lista de Como Pedir */
 .como-pedir-list { text-align: left; font-size: 14px; color: #4a2e1b; line-height: 1.6; margin: 0; padding-left: 20px; font-weight: 500; }
 .como-pedir-list li { margin-bottom: 12px; }
 .como-pedir-list li:last-child { margin-bottom: 0; }
 
-/* CARDS DE CESTA */
+
+/* =========================================
+   CARDS DE CESTA (LISTA HORIZONTAL)
+========================================= */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff;
     border: 1px solid #e8ddd3 !important;
@@ -180,6 +195,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
 
 @media (min-width: 641px) { div[data-testid="stHorizontalBlock"] { align-items: center !important; } }
 
+/* NOME DA CESTA */
 .card-cesta-titulo {
     font-family: 'Dancing Script', cursive !important;
     font-size: 42px !important;
@@ -190,6 +206,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     line-height: 1.1 !important;
 }
 
+/* Texto de Descrição */
 .card-cesta-desc {
     font-size: 14px !important;
     color: #4d3e35 !important;
@@ -209,6 +226,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     margin-bottom: 18px !important;
 }
 
+/* BOTÃO MONTE SUA CESTA */
 div[data-testid="stButton"] button {
     background: linear-gradient(135deg, #c5721f 0%, #9e520b 100%) !important;
     color: white !important;
@@ -229,7 +247,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX UNIFICADO (TELA INTEIRA REAL)
+   LIGHTBOX CSS PADRÃO (FOTOS)
 ========================================= */
 .lightbox-wrapper { text-align: center; margin-bottom: 10px; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 .lightbox-toggle { display: none !important; }
@@ -244,35 +262,14 @@ div[data-testid="stButton"] button:hover {
 }
 .lightbox-image:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(90, 59, 40, 0.15); }
 .imagem-legenda { text-align: center; font-size: 12px; color: #888; margin-top: 10px; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-
-/* MODAL GLOBAL FIXO COBRINDO A TELA INTEIRA */
 .lightbox-modal {
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100vw; 
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.85); 
-    z-index: 9999999;
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    opacity: 0; 
-    visibility: hidden; 
-    transition: opacity 0.3s ease; 
-    cursor: zoom-out;
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85); z-index: 999999;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; transition: opacity 0.3s ease; cursor: zoom-out;
 }
-.lightbox-modal img { 
-    max-width: 90vw; 
-    max-height: 90vh; 
-    border-radius: 12px; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
-    object-fit: contain;
-}
-.lightbox-toggle:checked ~ .lightbox-modal { 
-    opacity: 1; 
-    visibility: visible; 
-}
+.lightbox-modal img { max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+.lightbox-toggle:checked ~ .lightbox-modal { opacity: 1; visibility: visible; }
 
 /* =========================================
    GRID CSS DE ADICIONAIS (EXTRAS AVULSOS)
@@ -306,25 +303,15 @@ div[data-testid="stButton"] button:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
 }
-.adicional-img-small { 
-    width: 70px; 
-    height: 70px; 
-    object-fit: cover; 
-    border-radius: 10px; 
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06); 
-    cursor: zoom-in; 
-    display: block; 
-    margin: 0 auto; 
-    border: 1px solid #f0e6dc;
-    transition: transform 0.2s ease;
-}
-.adicional-img-small:hover { transform: scale(1.05); }
+.adicional-img-small { width: 70px; height: 70px; object-fit: cover; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); cursor: zoom-in; display: block; margin: 0 auto; border: 1px solid #f0e6dc; }
 .adicional-img-placeholder { width: 70px; height: 70px; background: linear-gradient(135deg, #fdfbf8 0%, #f5eee6 100%); display: flex; align-items: center; justify-content: center; font-size: 26px; border-radius: 10px; border: 1px dashed #dfcdbb; margin: 0 auto; }
 .adicional-nome { font-size: 12.5px; font-weight: 700; color: #4a2e1b; margin-top: 10px; margin-bottom: 6px; min-height: 32px; line-height: 1.3; }
 .adicional-preco-fixo { color: #137333; font-weight: 800; font-size: 14px; }
 .adicional-preco-consulta { color: #c5721f; font-weight: 800; background: #fff8ef; padding: 4px 8px; border-radius: 8px; font-size: 10px; text-transform: uppercase; border: 1px solid #fce8b2; display: inline-block; }
 
-/* RODAPÉ */
+/* =========================================
+   RODAPÉ (FALE CONOSCO)
+========================================= */
 .footer-container {
     background: #ffffff;
     border: 1px solid #e8ddd3;
@@ -348,11 +335,15 @@ div[data-testid="stButton"] button:hover {
 .btn-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important; box-shadow: 0 4px 12px rgba(220, 39, 67, 0.3); }
 .btn-instagram:hover { box-shadow: 0 6px 16px rgba(220, 39, 67, 0.45); }
 
+/* =========================================
+   RESPONSIVO EXCLUSIVO MOBILE
+========================================= */
 @media (max-width: 900px) { .adicionais-grid-css { grid-template-columns: repeat(3, 1fr) !important; } }
 
 @media (max-width: 640px) {
     .block-container { padding-top: 1rem !important; padding-left: 0.6rem !important; padding-right: 0.6rem !important; }
     
+    /* GANTE ALINHAMENTO CENTRAL NO CELULAR PARA O TOPO */
     .header-banner { flex-direction: column !important; align-items: center !important; text-align: center !important; padding: 24px 16px !important; gap: 16px !important; }
     .header-text { align-items: center !important; text-align: center !important; width: 100% !important; }
     .header-logo { width: 120px !important; margin: 0 auto !important; }
@@ -365,6 +356,7 @@ div[data-testid="stButton"] button:hover {
     .card-cesta-preco { font-size: 24px !important; text-align: center; }
     .lightbox-image { width: 85%; }
     
+    /* Celular: Força exatamente 2 colunas lado a lado nos adicionais */
     .adicionais-grid-css { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
 }
 </style>
@@ -423,8 +415,10 @@ st.caption("Escolha a cesta perfeita, confira os itens detalhados e personalize 
 
 try:
     cestas = listar_cestas()
+    # Filtra as cestas ativas
     cestas = [c for c in cestas if c.get("ativa", True)]
     
+    # Tratamento para garantir a ordenação via Python 
     for cesta in cestas:
         if "ordem" not in cesta or cesta["ordem"] is None:
             cesta["ordem"] = 999 
@@ -485,17 +479,21 @@ else:
                     st.markdown('<div class="card-cesta-preco">Preço sob consulta</div>', unsafe_allow_html=True)
 
                 st.write("")
+                # ==================================================
+                # AQUI É ONDE O BOTÃO APONTA PARA A NOVA PÁGINA
+                # ==================================================
                 if st.button("🛒 Quero Montar Esta Cesta", key=f"cesta_btn_{cesta['id']}", use_container_width=True):
                     st.session_state["cesta_selecionada_home"] = cesta["id"]
                     st.switch_page("pages/01_Inicio.py")
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (GRID PREMIUM COM LIGHTBOX IDÊNTICO)
+# APRESENTAÇÃO DOS ADICIONAIS (GRID PREMIUM)
 # ==========================================================
 
 produtos_adicionais = []
 try:
+    # Usa a função segura para puxar categorias
     categorias = obter_categorias() 
     cat_adicionais = next((c for c in categorias if c.get("nome", "").strip().lower() == "adicionais"), None)
     
@@ -524,16 +522,7 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            # Aplicando exatamente a mesma estrutura de label + input checkbox + modal do lightbox das cestas
-            img_html = f'''
-                <label style="cursor: zoom-in; display: inline-block; margin-bottom: 6px;">
-                    <input type="checkbox" class="lightbox-toggle">
-                    <img src="{img_src}" class="adicional-img-small" title="Clique para ampliar">
-                    <div class="lightbox-modal">
-                        <img src="{img_src}">
-                    </div>
-                </label>
-            '''
+            img_html = f'<label style="cursor: zoom-in; display: inline-block; margin-bottom: 6px;"><input type="checkbox" class="lightbox-toggle"><img src="{img_src}" class="adicional-img-small" title="Clique para ampliar"><div class="lightbox-modal"><img src="{img_src}"></div></label>'
         else:
             img_html = f'<div class="adicional-img-placeholder" style="margin-bottom: 6px;">🎀</div>'
 
@@ -585,6 +574,7 @@ st.markdown(
 st.write("")
 st.divider()
 
+# Link discreto para a Área Administrativa no rodapé
 st.page_link(
     "pages/99_Admin.py",
     label="Acesso Restrito Administrativo",
