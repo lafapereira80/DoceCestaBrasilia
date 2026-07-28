@@ -36,7 +36,7 @@ administrador_operador()
 
 
 # =====================================================
-# CSS ULTRA COMPACTO E ISOLADO
+# CSS PREMIUM E RESPONSIVIDADE
 # =====================================================
 
 st.markdown(
@@ -46,78 +46,125 @@ st.markdown(
    CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
 ========================================== */
 .block-container {
-    padding-top: 1rem !important;
-    padding-bottom: 2rem !important;
-    max-width: 1050px;
+    padding-top: 1.5rem !important;
+    padding-bottom: 3rem !important;
+    max-width: 1100px;
 }
 
 div[data-testid="stVerticalBlock"] {
-    gap: 0.4rem !important;
+    gap: 0.5rem !important;
 }
 
 h1 {
-    font-size: 24px !important;
-    font-weight: 700 !important;
-    color: #5a3b28;
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    color: #4a2e1b;
     margin-bottom: 2px !important;
+    letter-spacing: -0.5px;
 }
 
-h2, h3 {
-    font-size: 15px !important;
-    font-weight: 700 !important;
-    color: #5a3b28;
-    margin-top: 4px !important;
-    margin-bottom: 6px !important;
+h2, h3, h4 {
+    color: #5a3b28 !important;
+    font-weight: 800 !important;
 }
 
 .block-container p, 
 .block-container label {
-    font-family: Arial, sans-serif !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
     font-size: 13px !important;
 }
 
 /* =========================================
-   CONTAINERS DAS CATEGORIAS (CARDS COMPACTOS)
+   CONTAINERS DAS CATEGORIAS (CARDS PREMIUM)
 ========================================== */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff;
     border: 1px solid #e8ddd3 !important;
-    border-radius: 12px !important;
-    padding: 10px 14px !important;
-    margin-bottom: 8px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    border-radius: 14px !important;
+    padding: 18px 20px !important;
+    margin-bottom: 12px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+    border-color: #d2bfae !important;
+    box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
 }
 
 .categoria-title {
-    font-size: 14px !important;
-    font-weight: 700 !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
     color: #5a3b28 !important;
-    margin-bottom: 8px !important;
+    margin-bottom: 15px !important;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    border-bottom: 1px solid #f3ece6;
+    padding-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-/* Ajustes direcionados para os checkboxes */
+/* =========================================
+   CHECKBOXES MODERNOS (ESTILO PÍLULA)
+========================================== */
 div[data-testid="stCheckbox"] {
-    margin-bottom: 2px !important;
+    margin-bottom: 4px !important;
     background: #faf7f3;
-    padding: 4px 10px;
-    border-radius: 8px;
-    border: 1px solid #f0e6dd;
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid #e8ddd3;
     transition: all 0.2s ease;
 }
 
 div[data-testid="stCheckbox"]:hover {
-    border-color: #dfcdbb;
-    background: #f5eee6;
+    border-color: #d2bfae;
+    background: #fdfcfb;
+    transform: translateX(2px);
 }
 
-/* Botões da Página */
+/* =========================================
+   ESTILIZAÇÃO DE BOTÕES DE AÇÃO
+========================================== */
 div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button {
-    font-size: 13px !important;
-    border-radius: 8px !important;
-    min-height: 36px !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    border-radius: 10px !important;
+    min-height: 42px !important;
+    transition: all 0.2s ease;
+}
+
+div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button:hover {
+    transform: scale(1.02);
+}
+
+/* =========================================
+   RESPONSIVIDADE MOBILE (LADO A LADO)
+========================================== */
+@media (max-width: 768px) {
+    h1 { font-size: 24px !important; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 14px 16px !important; }
+    
+    /* Força os botões da base a ficarem na horizontal no mobile */
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 10px !important;
+        margin-top: 15px !important;
+        justify-content: space-between;
+    }
+
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) > div[data-testid="stColumn"] {
+        flex: 1 1 0% !important; 
+        min-width: 0 !important;
+        padding: 0 !important;
+    }
+
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) button {
+        width: 100% !important;
+        padding: 8px 0px !important;
+    }
 }
 </style>
 """,
@@ -129,9 +176,9 @@ unsafe_allow_html=True
 # VERIFICA CESTA SELECIONADA
 # =====================================================
 
-if "cesta_produtos" not in st.session_state:
-    st.error("Nenhuma cesta selecionada.")
-    if st.button("⬅ Voltar"):
+if "cesta_produtos" not in st.session_state or not st.session_state["cesta_produtos"]:
+    st.warning("⚠️ Nenhuma cesta selecionada para configuração.")
+    if st.button("⬅ Voltar para Cestas"):
         st.switch_page("pages/04_Cestas.py")
     st.stop()
 
@@ -142,9 +189,10 @@ cesta_id = st.session_state["cesta_produtos"]
 # TÍTULO E CABEÇALHO
 # =====================================================
 
-st.title("📦 Produtos da Cesta")
-st.caption("Selecione os produtos que fazem parte da composição desta cesta.")
-st.divider()
+col_t1, col_t2 = st.columns([3, 1])
+with col_t1:
+    st.title("📦 Composição da Cesta")
+    st.caption("Selecione todos os produtos que fazem parte do pacote oficial desta cesta.")
 
 
 # =====================================================
@@ -198,7 +246,7 @@ produtos_por_categoria = {
 }
 
 
-# Ordenação dinâmica
+# Ordenação dinâmica das categorias
 categorias_ordenadas = sorted(
     produtos_por_categoria.keys(),
     key=lambda x: x.lower()
@@ -216,26 +264,36 @@ produtos_marcados = [
 
 
 # =====================================================
-# SELEÇÃO DINÂMICA DOS PRODUTOS (CARDS COMPACTOS)
+# SELEÇÃO DINÂMICA DOS PRODUTOS (CARDS PREMIUM 3 COLUNAS)
 # =====================================================
 
 selecionados = []
+st.write("")
 
 for categoria in categorias_ordenadas:
     produtos_lista = produtos_por_categoria[categoria]
 
     with st.container(border=True):
         st.markdown(
-            f'<div class="categoria-title">📂 {categoria}</div>',
+            f'<div class="categoria-title">📁 {categoria}</div>',
             unsafe_allow_html=True
         )
 
-        col1, col2 = st.columns(2)
+        # Usando 3 colunas para aproveitar melhor o espaço horizontal
+        col1, col2, col3 = st.columns(3)
 
         for index, produto in enumerate(produtos_lista):
             marcado = produto["id"] in produtos_marcados
 
-            with col1 if index % 2 == 0 else col2:
+            # Distribuição balanceada dos produtos entre as 3 colunas
+            if index % 3 == 0:
+                coluna_atual = col1
+            elif index % 3 == 1:
+                coluna_atual = col2
+            else:
+                coluna_atual = col3
+
+            with coluna_atual:
                 escolhido = st.checkbox(
                     produto["nome"],
                     value=marcado,
@@ -247,26 +305,28 @@ for categoria in categorias_ordenadas:
 
 
 # =====================================================
-# BOTÕES DE AÇÃO
+# BOTÕES DE AÇÃO (RODAPÉ)
 # =====================================================
 
+st.write("")
 st.divider()
 
-col1, col2 = st.columns(2)
+col_b1, col_b2, col_b3 = st.columns([1.5, 1.5, 1])
 
-with col1:
-    if st.button("💾 Salvar Produtos", use_container_width=True, type="primary"):
-        try:
-            salvar_produtos_da_cesta(
-                cesta_id,
-                selecionados
-            )
-            st.success("Produtos da cesta atualizados com sucesso!")
-            st.rerun()
-        except Exception as erro:
-            st.error(f"Erro ao salvar: {erro}")
+with col_b1:
+    if st.button("💾 Salvar Composição da Cesta", use_container_width=True, type="primary"):
+        with st.spinner("Atualizando itens da cesta..."):
+            try:
+                salvar_produtos_da_cesta(
+                    cesta_id,
+                    selecionados
+                )
+                st.toast("✅ Produtos vinculados com sucesso!")
+                st.rerun()
+            except Exception as erro:
+                st.error(f"Erro ao salvar configuração: {erro}")
 
-with col2:
-    if st.button("⬅ Voltar ao Catálogo", use_container_width=True):
+with col_b2:
+    if st.button("⬅ Voltar ao Catálogo de Cestas", use_container_width=True):
         st.session_state.pop("cesta_produtos", None)
         st.switch_page("pages/04_Cestas.py")
