@@ -37,7 +37,7 @@ def obter_categorias():
 # ==========================================================
 
 st.set_page_config(
-    page_title="Doce Cesta Brasília | Vitrine de Cestas",
+    page_title="Doce Cesta Brasília | Vitrine Oficial",
     page_icon="🎁",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -60,7 +60,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS MODERNO E LIGHTBOX CSS PADRÃO (CESTAS E ADICIONAIS)
+# CSS PREMIUM E LIGHTBOX (VITRINE DO CLIENTE)
 # ==========================================================
 
 st.markdown(
@@ -69,7 +69,7 @@ st.markdown(
 /* Importação de Fontes Elegantes */
 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Montserrat:wght@400;500;600;700;800&display=swap');
 
-/* Remoção de elementos padrão do Streamlit */
+/* Remoção de elementos padrão do Streamlit (Modo Vitrine) */
 section[data-testid="stSidebar"] { display: none !important; }
 [data-testid="collapsedControl"] { display: none !important; }
 header { visibility: hidden !important; height: 0px !important; }
@@ -83,56 +83,45 @@ html, body, [class*="css"]  {
 
 /* Container Principal */
 .block-container {
-    max-width: 1080px !important;
-    padding-top: 1rem !important;
+    max-width: 1150px !important;
+    padding-top: 1.5rem !important;
     padding-bottom: 3rem !important;
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
 }
 
-/* Banner / Cabeçalho Principal */
+/* =========================================
+   BANNER / CABEÇALHO PRINCIPAL
+========================================= */
 .header-banner {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 24px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     width: 100%;
-    background: #ffffff;
-    padding: 20px 24px;
-    border-radius: 18px;
+    background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%);
+    padding: 24px 30px;
+    border-radius: 20px;
     border: 1px solid #e8ddd3;
-    box-shadow: 0 4px 12px rgba(90, 59, 40, 0.04);
+    box-shadow: 0 8px 24px rgba(90, 59, 40, 0.04);
+    transition: transform 0.3s ease;
 }
+.header-banner:hover { transform: translateY(-2px); }
 
-.header-logo {
-    width: 140px;
-    height: auto;
-    object-fit: contain;
-    flex-shrink: 0;
-}
-
-.header-text {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    text-align: left;
-}
-
+.header-logo { width: 150px; height: auto; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.05)); }
+.header-text { display: flex; flex-direction: column; justify-content: center; text-align: left; }
 .header-title {
     font-family: 'Dancing Script', cursive !important;
-    font-size: 42px !important;
+    font-size: 48px !important;
     font-weight: 700 !important;
     color: #c5721f !important;
     margin: 0 !important;
     line-height: 1.1 !important;
 }
-
 .header-subtitle {
-    font-size: 14px !important;
-    font-weight: 500 !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
     color: #5a3b28 !important;
-    margin-top: 4px !important;
+    margin-top: 6px !important;
     margin-bottom: 0 !important;
     letter-spacing: 0.5px;
 }
@@ -142,22 +131,26 @@ html, body, [class*="css"]  {
 ========================================= */
 .info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 24px;
-    margin-bottom: 1rem; 
+    margin-bottom: 2.5rem; 
 }
-
 .info-card {
-    background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%);
-    border: 1px solid #e2d2c3;
-    border-radius: 16px;
-    padding: 12px 24px 12px 24px; 
-    box-shadow: 0 3px 10px rgba(90, 59, 40, 0.03);
+    background: linear-gradient(145deg, #ffffff 0%, #fdfcfb 100%);
+    border: 1px solid #e8ddd3;
+    border-radius: 18px;
+    padding: 20px 28px; 
+    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03);
     display: flex;
     flex-direction: column;
     height: 100%;
+    transition: all 0.3s ease;
 }
-
+.info-card:hover {
+    border-color: #d2bfae;
+    box-shadow: 0 8px 25px rgba(90, 59, 40, 0.06);
+    transform: translateY(-3px);
+}
 .info-title {
     font-family: 'Dancing Script', cursive !important;
     font-size: 38px !important;
@@ -167,29 +160,18 @@ html, body, [class*="css"]  {
     margin-bottom: 16px !important;
     text-align: center;
 }
-
 .info-text {
     font-size: 14.5px !important;
-    color: #5a3b28 !important;
+    color: #4a2e1b !important;
     line-height: 1.6 !important;
-    font-weight: 400 !important;
+    font-weight: 500 !important;
     text-align: justify;
 }
-
-.info-text strong {
-    color: #2e7d32 !important;
-}
+.info-text strong { color: #2e7d32 !important; font-weight: 700 !important; }
 
 /* Lista de Como Pedir */
-.como-pedir-list {
-    text-align: left;
-    font-size: 14px;
-    color: #5a3b28;
-    line-height: 1.6;
-    margin: 0;
-    padding-left: 20px;
-}
-.como-pedir-list li { margin-bottom: 10px; }
+.como-pedir-list { text-align: left; font-size: 14px; color: #4a2e1b; line-height: 1.6; margin: 0; padding-left: 20px; font-weight: 500; }
+.como-pedir-list li { margin-bottom: 12px; }
 .como-pedir-list li:last-child { margin-bottom: 0; }
 
 
@@ -199,299 +181,183 @@ html, body, [class*="css"]  {
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff;
     border: 1px solid #e8ddd3 !important;
-    border-radius: 18px !important;
-    padding: 18px !important;
-    margin-bottom: 12px !important; 
-    box-shadow: 0 4px 12px rgba(90, 59, 40, 0.04);
-    transition: all 0.25s ease !important;
+    border-radius: 20px !important;
+    padding: 24px !important;
+    margin-bottom: 20px !important; 
+    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
-
 div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     border-color: #cbab92 !important;
-    box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
+    box-shadow: 0 12px 30px rgba(90, 59, 40, 0.08);
+    transform: translateY(-4px);
 }
 
-@media (min-width: 641px) {
-    div[data-testid="stHorizontalBlock"] { align-items: center !important; }
-}
+@media (min-width: 641px) { div[data-testid="stHorizontalBlock"] { align-items: center !important; } }
 
 /* NOME DA CESTA */
 .card-cesta-titulo {
     font-family: 'Dancing Script', cursive !important;
-    font-size: 36px !important;
+    font-size: 42px !important;
     font-weight: 700 !important;
     color: #c5721f !important;
     margin-top: 0px !important;
-    margin-bottom: 8px !important;
+    margin-bottom: 10px !important;
     line-height: 1.1 !important;
 }
 
-/* Texto de Descrição Justificado */
+/* Texto de Descrição */
 .card-cesta-desc {
-    font-size: 13.5px !important;
+    font-size: 14px !important;
     color: #4d3e35 !important;
-    line-height: 1.55 !important;
+    line-height: 1.6 !important;
     text-align: justify !important;
-    margin-bottom: 14px !important;
-    background: #fcf9f5;
-    padding: 14px;
-    border-radius: 12px;
+    margin-bottom: 16px !important;
+    background: #faf7f3;
+    padding: 16px;
+    border-radius: 14px;
     border: 1px solid #f0e6dc;
 }
 
 .card-cesta-preco {
-    font-size: 24px !important;
+    font-size: 26px !important;
     font-weight: 800 !important;
-    color: #2e7d32 !important;
-    margin-bottom: 16px !important;
+    color: #137333 !important;
+    margin-bottom: 18px !important;
 }
 
 /* BOTÃO MONTE SUA CESTA */
 div[data-testid="stButton"] button {
-    background: linear-gradient(135deg, #c5721f 0%, #a65d14 100%) !important;
+    background: linear-gradient(135deg, #c5721f 0%, #9e520b 100%) !important;
     color: white !important;
-    border-radius: 30px !important; 
-    height: 50px !important;
-    font-size: 15px !important;
-    font-weight: 700 !important;
+    border-radius: 14px !important; 
+    height: 54px !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
     border: none !important;
-    box-shadow: 0 4px 14px rgba(197, 114, 31, 0.3) !important;
+    box-shadow: 0 4px 15px rgba(197, 114, 31, 0.25) !important;
     transition: all 0.3s ease !important;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
 }
 div[data-testid="stButton"] button:hover {
     transform: translateY(-3px) !important;
-    box-shadow: 0 6px 18px rgba(197, 114, 31, 0.45) !important;
-    background: linear-gradient(135deg, #b56210 0%, #914f0f 100%) !important;
+    box-shadow: 0 8px 20px rgba(197, 114, 31, 0.4) !important;
+    background: linear-gradient(135deg, #b56210 0%, #874609 100%) !important;
 }
 
 /* =========================================
-   LIGHTBOX CSS PADRÃO (ESTÁVEL E TESTADO)
+   LIGHTBOX CSS PADRÃO (FOTOS)
 ========================================= */
-.lightbox-wrapper {
-    text-align: center;
-    margin-bottom: 6px;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center; 
-}
+.lightbox-wrapper { text-align: center; margin-bottom: 10px; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 .lightbox-toggle { display: none !important; }
-
 .lightbox-image {
-    width: 60%; 
-    border-radius: 12px;
+    width: 65%; 
+    border-radius: 14px;
     cursor: zoom-in;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    box-shadow: 0 4px 10px rgba(90, 59, 40, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.1);
     object-fit: cover;
+    border: 1px solid #e8ddd3;
 }
-.lightbox-image:hover {
-    transform: scale(1.02);
-    box-shadow: 0 6px 15px rgba(90, 59, 40, 0.2);
-}
-
-.imagem-legenda {
-    text-align: center;
-    font-size: 11.5px;
-    color: #888;
-    margin-top: 8px;
-    margin-bottom: 8px;
-    font-style: italic;
-}
-
+.lightbox-image:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(90, 59, 40, 0.15); }
+.imagem-legenda { text-align: center; font-size: 12px; color: #888; margin-top: 10px; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 .lightbox-modal {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background-color: rgba(0, 0, 0, 0.85);
-    z-index: 999999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease;
-    cursor: zoom-out;
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85); z-index: 999999;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; transition: opacity 0.3s ease; cursor: zoom-out;
 }
-.lightbox-modal img {
-    max-width: 90vw;
-    max-height: 90vh;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-}
-.lightbox-toggle:checked ~ .lightbox-modal {
-    opacity: 1;
-    visibility: visible;
-}
+.lightbox-modal img { max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+.lightbox-toggle:checked ~ .lightbox-modal { opacity: 1; visibility: visible; }
 
 /* =========================================
-   GRID CSS DE ADICIONAIS (5 NO PC / 2 NO MOBILE)
+   GRID CSS DE ADICIONAIS (EXTRAS AVULSOS)
 ========================================= */
 .adicionais-hero-card {
-    background: linear-gradient(135deg, #ffffff 0%, #faf5f0 100%);
-    border: 1px solid #e2d2c3;
-    border-radius: 16px;
-    padding: 20px 24px;
-    margin-top: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 3px 10px rgba(90, 59, 40, 0.03);
+    background: linear-gradient(135deg, #ffffff 0%, #faf7f3 100%);
+    border: 1px solid #e8ddd3;
+    border-radius: 20px;
+    padding: 24px 30px;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03);
 }
-
-.adicionais-hero-title {
-    font-family: 'Montserrat', sans-serif !important; 
-    font-size: 16px;
-    font-weight: 700;
-    color: #5a3b28;
-    margin-bottom: 16px;
-}
-
-.adicionais-grid-css {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 14px;
-}
-
+.adicionais-hero-title { font-size: 18px; font-weight: 800; color: #5a3b28; margin-bottom: 20px; }
+.adicionais-grid-css { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
 .adicional-item-box {
     background: #ffffff;
     border: 1px solid #e8ddd3;
-    border-radius: 14px;
-    padding: 12px 8px;
+    border-radius: 16px;
+    padding: 16px 10px;
     text-align: center;
-    box-shadow: 0 4px 10px rgba(90, 59, 40, 0.04);
+    box-shadow: 0 4px 10px rgba(90, 59, 40, 0.02);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     align-items: center;
+    transition: all 0.3s ease;
 }
-
-.adicional-img-small {
-    width: 60px;
-    height: 60px;
-    object-fit: cover;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
-    cursor: zoom-in;
-    display: block;
-    margin: 0 auto;
+.adicional-item-box:hover {
+    border-color: #d2bfae;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
 }
-
-.adicional-img-placeholder {
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #fdfbf8 0%, #f5eee6 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    border-radius: 8px;
-    border: 1px solid #f0e6dc;
-    margin: 0 auto;
-}
-
-.adicional-nome {
-    font-size: 11.5px;
-    font-weight: 700;
-    color: #4d3e35;
-    margin-top: 6px;
-    margin-bottom: 4px;
-    min-height: 28px;
-    line-height: 1.25;
-}
-
-.adicional-preco-fixo {
-    color: #2e7d32;
-    font-weight: 800;
-    font-size: 12px;
-}
-
-.adicional-preco-consulta {
-    color: #c5721f;
-    font-weight: 700;
-    background: #fff8ef;
-    padding: 2px 6px;
-    border-radius: 10px;
-    font-size: 9.5px;
-    display: inline-block;
-}
+.adicional-img-small { width: 70px; height: 70px; object-fit: cover; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); cursor: zoom-in; display: block; margin: 0 auto; border: 1px solid #f0e6dc; }
+.adicional-img-placeholder { width: 70px; height: 70px; background: linear-gradient(135deg, #fdfbf8 0%, #f5eee6 100%); display: flex; align-items: center; justify-content: center; font-size: 26px; border-radius: 10px; border: 1px dashed #dfcdbb; margin: 0 auto; }
+.adicional-nome { font-size: 12.5px; font-weight: 700; color: #4a2e1b; margin-top: 10px; margin-bottom: 6px; min-height: 32px; line-height: 1.3; }
+.adicional-preco-fixo { color: #137333; font-weight: 800; font-size: 14px; }
+.adicional-preco-consulta { color: #c5721f; font-weight: 800; background: #fff8ef; padding: 4px 8px; border-radius: 8px; font-size: 10px; text-transform: uppercase; border: 1px solid #fce8b2; display: inline-block; }
 
 /* =========================================
-   RODAPÉ
+   RODAPÉ (FALE CONOSCO)
 ========================================= */
 .footer-container {
     background: #ffffff;
     border: 1px solid #e8ddd3;
-    border-radius: 18px;
-    padding: 24px;
+    border-radius: 20px;
+    padding: 30px;
     text-align: center;
-    margin-top: 2rem;
-    box-shadow: 0 2px 8px rgba(90, 59, 40, 0.03);
+    margin-top: 3rem;
+    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03);
 }
-.footer-title {
-    font-family: 'Dancing Script', cursive !important;
-    font-size: 32px !important;
-    font-weight: 700 !important;
-    color: #c5721f;
-    margin-bottom: 8px;
-}
-.footer-text {
-    font-size: 13.5px;
-    color: #5a3b28;
-    margin-bottom: 16px;
-    line-height: 1.5;
-}
-.social-btn-box { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.footer-title { font-family: 'Dancing Script', cursive !important; font-size: 38px !important; font-weight: 700 !important; color: #c5721f; margin-bottom: 10px; }
+.footer-text { font-size: 14px; color: #5a3b28; margin-bottom: 20px; line-height: 1.6; font-weight: 500; }
+.social-btn-box { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
 .social-btn-box a {
     display: inline-flex; align-items: center; gap: 8px; color: white !important;
-    padding: 12px 24px; border-radius: 12px; font-weight: 600; text-decoration: none; font-size: 14px;
-    transition: all 0.2s ease;
+    padding: 14px 28px; border-radius: 14px; font-weight: 800; text-decoration: none; font-size: 15px;
+    transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 0.5px;
 }
-.btn-whatsapp { background: #25d366 !important; box-shadow: 0 3px 8px rgba(37, 211, 102, 0.25); }
-.btn-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important; box-shadow: 0 3px 8px rgba(220, 39, 67, 0.25); }
+.social-btn-box a:hover { transform: translateY(-3px); }
+.btn-whatsapp { background: #25d366 !important; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3); }
+.btn-whatsapp:hover { box-shadow: 0 6px 16px rgba(37, 211, 102, 0.45); }
+.btn-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important; box-shadow: 0 4px 12px rgba(220, 39, 67, 0.3); }
+.btn-instagram:hover { box-shadow: 0 6px 16px rgba(220, 39, 67, 0.45); }
 
 /* =========================================
    RESPONSIVO EXCLUSIVO MOBILE
 ========================================= */
-@media (max-width: 900px) {
-    .adicionais-grid-css { grid-template-columns: repeat(3, 1fr) !important; }
-}
+@media (max-width: 900px) { .adicionais-grid-css { grid-template-columns: repeat(3, 1fr) !important; } }
 
 @media (max-width: 640px) {
-    .block-container { 
-        padding-top: 0.5rem !important; 
-        padding-left: 0.6rem !important; padding-right: 0.6rem !important;
-    }
+    .block-container { padding-top: 1rem !important; padding-left: 0.6rem !important; padding-right: 0.6rem !important; }
     
     /* GANTE ALINHAMENTO CENTRAL NO CELULAR PARA O TOPO */
-    .header-banner { 
-        flex-direction: column !important; 
-        align-items: center !important; 
-        justify-content: center !important; 
-        text-align: center !important; 
-        padding: 20px 16px !important; 
-        gap: 12px !important; 
-    }
+    .header-banner { flex-direction: column !important; align-items: center !important; text-align: center !important; padding: 24px 16px !important; gap: 16px !important; }
+    .header-text { align-items: center !important; text-align: center !important; width: 100% !important; }
+    .header-logo { width: 120px !important; margin: 0 auto !important; }
+    .header-title { font-size: 40px !important; margin-bottom: 6px !important; text-align: center !important; }
+    .header-subtitle { text-align: center !important; font-size: 14px !important; }
     
-    .header-text { 
-        align-items: center !important; 
-        text-align: center !important; 
-        width: 100% !important;
-    }
-    
-    .header-logo { width: 110px !important; margin: 0 auto !important; }
-    .header-title { font-size: 36px !important; text-align: center !important; margin-bottom: 6px !important; }
-    .header-subtitle { text-align: center !important; }
-    
-    .info-card { padding: 12px 16px 12px 16px !important; } 
-    .info-title { font-size: 32px !important; }
-    .card-cesta-titulo { font-size: 30px !important; text-align: center; }
-    .card-cesta-preco { font-size: 22px !important; text-align: center; }
-    .lightbox-image { width: 80%; }
+    .info-card { padding: 16px 20px !important; } 
+    .info-title { font-size: 34px !important; }
+    .card-cesta-titulo { font-size: 32px !important; text-align: center; }
+    .card-cesta-preco { font-size: 24px !important; text-align: center; }
+    .lightbox-image { width: 85%; }
     
     /* Celular: Força exatamente 2 colunas lado a lado nos adicionais */
-    .adicionais-grid-css { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+    .adicionais-grid-css { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
 }
 </style>
 """,
@@ -509,7 +375,7 @@ logo_html = ""
 if logo_path.exists():
     with open(logo_path, "rb") as img_file:
         encoded_logo = base64.b64encode(img_file.read()).decode()
-    logo_html = f'<img src="data:image/webp;base64,{encoded_logo}" class="header-logo" alt="Logo">'
+    logo_html = f'<img src="data:image/webp;base64,{encoded_logo}" class="header-logo" alt="Logo da Doce Cesta">'
 
 st.markdown(
     f"""
@@ -517,7 +383,7 @@ st.markdown(
         {logo_html}
         <div class="header-text">
             <h1 class="header-title">Doce Cesta Brasília</h1>
-            <p class="header-subtitle">Cestas personalizadas para momentos inesquecíveis 💝</p>
+            <p class="header-subtitle">Cestas personalizadas para criar memórias inesquecíveis 💝</p>
         </div>
     </div>
     """,
@@ -530,7 +396,7 @@ st.markdown(
 # ==========================================================
 
 st.markdown(
-    """<div class="info-grid"><div class="info-card"><div class="info-title">Bem-vindo(a)</div><div class="info-text"><div style="text-align: center; margin-bottom: 12px;">É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.</div>Nossas cestas são cuidadosamente montadas no estilo <strong>grazing</strong> e proporcionam não apenas sabores únicos e envolventes, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br><div style="text-align: center;">Desfrute o melhor da vida com um bom café e uma excelente companhia!</div></div></div><div class="info-card"><div class="info-title">Como fazer o pedido</div><ul class="como-pedir-list"><li>✨ Defina através do nosso catálogo abaixo a opção desejada e clique em <b>"Monte sua Cesta"</b>.</li><li>⏳ Peça sua Doce Cesta com no mínimo <b>24h de antecedência</b> (ou <b>72h</b> caso possua mini bolo).</li><li>🕒 <b>Atendimento:</b> Segunda a sexta de 7h às 19h | Sábado de 8h às 12h.</li><li>🚗 A entrega poderá ser realizada via <b>Uber Flash / 99 Entrega</b> ou retirada em mãos.</li><li>💌 Todas as cestas contêm um pequeno <b>cartão personalizável</b>.</li><li>💳 <b>Pagamento:</b> PIX ou link de Cartão de Crédito.</li></ul></div></div>""",
+    """<div class="info-grid"><div class="info-card"><div class="info-title">Bem-vindo(a)</div><div class="info-text"><div style="text-align: center; margin-bottom: 12px;">É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.</div>Nossas cestas são cuidadosamente montadas no estilo <strong>grazing</strong> e proporcionam não apenas sabores únicos e envolventes, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br><div style="text-align: center;">Desfrute o melhor da vida com um bom café e uma excelente companhia!</div></div></div><div class="info-card"><div class="info-title">Como fazer o pedido</div><ul class="como-pedir-list"><li>✨ Defina através do nosso catálogo abaixo a opção desejada e clique em <b>"Monte sua Cesta"</b>.</li><li>⏳ Peça sua Doce Cesta com no mínimo <b>24h de antecedência</b> (ou <b>72h</b> caso possua mini bolo).</li><li>🕒 <b>Atendimento:</b> Segunda a sexta de 7h às 19h | Sábado de 8h às 12h.</li><li>🚗 A entrega poderá ser realizada via <b>Uber Flash / 99 Entrega</b> ou retirada em mãos.</li><li>💌 Todas as cestas contêm um <b>cartão personalizável</b> para o homenageado.</li><li>💳 <b>Pagamento:</b> PIX ou link de Cartão de Crédito.</li></ul></div></div>""",
     unsafe_allow_html=True
 )
 
@@ -539,8 +405,8 @@ st.markdown(
 # TÍTULO PRINCIPAL DO CATÁLOGO
 # ==========================================================
 
-st.markdown("<h3 style='font-family: \"Montserrat\", sans-serif; color:#5a3b28; margin-top:0; margin-bottom:4px; font-weight:800; font-size: 22px;'>🎁 Catálogo de Cestas</h3>", unsafe_allow_html=True)
-st.caption("Escolha a cesta perfeita, confira os itens detalhados e personalize do seu jeito.")
+st.markdown("<h3 style='font-family: \"Montserrat\", sans-serif; color:#4a2e1b; margin-top:10px; margin-bottom:4px; font-weight:800; font-size: 26px; letter-spacing: -0.5px;'>🎁 Catálogo Oficial</h3>", unsafe_allow_html=True)
+st.caption("Escolha a cesta perfeita, confira os itens detalhados e personalize do seu jeito em nosso formulário.")
 
 
 # ==========================================================
@@ -564,11 +430,11 @@ except Exception as erro:
     cestas = []
 
 if not cestas:
-    st.info("Nenhuma cesta cadastrada no momento.")
+    st.info("O catálogo está sendo atualizado. Nenhuma cesta disponível no momento.")
 else:
     for cesta in cestas:
         with st.container(border=True):
-            col_img, col_text = st.columns([1.2, 2], gap="medium")
+            col_img, col_text = st.columns([1.2, 2], gap="large")
             
             with col_img:
                 imagem_url = cesta.get("imagem")
@@ -579,7 +445,7 @@ else:
                         <div class="lightbox-wrapper">
                             <label style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
                                 <input type="checkbox" class="lightbox-toggle">
-                                <img src="{img_src}" class="lightbox-image" title="Clique para ampliar">
+                                <img src="{img_src}" class="lightbox-image" title="Clique para ampliar a foto da cesta">
                                 <div class="lightbox-modal">
                                     <img src="{img_src}">
                                 </div>
@@ -592,7 +458,7 @@ else:
 
                 fotos_extras = cesta.get("fotos_adicionais", [])
                 if isinstance(fotos_extras, list) and len(fotos_extras) > 0:
-                    st.caption("📸 Outros ângulos:")
+                    st.markdown("<div style='font-size: 11px; font-weight: 800; color: #775a46; margin-bottom: 6px; text-transform: uppercase;'>📸 Outros ângulos:</div>", unsafe_allow_html=True)
                     cols_extras = st.columns(min(len(fotos_extras), 3))
                     for f_idx, f_url in enumerate(fotos_extras[:3]):
                         if f_url and str(f_url).strip():
@@ -612,25 +478,29 @@ else:
                 except:
                     st.markdown('<div class="card-cesta-preco">Preço sob consulta</div>', unsafe_allow_html=True)
 
-                if st.button("🛒 Monte sua Cesta", key=f"cesta_btn_{cesta['id']}", use_container_width=True):
+                st.write("")
+                # ==================================================
+                # AQUI É ONDE O BOTÃO APONTA PARA A NOVA PÁGINA
+                # ==================================================
+                if st.button("🛒 Quero Montar Esta Cesta", key=f"cesta_btn_{cesta['id']}", use_container_width=True):
                     st.session_state["cesta_selecionada_home"] = cesta["id"]
                     st.switch_page("pages/01_Inicio.py")
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (GRID CSS COM 5 NO PC E 2 NO MOBILE + ZOOM)
+# APRESENTAÇÃO DOS ADICIONAIS (GRID PREMIUM)
 # ==========================================================
 
 produtos_adicionais = []
 try:
-    # Usa a função segura que criamos no início do código!
+    # Usa a função segura para puxar categorias
     categorias = obter_categorias() 
     cat_adicionais = next((c for c in categorias if c.get("nome", "").strip().lower() == "adicionais"), None)
     
     if cat_adicionais:
         produtos_adicionais = listar_produtos_por_categoria_id(cat_adicionais["id"])
 except Exception as erro:
-    st.error(f"Não foi possível carregar os adicionais: {erro}")
+    st.error(f"Não foi possível carregar os itens adicionais: {erro}")
     produtos_adicionais = []
 
 if produtos_adicionais:
@@ -646,15 +516,15 @@ if produtos_adicionais:
                 texto_preco = f'R$ {val_f:,.2f}'.replace(",", "X").replace(".", ",").replace("X",".")
                 span_preco = f'<span class="adicional-preco-fixo">{texto_preco}</span>'
             except:
-                span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
+                span_preco = '<span class="adicional-preco-consulta">Consulta</span>'
         else:
-            span_preco = '<span class="adicional-preco-consulta">Sob Consulta</span>'
+            span_preco = '<span class="adicional-preco-consulta">Consulta</span>'
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            img_html = f'<label style="cursor: zoom-in; display: inline-block; margin-bottom: 4px;"><input type="checkbox" class="lightbox-toggle"><img src="{img_src}" class="adicional-img-small" title="Clique para ampliar"><div class="lightbox-modal"><img src="{img_src}"></div></label>'
+            img_html = f'<label style="cursor: zoom-in; display: inline-block; margin-bottom: 6px;"><input type="checkbox" class="lightbox-toggle"><img src="{img_src}" class="adicional-img-small" title="Clique para ampliar"><div class="lightbox-modal"><img src="{img_src}"></div></label>'
         else:
-            img_html = f'<div class="adicional-img-placeholder">🎀</div>'
+            img_html = f'<div class="adicional-img-placeholder" style="margin-bottom: 6px;">🎀</div>'
 
         cards_html += f'<div class="adicional-item-box">{img_html}<div class="adicional-nome">{nome_p}</div><div>{span_preco}</div></div>'
 
@@ -662,9 +532,9 @@ if produtos_adicionais:
         f"""
         <div class="adicionais-hero-card">
             <div class="adicionais-hero-title">
-                🎀 Incremente seu presente com nossos Adicionais Especiais:
-                <span style="font-size: 12px; font-weight: normal; color: #888; display: block; margin-top: 4px;">
-                    👉 Toque em qualquer foto para ampliar
+                🎀 Incremente seu presente com nossos Adicionais:
+                <span style="font-size: 13px; font-weight: 500; color: #888; display: block; margin-top: 6px;">
+                    👉 Você poderá escolher os adicionais na próxima tela de montagem. (Toque na foto para ampliar).
                 </span>
             </div>
             <div class="adicionais-grid-css">
@@ -685,8 +555,8 @@ st.markdown(
     <div class="footer-container">
         <div class="footer-title">Fale Conosco</div>
         <div class="footer-text">
-            Dúvidas sobre entregas, prazos ou encomendas corporativas?<br>
-            📍 <b>Brasília - DF</b>
+            Ficou com alguma dúvida sobre entregas, prazos ou quer fazer uma encomenda corporativa?<br>
+            Nossa equipe está pronta para te atender.
         </div>
         <div class="social-btn-box">
             <a href="https://wa.me/5561999759079?text=Olá!%20Gostaria%20de%20tirar%20dúvidas%20sobre%20as%20cestas." target="_blank" class="btn-whatsapp">
@@ -702,10 +572,11 @@ st.markdown(
 )
 
 st.write("")
+st.divider()
 
-# Link discreto para a Área Administrativa
+# Link discreto para a Área Administrativa no rodapé
 st.page_link(
     "pages/99_Admin.py",
-    label="Área Administrativa",
+    label="Acesso Restrito Administrativo",
     icon="🔒"
 )
