@@ -57,7 +57,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS PREMIUM E LIGHTBOX PADRÃO
+# CSS PREMIUM E LIGHTBOX GLOBAL FLUTUANTE (TELA INTEIRA REAL)
 # ==========================================================
 
 st.markdown(
@@ -229,7 +229,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX PADRÃO UNIFICADO (TELA INTEIRA)
+   LIGHTBOX PADRÃO DAS CESTAS
 ========================================= */
 .lightbox-wrapper { text-align: center; margin-bottom: 10px; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 .lightbox-toggle { display: none !important; }
@@ -244,38 +244,17 @@ div[data-testid="stButton"] button:hover {
 }
 .lightbox-image:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(90, 59, 40, 0.15); }
 .imagem-legenda { text-align: center; font-size: 12px; color: #888; margin-top: 10px; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-
-/* O MODAL DEVE SER POSITION FIXED GLOBAL */
 .lightbox-modal {
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100vw; 
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.85); 
-    z-index: 99999999;
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    opacity: 0; 
-    visibility: hidden; 
-    transition: opacity 0.3s ease; 
-    cursor: zoom-out;
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85); z-index: 99999999;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; transition: opacity 0.3s ease; cursor: zoom-out;
 }
-.lightbox-modal img { 
-    max-width: 90vw; 
-    max-height: 90vh; 
-    border-radius: 12px; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
-    object-fit: contain;
-}
-.lightbox-toggle:checked ~ .lightbox-modal { 
-    opacity: 1; 
-    visibility: visible; 
-}
+.lightbox-modal img { max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); object-fit: contain; }
+.lightbox-toggle:checked ~ .lightbox-modal { opacity: 1; visibility: visible; }
 
 /* =========================================
-   GRID CSS DE ADICIONAIS (EXTRAS AVULSOS)
+   GRID CSS DE ADICIONAIS
 ========================================= */
 .adicionais-hero-card {
     background: linear-gradient(135deg, #ffffff 0%, #faf7f3 100%);
@@ -300,7 +279,6 @@ div[data-testid="stButton"] button:hover {
     justify-content: space-between;
     align-items: center;
     transition: all 0.3s ease;
-    position: relative; /* Garante posicionamento base limpo */
 }
 .adicional-item-box:hover {
     border-color: #d2bfae;
@@ -324,6 +302,36 @@ div[data-testid="stButton"] button:hover {
 .adicional-nome { font-size: 12.5px; font-weight: 700; color: #4a2e1b; margin-top: 10px; margin-bottom: 6px; min-height: 32px; line-height: 1.3; }
 .adicional-preco-fixo { color: #137333; font-weight: 800; font-size: 14px; }
 .adicional-preco-consulta { color: #c5721f; font-weight: 800; background: #fff8ef; padding: 4px 8px; border-radius: 8px; font-size: 10px; text-transform: uppercase; border: 1px solid #fce8b2; display: inline-block; }
+
+/* MODAL GLOBAL ÚNICO PARA OS ADICIONAIS (ABRE EM CIMA DA TELA INTEIRA) */
+.add-lightbox-toggle { display: none !important; }
+.add-lightbox-modal {
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85); 
+    z-index: 99999999;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    opacity: 0; 
+    visibility: hidden; 
+    transition: opacity 0.3s ease; 
+    cursor: zoom-out;
+}
+.add-lightbox-modal img { 
+    max-width: 90vw; 
+    max-height: 90vh; 
+    border-radius: 12px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
+    object-fit: contain;
+}
+.add-lightbox-toggle:checked ~ .add-lightbox-modal { 
+    opacity: 1; 
+    visibility: visible; 
+}
 
 /* RODAPÉ */
 .footer-container {
@@ -492,7 +500,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (COM MODAL RENDERIZADO FORA DA GRID)
+# APRESENTAÇÃO DOS ADICIONAIS (COM MODAL FLUTUANTE GLOBAL)
 # ==========================================================
 
 produtos_adicionais = []
@@ -508,7 +516,7 @@ except Exception as erro:
 
 if produtos_adicionais:
     cards_html = ""
-    for idx_add, prod in enumerate(produtos_adicionais):
+    for prod in produtos_adicionais:
         nome_p = prod.get("nome", "")
         preco_p = prod.get("preco")
         imagem_p = prod.get("imagem")
@@ -525,16 +533,19 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            # Para evitar que o modal seja confinado ao container grid, renderizamos o input/label 
-            # e posicionamos o modal fora do card (logo abaixo), garantindo posicionamento em tela cheia idêntico.
+            # A tag input checkbox fica fora do fluxo restrito do card e o modal se expande globalmente via CSS sibling
             img_html = f'''
-                <label style="cursor: zoom-in; display: inline-block; margin-bottom: 6px; position: static;">
-                    <input type="checkbox" class="lightbox-toggle">
-                    <img src="{img_src}" class="adicional-img-small" title="Clique para ampliar">
-                    <div class="lightbox-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;">
-                        <img src="{img_src}">
+                <div style="position: relative; display: inline-block;">
+                    <input type="checkbox" id="add_chk_{prod.get('id')}" class="add-lightbox-toggle">
+                    <label for="add_chk_{prod.get('id')}" style="cursor: zoom-in; display: inline-block; margin-bottom: 6px;">
+                        <img src="{img_src}" class="adicional-img-small" title="Clique para ampliar">
+                    </label>
+                    <div class="add-lightbox-modal">
+                        <label for="add_chk_{prod.get('id')}" style="width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: zoom-out;">
+                            <img src="{img_src}">
+                        </label>
                     </div>
-                </label>
+                </div>
             '''
         else:
             img_html = f'<div class="adicional-img-placeholder" style="margin-bottom: 6px;">🎀</div>'
