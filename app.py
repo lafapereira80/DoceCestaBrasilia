@@ -57,7 +57,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS PREMIUM E LIGHTBOX ESTÁVEL (VITRINE DO CLIENTE)
+# CSS PREMIUM E LIGHTBOX GLOBAL (TELA INTEIRA REAL)
 # ==========================================================
 
 st.markdown(
@@ -229,9 +229,9 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   LIGHTBOX CORRIGIDO E ESTÁVEL (SEM PISCAR)
+   LIGHTBOX GLOBAL 100% ESTÁVEL (CORRIGIDO)
 ========================================= */
-.lightbox-wrapper { text-align: center; margin-bottom: 10px; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.lightbox-wrapper { text-align: center; margin-bottom: 10px; }
 .lightbox-image {
     width: 65%; 
     border-radius: 14px;
@@ -244,24 +244,34 @@ div[data-testid="stButton"] button:hover {
 .lightbox-image:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(90, 59, 40, 0.15); }
 .imagem-legenda { text-align: center; font-size: 12px; color: #888; margin-top: 10px; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-/* Modal nativo por checkbox sem display:none quebrado */
+/* O input checkbox fica oculto fora do fluxo de cards para evitar confinamento */
 .lightbox-checkbox {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
+    display: none !important;
 }
+
+/* O modal fixo agora cobre a tela inteira globalmente via viewport */
 .lightbox-modal {
     position: fixed;
     top: 0; left: 0; width: 100vw; height: 100vh;
-    background-color: rgba(0, 0, 0, 0.85); z-index: 999999;
+    background-color: rgba(0, 0, 0, 0.85);
+    z-index: 9999999;
     display: flex; align-items: center; justify-content: center;
-    opacity: 0; visibility: hidden; transition: opacity 0.3s ease; cursor: zoom-out;
+    opacity: 0; visibility: hidden; transition: opacity 0.3s ease;
+    cursor: zoom-out;
 }
-.lightbox-checkbox:checked + .lightbox-label-wrap .lightbox-modal {
+
+/* Ativa o modal globalmente quando o checkbox correspondente for marcado */
+.lightbox-checkbox:checked ~ .lightbox-modal {
     opacity: 1;
     visibility: visible;
 }
-.lightbox-modal img { max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+.lightbox-modal img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    object-fit: contain;
+}
 
 /* =========================================
    GRID CSS DE ADICIONAIS (EXTRAS AVULSOS)
@@ -428,12 +438,14 @@ else:
                         f"""
                         <div class="lightbox-wrapper">
                             <input type="checkbox" id="{c_id_cesta}" class="lightbox-checkbox">
-                            <label for="{c_id_cesta}" class="lightbox-label-wrap" style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                            <label for="{c_id_cesta}" style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
                                 <img src="{img_src}" class="lightbox-image" title="Clique para ampliar a foto da cesta">
-                                <div class="lightbox-modal">
-                                    <img src="{img_src}">
-                                </div>
                             </label>
+                            <div class="lightbox-modal">
+                                <label for="{c_id_cesta}" style="width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: zoom-out;">
+                                    <img src="{img_src}">
+                                </label>
+                            </div>
                             <div class="imagem-legenda">👆 Toque na foto para ampliar</div>
                         </div>
                         """,
@@ -503,7 +515,17 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            img_html = f'<input type="checkbox" id="{c_id_add}" class="lightbox-checkbox"><label for="{c_id_add}" class="lightbox-label-wrap" style="cursor: zoom-in; display: inline-block; margin-bottom: 6px;"><img src="{img_src}" class="adicional-img-small" title="Clique para ampliar"><div class="lightbox-modal"><img src="{img_src}"></div></label>'
+            img_html = f'''
+                <input type="checkbox" id="{c_id_add}" class="lightbox-checkbox">
+                <label for="{c_id_add}" style="cursor: zoom-in; display: inline-block; margin-bottom: 6px;">
+                    <img src="{img_src}" class="adicional-img-small" title="Clique para ampliar">
+                </label>
+                <div class="lightbox-modal">
+                    <label for="{c_id_add}" style="width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: zoom-out;">
+                        <img src="{img_src}">
+                    </label>
+                </div>
+            '''
         else:
             img_html = f'<div class="adicional-img-placeholder" style="margin-bottom: 6px;">🎀</div>'
 
