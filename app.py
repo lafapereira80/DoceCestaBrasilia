@@ -614,7 +614,7 @@ else:
 
                 if st.button("🛒 Monte sua Cesta", key=f"cesta_btn_{cesta['id']}", use_container_width=True):
                     st.session_state["cesta_selecionada_home"] = cesta["id"]
-                    st.switch_page("pages/formcompra.py")
+                    st.switch_page("pages/01_Inicio.py")
 
 
 # ==========================================================
