@@ -15,6 +15,7 @@ from utils.menu import (
 from utils.permissao import (
     administrador_operador
 )
+from config.supabase import supabase
 
 
 # =====================================================
@@ -109,7 +110,6 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     transform: translateY(-2px);
 }
 
-/* Alinhamento vertical Desktop */
 @media (min-width: 641px) {
     div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
         align-items: center !important;
@@ -175,13 +175,9 @@ div[data-testid="stColumn"] div[data-testid="stButton"] button:hover {
 
 .stImage img { border-radius: 8px; object-fit: cover; border: 1px solid #e8ddd3; }
 
-/* =========================================
-   RESPONSIVIDADE MOBILE E BOTÕES (4 LADO A LADO)
-========================================== */
 @media (max-width: 768px) {
     h1 { font-size: 24px !important; }
     
-    /* Força os botões a ficarem na horizontal no mobile */
     div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) {
         display: flex !important;
         flex-direction: row !important;
@@ -191,7 +187,6 @@ div[data-testid="stColumn"] div[data-testid="stButton"] button:hover {
         justify-content: space-between;
     }
 
-    /* Como são 4 botões nas cestas, cada um assume 25% do espaço */
     div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) > div[data-testid="stColumn"] {
         width: 25% !important;
         flex: 1 1 0% !important;
@@ -221,22 +216,23 @@ with col_t1:
 
 
 # =====================================================
-# CARREGA CESTAS ANTES DO CADASTRO
+# CARREGA E ORGANIZA CESTAS (DIRETO DA COLUNA 'ordem')
 # =====================================================
 
 try:
-    cestas = listar_cestas()
+    # Busca ordenada direto do Supabase usando a coluna ordem
+    resposta = supabase.table("cestas").select("*").order("ordem", desc=False).execute()
+    cestas = resposta.data or []
     
-    # Tratamento para garantir a ordenação via Python
-    for cesta in cestas:
-        if "ordem" not in cesta or cesta["ordem"] is None:
-            cesta["ordem"] = 999 
+    # Realinha caso haja buracos na numeração do banco
+    for i, c in enumerate(cestas):
+        nova_pos = i + 1
+        if c.get("ordem") != nova_pos:
+            supabase.table("cestas").update({"ordem": nova_pos}).eq("id", c["id"]).execute()
+            c["ordem"] = nova_pos
             
-    # Ordena explicitamente a lista baseada na chave "ordem"
-    cestas = sorted(cestas, key=lambda c: c["ordem"])
-    
 except Exception as erro:
-    st.error(f"Erro ao carregar cestas: {erro}")
+    st.error(f"Erro ao carregar cestas do banco: {erro}")
     cestas = []
 
 total_cestas = len(cestas)
@@ -244,13 +240,12 @@ proxima_ordem = total_cestas + 1
 
 
 # =====================================================
-# NOVA CESTA (NOVO MODELO COM EXPANDER)
+# NOVA CESTA (EXPANDER)
 # =====================================================
 
 salvar = False
 
 if usuario.get("perfil") == "Administrador":
-    # Expander de Cadastro, começa fechado para manter a interface premium
     with st.expander("✨ Cadastrar Nova Cesta", expanded=False):
         col_f1, col_f2 = st.columns([1.5, 1])
 
@@ -263,7 +258,15 @@ if usuario.get("perfil") == "Administrador":
             with col_p1:
                 preco = st.number_input("Preço de Venda (R$)", min_value=0.0, value=0.0, step=1.0, format="%.2f")
             with col_p2:
-                ordem_escolhida = st.number_input("Ordem na Vitrine", min_value=1, value=proxima_ordem, step=1)
+                # REQUISITO: Trava para impedir ordem maior do que a próxima sequência correta
+                ordem_escolhida = st.number_input(
+                    "Ordem na Vitrine", 
+                    min_value=1, 
+                    max_value=proxima_ordem, 
+                    value=proxima_ordem, 
+                    step=1,
+                    help=f"A posição sequencial deve ser de 1 a {proxima_ordem}."
+                )
             
             imagem_arquivo = st.file_uploader("📷 Foto da Cesta", type=["jpg", "jpeg", "png", "webp"])
 
@@ -278,7 +281,7 @@ else:
 
 
 # =====================================================
-# SALVAR CESTA
+# SALVAR CESTA E REALINHAR SEQUÊNCIA NO SUPABASE
 # =====================================================
 
 if salvar:
@@ -286,26 +289,30 @@ if salvar:
         st.error("Informe o nome da cesta.")
     else:
         try:
-            with st.spinner("Registrando cesta e ajustando posições..."):
+            with st.spinner("Registrando cesta e ajustando posições no banco..."):
                 imagem_url = None
                 if imagem_arquivo:
                     imagem_url = upload_imagem_cesta(imagem_arquivo)
 
+                pos_desejada = int(ordem_escolhida)
+
+                # Se inseriu numa posição intermediária, empurra as ordens seguintes para frente no banco
+                for c in cestas:
+                    if c["ordem"] >= pos_desejada:
+                        supabase.table("cestas").update({"ordem": c["ordem"] + 1}).eq("id", c["id"]).execute()
+
+                # Cadastra a nova cesta com a ordem exata escolhida
                 cadastrar_cesta(
                     nome=nome.strip(), 
                     descricao=descricao.strip(), 
                     preco=preco, 
                     imagem=imagem_url, 
-                    ordem=int(ordem_escolhida)
+                    ordem=pos_desejada
                 )
+
             st.success("✅ Cesta cadastrada e reordenada com sucesso!")
             st.rerun()
 
-        except TypeError as erro_tipo:
-            if "ordem" in str(erro_tipo):
-                st.error("⚠️ Erro de Cache. Apague o __pycache__ e reinicie o app.")
-            else:
-                st.error(f"Erro ao cadastrar: {erro_tipo}")
         except Exception as erro:
             st.error(f"Erro ao cadastrar cesta: {erro}")
 
@@ -322,14 +329,11 @@ if not cestas:
 else:
     for cesta in cestas:
         ativa = cesta.get("ativa", True)
-        posicao_atual_num = cesta.get("ordem", 999)
-        posicao_display = str(posicao_atual_num) if posicao_atual_num != 999 else "-"
+        posicao_display = cesta.get("ordem", 1)
 
         with st.container(border=True):
-            # Layout de colunas sutilmente reajustado para caberem 4 botões na direita
             col1, col2, col3, col4 = st.columns([4.2, 2.0, 1.3, 2.5])
 
-            # Coluna 1: Imagem, Posição, Nome e Descrição
             with col1:
                 imagem_url = cesta.get("imagem")
                 if imagem_url:
@@ -351,7 +355,6 @@ else:
                         if len(desc) > 90: desc = desc[:90] + "..."
                         st.caption(desc)
 
-            # Coluna 2: Preço
             with col2:
                 try:
                     valor = float(cesta.get("preco", 0))
@@ -360,14 +363,12 @@ else:
                 except:
                     st.caption("Sob consulta")
 
-            # Coluna 3: Status
             with col3:
                 if ativa:
                     st.markdown('<span class="badge-ativa">Ativa</span>', unsafe_allow_html=True)
                 else:
                     st.markdown('<span class="badge-inativa">Inativa</span>', unsafe_allow_html=True)
 
-            # Coluna 4: Ações (4 botões em linha)
             with col4:
                 b1, b2, b3, b4 = st.columns(4)
 
@@ -389,8 +390,17 @@ else:
                 with b4:
                     if st.button("🗑️", key=f"excluir_{cesta['id']}", help="Excluir Cesta", use_container_width=True):
                         try:
+                            ordem_removida = cesta["ordem"]
                             excluir_cesta(cesta["id"])
-                            st.toast("✅ Cesta excluída com sucesso!")
+                            
+                            # REQUISITO: Ao excluir, reorganiza o banco fechando lacunas (ex: se apagou a 2, a 3 vira 2, a 4 vira 3...)
+                            cestas_restantes = supabase.table("cestas").select("*").order("ordem", desc=False).execute().data or []
+                            for idx_r, rest in enumerate(cestas_restantes):
+                                nova_ordem_correta = idx_r + 1
+                                if rest.get("ordem") != nova_ordem_correta:
+                                    supabase.table("cestas").update({"ordem": nova_ordem_correta}).eq("id", rest["id"]).execute()
+
+                            st.toast("✅ Cesta excluída e posições reorganizadas!")
                             st.rerun()
                         except Exception as erro:
                             st.error(f"Erro: {erro}")
