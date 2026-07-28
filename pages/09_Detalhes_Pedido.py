@@ -94,8 +94,6 @@ div[data-testid="stLinkButton"] > a:hover { background-color: #128C7E !important
 div[data-testid="stFileUploader"] section { background-color: #faf7f3 !important; border: 2px dashed #dfcdbb !important; border-radius: 12px !important; padding: 12px !important; text-align: center !important; transition: all 0.3s ease !important; }
 div[data-testid="stFileUploader"] section:hover { border-color: #a87b57 !important; background-color: #f5eee6 !important; }
 
-.item-extra-row { display: flex; align-items: center; justify-content: space-between; background: #faf7f3; padding: 6px 12px; border-radius: 8px; border: 1px solid #e8ddd3; margin-bottom: 4px; }
-
 @media (max-width: 768px) { 
     .block-container { padding: 1rem 0.5rem !important; } 
     h1 { font-size: 24px !important; } 
@@ -207,6 +205,7 @@ def formatar_data(data):
 
 def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_dinamicos_lista, desconto_atual):
     lista_adicionais = []
+    
     # 1. Adicionais de Catálogo
     for item in adicionais:
         nome = item.get("nome_produto", "-")
@@ -218,7 +217,7 @@ def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_dinamico
     for extra in extras_dinamicos_lista:
         lista_adicionais.append(f"• {extra['nome']} - {formatar_valor(extra['valor'])}")
 
-    texto_produtos = str(pedido.get('produtos','-')).replace('\n', '\n')
+    texto_produtos = str(pedido.get('produtos','-'))
     texto_adicionais = '\n'.join(lista_adicionais) if lista_adicionais else "Nenhum"
 
     dest_nome = (pedido.get("destinatario_nome") or "").strip()
@@ -240,11 +239,11 @@ def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_dinamico
         f"Olá {pedido.get('cliente_nome','') if pedido else ''}!\n\n"
         f"{texto_dest}"
         f"🎀 *Cesta:* {pedido.get('cesta_nome','-')}\n\n"
-        f"🛒 *Produtos:*\n{texto_produtos}\n\n"
+        f"🛒 *Produtos da Cesta:*\n{texto_produtos}\n\n"
         f"🎀 *Adicionais / Extras:*\n{texto_adicionais}\n\n"
         f"📍 *Entrega:*\nData: {formatar_data(pedido.get('data_entrega'))}\n"
         f"Período: {pedido.get('periodo_entrega','-')}\n"
-        f"Horário: {pedido.get('horario_combinado','-')}\n\n"
+        f"Horário Fixo: {pedido.get('horario_combinado','-')}\n\n"
         f"💳 Pagamento: {pedido.get('pagamento','-')}\n\n"
         f"💰 *Resumo Financeiro*\n"
         f"{texto_val}"
@@ -255,6 +254,7 @@ def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_dinamico
     if len(tel_limpo) == 10 or len(tel_limpo) == 11: tel_wpp = f"55{tel_limpo}"
     else: tel_wpp = tel_limpo
         
+    # urllib faz o encode 100% correto dos caracteres especiais e das quebras de linha '\n'
     return f"https://wa.me/{tel_wpp}?text={urllib.parse.quote(texto)}"
 
 def obter_icone_pagamento(metodo):
@@ -496,7 +496,7 @@ else:
             st.markdown("<hr style='margin:12px 0; border:none; border-top:1px dashed #dfcdbb;'>", unsafe_allow_html=True)
             st.markdown('<div class="info-label">➕ EXTRAS AVULSOS PERSONALIZADOS</div>', unsafe_allow_html=True)
             
-            col_add1, col_add2, col_add3 = st.columns([2, 1, 0.5])
+            col_add1, col_add2, col_add3 = st.columns([2.5, 1, 0.5])
             with col_add1: input_nome_extra = st.text_input("Nome do Item", key="nome_extra_dinamico", disabled=travar_financeiro, placeholder="Ex: Taxa Urgência")
             with col_add2: input_val_extra = st.number_input("Valor", min_value=0.0, step=1.0, key="val_extra_dinamico", disabled=travar_financeiro)
             with col_add3:
@@ -509,17 +509,22 @@ else:
             valor_extras_total = 0.0
             idx_remover = None
             if st.session_state["lista_extras_dinamicos"]:
+                st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
                 for idx, extra in enumerate(st.session_state["lista_extras_dinamicos"]):
                     valor_extras_total += extra["valor"]
-                    st.markdown(f"""
-                    <div class="item-extra-row">
-                        <span style="font-size:13px; font-weight:600; color:#5a3b28;">{extra['nome']}</span>
-                        <span style="font-size:13px; font-weight:800; color:#137333;">{formatar_valor(extra['valor'])}</span>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    if not travar_financeiro:
-                        if st.button(f"🗑️ Remover {extra['nome']}", key=f"rm_ext_{idx}"):
-                            idx_remover = idx
+                    
+                    c_n, c_v, c_b = st.columns([2.5, 1.2, 0.8])
+                    with c_n:
+                        st.markdown(f"<div style='margin-top: 10px; font-size:13px; font-weight:600; color:#5a3b28;'>🔹 {extra['nome']}</div>", unsafe_allow_html=True)
+                    with c_v:
+                        st.markdown(f"<div style='margin-top: 10px; font-size:13px; font-weight:800; color:#137333;'>{formatar_valor(extra['valor'])}</div>", unsafe_allow_html=True)
+                    with c_b:
+                        if not travar_financeiro:
+                            # Botão no formato Lixeira
+                            if st.button("🗑️", key=f"rm_ext_{idx}", help="Remover item", use_container_width=True):
+                                idx_remover = idx
+                    
+                    st.markdown("<hr style='margin: 2px 0 8px 0; border: none; border-bottom: 1px solid #f3ece6;'>", unsafe_allow_html=True)
 
             if idx_remover is not None:
                 st.session_state["lista_extras_dinamicos"].pop(idx_remover)
