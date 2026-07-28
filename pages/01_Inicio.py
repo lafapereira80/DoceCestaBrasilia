@@ -139,7 +139,6 @@ div[data-testid="stFileUploader"] section button {
 }
 div[data-testid="stFileUploader"] section button:hover { transform: scale(1.02); }
 
-/* Esconde o texto nativo "Browse Files" do Streamlit e adiciona o nosso customizado */
 div[data-testid="stFileUploader"] section button span { display: none !important; }
 div[data-testid="stFileUploader"] section button::after { 
     content: "📷 Anexar Fotos" !important; 
@@ -160,7 +159,6 @@ div[data-testid="stFileUploader"] section button::after {
 .sucesso-titulo { font-size: 26px; font-weight: 800; color: #137333; margin-bottom: 10px; }
 .sucesso-texto { font-size: 15px; color: #333; line-height: 1.6; margin-bottom: 20px; font-weight: 500; }
 
-/* Estilização para imagens */
 .stImage img { border-radius: 12px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 
 @media (max-width: 640px) {
@@ -252,7 +250,6 @@ selecoes_cliente = {}
 if cestas:
     opcoes_cestas = [{"id": None, "nome": "Selecione o modelo da cesta..."}] + cestas
     
-    # Sincroniza escolha que veio da página inicial
     if st.session_state.get("cesta_selecionada_home"):
         st.session_state["cesta_selecionada_id"] = st.session_state["cesta_selecionada_home"]
         st.session_state["cesta_selecionada_home"] = None
@@ -280,7 +277,6 @@ if cestas:
             cesta_obj = cesta_selecionada
             st.session_state["cesta_selecionada_id"] = cesta_selecionada.get("id")
             
-            # Mostra imagem e preço dinâmico sem precisar de st.rerun
             col_img, col_txt = st.columns([1, 2])
             with col_img:
                 if cesta_obj.get("imagem"):
@@ -350,7 +346,6 @@ if polaroid:
         st.markdown('<div class="secao-titulo">📷 Envie suas Fotos (Polaroid)</div>', unsafe_allow_html=True)
         st.caption("Você selecionou o item Polaroid. Envie até 2 fotos para revelação.")
         
-        # Uploader sem causar st.rerun manual. O Streamlit gerencia os arquivos na sessão automaticamente.
         fotos_upload = st.file_uploader("Upload", type=["jpg", "jpeg", "png", "webp", "heic"], accept_multiple_files=True, key="fotos_polaroid_cliente", label_visibility="collapsed")
         
         if fotos_upload:
@@ -366,8 +361,6 @@ if polaroid:
 with st.container(border=True):
     st.markdown('<div class="secao-titulo">📍 Endereço de Entrega</div>', unsafe_allow_html=True)
     
-    # O PULO DO GATO DO VIACEP SEM TRAVAR A TELA:
-    # Verificamos o CEP ANTES de desenhar os Text Inputs da rua e bairro!
     cep_input = st.text_input("CEP (Opcional - Preenche Automático)", max_chars=8, placeholder="Somente números", key="input_cep")
     cep_limpo = re.sub(r'\D', '', cep_input)
     
@@ -381,7 +374,6 @@ with st.container(border=True):
                 st.session_state["input_cidade"] = f"{dados_cep.get('localidade', '')} - {dados_cep.get('uf', '')}"
         except: pass
         st.session_state["ultimo_cep_buscado"] = cep_limpo
-        # Removido o st.rerun()! O Streamlit aplica as chaves acima instantaneamente nos inputs abaixo.
 
     col_cid, col_bairro = st.columns([1.5, 1])
     with col_cid: st.text_input("Cidade - UF *", placeholder="Ex: Brasília - DF", key="input_cidade")
@@ -521,7 +513,20 @@ if enviar:
                 except Exception as e: print(f"Aviso foto: {e}")
                 
             try:
-                texto_aviso = f"🚨 <b>NOVO PEDIDO (SITE)!</b> 🚨\n\n👤 <b>Cliente:</b> {nome}\n📱 <b>Tel:</b> <a href='https://wa.me/{telefone_oficial}'>+{ddi} {tel_limpo}</a>\n🎁 <b>Cesta:</b> {cesta_obj['nome']}\n💝 <b>Para:</b> {dest_nome}\n📍 <b>Local:</b> {bairro}\n💰 <b>Estimativa:</b> R$ {total_estimado:,.2f}"
+                # Novo layout profissional para a mensagem do Telegram
+                texto_aviso = (
+                    f"🚨 *NOVO PEDIDO REGISTRADO (SITE)!* 🚨\n\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                    f"📦 *ID do Pedido:* `#{pedido_id}`\n"
+                    f"👤 *Cliente:* {nome}\n"
+                    f"📱 *Contato:* [{telefone_oficial}](https://wa.me/{telefone_oficial})\n"
+                    f"🎁 *Cesta:* {cesta_obj['nome']}\n"
+                    f"💝 *Para:* {dest_nome}\n"
+                    f"📍 *Bairro / Região:* {bairro}\n"
+                    f"💰 *Estimativa:* R$ {total_estimado:,.2f}\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                    f"⚡ *Ação:* Acesse o painel para verificar os detalhes e despachar!"
+                )
                 enviar_notificacao_telegram(texto_aviso)
             except: pass 
 
