@@ -235,35 +235,17 @@ if st.session_state.pedido_em_montagem:
             if p_ativo.get('pedido_especial'):
                 st.warning(f"✨ **Atenção - Solicitação Especial:** {p_ativo.get('pedido_especial')}")
             
-            # -------------------------------------------------------------
-            # BOTÕES DE AÇÃO RÁPIDA: MARCAR / DESMARCAR TODOS
-            # -------------------------------------------------------------
             st.markdown("#### 📋 Checklist de Verificação Oficial")
-            
-            col_m1, col_m2 = st.columns(2)
-            marcar_todos_click = col_m1.button("✅ Marcar Todos os Itens", use_container_width=True)
-            desmarcar_todos_click = col_m2.button("❌ Desmarcar Todos", use_container_width=True)
             
             checklist_salvo = p_ativo.get("checklist") or {}
             if isinstance(checklist_salvo, str):
                 try: checklist_salvo = json.loads(checklist_salvo)
                 except: checklist_salvo = {}
-                
-            # Se o usuário clicou nos botões de lote, atualiza a session state dos checkboxes
-            if marcar_todos_click:
-                for k in checklist_salvo.keys():
-                    st.session_state[f"chk_item_{p_ativo['id']}_{k}"] = True
-                st.toast("✅ Todos os itens marcados!")
-                st.rerun()
-            elif desmarcar_todos_click:
-                for k in checklist_salvo.keys():
-                    st.session_state[f"chk_item_{p_ativo['id']}_{k}"] = False
-                st.toast("❌ Todos os itens desmarcados!")
-                st.rerun()
 
-            novo_checklist = {}
+            # Descobre antecipadamente todas as chaves de itens que compõem este pedido específico
+            chaves_itens_pedido = []
             
-            # --- 1. ITENS PADRÃO DA CESTA ---
+            # 1. Itens Padrão
             cesta_obj = buscar_cesta(p_ativo.get("cesta_id")) if p_ativo.get("cesta_id") else {}
             descricao_cesta = cesta_obj.get("descricao", "") if cesta_obj else ""
             if descricao_cesta:
@@ -271,25 +253,73 @@ if st.session_state.pedido_em_montagem:
                 if "Inclusos:" in descricao_cesta: bloco_inclusos = descricao_cesta.split("Inclusos:")[1]
                 elif "inclusos:" in descricao_cesta.lower(): bloco_inclusos = descricao_cesta.lower().split("inclusos:")[1]
                 bloco_inclusos = bloco_inclusos.split("\n\n")[0]
-                
-                itens_desc = [i.strip() for i in bloco_inclusos.split(";") if i.strip()]
-                if itens_desc:
-                    st.markdown("<div class='secao-titulo'>📦 Itens Padrão do Catálogo</div>", unsafe_allow_html=True)
-                    cols_padrao = st.columns(2)
-                    for idx, item in enumerate(itens_desc):
-                        chave_chk = f"📦 {item}"
-                        val_padrao = checklist_salvo.get(chave_chk, False)
-                        
-                        # Verifica se foi alterado via session_state em lote
-                        session_key = f"chk_item_{p_ativo['id']}_{chave_chk}"
-                        if session_key in st.session_state:
-                            val_padrao = st.session_state[session_key]
-
-                        with cols_padrao[idx % 2]:
-                            novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
+                for item in [i.strip() for i in bloco_inclusos.split(";") if i.strip()]:
+                    chaves_itens_pedido.append(f"📦 {item}")
             
-            # --- 2. PERSONALIZAÇÃO DO CLIENTE ---
+            # 2. Personalização
             produtos = p_ativo.get("produtos", "")
+            if produtos:
+                for prod_limpo in [p.replace('•', '').strip() for p in produtos.split("\n") if p.replace('•', '').strip()]:
+                    chaves_itens_pedido.append(f"✔️ {prod_limpo}")
+            
+            # 3. Adicionais e Extras
+            try:
+                for ad in listar_adicionais_pedido(p_ativo['id']):
+                    nome_ad = ad.get("nome_produto")
+                    if nome_ad:
+                        chave_ad = f"➕ {nome_ad}"
+                        if chave_ad not in chaves_itens_pedido:
+                            chaves_itens_pedido.append(chave_ad)
+            except: pass
+            
+            if float(p_ativo.get("valor_extras", 0)) > 0:
+                chaves_itens_pedido.append("💲 O cliente pagou por acréscimos especiais extras")
+            
+            # 4. Cartão
+            if p_ativo.get("mensagem", ""):
+                chaves_itens_pedido.append("✅ Cartão impresso e posicionado")
+
+            # Botões de Ação Rápida em Lote (Marcar / Desmarcar Todos)
+            col_m1, col_m2 = st.columns(2)
+            marcar_todos_click = col_m1.button("✅ Marcar Todos os Itens", use_container_width=True)
+            desmarcar_todos_click = col_m2.button("❌ Desmarcar Todos", use_container_width=True)
+            
+            if marcar_todos_click:
+                for k in chaves_itens_pedido:
+                    st.session_state[f"chk_item_{p_ativo['id']}_{k}"] = True
+                st.toast("✅ Todos os itens foram marcados!")
+                st.rerun()
+            elif desmarcar_todos_click:
+                for k in chaves_itens_pedido:
+                    st.session_state[f"chk_item_{p_ativo['id']}_{k}"] = False
+                st.toast("❌ Todos os itens foram desmarcados!")
+                st.rerun()
+
+            novo_checklist = {}
+            
+            # --- RENDERIZAÇÃO DOS ITENS PADRÃO ---
+            itens_desc = []
+            if descricao_cesta:
+                bloco_inclusos = descricao_cesta
+                if "Inclusos:" in descricao_cesta: bloco_inclusos = descricao_cesta.split("Inclusos:")[1]
+                elif "inclusos:" in descricao_cesta.lower(): bloco_inclusos = descricao_cesta.lower().split("inclusos:")[1]
+                bloco_inclusos = bloco_inclusos.split("\n\n")[0]
+                itens_desc = [i.strip() for i in bloco_inclusos.split(";") if i.strip()]
+
+            if itens_desc:
+                st.markdown("<div class='secao-titulo'>📦 Itens Padrão do Catálogo</div>", unsafe_allow_html=True)
+                cols_padrao = st.columns(2)
+                for idx, item in enumerate(itens_desc):
+                    chave_chk = f"📦 {item}"
+                    val_padrao = checklist_salvo.get(chave_chk, False)
+                    session_key = f"chk_item_{p_ativo['id']}_{chave_chk}"
+                    if session_key in st.session_state:
+                        val_padrao = st.session_state[session_key]
+
+                    with cols_padrao[idx % 2]:
+                        novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
+            
+            # --- RENDERIZAÇÃO DA PERSONALIZAÇÃO ---
             if produtos:
                 st.markdown("<div class='secao-titulo'>🍓 Personalização Escolhida no Fechamento</div>", unsafe_allow_html=True)
                 prods_lista = [p.replace('•', '').strip() for p in produtos.split("\n") if p.replace('•', '').strip()]
@@ -297,7 +327,6 @@ if st.session_state.pedido_em_montagem:
                 for idx, prod_limpo in enumerate(prods_lista):
                     chave_chk = f"✔️ {prod_limpo}"
                     val_padrao = checklist_salvo.get(chave_chk, False)
-                    
                     session_key = f"chk_item_{p_ativo['id']}_{chave_chk}"
                     if session_key in st.session_state:
                         val_padrao = st.session_state[session_key]
@@ -305,7 +334,7 @@ if st.session_state.pedido_em_montagem:
                     with cols_pers[idx % 2]:
                         novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
 
-            # --- 3. ADICIONAIS E EXTRAS ---
+            # --- RENDERIZAÇÃO DOS ADICIONAIS E EXTRAS ---
             adicionais_bd = []
             try:
                 lista_bruta = listar_adicionais_pedido(p_ativo['id'])
@@ -325,7 +354,6 @@ if st.session_state.pedido_em_montagem:
                 for ad in adicionais_bd:
                     chave_chk = f"➕ {ad.get('nome_produto', '')}"
                     val_padrao = checklist_salvo.get(chave_chk, False)
-                    
                     session_key = f"chk_item_{p_ativo['id']}_{chave_chk}"
                     if session_key in st.session_state:
                         val_padrao = st.session_state[session_key]
@@ -337,7 +365,6 @@ if st.session_state.pedido_em_montagem:
                 if valor_extras > 0:
                     chave_chk = "💲 O cliente pagou por acréscimos especiais extras"
                     val_padrao = checklist_salvo.get(chave_chk, False)
-                    
                     session_key = f"chk_item_{p_ativo['id']}_{chave_chk}"
                     if session_key in st.session_state:
                         val_padrao = st.session_state[session_key]
@@ -345,14 +372,13 @@ if st.session_state.pedido_em_montagem:
                     with cols_add[contador_add % 2]:
                         novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
             
-            # --- 4. MENSAGEM DO CARTÃO ---
+            # --- RENDERIZAÇÃO DA MENSAGEM DO CARTÃO ---
             mensagem = p_ativo.get("mensagem", "")
             if mensagem:
                 st.markdown("<div class='secao-titulo'>💌 Mensagem do Cartão</div>", unsafe_allow_html=True)
                 st.info(f"_{mensagem}_")
                 chave_chk = "✅ Cartão impresso e posicionado"
                 val_padrao = checklist_salvo.get(chave_chk, False)
-                
                 session_key = f"chk_item_{p_ativo['id']}_{chave_chk}"
                 if session_key in st.session_state:
                     val_padrao = st.session_state[session_key]
