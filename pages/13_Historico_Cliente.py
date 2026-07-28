@@ -247,10 +247,14 @@ if pedido_aberto_id:
             if val_ad is not None: valor_adicionais_catalogo += float(val_ad)
             else: valor_adicionais_catalogo += float(itens_consulta_salvos.get(nome_ad, 0) or 0)
 
+        # CORREÇÃO AQUI: Varre todos os extras salvos no JSON itens_consulta como avulsos dinâmicos
         valor_extras_total = 0.0
         for k, v in itens_consulta_salvos.items():
-            if "Valor Manual de" not in k and not k.startswith("Valor de "):
-                valor_extras_total += float(v)
+            if "Valor Manual de" not in k and not k.startswith("Valor de ") and k not in [ad.get("nome_produto") for ad in adicionais_pedido]:
+                try:
+                    valor_extras_total += float(v)
+                except:
+                    pass
 
         valor_frete = float(pedido.get("valor_frete") or 0)
         desconto = float(pedido.get("desconto") or 0)
@@ -267,13 +271,20 @@ if pedido_aberto_id:
         with col_f2:
             with st.container(border=True):
                 st.markdown('<div class="card-title">🧮 Extrato do Recibo Oficial</div>', unsafe_allow_html=True)
+                
+                # Renderiza a listagem individual dos extras dinâmicos no recibo de visualização
+                html_extras_detalhe = ""
+                for k, v in itens_consulta_salvos.items():
+                    if "Valor Manual de" not in k and not k.startswith("Valor de ") and k not in [ad.get("nome_produto") for ad in adicionais_pedido]:
+                        html_extras_detalhe += f'<div class="resumo-row"><span class="resumo-label">🔹 {k}</span><span class="resumo-val">{formatar_valor(v)}</span></div>'
+
                 st.markdown(
                     f"""
                     <div class="resumo-container">
                         <div class="resumo-row"><span class="resumo-label">🎁 Valor da Cesta</span><span class="resumo-val">{formatar_valor(valor_cesta)}</span></div>
                         <div class="resumo-row"><span class="resumo-label">🎀 Adicionais (Catálogo)</span><span class="resumo-val">{formatar_valor(valor_adicionais_catalogo)}</span></div>
                         <div class="resumo-row"><span class="resumo-label">🚚 Taxa de Entrega</span><span class="resumo-val">{formatar_valor(valor_frete)}</span></div>
-                        <div class="resumo-row"><span class="resumo-label">➕ Extras Dinâmicos</span><span class="resumo-val">{formatar_valor(valor_extras_total)}</span></div>
+                        {html_extras_detalhe}
                         <div class="resumo-row"><span class="resumo-label">🏷️ Desconto</span><span class="resumo-val" style="color: #c5221f;">- {formatar_valor(desconto)}</span></div>
                         <div class="resumo-row"><span class="resumo-label" style="font-size:15px; font-weight:800; color:#2c1e14;">💰 VALOR FINAL</span><span class="resumo-total-val">{formatar_valor(valor_total_calculado)}</span></div>
                     </div>
