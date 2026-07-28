@@ -118,7 +118,7 @@ if not pedido:
 
 
 # =====================================================
-# TRATAMENTO DE JSON E DADOS SALVOS
+# FUNÇÕES E LÓGICAS DE CONTROLE
 # =====================================================
 status_atual_pedido = str(pedido.get("status", "")).strip().capitalize()
 perfil_usuario = usuario.get("perfil", "Operador")
@@ -144,16 +144,15 @@ for ad in lista_bruta_adicionais:
         adicionais_pedido.append(ad)
         nomes_vistos.add(nome_ad)
 
-# Tratamento seguro para itens_consulta do banco
-itens_consulta_salvos = pedido.get("itens_consulta") or {}
-if isinstance(itens_consulta_salvos, str):
-    try: itens_consulta_salvos = json.loads(itens_consulta_salvos)
-    except: itens_consulta_salvos = {}
-
 # Gerenciamento de Extras Dinâmicos
 if "lista_extras_dinamicos" not in st.session_state:
+    itens_salvos = pedido.get("itens_consulta") or {}
+    if isinstance(itens_salvos, str):
+        try: itens_salvos = json.loads(itens_salvos)
+        except: itens_salvos = {}
+    
     lista_temp = []
-    for nome, val in itens_consulta_salvos.items():
+    for nome, val in itens_salvos.items():
         if "Valor Manual de" not in nome and not nome.startswith("Valor de "):
             lista_temp.append({"nome": nome, "valor": float(val)})
     st.session_state["lista_extras_dinamicos"] = lista_temp
@@ -207,7 +206,6 @@ def formatar_data(data):
 def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_dinamicos_lista, desconto_atual, itens_consulta_catalogo):
     lista_adicionais = []
     
-    # 1. Adicionais de Catálogo
     for item in adicionais:
         nome = item.get("nome_produto", "-")
         valor = item.get("valor_unitario")
@@ -220,7 +218,6 @@ def gerar_whatsapp(pedido, adicionais, valor_final, frete_atual, extras_dinamico
             else:
                 lista_adicionais.append(f"• {nome} (sob consulta)")
     
-    # 2. Extras Dinâmicos
     for extra in extras_dinamicos_lista:
         lista_adicionais.append(f"• {extra['nome']} - {formatar_valor(extra['valor'])}")
 
@@ -499,6 +496,14 @@ else:
         cesta = obter_cesta_cacheada(pedido.get("cesta_id"))
         if cesta: valor_cesta = float(cesta.get("preco", 0) or 0)
 
+        # Leitura dos itens de consulta do catálogo caso existam salvos
+        itens_consulta = {}
+        for ad in adicionais_pedido:
+            nome_ad = ad.get("nome_produto")
+            if ad.get("valor_unitario") is None and nome_ad:
+                val_salvo = float(itens_consulta_salvos.get(nome_ad, 0) or 0)
+                itens_consulta[nome_ad] = st.session_state.get(f"cons_{nome_ad}_0", val_salvo)
+
         col_f1, col_f2 = st.columns([1.2, 1])
 
         with col_f1:
@@ -537,7 +542,6 @@ else:
                         status = st.selectbox("Status Financeiro", [status_atual], index=0, disabled=True)
                 
                 with c_status2:
-                    # REQUISITO: Se status for Recebido ou Desistência, esconde a opção de Cesta Pronta
                     if status not in ["Recebido", "Desistência"]:
                         st.markdown("<div style='margin-top: 32px;'></div>", unsafe_allow_html=True)
                         chk_montada = st.checkbox("🧺 Cesta Pronta", value=bool(pedido.get("cesta_montada")), disabled=travar_financeiro)
@@ -678,7 +682,7 @@ else:
                 for extra in st.session_state["lista_extras_dinamicos"]:
                     json_extras_salvar[extra["nome"]] = extra["valor"]
                 
-                # Salva também os valores manuais preenchidos nos adicionais "Sob Consulta"
+                # Coleta também os valores manuais preenchidos na aba de itens
                 for k, v in itens_consulta.items():
                     if v > 0: json_extras_salvar[f"Valor de {k}"] = v
 
