@@ -1,7 +1,7 @@
 import streamlit as st
 import urllib.parse
 import re
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
 from services.telegram_service import enviar_notificacao_telegram
@@ -92,7 +92,6 @@ div[data-testid="stLinkButton"] > a:hover { transform: scale(1.03); }
     h1 { font-size: 24px !important; }
     div[data-testid="stVerticalBlockBorderWrapper"] { padding: 12px !important; }
     
-    /* Força os botões da direita (ações rápidas do motoboy) a ficarem na horizontal */
     div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) {
         display: flex !important;
         flex-direction: row !important;
@@ -125,8 +124,13 @@ def formatar_data(data_str):
     except:
         return str(data_str)
 
+def obter_horario_brasilia():
+    # Fuso horário de Brasília (UTC-3) fixo e preciso
+    fuso_br = timezone(timedelta(hours=-3))
+    return datetime.now(fuso_br)
+
 def buscar_entregas_dia(driver_login=None):
-    data_hoje = datetime.now().strftime("%d/%m/%Y")
+    data_hoje = obter_horario_brasilia().strftime("%d/%m/%Y")
     
     query_env = supabase.table("pedidos").select("*").eq("status", "Enviado")
     if perfil_usuario == "Entregador" or driver_login:
@@ -166,13 +170,26 @@ def atualizar_entregador(pedido_id, widget_key):
 
 def marcar_como_entregue(pedido, login_autor):
     try:
-        agora = datetime.now()
-        hora_formatada = agora.strftime("%d/%m/%Y %H:%M")
-        apenas_hora = agora.strftime("%H:%M")
+        agora_br = obter_horario_brasilia()
+        hora_formatada = agora_br.strftime("%d/%m/%Y %H:%M")
+        apenas_hora = agora_br.strftime("%H:%M")
         
         supabase.table("pedidos").update({"status": "Entregue", "ordem_entrega": 999, "hora_entrega_realizada": hora_formatada}).eq("id", pedido["id"]).execute()
         
-        texto_telegram = f"""✅ *ENTREGA REALIZADA!* ✅\n\n🛵 *Responsável:* {login_autor}\n📦 *Cesta:* {pedido.get('cesta_nome', '-')}\n💝 *Destinatário:* {pedido.get('destinatario_nome', '-')}\n📍 *Local:* {str(pedido.get('endereco', '')).split(',')[-1].split('(')[0].strip()}\n⏰ *Horário:* {apenas_hora}"""
+        # Layout da mensagem Telegram reformulado, limpo e estruturado
+        bairro_local = str(pedido.get('endereco', '')).split(',')[-1].split('(')[0].strip() or "Região Central"
+        texto_telegram = (
+            f"🚀 *ATUALIZAÇÃO DE ROTA — DOÇURA ENTREGUE!* 🎁\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📦 *ID do Pedido:* `#{pedido.get('id')}`\n"
+            f"🎁 *Pacote:* {pedido.get('cesta_nome', '-')}\n"
+            f"💝 *Destinatário:* {pedido.get('destinatario_nome', '-')}\n"
+            f"📍 *Bairro / Local:* {bairro_local}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🛵 *Responsável:* {login_autor}\n"
+            f"⏰ *Horário Real:* {apenas_hora}\n"
+            f"✅ *Status:* Concluído com Sucesso!"
+        )
         enviar_notificacao_telegram(texto_telegram)
     except Exception as e:
         st.error(f"Erro ao finalizar entrega: {e}")
@@ -259,7 +276,7 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                 st.rerun()
 
         # Verifica rigorosamente se algum entregador possui rotas ativas ou concluídas hoje
-        data_hoje = datetime.now().strftime("%d-%m-%Y")
+        data_hoje = obter_horario_brasilia().strftime("%d-%m-%Y")
         rotas_ativas_existem = False
         if lista_entregadores:
             for driver in lista_entregadores:
@@ -348,7 +365,7 @@ if perfil_usuario in ["Administrador", "Operador"]:
                         if ped_driver_concluidos:
                             st.markdown("<span style='font-size:12px; font-weight:800; color:#137333; margin-top:15px; display:block; text-transform: uppercase;'>✅ Finalizados Hoje:</span>", unsafe_allow_html=True)
                             for ped in ped_driver_concluidos:
-                                hora_ext = ped.get('hora_entrega_realizada', '')[-5:]
+                                hora_ext = ped.get('hora_entrega_realizada', '')[-5:] 
                                 bairro_con = str(ped.get('endereco', '')).split(',')[-1].split('(')[0].strip()
                                 st.markdown(f"""
                                 <div data-testid="stVerticalBlockBorderWrapper" class="entregue-box" style="padding: 10px !important;">
@@ -533,28 +550,28 @@ else:
                             marcar_como_entregue(ped, login_atual)
                             st.rerun()
 
-                        st.write("")
-                        st.markdown("<div style='font-size: 11px; font-weight: 800; color: #775a46; margin-bottom: 4px; text-transform: uppercase;'>Mudar Ordem:</div>", unsafe_allow_html=True)
-                        col_up, col_down = st.columns(2)
-                        with col_up:
-                            if i > 0:
-                                if st.button("⬆️ Subir", key=f"up_{ped['id']}", use_container_width=True):
-                                    pedidos_ativos_driver[i], pedidos_ativos_driver[i-1] = pedidos_ativos_driver[i-1], pedidos_ativos_driver[i]
-                                    salvar_ordem(pedidos_ativos_driver)
-                                    st.rerun()
-                        with col_down:
-                            if i < len(pedidos_ativos_driver) - 1:
-                                if st.button("⬇️ Descer", key=f"down_{ped['id']}", use_container_width=True):
-                                    pedidos_ativos_driver[i], pedidos_ativos_driver[i+1] = pedidos_ativos_driver[i+1], pedidos_ativos_driver[i]
-                                    salvar_ordem(pedidos_ativos_driver)
-                                    st.rerun()
+                    st.write("")
+                    st.markdown("<div style='font-size: 11px; font-weight: 800; color: #775a46; margin-bottom: 4px; text-transform: uppercase;'>Mudar Ordem:</div>", unsafe_allow_html=True)
+                    col_up, col_down = st.columns(2)
+                    with col_up:
+                        if i > 0:
+                            if st.button("⬆️ Subir", key=f"up_{ped['id']}", use_container_width=True):
+                                pedidos_ativos_driver[i], pedidos_ativos_driver[i-1] = pedidos_ativos_driver[i-1], pedidos_ativos_driver[i]
+                                salvar_ordem(pedidos_ativos_driver)
+                                st.rerun()
+                    with col_down:
+                        if i < len(pedidos_ativos_driver) - 1:
+                            if st.button("⬇️ Descer", key=f"down_{ped['id']}", use_container_width=True):
+                                pedidos_ativos_driver[i], pedidos_ativos_driver[i+1] = pedidos_ativos_driver[i+1], pedidos_ativos_driver[i]
+                                salvar_ordem(pedidos_ativos_driver)
+                                st.rerun()
 
             st.write("")
             if st.button("🚀 INICIAR MODO NAVEGAÇÃO FOCO", type="primary", use_container_width=True):
                 st.session_state.modo_entrega_ativa = True
                 st.rerun()
         else:
-            st.success("🎉 Nenhuma entrega pendente na fila ativa.")
+            st.success("🎉 Rota limpa! Nenhuma entrega pendente na fila ativa.")
 
     else:
         if pedidos_ativos_driver:
