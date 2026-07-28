@@ -60,7 +60,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS PREMIUM E LIGHTBOX (VITRINE DO CLIENTE)
+# CSS PREMIUM E LIGHTBOX CORRIGIDO (VITRINE DO CLIENTE)
 # ==========================================================
 
 st.markdown(
@@ -103,9 +103,11 @@ html, body, [class*="css"]  {
     border-radius: 20px;
     border: 1px solid #e8ddd3;
     box-shadow: 0 8px 24px rgba(90, 59, 40, 0.04);
-    transition: transform 0.3s ease;
+    position: relative; 
+    top: 0;
+    transition: all 0.3s ease;
 }
-.header-banner:hover { transform: translateY(-2px); }
+.header-banner:hover { top: -2px; }
 
 .header-logo { width: 150px; height: auto; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.05)); }
 .header-text { display: flex; flex-direction: column; justify-content: center; text-align: left; }
@@ -144,12 +146,14 @@ html, body, [class*="css"]  {
     display: flex;
     flex-direction: column;
     height: 100%;
+    position: relative; 
+    top: 0;
     transition: all 0.3s ease;
 }
 .info-card:hover {
     border-color: #d2bfae;
     box-shadow: 0 8px 25px rgba(90, 59, 40, 0.06);
-    transform: translateY(-3px);
+    top: -3px;
 }
 .info-title {
     font-family: 'Dancing Script', cursive !important;
@@ -185,12 +189,14 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     padding: 24px !important;
     margin-bottom: 20px !important; 
     box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03);
+    position: relative; 
+    top: 0;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     border-color: #cbab92 !important;
     box-shadow: 0 12px 30px rgba(90, 59, 40, 0.08);
-    transform: translateY(-4px);
+    top: -4px;
 }
 
 @media (min-width: 641px) { div[data-testid="stHorizontalBlock"] { align-items: center !important; } }
@@ -236,18 +242,20 @@ div[data-testid="stButton"] button {
     font-weight: 800 !important;
     border: none !important;
     box-shadow: 0 4px 15px rgba(197, 114, 31, 0.25) !important;
+    position: relative; 
+    top: 0;
     transition: all 0.3s ease !important;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 div[data-testid="stButton"] button:hover {
-    transform: translateY(-3px) !important;
+    top: -3px !important;
     box-shadow: 0 8px 20px rgba(197, 114, 31, 0.4) !important;
     background: linear-gradient(135deg, #b56210 0%, #874609 100%) !important;
 }
 
 /* =========================================
-   LIGHTBOX CSS PADRÃO (FOTOS)
+   LIGHTBOX CSS (CORRIGIDO PARA TELA CHEIA)
 ========================================= */
 .lightbox-wrapper { text-align: center; margin-bottom: 10px; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 .lightbox-toggle { display: none !important; }
@@ -285,6 +293,8 @@ div[data-testid="stButton"] button:hover {
 }
 .adicionais-hero-title { font-size: 18px; font-weight: 800; color: #5a3b28; margin-bottom: 20px; }
 .adicionais-grid-css { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+
+/* REGRAS DE LAYOUT CORRIGIDAS (SEM TRANSFORM) */
 .adicional-item-box {
     background: #ffffff;
     border: 1px solid #e8ddd3;
@@ -296,13 +306,16 @@ div[data-testid="stButton"] button:hover {
     flex-direction: column;
     justify-content: space-between;
     align-items: center;
+    position: relative; 
+    top: 0;
     transition: all 0.3s ease;
 }
 .adicional-item-box:hover {
     border-color: #d2bfae;
-    transform: translateY(-4px);
+    top: -4px; /* Move a caixa sem quebrar o modal de tela cheia */
     box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
 }
+
 .adicional-img-small { width: 70px; height: 70px; object-fit: cover; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); cursor: zoom-in; display: block; margin: 0 auto; border: 1px solid #f0e6dc; }
 .adicional-img-placeholder { width: 70px; height: 70px; background: linear-gradient(135deg, #fdfbf8 0%, #f5eee6 100%); display: flex; align-items: center; justify-content: center; font-size: 26px; border-radius: 10px; border: 1px dashed #dfcdbb; margin: 0 auto; }
 .adicional-nome { font-size: 12.5px; font-weight: 700; color: #4a2e1b; margin-top: 10px; margin-bottom: 6px; min-height: 32px; line-height: 1.3; }
@@ -327,9 +340,11 @@ div[data-testid="stButton"] button:hover {
 .social-btn-box a {
     display: inline-flex; align-items: center; gap: 8px; color: white !important;
     padding: 14px 28px; border-radius: 14px; font-weight: 800; text-decoration: none; font-size: 15px;
+    position: relative; 
+    top: 0;
     transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 0.5px;
 }
-.social-btn-box a:hover { transform: translateY(-3px); }
+.social-btn-box a:hover { top: -3px; }
 .btn-whatsapp { background: #25d366 !important; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3); }
 .btn-whatsapp:hover { box-shadow: 0 6px 16px rgba(37, 211, 102, 0.45); }
 .btn-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important; box-shadow: 0 4px 12px rgba(220, 39, 67, 0.3); }
@@ -493,7 +508,7 @@ else:
 
 produtos_adicionais = []
 try:
-    # Usa a função segura para puxar categorias
+    # Usa a função segura para puxar categorias 
     categorias = obter_categorias() 
     cat_adicionais = next((c for c in categorias if c.get("nome", "").strip().lower() == "adicionais"), None)
     
