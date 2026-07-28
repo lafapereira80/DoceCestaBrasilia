@@ -57,7 +57,7 @@ def image_to_base64(img_path):
 
 
 # ==========================================================
-# CSS PREMIUM E LIGHTBOX GLOBAL FLUTUANTE (TELA INTEIRA REAL)
+# CSS PREMIUM E LIGHTBOX PADRÃO
 # ==========================================================
 
 st.markdown(
@@ -303,36 +303,6 @@ div[data-testid="stButton"] button:hover {
 .adicional-preco-fixo { color: #137333; font-weight: 800; font-size: 14px; }
 .adicional-preco-consulta { color: #c5721f; font-weight: 800; background: #fff8ef; padding: 4px 8px; border-radius: 8px; font-size: 10px; text-transform: uppercase; border: 1px solid #fce8b2; display: inline-block; }
 
-/* MODAL GLOBAL ÚNICO PARA OS ADICIONAIS (ABRE EM CIMA DA TELA INTEIRA) */
-.add-lightbox-toggle { display: none !important; }
-.add-lightbox-modal {
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100vw; 
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.85); 
-    z-index: 99999999;
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    opacity: 0; 
-    visibility: hidden; 
-    transition: opacity 0.3s ease; 
-    cursor: zoom-out;
-}
-.add-lightbox-modal img { 
-    max-width: 90vw; 
-    max-height: 90vh; 
-    border-radius: 12px; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
-    object-fit: contain;
-}
-.add-lightbox-toggle:checked ~ .add-lightbox-modal { 
-    opacity: 1; 
-    visibility: visible; 
-}
-
 /* RODAPÉ */
 .footer-container {
     background: #ffffff;
@@ -379,6 +349,27 @@ div[data-testid="stButton"] button:hover {
 </style>
 """,
 unsafe_allow_html=True
+)
+
+
+# ==========================================================
+# SCRIPT JS GLOBAL PARA MOVER O MODAL PARA O BODY RAIZ
+# ==========================================================
+st.markdown(
+    """
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Move todos os modais de adicionais para fora do container grid, direto para o body da página
+        setTimeout(function() {
+            const modals = document.querySelectorAll('.adicional-item-box .lightbox-modal');
+            modals.forEach(modal => {
+                document.body.appendChild(modal);
+            });
+        }, 500);
+    });
+    </script>
+    """,
+    unsafe_allow_html=True
 )
 
 
@@ -500,7 +491,7 @@ else:
 
 
 # ==========================================================
-# APRESENTAÇÃO DOS ADICIONAIS (COM MODAL FLUTUANTE GLOBAL)
+# APRESENTAÇÃO DOS ADICIONAIS (COM SCRIPT DE ELEVAÇÃO DE DOM)
 # ==========================================================
 
 produtos_adicionais = []
@@ -533,18 +524,16 @@ if produtos_adicionais:
 
         if imagem_p and str(imagem_p).strip():
             img_src = image_to_base64(imagem_p)
-            # A tag input checkbox fica fora do fluxo restrito do card e o modal se expande globalmente via CSS sibling
+            # Reutiliza exatamente a mesma classe de lightbox das cestas
             img_html = f'''
-                <div style="position: relative; display: inline-block;">
-                    <input type="checkbox" id="add_chk_{prod.get('id')}" class="add-lightbox-toggle">
-                    <label for="add_chk_{prod.get('id')}" style="cursor: zoom-in; display: inline-block; margin-bottom: 6px;">
+                <div class="lightbox-wrapper" style="margin-bottom: 0px; height: auto;">
+                    <label style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                        <input type="checkbox" class="lightbox-toggle">
                         <img src="{img_src}" class="adicional-img-small" title="Clique para ampliar">
-                    </label>
-                    <div class="add-lightbox-modal">
-                        <label for="add_chk_{prod.get('id')}" style="width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: zoom-out;">
+                        <div class="lightbox-modal">
                             <img src="{img_src}">
-                        </label>
-                    </div>
+                        </div>
+                    </label>
                 </div>
             '''
         else:
