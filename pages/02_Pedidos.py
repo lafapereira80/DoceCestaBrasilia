@@ -60,6 +60,22 @@ def formatar_data(data_str):
     except: return str(data_str)
 
 # =====================================================
+# CACHING DINÂMICO PARA SEÇÕES E CESTAS (ATUALIZAÇÃO IMEDIATA)
+# =====================================================
+@st.cache_data(ttl=5, show_spinner=False)
+def obter_secoes_e_cestas_ativas():
+    try:
+        secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
+        secoes_ativas = sorted([s for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
+        nomes_secoes_ativas = {s["nome"] for s in secoes_ativas}
+
+        cestas_todas = listar_cestas()
+        cestas = [c for c in cestas_todas if c.get("ativa", True) and c.get("secao_vitrine", "Cestas de Café") in nomes_secoes_ativas]
+        return sorted(cestas, key=lambda x: x.get("ordem", 999))
+    except:
+        return []
+
+# =====================================================
 # FUNÇÃO LOCAL PARA MUDAR STATUS NO BANCO
 # =====================================================
 def alterar_para_enviado(pedido_id):
@@ -200,17 +216,7 @@ def render_criar_pedido_manual():
                     st.rerun(scope="fragment")
         
         st.markdown("#### 🎁 Seleção da Cesta e Montagem")
-        try: 
-            # Bloco blindado igual ao 01_Inicio: Busca seções ativas no banco ordenadas
-            secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
-            secoes_ativas = sorted([s for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
-            nomes_secoes_ativas = {s["nome"] for s in secoes_ativas}
-
-            cestas_todas = listar_cestas()
-            # Filtra apenas cestas ativas E pertencentes estritamente a seções ativas
-            cestas = [c for c in cestas_todas if c.get("ativa", True) and c.get("secao_vitrine", "Cestas de Café") in nomes_secoes_ativas]
-            cestas = sorted(cestas, key=lambda x: x.get("ordem", 999))
-        except: cestas = []
+        cestas = obter_secoes_e_cestas_ativas()
         
         cesta_sel = st.selectbox("Selecione a Cesta Base *", [{"id": None, "nome": "Selecione..."}] + cestas, format_func=lambda x: x["nome"], key="man_sel_cesta")
         selecoes_admin = {}
