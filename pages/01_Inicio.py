@@ -28,7 +28,7 @@ st.set_page_config(
 )
 
 # ==========================================================
-# CACHING DE ALTA PERFORMANCE
+# CACHING DINÂMICO (ATUALIZAÇÃO INSTANTÂNEA)
 # ==========================================================
 @st.cache_data(ttl=600, show_spinner=False)
 def obter_categorias_cacheadas():
@@ -37,7 +37,7 @@ def obter_categorias_cacheadas():
     except:
         return []
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=5, show_spinner=False)  # TTL reduzido para 5 segundos para refletir ativações na hora
 def obter_secoes_ordenadas():
     try:
         secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
@@ -46,7 +46,7 @@ def obter_secoes_ordenadas():
     except:
         return ["Cestas de Café"]
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=5, show_spinner=False)  # TTL reduzido para 5 segundos para refletir produtos de seções ativadas
 def obter_cestas_cacheadas():
     try:
         cestas = supabase.table("cestas").select("*").eq("ativa", True).execute().data or []
@@ -374,7 +374,6 @@ if cestas and secoes_disponiveis:
                     st.image(cesta_obj["imagem"], use_container_width=True)
             with col_txt:
                 sec_txt = cesta_obj.get("secao_vitrine", "Cestas de Café")
-                # Nome da cesta posicionado no local original mas com a fonte clássica refinada
                 st.markdown(f'<div class="destaque-cesta-nome-local">{cesta_obj.get("nome", "")}</div>', unsafe_allow_html=True)
                 st.markdown(f"**Categoria:** <span style='color: #775a46; font-size:13px;'>{sec_txt}</span>", unsafe_allow_html=True)
                 if cesta_obj.get("descricao"): st.caption(cesta_obj["descricao"])
