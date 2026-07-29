@@ -201,12 +201,15 @@ def render_criar_pedido_manual():
         
         st.markdown("#### 🎁 Seleção da Cesta e Montagem")
         try: 
-            # Filtra apenas cestas ativas e de seções válidas do painel
-            secoes_ativas_bd = supabase.table("vitrine_secoes").select("nome").eq("ativa", True).execute().data or []
-            nomes_secoes_ativas = {s["nome"] for s in secoes_ativas_bd}
-            
+            # Bloco blindado igual ao 01_Inicio: Busca seções ativas no banco ordenadas
+            secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
+            secoes_ativas = sorted([s for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
+            nomes_secoes_ativas = {s["nome"] for s in secoes_ativas}
+
             cestas_todas = listar_cestas()
+            # Filtra apenas cestas ativas E pertencentes estritamente a seções ativas
             cestas = [c for c in cestas_todas if c.get("ativa", True) and c.get("secao_vitrine", "Cestas de Café") in nomes_secoes_ativas]
+            cestas = sorted(cestas, key=lambda x: x.get("ordem", 999))
         except: cestas = []
         
         cesta_sel = st.selectbox("Selecione a Cesta Base *", [{"id": None, "nome": "Selecione..."}] + cestas, format_func=lambda x: x["nome"], key="man_sel_cesta")
