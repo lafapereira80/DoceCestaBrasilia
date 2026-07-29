@@ -138,6 +138,16 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     letter-spacing: -0.3px; display: flex; align-items: center; gap: 8px;
 }
 
+/* Fonte Clássica Dancing Script aplicada perfeitamente no local original */
+.destaque-cesta-nome-local {
+    font-family: 'Dancing Script', cursive !important;
+    font-size: 26px !important;
+    font-weight: 700 !important;
+    color: #c5721f !important;
+    line-height: 1.1 !important;
+    margin-bottom: 4px;
+}
+
 /* Campos de Entrada Modernos */
 input, textarea, select {
     border-radius: 12px !important; border: 1px solid #dfcdbb !important; background-color: #faf7f3 !important;
@@ -364,8 +374,8 @@ if cestas and secoes_disponiveis:
                     st.image(cesta_obj["imagem"], use_container_width=True)
             with col_txt:
                 sec_txt = cesta_obj.get("secao_vitrine", "Cestas de Café")
-                # Nome da cesta em destaque logo acima da descrição da Categoria
-                st.markdown(f"<div style='font-size: 16px; font-weight: 800; color: #c5721f; margin-bottom: 4px;'>{cesta_obj.get('nome', '')}</div>", unsafe_allow_html=True)
+                # Nome da cesta posicionado no local original mas com a fonte clássica refinada
+                st.markdown(f'<div class="destaque-cesta-nome-local">{cesta_obj.get("nome", "")}</div>', unsafe_allow_html=True)
                 st.markdown(f"**Categoria:** <span style='color: #775a46; font-size:13px;'>{sec_txt}</span>", unsafe_allow_html=True)
                 if cesta_obj.get("descricao"): st.caption(cesta_obj["descricao"])
                 valor = float(cesta_obj.get("preco", 0))
