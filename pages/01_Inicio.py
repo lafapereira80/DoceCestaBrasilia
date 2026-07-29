@@ -234,7 +234,7 @@ with st.container(border=True):
 
 
 # ==========================================================
-# 2. SELEÇÃO INTELIGENTE (SEÇÃO E CESTA LADO A LADO)
+# 2. SELEÇÃO INTELIGENTE DA CESTA / PRESENTE
 # ==========================================================
 cestas = obter_cestas_cacheadas()
 secoes_disponiveis = obter_secoes_ordenadas()
@@ -260,43 +260,62 @@ if cestas and secoes_disponiveis:
     with st.container(border=True):
         st.markdown('<div class="secao-titulo">🎁 Escolha sua Opção</div>', unsafe_allow_html=True)
         
-        # Colocando Categoria e Cesta Lado a Lado
-        col_categoria, col_modelo = st.columns(2)
-        
-        # --- CAMPO 1: ESCOLHA A SEÇÃO ---
         def ao_mudar_secao():
             st.session_state["cesta_selecionada_id"] = None
 
-        with col_categoria:
-            st.selectbox(
-                "🗂️ 1. Selecione a Categoria", 
-                secoes_disponiveis,
-                index=secoes_disponiveis.index(st.session_state["secao_form"]),
-                key="secao_form",
-                on_change=ao_mudar_secao
-            )
+        # -- SE EXISTE MAIS DE UMA CATEGORIA ATIVA (Mostra as duas caixas lado a lado)
+        if len(secoes_disponiveis) > 1:
+            col_categoria, col_modelo = st.columns(2)
+            
+            with col_categoria:
+                st.selectbox(
+                    "🗂️ 1. Selecione a Categoria", 
+                    secoes_disponiveis,
+                    index=secoes_disponiveis.index(st.session_state["secao_form"]),
+                    key="secao_form",
+                    on_change=ao_mudar_secao
+                )
 
-        # Filtra as cestas de acordo com a Seção escolhida
-        cestas_da_secao = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") == st.session_state["secao_form"]]
-        opcoes_cestas = [{"id": None, "nome": "Selecione o modelo desejado..."}] + cestas_da_secao
-        
-        cesta_idx = 0
-        if st.session_state.get("cesta_selecionada_id"):
-            for i, c in enumerate(opcoes_cestas):
-                if c["id"] == st.session_state["cesta_selecionada_id"]:
-                    cesta_idx = i
-                    break
+            cestas_da_secao = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") == st.session_state["secao_form"]]
+            opcoes_cestas = [{"id": None, "nome": "Selecione o presente..."}] + cestas_da_secao
+            
+            cesta_idx = 0
+            if st.session_state.get("cesta_selecionada_id"):
+                for i, c in enumerate(opcoes_cestas):
+                    if c["id"] == st.session_state["cesta_selecionada_id"]:
+                        cesta_idx = i
+                        break
 
-        # --- CAMPO 2: ESCOLHA A CESTA ---
-        with col_modelo:
+            with col_modelo:
+                cesta_selecionada = st.selectbox(
+                    "💝 2. Qual será o presente?", 
+                    opcoes_cestas, 
+                    format_func=lambda c: c["nome"], 
+                    index=cesta_idx
+                )
+                
+        # -- SE EXISTE APENAS 1 CATEGORIA (Oculta a primeira caixa e mostra só o presente)
+        else:
+            st.session_state["secao_form"] = secoes_disponiveis[0]
+            cestas_da_secao = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") == st.session_state["secao_form"]]
+            opcoes_cestas = [{"id": None, "nome": "Selecione a opção desejada..."}] + cestas_da_secao
+            
+            cesta_idx = 0
+            if st.session_state.get("cesta_selecionada_id"):
+                for i, c in enumerate(opcoes_cestas):
+                    if c["id"] == st.session_state["cesta_selecionada_id"]:
+                        cesta_idx = i
+                        break
+
             cesta_selecionada = st.selectbox(
-                "🛍️ 2. Modelo Desejado", 
+                "💝 Qual será o presente?", 
                 opcoes_cestas, 
                 format_func=lambda c: c["nome"], 
                 index=cesta_idx
             )
 
-        # SE UMA CESTA FOR ESCOLHIDA, EXIBE OS DETALHES
+
+        # SE UMA CESTA FOR ESCOLHIDA, EXIBE OS DETALHES ABAIXO
         if cesta_selecionada and cesta_selecionada.get("id"):
             cesta_obj = cesta_selecionada
             st.session_state["cesta_selecionada_id"] = cesta_selecionada.get("id")
