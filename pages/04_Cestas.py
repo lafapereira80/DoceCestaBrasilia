@@ -43,7 +43,7 @@ st.markdown(
 """
 <style>
 /* =========================================
-   CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
+    CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
 ========================================== */
 .block-container {
     padding-top: 1.5rem !important;
@@ -66,7 +66,7 @@ h1 {
 }
 
 /* =========================================
-   ACORDEÃO (EXPANDER) "NOVA CESTA"
+    ACORDEÃO (EXPANDER) "NOVA CESTA"
 ========================================== */
 div[data-testid="stExpander"] {
     background: #ffffff;
@@ -92,7 +92,7 @@ div[data-testid="stExpanderDetails"] {
 }
 
 /* =========================================
-   CARDS DE CESTAS
+    CARDS DE CESTAS
 ========================================== */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff;
@@ -117,7 +117,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
 }
 
 /* =========================================
-   ELEMENTOS DE TEXTO & BADGES
+    ELEMENTOS DE TEXTO & BADGES
 ========================================== */
 .cesta-nome {
     font-weight: 800;
@@ -157,7 +157,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
 .badge-inativa { background-color: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; }
 
 /* =========================================
-   BOTÕES DE AÇÃO NA TABELA
+    BOTÕES DE AÇÃO NA TABELA
 ========================================== */
 div[data-testid="stColumn"] div[data-testid="stButton"] button {
     font-size: 15px !important;
@@ -220,11 +220,9 @@ with col_t1:
 # =====================================================
 
 try:
-    # Busca ordenada direto do Supabase usando a coluna ordem
     resposta = supabase.table("cestas").select("*").order("ordem", desc=False).execute()
     cestas = resposta.data or []
     
-    # Realinha caso haja buracos na numeração do banco
     for i, c in enumerate(cestas):
         nova_pos = i + 1
         if c.get("ordem") != nova_pos:
@@ -240,19 +238,15 @@ proxima_ordem = total_cestas + 1
 
 
 # =====================================================
-# BUSCA DE SEÇÕES EXISTENTES PARA O DROPDOWN
+# BUSCA DE SEÇÕES OFICIAIS EXCLUSIVAS (TABELA vitrine_secoes)
 # =====================================================
-secoes_unicas = set()
-for c in cestas:
-    sec = c.get("secao_vitrine")
-    if sec and str(sec).strip() != "":
-        secoes_unicas.add(str(sec).strip())
-
-if not secoes_unicas:
-    secoes_unicas.add("Cestas Tradicionais")
-
-lista_secoes = sorted(list(secoes_unicas))
-lista_secoes.append("➕ Criar nova seção...")
+try:
+    res_secoes = supabase.table("vitrine_secoes").select("nome").order("ordem").execute()
+    lista_secoes = [s["nome"] for s in (res_secoes.data or [])]
+    if not lista_secoes:
+        lista_secoes = ["Cestas de Café"]
+except:
+    lista_secoes = ["Cestas de Café"]
 
 
 # =====================================================
@@ -268,17 +262,13 @@ if usuario.get("perfil") == "Administrador":
         with col_f1:
             nome = st.text_input("Nome da Opção", placeholder="Ex: Tábua de Frios Premium")
             
-            # DROPDOWN INTELIGENTE PARA SEÇÃO DA VITRINE
+            # DROPDOWN PUXANDO APENAS AS SEÇÕES OFICIAIS CADASTRADAS NO MÓDULO EXCLUSIVO
             secao_selecionada = st.selectbox(
                 "Seção na Vitrine", 
                 lista_secoes,
-                help="Escolha em qual bloco do site este produto vai aparecer."
+                help="Selecione a seção correspondente. Para criar ou gerenciar seções, utilize o menu 'Seções da Vitrine'."
             )
             
-            nova_secao = ""
-            if secao_selecionada == "➕ Criar nova seção...":
-                nova_secao = st.text_input("Nome da Nova Seção", placeholder="Ex: Kits Corporativos")
-                
             descricao = st.text_area("Descrição", height=105, placeholder="Descreva os itens principais que acompanham...")
 
         with col_f2:
@@ -286,7 +276,6 @@ if usuario.get("perfil") == "Administrador":
             with col_p1:
                 preco = st.number_input("Preço (R$)", min_value=0.0, value=0.0, step=1.0, format="%.2f")
             with col_p2:
-                # REQUISITO: Trava para impedir ordem maior do que a próxima sequência correta
                 ordem_escolhida = st.number_input(
                     "Ordem Geral", 
                     min_value=1, 
@@ -313,12 +302,10 @@ else:
 # =====================================================
 
 if salvar:
-    secao_final = nova_secao.strip() if secao_selecionada == "➕ Criar nova seção..." else secao_selecionada
-    
     if not nome.strip():
         st.error("Informe o nome do produto.")
-    elif not secao_final:
-        st.error("Informe o nome da seção para a vitrine.")
+    elif not secao_selecionada:
+        st.error("Selecione a seção para a vitrine.")
     else:
         try:
             with st.spinner("Registrando produto e ajustando posições no banco..."):
@@ -328,12 +315,10 @@ if salvar:
 
                 pos_desejada = int(ordem_escolhida)
 
-                # Se inseriu numa posição intermediária, empurra as ordens seguintes para frente no banco
                 for c in cestas:
                     if c["ordem"] >= pos_desejada:
                         supabase.table("cestas").update({"ordem": c["ordem"] + 1}).eq("id", c["id"]).execute()
 
-                # Cadastra a nova cesta com a ordem exata escolhida (usa o service existente)
                 cadastrar_cesta(
                     nome=nome.strip(), 
                     descricao=descricao.strip(), 
@@ -342,10 +327,10 @@ if salvar:
                     ordem=pos_desejada
                 )
                 
-                # Injeção inteligente da seção (atualiza o produto recém-criado)
-                supabase.table("cestas").update({"secao_vitrine": secao_final}).eq("nome", nome.strip()).execute()
+                # Associa diretamente com a seção selecionada
+                supabase.table("cestas").update({"secao_vitrine": secao_selecionada}).eq("nome", nome.strip()).execute()
 
-            st.success(f"✅ Opção cadastrada na seção '{secao_final}' com sucesso!")
+            st.success(f"✅ Opção cadastrada na seção '{secao_selecionada}' com sucesso!")
             st.rerun()
 
         except Exception as erro:
@@ -429,7 +414,6 @@ else:
                             ordem_removida = cesta["ordem"]
                             excluir_cesta(cesta["id"])
                             
-                            # REQUISITO: Ao excluir, reorganiza o banco fechando lacunas
                             cestas_restantes = supabase.table("cestas").select("*").order("ordem", desc=False).execute().data or []
                             for idx_r, rest in enumerate(cestas_restantes):
                                 nova_ordem_correta = idx_r + 1
