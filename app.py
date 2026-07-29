@@ -4,6 +4,10 @@ import mimetypes
 from pathlib import Path
 import importlib
 
+# 👇 As funções do banco de dados que estavam faltando
+from services.cesta_service import listar_cestas
+from services.produto_service import listar_produtos_por_categoria_id
+
 # ==========================================================
 # BUSCA INTELIGENTE DE CATEGORIAS (INFALÍVEL)
 # ==========================================================
