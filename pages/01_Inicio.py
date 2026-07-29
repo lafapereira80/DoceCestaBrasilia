@@ -28,18 +28,18 @@ st.set_page_config(
 )
 
 # ==========================================================
-# CACHING DE ALTA PERFORMANCE (BLINDADO CONTRA INATIVAS)
+# CACHING DE ALTA PERFORMANCE (ELIMINA O LOADING LENTO)
 # ==========================================================
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=600, show_spinner=False)
 def obter_categorias_cacheadas():
     try:
         return supabase.table("categorias").select("*").execute().data or []
     except:
         return []
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=300, show_spinner=False)
 def obter_secoes_ordenadas():
-    """Busca apenas as seções que estão ATIVAS no painel"""
+    """Busca apenas as seções que estão ATIVAS no painel com cache de alta velocidade"""
     try:
         secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
         secoes_ativas = sorted([s for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
@@ -47,37 +47,32 @@ def obter_secoes_ordenadas():
     except:
         return ["Cestas de Café"]
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=300, show_spinner=False)
 def obter_cestas_cacheadas():
     """Busca cestas ativas E pertencentes apenas a seções ativas"""
     try:
         cestas = supabase.table("cestas").select("*").eq("ativa", True).execute().data or []
-        
-        # Pega a lista de seções estritamente ativas
         secoes_ativas = obter_secoes_ordenadas()
-        
-        # Filtra para que produtos de seções desativadas não apareçam no formulário
         cestas_filtradas = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") in secoes_ativas]
-        
         return sorted(cestas_filtradas, key=lambda x: x.get("ordem", 999))
     except:
         return []
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=300, show_spinner=False)
 def obter_configuracao_cesta_cacheada(cesta_id):
     try:
         return carregar_configuracao_cesta(cesta_id)
     except:
         return []
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=300, show_spinner=False)
 def obter_produtos_por_categoria_cacheados(categoria_id):
     try:
         return listar_produtos_por_categoria_id(categoria_id)
     except:
         return []
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def carregar_logo_base64():
     logo_path = Path("assets/logo.webp")
     if logo_path.exists():
@@ -109,7 +104,6 @@ section[data-testid="stSidebar"] { display: none !important; }
 header { visibility: hidden !important; height: 0px !important; }
 footer { visibility: hidden !important; }
 
-/* Oculta o menu flutuante de cache do Streamlit */
 .stAppDeployMenu { display: none !important; }
 
 .block-container { max-width: 720px !important; padding-top: 1rem !important; padding-bottom: 3rem !important; }
@@ -238,10 +232,11 @@ with st.container(border=True):
 
 
 # ==========================================================
-# 2. SELEÇÃO INTELIGENTE DA CESTA / PRESENTE
+# 2. SELEÇÃO INTELIGENTE DA CESTA / PRESENTE (COM CARREGAMENTO SILENCIOSO)
 # ==========================================================
-cestas = obter_cestas_cacheadas()
-secoes_disponiveis = obter_secoes_ordenadas()
+with st.spinner("Carregando opções..."):
+    cestas = obter_cestas_cacheadas()
+    secoes_disponiveis = obter_secoes_ordenadas()
 
 cesta_obj = None
 selecoes_cliente = {}
