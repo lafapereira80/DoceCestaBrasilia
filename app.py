@@ -17,8 +17,7 @@ def obter_categorias():
     try:
         from config.supabase import supabase
         return supabase.table("categorias").select("*").execute().data or []
-    except Exception as e:
-        return []
+    except Exception as e: return []
 
 st.set_page_config(page_title="Doce Cesta Brasília | Vitrine Oficial", page_icon="🎁", layout="wide", initial_sidebar_state="collapsed")
 
@@ -33,7 +32,7 @@ def image_to_base64(img_path):
     except: return img_path
 
 # ==========================================================
-# CSS PREMIUM COM ESTILIZAÇÃO DAS ABAS (TABS)
+# CSS PREMIUM E ESTILOS GERAIS
 # ==========================================================
 st.markdown(
 """
@@ -48,21 +47,10 @@ footer { visibility: hidden !important; }
 html, body, [class*="css"]  { font-family: 'Montserrat', sans-serif !important; }
 .block-container { max-width: 1150px !important; padding-top: 1.5rem !important; padding-bottom: 3rem !important; }
 
-/* ESTILIZAÇÃO DAS ABAS (TABS) */
-div[data-testid="stTabs"] button {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 16px;
-    font-weight: 600;
-    color: #8c7362;
-    padding-bottom: 12px !important;
-}
-div[data-testid="stTabs"] button[aria-selected="true"] {
-    color: #c5721f !important;
-    font-weight: 800 !important;
-}
-div[data-testid="stTabs"] button[aria-selected="true"] div[data-testid="stMarkdownContainer"] p {
-    color: #c5721f !important;
-}
+/* ABAS */
+div[data-testid="stTabs"] button { font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 600; color: #8c7362; padding-bottom: 12px !important; }
+div[data-testid="stTabs"] button[aria-selected="true"] { color: #c5721f !important; font-weight: 800 !important; }
+div[data-testid="stTabs"] button[aria-selected="true"] div[data-testid="stMarkdownContainer"] p { color: #c5721f !important; }
 
 .header-banner { display: flex; align-items: center; justify-content: center; gap: 24px; margin-bottom: 2rem; width: 100%; background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%); padding: 24px 30px; border-radius: 20px; border: 1px solid #e8ddd3; box-shadow: 0 8px 24px rgba(90, 59, 40, 0.04); position: relative; top: 0; transition: all 0.3s ease; }
 .header-banner:hover { top: -2px; }
@@ -163,16 +151,16 @@ st.markdown(
 
 
 # ==========================================================
-# MOTOR DE ABAS (TABS) DINÂMICAS COM ÍCONES
+# MOTOR DE RENDERIZAÇÃO INTELIGENTE DA VITRINE
 # ==========================================================
 try:
     from config.supabase import supabase
     
-    # 1. Puxa as seções ordenadas do banco
+    # Busca apenas seções que estão ATIVAS
     res_ordem = supabase.table("vitrine_secoes").select("*").order("ordem").execute()
-    secoes_ordenadas_bd = res_ordem.data or []
+    todas_secoes = res_ordem.data or []
+    secoes_ordenadas_bd = [s for s in todas_secoes if s.get("ativa", True)]
     
-    # 2. Puxa os produtos
     todos_produtos = listar_cestas()
     todos_produtos = [c for c in todos_produtos if c.get("ativa", True)]
     for p in todos_produtos:
@@ -184,81 +172,105 @@ except Exception as erro:
     secoes_ordenadas_bd = []
     todos_produtos = []
 
+# Função auxiliar para desenhar o card de cada produto
+def desenhar_card_produto(produto, nome_secao_atual):
+    with st.container(border=True):
+        col_img, col_text = st.columns([1.2, 2], gap="large")
+        with col_img:
+            imagem_url = produto.get("imagem")
+            if imagem_url and str(imagem_url).strip():
+                img_src = image_to_base64(imagem_url)
+                st.markdown(
+                    f"""
+                    <div class="lightbox-wrapper">
+                        <label style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                            <input type="checkbox" class="lightbox-toggle">
+                            <img src="{img_src}" class="lightbox-image" title="Clique para ampliar">
+                            <div class="lightbox-modal"><img src="{img_src}"></div>
+                        </label>
+                        <div class="imagem-legenda">👆 Toque na foto para ampliar</div>
+                    </div>
+                    """, unsafe_allow_html=True
+                )
+            fotos_extras = produto.get("fotos_adicionais", [])
+            if isinstance(fotos_extras, list) and len(fotos_extras) > 0:
+                st.markdown("<div style='font-size: 11px; font-weight: 800; color: #775a46; margin-bottom: 6px; text-transform: uppercase;'>📸 Outros ângulos:</div>", unsafe_allow_html=True)
+                cols_extras = st.columns(min(len(fotos_extras), 3))
+                for f_idx, f_url in enumerate(fotos_extras[:3]):
+                    if f_url and str(f_url).strip():
+                        with cols_extras[f_idx]: st.image(str(f_url).strip(), use_container_width=True)
+
+        with col_text:
+            st.markdown(f'<div class="card-cesta-titulo">{produto.get("nome", "")}</div>', unsafe_allow_html=True)
+            if produto.get("descricao") and str(produto["descricao"]).strip(): st.markdown(f'<div class="card-cesta-desc">{produto["descricao"]}</div>', unsafe_allow_html=True)
+            try:
+                valor = float(produto.get("preco", 0))
+                valor_fmt = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
+                st.markdown(f'<div class="card-cesta-preco">{valor_fmt}</div>', unsafe_allow_html=True)
+            except: st.markdown('<div class="card-cesta-preco">Preço sob consulta</div>', unsafe_allow_html=True)
+            
+            st.write("")
+            btn_text = "🛒 Quero Montar Esta Opção"
+            if "tábua" in produto.get("nome", "").lower() or "tabua" in produto.get("nome", "").lower(): btn_text = "🛒 Quero Montar Esta Tábua"
+            elif "cesta" in produto.get("nome", "").lower(): btn_text = "🛒 Quero Montar Esta Cesta"
+            elif "corporativo" in nome_secao_atual.lower(): btn_text = "🛒 Quero Este Kit"
+
+            if st.button(btn_text, key=f"prod_btn_{produto['id']}", use_container_width=True):
+                st.session_state["cesta_selecionada_home"] = produto["id"]
+                st.switch_page("pages/01_Inicio.py")
+
+# ==========================================================
+# LÓGICA DE EXIBIÇÃO: ÚNICA SEÇÃO VS ABAS (TABS)
+# ==========================================================
 if not secoes_ordenadas_bd:
-    st.info("O catálogo está sendo atualizado. Nenhum produto disponível no momento.")
+    st.info("Nenhuma seção ativa no momento. O catálogo está sendo atualizado.")
 else:
     st.markdown("<h3 style='font-family: \"Montserrat\", sans-serif; color:#4a2e1b; margin-top:10px; margin-bottom:14px; font-weight:800; font-size: 26px; letter-spacing: -0.5px;'>🎁 Catálogo Oficial</h3>", unsafe_allow_html=True)
     
-    # Cria os títulos das abas colocando um ícone inteligente baseado no nome
-    titulos_abas = []
-    for s in secoes_ordenadas_bd:
-        nome = s["nome"]
+    # -----------------------------------------------
+    # CENÁRIO 1: APENAS 1 SEÇÃO ATIVA (Layout Antigo)
+    # -----------------------------------------------
+    if len(secoes_ordenadas_bd) == 1:
+        secao_unica = secoes_ordenadas_bd[0]
+        nome = secao_unica["nome"]
         icone = "🎁"
         if "tábua" in nome.lower() or "tabua" in nome.lower() or "frios" in nome.lower(): icone = "🧀"
         elif "corporativo" in nome.lower(): icone = "💼"
-        titulos_abas.append(f"{icone} {nome}")
-
-    # Cria as abas horizontais (O componente mais elegante para vitrines)
-    abas = st.tabs(titulos_abas)
-
-    # Preenche cada aba com seus respectivos produtos
-    for i, aba in enumerate(abas):
-        nome_secao_atual = secoes_ordenadas_bd[i]["nome"]
+            
+        st.markdown(f"<h3 style='font-family: \"Montserrat\", sans-serif; color:#c5721f; margin-top:30px; margin-bottom:14px; font-weight:800; font-size: 32px; letter-spacing: -0.5px;'>{icone} {nome}</h3>", unsafe_allow_html=True)
         
-        with aba:
-            st.write("") # Espaçamento para o conteúdo respirar
-            
-            # Filtra apenas os produtos que pertencem a esta aba
-            produtos_desta_secao = [p for p in todos_produtos if p.get("secao_vitrine", "Cestas de Café") == nome_secao_atual]
-            
-            if not produtos_desta_secao:
-                st.info(f"✨ Em breve teremos novidades incríveis na categoria de **{nome_secao_atual}**!")
-            else:
-                for produto in produtos_desta_secao:
-                    with st.container(border=True):
-                        col_img, col_text = st.columns([1.2, 2], gap="large")
-                        with col_img:
-                            imagem_url = produto.get("imagem")
-                            if imagem_url and str(imagem_url).strip():
-                                img_src = image_to_base64(imagem_url)
-                                st.markdown(
-                                    f"""
-                                    <div class="lightbox-wrapper">
-                                        <label style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
-                                            <input type="checkbox" class="lightbox-toggle">
-                                            <img src="{img_src}" class="lightbox-image" title="Clique para ampliar">
-                                            <div class="lightbox-modal"><img src="{img_src}"></div>
-                                        </label>
-                                        <div class="imagem-legenda">👆 Toque na foto para ampliar</div>
-                                    </div>
-                                    """, unsafe_allow_html=True
-                                )
-                            fotos_extras = produto.get("fotos_adicionais", [])
-                            if isinstance(fotos_extras, list) and len(fotos_extras) > 0:
-                                st.markdown("<div style='font-size: 11px; font-weight: 800; color: #775a46; margin-bottom: 6px; text-transform: uppercase;'>📸 Outros ângulos:</div>", unsafe_allow_html=True)
-                                cols_extras = st.columns(min(len(fotos_extras), 3))
-                                for f_idx, f_url in enumerate(fotos_extras[:3]):
-                                    if f_url and str(f_url).strip():
-                                        with cols_extras[f_idx]: st.image(str(f_url).strip(), use_container_width=True)
+        produtos_desta_secao = [p for p in todos_produtos if p.get("secao_vitrine", "Cestas de Café") == nome]
+        if not produtos_desta_secao:
+            st.info(f"✨ Em breve teremos novidades em **{nome}**!")
+        else:
+            for produto in produtos_desta_secao:
+                desenhar_card_produto(produto, nome)
 
-                        with col_text:
-                            st.markdown(f'<div class="card-cesta-titulo">{produto.get("nome", "")}</div>', unsafe_allow_html=True)
-                            if produto.get("descricao") and str(produto["descricao"]).strip(): st.markdown(f'<div class="card-cesta-desc">{produto["descricao"]}</div>', unsafe_allow_html=True)
-                            try:
-                                valor = float(produto.get("preco", 0))
-                                valor_fmt = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
-                                st.markdown(f'<div class="card-cesta-preco">{valor_fmt}</div>', unsafe_allow_html=True)
-                            except: st.markdown('<div class="card-cesta-preco">Preço sob consulta</div>', unsafe_allow_html=True)
-                            
-                            st.write("")
-                            btn_text = "🛒 Quero Montar Esta Opção"
-                            if "tábua" in produto.get("nome", "").lower() or "tabua" in produto.get("nome", "").lower(): btn_text = "🛒 Quero Montar Esta Tábua"
-                            elif "cesta" in produto.get("nome", "").lower(): btn_text = "🛒 Quero Montar Esta Cesta"
-                            elif "corporativo" in nome_secao_atual.lower(): btn_text = "🛒 Quero Este Kit"
+    # -----------------------------------------------
+    # CENÁRIO 2: 2 OU MAIS SEÇÕES ATIVAS (Layout de Abas)
+    # -----------------------------------------------
+    else:
+        titulos_abas = []
+        for s in secoes_ordenadas_bd:
+            nome = s["nome"]
+            icone = "🎁"
+            if "tábua" in nome.lower() or "tabua" in nome.lower() or "frios" in nome.lower(): icone = "🧀"
+            elif "corporativo" in nome.lower(): icone = "💼"
+            titulos_abas.append(f"{icone} {nome}")
 
-                            if st.button(btn_text, key=f"prod_btn_{produto['id']}", use_container_width=True):
-                                st.session_state["cesta_selecionada_home"] = produto["id"]
-                                st.switch_page("pages/01_Inicio.py")
+        abas = st.tabs(titulos_abas)
+
+        for i, aba in enumerate(abas):
+            nome_secao_atual = secoes_ordenadas_bd[i]["nome"]
+            with aba:
+                st.write("") 
+                produtos_desta_secao = [p for p in todos_produtos if p.get("secao_vitrine", "Cestas de Café") == nome_secao_atual]
+                
+                if not produtos_desta_secao:
+                    st.info(f"✨ Em breve teremos novidades incríveis na categoria de **{nome_secao_atual}**!")
+                else:
+                    for produto in produtos_desta_secao:
+                        desenhar_card_produto(produto, nome_secao_atual)
 
 # ==========================================================
 # ADICIONAIS E RODAPÉ
