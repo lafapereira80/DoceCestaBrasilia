@@ -28,7 +28,7 @@ st.set_page_config(
 )
 
 # ==========================================================
-# CACHING DE ALTA PERFORMANCE
+# CACHING DE ALTA PERFORMANCE (BLINDADO CONTRA INATIVAS)
 # ==========================================================
 @st.cache_data(ttl=300)
 def obter_categorias_cacheadas():
@@ -38,29 +38,30 @@ def obter_categorias_cacheadas():
         return []
 
 @st.cache_data(ttl=60)
-def obter_cestas_cacheadas():
-    try:
-        cestas = supabase.table("cestas").select("*").eq("ativa", True).execute().data or []
-        
-        secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
-        secoes_ativas = [s["nome"] for s in secoes_bd if s.get("ativa", True)]
-        
-        # Filtra cestas apenas de seções ativas
-        cestas_filtradas = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") in secoes_ativas]
-        
-        # Ordena as cestas pela ordem cadastrada no banco
-        return sorted(cestas_filtradas, key=lambda x: x.get("ordem", 999))
-    except:
-        return []
-
-@st.cache_data(ttl=60)
 def obter_secoes_ordenadas():
+    """Busca apenas as seções que estão ATIVAS no painel"""
     try:
         secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
         secoes_ativas = sorted([s for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
         return [s["nome"] for s in secoes_ativas]
     except:
         return ["Cestas de Café"]
+
+@st.cache_data(ttl=60)
+def obter_cestas_cacheadas():
+    """Busca cestas ativas E pertencentes apenas a seções ativas"""
+    try:
+        cestas = supabase.table("cestas").select("*").eq("ativa", True).execute().data or []
+        
+        # Pega a lista de seções estritamente ativas
+        secoes_ativas = obter_secoes_ordenadas()
+        
+        # Filtra para que produtos de seções desativadas não apareçam no formulário
+        cestas_filtradas = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") in secoes_ativas]
+        
+        return sorted(cestas_filtradas, key=lambda x: x.get("ordem", 999))
+    except:
+        return []
 
 @st.cache_data(ttl=60)
 def obter_configuracao_cesta_cacheada(cesta_id):
@@ -266,7 +267,7 @@ if cestas and secoes_disponiveis:
         def ao_mudar_secao():
             st.session_state["cesta_selecionada_id"] = None
 
-        # -- SE EXISTE MAIS DE UMA CATEGORIA ATIVA (Mostra as duas caixas lado a lado)
+        # -- SE EXISTE MAIS DE UMA SEÇÃO ATIVA (Mostra as duas caixas lado a lado)
         if len(secoes_disponiveis) > 1:
             col_categoria, col_modelo = st.columns(2)
             
@@ -297,7 +298,7 @@ if cestas and secoes_disponiveis:
                     index=cesta_idx
                 )
                 
-        # -- SE EXISTE APENAS 1 CATEGORIA (Oculta a categoria e expande o presente)
+        # -- SE EXISTE APENAS 1 SEÇÃO ATIVA (Oculta a categoria e expande o presente)
         else:
             st.session_state["secao_form"] = secoes_disponiveis[0]
             cestas_da_secao = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") == st.session_state["secao_form"]]
