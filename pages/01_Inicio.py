@@ -234,7 +234,7 @@ with st.container(border=True):
 
 
 # ==========================================================
-# 2. SELEÇÃO INTELIGENTE (SEÇÃO -> CESTA)
+# 2. SELEÇÃO INTELIGENTE (SEÇÃO E CESTA LADO A LADO)
 # ==========================================================
 cestas = obter_cestas_cacheadas()
 secoes_disponiveis = obter_secoes_ordenadas()
@@ -247,7 +247,6 @@ if cestas and secoes_disponiveis:
     # -- LÓGICA DE PREENCHIMENTO AUTOMÁTICO VIA VITRINE --
     cesta_veio_da_home = st.session_state.get("cesta_selecionada_home")
     if cesta_veio_da_home:
-        # Se veio da Home, procura qual é a Seção dessa cesta
         for c in cestas:
             if c["id"] == cesta_veio_da_home:
                 st.session_state["secao_form"] = c.get("secao_vitrine", "Cestas de Café")
@@ -255,31 +254,32 @@ if cestas and secoes_disponiveis:
                 break
         st.session_state["cesta_selecionada_home"] = None # Reseta o gatilho da home
 
-    # Proteção caso a sessão não exista
     if "secao_form" not in st.session_state or st.session_state["secao_form"] not in secoes_disponiveis:
         st.session_state["secao_form"] = secoes_disponiveis[0]
 
     with st.container(border=True):
         st.markdown('<div class="secao-titulo">🎁 Escolha sua Opção</div>', unsafe_allow_html=True)
         
+        # Colocando Categoria e Cesta Lado a Lado
+        col_categoria, col_modelo = st.columns(2)
+        
         # --- CAMPO 1: ESCOLHA A SEÇÃO ---
         def ao_mudar_secao():
-            # Se o usuário mudar a seção na mão, a cesta selecionada é resetada
             st.session_state["cesta_selecionada_id"] = None
 
-        st.selectbox(
-            "🗂️ 1. Selecione a Categoria", 
-            secoes_disponiveis,
-            index=secoes_disponiveis.index(st.session_state["secao_form"]),
-            key="secao_form",
-            on_change=ao_mudar_secao
-        )
+        with col_categoria:
+            st.selectbox(
+                "🗂️ 1. Selecione a Categoria", 
+                secoes_disponiveis,
+                index=secoes_disponiveis.index(st.session_state["secao_form"]),
+                key="secao_form",
+                on_change=ao_mudar_secao
+            )
 
-        # Filtra as cestas de acordo com a Seção escolhida acima
+        # Filtra as cestas de acordo com a Seção escolhida
         cestas_da_secao = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") == st.session_state["secao_form"]]
         opcoes_cestas = [{"id": None, "nome": "Selecione o modelo desejado..."}] + cestas_da_secao
         
-        # Descobre o índice da cesta para deixar selecionada
         cesta_idx = 0
         if st.session_state.get("cesta_selecionada_id"):
             for i, c in enumerate(opcoes_cestas):
@@ -288,18 +288,20 @@ if cestas and secoes_disponiveis:
                     break
 
         # --- CAMPO 2: ESCOLHA A CESTA ---
-        cesta_selecionada = st.selectbox(
-            "🛍️ 2. Modelo Desejado", 
-            opcoes_cestas, 
-            format_func=lambda c: c["nome"], 
-            index=cesta_idx
-        )
+        with col_modelo:
+            cesta_selecionada = st.selectbox(
+                "🛍️ 2. Modelo Desejado", 
+                opcoes_cestas, 
+                format_func=lambda c: c["nome"], 
+                index=cesta_idx
+            )
 
+        # SE UMA CESTA FOR ESCOLHIDA, EXIBE OS DETALHES
         if cesta_selecionada and cesta_selecionada.get("id"):
             cesta_obj = cesta_selecionada
             st.session_state["cesta_selecionada_id"] = cesta_selecionada.get("id")
             
-            # --- MOSTRA OS DETALHES DO PRODUTO ESCOLHIDO ---
+            st.write("") # Espaçamento
             col_img, col_txt = st.columns([1, 2])
             with col_img:
                 if cesta_obj.get("imagem"):
