@@ -108,6 +108,9 @@ section[data-testid="stSidebar"] { display: none !important; }
 header { visibility: hidden !important; height: 0px !important; }
 footer { visibility: hidden !important; }
 
+/* Oculta o menu flutuante de cache do Streamlit */
+.stAppDeployMenu { display: none !important; }
+
 .block-container { max-width: 720px !important; padding-top: 1rem !important; padding-bottom: 3rem !important; }
 div[data-testid="stVerticalBlock"] { gap: 0.8rem !important; }
 
@@ -269,7 +272,7 @@ if cestas and secoes_disponiveis:
             
             with col_categoria:
                 st.selectbox(
-                    "🗂️ 1. Selecione a Categoria", 
+                    "💌 1. O que você gostaria de enviar?", 
                     secoes_disponiveis,
                     index=secoes_disponiveis.index(st.session_state["secao_form"]),
                     key="secao_form",
@@ -288,13 +291,13 @@ if cestas and secoes_disponiveis:
 
             with col_modelo:
                 cesta_selecionada = st.selectbox(
-                    "💝 2. Qual será o presente?", 
+                    "💝 2. Escolha o modelo perfeito", 
                     opcoes_cestas, 
                     format_func=lambda c: c["nome"], 
                     index=cesta_idx
                 )
                 
-        # -- SE EXISTE APENAS 1 CATEGORIA (Oculta a primeira caixa e mostra só o presente)
+        # -- SE EXISTE APENAS 1 CATEGORIA (Oculta a categoria e expande o presente)
         else:
             st.session_state["secao_form"] = secoes_disponiveis[0]
             cestas_da_secao = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") == st.session_state["secao_form"]]
@@ -308,7 +311,7 @@ if cestas and secoes_disponiveis:
                         break
 
             cesta_selecionada = st.selectbox(
-                "💝 Qual será o presente?", 
+                "💝 Escolha o modelo perfeito", 
                 opcoes_cestas, 
                 format_func=lambda c: c["nome"], 
                 index=cesta_idx
