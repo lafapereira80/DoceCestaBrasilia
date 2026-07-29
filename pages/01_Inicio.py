@@ -138,17 +138,16 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     letter-spacing: -0.3px; display: flex; align-items: center; gap: 8px;
 }
 
-/* Card de Confirmação do Item Selecionado */
-.card-selecao-ativa {
-    background: linear-gradient(135deg, #fff9f2 0%, #fdf5ec 100%);
-    border: 1px solid #e8ddd3; border-radius: 14px; padding: 14px 20px;
-    margin-top: 14px; margin-bottom: 14px; display: flex; align-items: center; gap: 12px;
-    box-shadow: 0 2px 8px rgba(197, 114, 31, 0.04);
+/* Tipografia refinada para o Nome da Cesta em Destaque */
+.destaque-cesta-nome {
+    font-family: 'Dancing Script', cursive !important;
+    font-size: 38px !important;
+    font-weight: 700 !important;
+    color: #c5721f !important;
+    line-height: 1.1 !important;
+    margin-top: 4px;
+    margin-bottom: 12px;
 }
-.card-selecao-icone { font-size: 24px; }
-.card-selecao-texto { display: flex; flex-direction: column; }
-.card-selecao-label { font-size: 11.5px; text-transform: uppercase; font-weight: 700; color: #8c7362; letter-spacing: 0.5px; }
-.card-selecao-nome { font-family: 'Dancing Script', cursive !important; font-size: 30px !important; font-weight: 700 !important; color: #c5721f !important; line-height: 1 !important; margin-top: 2px; }
 
 /* Campos de Entrada Modernos */
 input, textarea, select {
@@ -364,26 +363,14 @@ if cestas and secoes_disponiveis:
                 index=cesta_idx
             )
 
-        # SE UMA CESTA FOR ESCOLHIDA, EXIBE O CARD DE CONFIRMAÇÃO E OS DETALHES
+        # SE UMA CESTA FOR ESCOLHIDA, EXIBE O NOME ACIMA E OS DETALHES ABAIXO
         if cesta_selecionada and cesta_selecionada.get("id"):
             cesta_obj = cesta_selecionada
             st.session_state["cesta_selecionada_id"] = cesta_selecionada.get("id")
             
-            # --- CARD DE CONFIRMAÇÃO VISUAL COM FONTE TRATADA ---
-            st.markdown(
-                f"""
-                <div class="card-selecao-ativa">
-                    <div class="card-selecao-icone">✨</div>
-                    <div class="card-selecao-texto">
-                        <span class="card-selecao-label">Opção selecionada com sucesso:</span>
-                        <div class="card-selecao-nome">{cesta_obj['nome']}</div>
-                    </div>
-                </div>
-                """, 
-                unsafe_allow_html=True
-            )
+            # --- NOME DA CESTA ESCOLHIDA EM DESTAQUE LOGO ACIMA ---
+            st.markdown(f'<div class="destaque-cesta-nome">✨ {cesta_obj["nome"]}</div>', unsafe_allow_html=True)
 
-            st.write("")
             col_img, col_txt = st.columns([1.1, 2], gap="large")
             with col_img:
                 if cesta_obj.get("imagem"):
