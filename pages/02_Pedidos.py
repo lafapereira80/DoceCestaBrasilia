@@ -218,7 +218,14 @@ def render_criar_pedido_manual():
         st.markdown("#### 🎁 Seleção da Cesta e Montagem")
         cestas = obter_secoes_e_cestas_ativas()
         
-        cesta_sel = st.selectbox("Selecione a Cesta Base *", [{"id": None, "nome": "Selecione..."}] + cestas, format_func=lambda x: x["nome"], key="man_sel_cesta")
+        # Mostra o nome da seção junto com o nome da cesta para facilitar a escolha
+        cesta_sel = st.selectbox(
+            "Selecione a Cesta Base *", 
+            [{"id": None, "nome": "Selecione..."}] + cestas, 
+            format_func=lambda x: f"[{x.get('secao_vitrine', 'Geral')}] {x['nome']}" if x.get("id") else x["nome"], 
+            key="man_sel_cesta"
+        )
+        
         selecoes_admin = {}
         if cesta_sel and cesta_sel.get("id"):
             cfg = carregar_configuracao_cesta(cesta_sel["id"])
