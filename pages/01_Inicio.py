@@ -28,7 +28,7 @@ st.set_page_config(
 )
 
 # ==========================================================
-# CACHING DE ALTA PERFORMANCE (Evita a tela piscar/travar)
+# CACHING DE ALTA PERFORMANCE
 # ==========================================================
 @st.cache_data(ttl=300)
 def obter_categorias_cacheadas():
@@ -42,15 +42,25 @@ def obter_cestas_cacheadas():
     try:
         cestas = supabase.table("cestas").select("*").eq("ativa", True).execute().data or []
         
-        # Garante que as seções inativas não apareçam no dropdown do formulário
-        secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa").execute().data or []
+        secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
         secoes_ativas = [s["nome"] for s in secoes_bd if s.get("ativa", True)]
         
+        # Filtra cestas apenas de seções ativas
         cestas_filtradas = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") in secoes_ativas]
         
+        # Ordena as cestas pela ordem cadastrada no banco
         return sorted(cestas_filtradas, key=lambda x: x.get("ordem", 999))
     except:
         return []
+
+@st.cache_data(ttl=60)
+def obter_secoes_ordenadas():
+    try:
+        secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
+        secoes_ativas = sorted([s for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
+        return [s["nome"] for s in secoes_ativas]
+    except:
+        return ["Cestas de Café"]
 
 @st.cache_data(ttl=60)
 def obter_configuracao_cesta_cacheada(cesta_id):
@@ -93,28 +103,23 @@ def validar_cpf(cpf: str) -> bool:
 st.markdown(
 """
 <style>
-/* Remoção de menus laterais */
 section[data-testid="stSidebar"] { display: none !important; }
 [data-testid="collapsedControl"] { display: none !important; }
 header { visibility: hidden !important; height: 0px !important; }
 footer { visibility: hidden !important; }
 
-/* Espaçamento principal fluido */
 .block-container { max-width: 720px !important; padding-top: 1rem !important; padding-bottom: 3rem !important; }
 div[data-testid="stVerticalBlock"] { gap: 0.8rem !important; }
 
-/* Fontes e Textos */
 h2, h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-bottom: 10px !important; }
 p, label, span { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; font-size: 14px !important; }
 
-/* Banner / Cabeçalho */
 .header-banner { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 1.5rem; background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%); padding: 20px; border-radius: 20px; border: 1px solid #e8ddd3; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.04); }
 .header-logo { width: 80px; height: auto; object-fit: contain; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.05)); }
 .header-text { display: flex; flex-direction: column; justify-content: center; }
 .header-title { font-size: 26px !important; font-weight: 800 !important; color: #c5721f !important; margin: 0 !important; line-height: 1.1 !important; }
 .header-subtitle { font-size: 13px !important; color: #775a46 !important; font-weight: 600 !important; margin-top: 4px !important; }
 
-/* Containers (Cards de Formulário) */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff; border: 1px solid #e8ddd3 !important; border-radius: 16px !important;
     padding: 20px 24px !important; margin-bottom: 12px !important; box-shadow: 0 4px 12px rgba(90, 59, 40, 0.03); transition: all 0.2s ease;
@@ -123,13 +128,9 @@ div[data-testid="stVerticalBlockBorderWrapper"]:focus-within { border-color: #cb
 
 .secao-titulo { font-size: 18px !important; font-weight: 800 !important; color: #5a3b28 !important; border-bottom: 1px solid #f3ece6; padding-bottom: 6px; margin-bottom: 12px !important; }
 
-/* Checkboxes como Pílulas (Botões clicáveis) */
 div[data-testid="stCheckbox"] { background: #faf7f3; border: 1px solid #e8ddd3; padding: 10px 14px; border-radius: 12px; margin-bottom: 6px; transition: all 0.2s ease; }
 div[data-testid="stCheckbox"]:hover { background: #fdfcfb; border-color: #d2bfae; transform: translateX(2px); }
 
-/* =========================================
-   UPLOADER DROPZONE (CORRIGIDO PARA POLAROID)
-========================================== */
 div[data-testid="stFileUploader"] { width: 100% !important; }
 div[data-testid="stFileUploader"] section { 
     background-color: #faf7f3 !important; border: 2px dashed #dfcdbb !important; 
@@ -137,31 +138,17 @@ div[data-testid="stFileUploader"] section {
     transition: all 0.3s ease !important; 
 }
 div[data-testid="stFileUploader"] section:hover { border-color: #a87b57 !important; background-color: #fdfcfb !important; }
-
 div[data-testid="stFileUploader"] section button { 
     background-color: #ffffff !important; border: 1px solid #dfcdbb !important; 
     color: #5a3b28 !important; font-weight: 800 !important; border-radius: 10px !important; 
     padding: 6px 16px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.03) !important; 
-    transition: all 0.2s ease !important; 
 }
-div[data-testid="stFileUploader"] section button:hover { transform: scale(1.02); }
-
 div[data-testid="stFileUploader"] section button span { display: none !important; }
-div[data-testid="stFileUploader"] section button::after { 
-    content: "📷 Anexar Fotos" !important; 
-    font-size: 14px !important; 
-    font-weight: 800 !important; 
-    display: block; 
-}
+div[data-testid="stFileUploader"] section button::after { content: "📷 Anexar Fotos" !important; font-size: 14px !important; font-weight: 800 !important; display: block; }
 
-/* =========================================
-   RESUMO E BOTÃO DE ENVIO
-========================================== */
 .resumo-box { background: linear-gradient(145deg, #ffffff 0%, #fdfcfb 100%); border: 1px solid #dfcdbb; border-radius: 14px; padding: 18px; text-align: left; }
-.stButton button { background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%) !important; color: white !important; border-radius: 14px !important; height: 54px !important; font-size: 16px !important; font-weight: 800 !important; border: none !important; box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3) !important; transition: all 0.3s ease !important; text-transform: uppercase; letter-spacing: 1px; margin-top: 15px; }
-.stButton button:hover { transform: translateY(-3px) !important; box-shadow: 0 8px 20px rgba(46, 125, 50, 0.4) !important; }
+.stButton button { background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%) !important; color: white !important; border-radius: 14px !important; height: 54px !important; font-size: 16px !important; font-weight: 800 !important; border: none !important; box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3) !important; text-transform: uppercase; letter-spacing: 1px; margin-top: 15px; }
 
-/* Tela de Sucesso */
 .sucesso-container { background: #f0f7f4; border: 2px solid #2e7d32; border-radius: 16px; padding: 30px; text-align: center; margin-top: 20px; box-shadow: 0 10px 30px rgba(46,125,50,0.1); }
 .sucesso-titulo { font-size: 26px; font-weight: 800; color: #137333; margin-bottom: 10px; }
 .sucesso-texto { font-size: 15px; color: #333; line-height: 1.6; margin-bottom: 20px; font-weight: 500; }
@@ -177,9 +164,8 @@ div[data-testid="stFileUploader"] section button::after {
 </style>
 """, unsafe_allow_html=True)
 
-
 # ==========================================================
-# CONTROLE DE ESTADO
+# CONTROLE DE ESTADO E INICIALIZAÇÃO
 # ==========================================================
 if "pedido_enviado_com_sucesso" not in st.session_state: st.session_state["pedido_enviado_com_sucesso"] = False
 if "ultimo_cep_buscado" not in st.session_state: st.session_state["ultimo_cep_buscado"] = ""
@@ -218,7 +204,7 @@ if st.session_state["pedido_enviado_com_sucesso"]:
     st.write("")
     if st.button("🎁 Fazer Novo Pedido", use_container_width=True):
         for key in list(st.session_state.keys()):
-            if key.startswith("input_") or key in ["pedido_enviado_com_sucesso", "cesta_selecionada_id", "fotos_polaroid_cliente", "ultimo_cep_buscado"]:
+            if key.startswith("input_") or key in ["pedido_enviado_com_sucesso", "cesta_selecionada_id", "fotos_polaroid_cliente", "ultimo_cep_buscado", "secao_form"]:
                 del st.session_state[key]
         st.rerun()
     st.stop()
@@ -248,49 +234,72 @@ with st.container(border=True):
 
 
 # ==========================================================
-# 2. SELEÇÃO DA CESTA E PERSONALIZAÇÃO
+# 2. SELEÇÃO INTELIGENTE (SEÇÃO -> CESTA)
 # ==========================================================
 cestas = obter_cestas_cacheadas()
+secoes_disponiveis = obter_secoes_ordenadas()
+
 cesta_obj = None
 selecoes_cliente = {}
 
-# Função para exibir "[Seção] Nome da Cesta" no Dropdown
-def formatar_nome_dropdown(c):
-    if c.get("id") is None:
-        return c["nome"]
-    sec = c.get("secao_vitrine", "Cestas de Café")
-    return f"[{sec}] {c['nome']}"
-
-if cestas:
-    opcoes_cestas = [{"id": None, "nome": "Selecione a opção desejada..."}] + cestas
+if cestas and secoes_disponiveis:
     
-    if st.session_state.get("cesta_selecionada_home"):
-        st.session_state["cesta_selecionada_id"] = st.session_state["cesta_selecionada_home"]
-        st.session_state["cesta_selecionada_home"] = None
-
-    cesta_inicial_index = 0
-    current_id = st.session_state.get("cesta_selecionada_id")
-    if current_id:
-        for idx, item in enumerate(opcoes_cestas):
-            if item.get("id") == current_id:
-                cesta_inicial_index = idx
+    # -- LÓGICA DE PREENCHIMENTO AUTOMÁTICO VIA VITRINE --
+    cesta_veio_da_home = st.session_state.get("cesta_selecionada_home")
+    if cesta_veio_da_home:
+        # Se veio da Home, procura qual é a Seção dessa cesta
+        for c in cestas:
+            if c["id"] == cesta_veio_da_home:
+                st.session_state["secao_form"] = c.get("secao_vitrine", "Cestas de Café")
+                st.session_state["cesta_selecionada_id"] = cesta_veio_da_home
                 break
+        st.session_state["cesta_selecionada_home"] = None # Reseta o gatilho da home
+
+    # Proteção caso a sessão não exista
+    if "secao_form" not in st.session_state or st.session_state["secao_form"] not in secoes_disponiveis:
+        st.session_state["secao_form"] = secoes_disponiveis[0]
 
     with st.container(border=True):
         st.markdown('<div class="secao-titulo">🎁 Escolha sua Opção</div>', unsafe_allow_html=True)
         
+        # --- CAMPO 1: ESCOLHA A SEÇÃO ---
+        def ao_mudar_secao():
+            # Se o usuário mudar a seção na mão, a cesta selecionada é resetada
+            st.session_state["cesta_selecionada_id"] = None
+
+        st.selectbox(
+            "🗂️ 1. Selecione a Categoria", 
+            secoes_disponiveis,
+            index=secoes_disponiveis.index(st.session_state["secao_form"]),
+            key="secao_form",
+            on_change=ao_mudar_secao
+        )
+
+        # Filtra as cestas de acordo com a Seção escolhida acima
+        cestas_da_secao = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") == st.session_state["secao_form"]]
+        opcoes_cestas = [{"id": None, "nome": "Selecione o modelo desejado..."}] + cestas_da_secao
+        
+        # Descobre o índice da cesta para deixar selecionada
+        cesta_idx = 0
+        if st.session_state.get("cesta_selecionada_id"):
+            for i, c in enumerate(opcoes_cestas):
+                if c["id"] == st.session_state["cesta_selecionada_id"]:
+                    cesta_idx = i
+                    break
+
+        # --- CAMPO 2: ESCOLHA A CESTA ---
         cesta_selecionada = st.selectbox(
-            "Modelo Desejado", 
+            "🛍️ 2. Modelo Desejado", 
             opcoes_cestas, 
-            format_func=formatar_nome_dropdown, 
-            index=cesta_inicial_index,
-            label_visibility="collapsed"
+            format_func=lambda c: c["nome"], 
+            index=cesta_idx
         )
 
         if cesta_selecionada and cesta_selecionada.get("id"):
             cesta_obj = cesta_selecionada
             st.session_state["cesta_selecionada_id"] = cesta_selecionada.get("id")
             
+            # --- MOSTRA OS DETALHES DO PRODUTO ESCOLHIDO ---
             col_img, col_txt = st.columns([1, 2])
             with col_img:
                 if cesta_obj.get("imagem"):
@@ -311,7 +320,6 @@ if cestas:
                     cat = grupo.get("categoria", "Categoria")
                     prods = grupo.get("produtos", [])
                     maximo = grupo.get("max_escolhas", 1)
-                    minimo = grupo.get("min_escolhas", 0)
 
                     if not prods: continue
                     
