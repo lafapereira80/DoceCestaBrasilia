@@ -138,15 +138,18 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     letter-spacing: -0.3px; display: flex; align-items: center; gap: 8px;
 }
 
-/* Tipografia refinada para o Nome da Cesta em Destaque */
+/* Nome da Cesta em destaque elegante e tamanho moderado */
 .destaque-cesta-nome {
-    font-family: 'Dancing Script', cursive !important;
-    font-size: 38px !important;
+    font-family: 'Montserrat', sans-serif !important;
+    font-size: 14.5px !important;
     font-weight: 700 !important;
     color: #c5721f !important;
-    line-height: 1.1 !important;
-    margin-top: 4px;
-    margin-bottom: 12px;
+    background: #fff8ef;
+    border: 1px solid #fce8b2;
+    padding: 8px 14px;
+    border-radius: 10px;
+    margin-bottom: 14px;
+    display: inline-block;
 }
 
 /* Campos de Entrada Modernos */
@@ -315,6 +318,13 @@ if cestas and secoes_disponiveis:
         def ao_mudar_secao():
             st.session_state["cesta_selecionada_id"] = None
 
+        # --- SE UMA CESTA JÁ FOI ESCOLHIDA, EXIBE O NOME EM DESTAQUE LOGO ACIMA DOS SELECTS ---
+        if st.session_state.get("cesta_selecionada_id"):
+            for c_item in cestas:
+                if c_item["id"] == st.session_state["cesta_selecionada_id"]:
+                    st.markdown(f'<div class="destaque-cesta-nome">✨ Item selecionado: <b>{c_item["nome"]}</b></div>', unsafe_allow_html=True)
+                    break
+
         if len(secoes_disponiveis) > 1:
             col_categoria, col_modelo = st.columns(2)
             
@@ -363,14 +373,12 @@ if cestas and secoes_disponiveis:
                 index=cesta_idx
             )
 
-        # SE UMA CESTA FOR ESCOLHIDA, EXIBE O NOME ACIMA E OS DETALHES ABAIXO
+        # SE UMA CESTA FOR ESCOLHIDA, EXIBE OS DETALHES ABAIXO
         if cesta_selecionada and cesta_selecionada.get("id"):
             cesta_obj = cesta_selecionada
             st.session_state["cesta_selecionada_id"] = cesta_selecionada.get("id")
-            
-            # --- NOME DA CESTA ESCOLHIDA EM DESTAQUE LOGO ACIMA ---
-            st.markdown(f'<div class="destaque-cesta-nome">✨ {cesta_obj["nome"]}</div>', unsafe_allow_html=True)
 
+            st.write("")
             col_img, col_txt = st.columns([1.1, 2], gap="large")
             with col_img:
                 if cesta_obj.get("imagem"):
