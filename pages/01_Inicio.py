@@ -97,7 +97,7 @@ def validar_cpf(cpf: str) -> bool:
 st.markdown(
 """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Dancing+Script:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
 
 /* Ocultar elementos padrão do Streamlit */
 section[data-testid="stSidebar"] { display: none !important; }
@@ -122,7 +122,7 @@ div[data-testid="stVerticalBlock"] { gap: 1rem !important; }
 .header-title { font-family: 'Dancing Script', cursive !important; font-size: 38px !important; font-weight: 700 !important; color: #c5721f !important; margin: 0 !important; line-height: 1.1 !important; }
 .header-subtitle { font-size: 13.5px !important; color: #775a46 !important; font-weight: 600 !important; margin-top: 6px !important; letter-spacing: 0.5px; }
 
-/* Cards do Formulário (Focus Cards) */
+/* Cards do Formulário */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff !important; border: 1px solid #e8ddd3 !important; border-radius: 20px !important;
     padding: 24px 28px !important; margin-bottom: 14px !important; box-shadow: 0 6px 20px rgba(90, 59, 40, 0.03);
@@ -138,7 +138,19 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     letter-spacing: -0.3px; display: flex; align-items: center; gap: 8px;
 }
 
-/* Campos de Entrada Modernos (Inputs e Selects) */
+/* Card de Confirmação do Item Selecionado */
+.card-selecao-ativa {
+    background: linear-gradient(135deg, #fff9f2 0%, #fdf5ec 100%);
+    border: 1px solid #e8ddd3; border-radius: 14px; padding: 14px 20px;
+    margin-top: 14px; margin-bottom: 14px; display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 2px 8px rgba(197, 114, 31, 0.04);
+}
+.card-selecao-icone { font-size: 24px; }
+.card-selecao-texto { display: flex; flex-direction: column; }
+.card-selecao-label { font-size: 11.5px; text-transform: uppercase; font-weight: 700; color: #8c7362; letter-spacing: 0.5px; }
+.card-selecao-nome { font-family: 'Dancing Script', cursive !important; font-size: 30px !important; font-weight: 700 !important; color: #c5721f !important; line-height: 1 !important; margin-top: 2px; }
+
+/* Campos de Entrada Modernos */
 input, textarea, select {
     border-radius: 12px !important; border: 1px solid #dfcdbb !important; background-color: #faf7f3 !important;
     font-family: 'Montserrat', sans-serif !important; font-size: 14px !important; color: #4a2e1b !important;
@@ -147,14 +159,12 @@ input:focus, textarea:focus {
     border-color: #c5721f !important; background-color: #ffffff !important; box-shadow: 0 0 0 3px rgba(197, 114, 31, 0.1) !important;
 }
 
-/* Estilização de Checkboxes como Pílulas Elegantes */
 div[data-testid="stCheckbox"] {
     background: #faf7f3; border: 1px solid #e8ddd3; padding: 12px 16px; border-radius: 14px;
     margin-bottom: 8px; transition: all 0.2s ease;
 }
 div[data-testid="stCheckbox"]:hover { background: #fdfcfb; border-color: #c5721f; transform: translateY(-1px); }
 
-/* Upload Moderno (Dropzone) */
 div[data-testid="stFileUploader"] { width: 100% !important; }
 div[data-testid="stFileUploader"] section { 
     background-color: #faf7f3 !important; border: 2px dashed #dfcdbb !important; 
@@ -170,14 +180,12 @@ div[data-testid="stFileUploader"] section button {
 div[data-testid="stFileUploader"] section button span { display: none !important; }
 div[data-testid="stFileUploader"] section button::after { content: "📷 Toque para Anexar Fotos" !important; font-size: 13.5px !important; font-weight: 800 !important; display: block; }
 
-/* Resumo de Valores */
 .resumo-box {
     background: linear-gradient(145deg, #ffffff 0%, #faf7f3 100%);
     border: 1px solid #e8ddd3; border-radius: 16px; padding: 20px; text-align: left;
     box-shadow: inset 0 2px 4px rgba(90, 59, 40, 0.02);
 }
 
-/* Botão de Confirmação Premium (Call to Action) */
 .stButton button {
     background: linear-gradient(135deg, #137333 0%, #0d4e22) !important; color: white !important;
     border-radius: 16px !important; height: 58px !important; font-size: 16px !important;
@@ -189,7 +197,6 @@ div[data-testid="stFileUploader"] section button::after { content: "📷 Toque p
     background: linear-gradient(135deg, #0f5c28 0%, #093818) !important;
 }
 
-/* Tela de Sucesso Estilizada */
 .sucesso-container {
     background: linear-gradient(145deg, #f0f7f4 0%, #e6f4ed 100%); border: 2px solid #137333;
     border-radius: 20px; padding: 35px 25px; text-align: center; margin-top: 20px;
@@ -200,7 +207,6 @@ div[data-testid="stFileUploader"] section button::after { content: "📷 Toque p
 
 .stImage img { border-radius: 14px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #e8ddd3; }
 
-/* Responsividade Mobile Extrema */
 @media (max-width: 640px) {
     .block-container { padding: 0.8rem 0.5rem !important; }
     .header-banner { flex-direction: column; text-align: center; padding: 20px 16px; gap: 12px; }
@@ -358,10 +364,25 @@ if cestas and secoes_disponiveis:
                 index=cesta_idx
             )
 
+        # SE UMA CESTA FOR ESCOLHIDA, EXIBE O CARD DE CONFIRMAÇÃO E OS DETALHES
         if cesta_selecionada and cesta_selecionada.get("id"):
             cesta_obj = cesta_selecionada
             st.session_state["cesta_selecionada_id"] = cesta_selecionada.get("id")
             
+            # --- CARD DE CONFIRMAÇÃO VISUAL COM FONTE TRATADA ---
+            st.markdown(
+                f"""
+                <div class="card-selecao-ativa">
+                    <div class="card-selecao-icone">✨</div>
+                    <div class="card-selecao-texto">
+                        <span class="card-selecao-label">Opção selecionada com sucesso:</span>
+                        <div class="card-selecao-nome">{cesta_obj['nome']}</div>
+                    </div>
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
+
             st.write("")
             col_img, col_txt = st.columns([1.1, 2], gap="large")
             with col_img:
