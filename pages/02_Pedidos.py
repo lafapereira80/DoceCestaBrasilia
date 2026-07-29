@@ -60,20 +60,20 @@ def formatar_data(data_str):
     except: return str(data_str)
 
 # =====================================================
-# CACHING DINÂMICO PARA SEÇÕES E CESTAS (ATUALIZAÇÃO IMEDIATA)
+# CACHING DINÂMICO PARA SEÇÕES E CESTAS
 # =====================================================
 @st.cache_data(ttl=5, show_spinner=False)
 def obter_secoes_e_cestas_ativas():
     try:
         secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
-        secoes_ativas = sorted([s for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
-        nomes_secoes_ativas = {s["nome"] for s in secoes_ativas}
-
+        secoes_ativas = sorted([s["nome"] for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
+        
         cestas_todas = listar_cestas()
-        cestas = [c for c in cestas_todas if c.get("ativa", True) and c.get("secao_vitrine", "Cestas de Café") in nomes_secoes_ativas]
-        return sorted(cestas, key=lambda x: x.get("ordem", 999))
+        cestas_ativas = [c for c in cestas_todas if c.get("ativa", True)]
+        
+        return secoes_ativas, sorted(cestas_ativas, key=lambda x: x.get("ordem", 999))
     except:
-        return []
+        return ["Cestas de Café"], []
 
 # =====================================================
 # FUNÇÃO LOCAL PARA MUDAR STATUS NO BANCO
@@ -216,16 +216,25 @@ def render_criar_pedido_manual():
                     st.rerun(scope="fragment")
         
         st.markdown("#### 🎁 Seleção da Cesta e Montagem")
-        cestas = obter_secoes_e_cestas_ativas()
+        secoes_ativas, todas_cestas = obter_secoes_e_cestas_ativas()
         
-        # Mostra o nome da seção junto com o nome da cesta para facilitar a escolha
-        cesta_sel = st.selectbox(
-            "Selecione a Cesta Base *", 
-            [{"id": None, "nome": "Selecione..."}] + cestas, 
-            format_func=lambda x: f"[{x.get('secao_vitrine', 'Geral')}] {x['nome']}" if x.get("id") else x["nome"], 
-            key="man_sel_cesta"
-        )
+        # 1. Caixa de Seleção do Tipo de Seção
+        col_sec, col_mod = st.columns(2)
+        with col_sec:
+            secao_escolhida = st.selectbox("💌 1. Escolha a Seção", secoes_ativas, key="man_sel_secao")
+            
+        # Filtra apenas as cestas pertencentes à seção escolhida
+        cestas_da_secao = [c for c in todas_cestas if c.get("secao_vitrine", "Cestas de Café") == secao_escolhida]
         
+        # 2. Caixa com os Modelos Cadastrados na Seção
+        with col_mod:
+            cesta_sel = st.selectbox(
+                "💝 2. Escolha o Modelo", 
+                [{"id": None, "nome": "Selecione o modelo..."}] + cestas_da_secao, 
+                format_func=lambda x: x["nome"], 
+                key="man_sel_cesta_modelo"
+            )
+
         selecoes_admin = {}
         if cesta_sel and cesta_sel.get("id"):
             cfg = carregar_configuracao_cesta(cesta_sel["id"])
@@ -319,7 +328,7 @@ def render_criar_pedido_manual():
         if st.button("✅ Confirmar e Salvar Pedido", type="primary", use_container_width=True):
             if not nome_comp: st.error("Informe o nome do comprador."); st.stop()
             if not cpf_comp: st.error("Informe o CPF do comprador."); st.stop()
-            if not cesta_sel or not cesta_sel.get("id"): st.error("Selecione uma Cesta."); st.stop()
+            if not cesta_sel or not cesta_sel.get("id"): st.error("Selecione um modelo de Cesta."); st.stop()
             if not dest_nome: st.error("Informe o nome do destinatário."); st.stop()
             if not rua or not num: st.error("Informe Rua e Número de entrega."); st.stop()
             
