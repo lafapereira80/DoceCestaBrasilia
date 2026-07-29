@@ -1,599 +1,341 @@
 import streamlit as st
 import base64
-import re
+import mimetypes
 from pathlib import Path
 import importlib
-from io import BytesIO
-from PIL import Image
-from datetime import date
-import requests
 
-from services.pedido_service import salvar_pedido
 from services.cesta_service import listar_cestas
-from services.configuracao_cesta_service import carregar_configuracao_cesta
 from services.produto_service import listar_produtos_por_categoria_id
-from services.pedido_adicional_service import salvar_adicionais_pedido
-from services.telegram_service import enviar_notificacao_telegram
-from services.foto_service import salvar_fotos
-from config.supabase import supabase
 
-# ==========================================================
-# CONFIGURAÇÃO DA PÁGINA
-# ==========================================================
-st.set_page_config(
-    page_title="Formulário de Pedido | Doce Cesta",
-    page_icon="🎁",
-    layout="centered",
-    initial_sidebar_state="collapsed"
-)
-
-# ==========================================================
-# CACHING DE ALTA PERFORMANCE
-# ==========================================================
-@st.cache_data(ttl=300)
-def obter_categorias_cacheadas():
+def obter_categorias():
     try:
+        cat_service = importlib.import_module("services.categoria_service")
+        for nome_funcao in dir(cat_service):
+            if "listar_categoria" in nome_funcao:
+                return getattr(cat_service, nome_funcao)()
+    except: pass 
+    try:
+        from config.supabase import supabase
         return supabase.table("categorias").select("*").execute().data or []
-    except:
-        return []
+    except Exception as e: return []
 
-@st.cache_data(ttl=60)
-def obter_cestas_cacheadas():
+st.set_page_config(page_title="Doce Cesta Brasília | Vitrine Oficial", page_icon="🎁", layout="wide", initial_sidebar_state="collapsed")
+
+def image_to_base64(img_path):
+    img_path = str(img_path).strip()
+    if img_path.startswith("http") or img_path.startswith("data:image"): return img_path
     try:
-        cestas = supabase.table("cestas").select("*").eq("ativa", True).execute().data or []
-        
-        secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
-        secoes_ativas = [s["nome"] for s in secoes_bd if s.get("ativa", True)]
-        
-        # Filtra cestas apenas de seções ativas
-        cestas_filtradas = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") in secoes_ativas]
-        
-        # Ordena as cestas pela ordem cadastrada no banco
-        return sorted(cestas_filtradas, key=lambda x: x.get("ordem", 999))
-    except:
-        return []
-
-@st.cache_data(ttl=60)
-def obter_secoes_ordenadas():
-    try:
-        secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
-        secoes_ativas = sorted([s for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
-        return [s["nome"] for s in secoes_ativas]
-    except:
-        return ["Cestas de Café"]
-
-@st.cache_data(ttl=60)
-def obter_configuracao_cesta_cacheada(cesta_id):
-    try:
-        return carregar_configuracao_cesta(cesta_id)
-    except:
-        return []
-
-@st.cache_data(ttl=300)
-def obter_produtos_por_categoria_cacheados(categoria_id):
-    try:
-        return listar_produtos_por_categoria_id(categoria_id)
-    except:
-        return []
-
-@st.cache_data
-def carregar_logo_base64():
-    logo_path = Path("assets/logo.webp")
-    if logo_path.exists():
-        with open(logo_path, "rb") as img_file:
-            encoded_logo = base64.b64encode(img_file.read()).decode()
-            return f'<img src="data:image/webp;base64,{encoded_logo}" class="header-logo" alt="Logo">'
-    return "🎁"
+        with open(img_path, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode()
+            mime = mimetypes.guess_type(img_path)[0] or "image/jpeg"
+            return f"data:{mime};base64,{b64}"
+    except: return img_path
 
 # ==========================================================
-# VALIDADOR DE CPF
-# ==========================================================
-def validar_cpf(cpf: str) -> bool:
-    cpf = re.sub(r'\D', '', cpf)
-    if len(cpf) != 11 or cpf == cpf[0] * 11: return False
-    soma = sum(int(cpf[i]) * (10 - i) for i in range(9))
-    if (soma * 10 % 11) % 10 != int(cpf[9]): return False
-    soma = sum(int(cpf[i]) * (11 - i) for i in range(10))
-    if (soma * 10 % 11) % 10 != int(cpf[10]): return False
-    return True
-
-# ==========================================================
-# CSS PREMIUM E RESPONSIVO
+# CSS PREMIUM E ESTILOS GERAIS
 # ==========================================================
 st.markdown(
 """
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Montserrat:wght@400;500;600;700;800&display=swap');
 section[data-testid="stSidebar"] { display: none !important; }
 [data-testid="collapsedControl"] { display: none !important; }
 header { visibility: hidden !important; height: 0px !important; }
 footer { visibility: hidden !important; }
+#MainMenu { visibility: hidden !important; }
 
-/* Oculta o menu flutuante de cache do Streamlit */
-.stAppDeployMenu { display: none !important; }
+html, body, [class*="css"]  { font-family: 'Montserrat', sans-serif !important; }
+.block-container { max-width: 1150px !important; padding-top: 1.5rem !important; padding-bottom: 3rem !important; }
 
-.block-container { max-width: 720px !important; padding-top: 1rem !important; padding-bottom: 3rem !important; }
-div[data-testid="stVerticalBlock"] { gap: 0.8rem !important; }
+/* ABAS */
+div[data-testid="stTabs"] button { font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 600; color: #8c7362; padding-bottom: 12px !important; }
+div[data-testid="stTabs"] button[aria-selected="true"] { color: #c5721f !important; font-weight: 800 !important; }
+div[data-testid="stTabs"] button[aria-selected="true"] div[data-testid="stMarkdownContainer"] p { color: #c5721f !important; }
 
-h2, h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-bottom: 10px !important; }
-p, label, span { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; font-size: 14px !important; }
+.header-banner { display: flex; align-items: center; justify-content: center; gap: 24px; margin-bottom: 2rem; width: 100%; background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%); padding: 24px 30px; border-radius: 20px; border: 1px solid #e8ddd3; box-shadow: 0 8px 24px rgba(90, 59, 40, 0.04); position: relative; top: 0; transition: all 0.3s ease; }
+.header-banner:hover { top: -2px; }
+.header-logo { width: 150px; height: auto; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.05)); }
+.header-text { display: flex; flex-direction: column; justify-content: center; text-align: left; }
+.header-title { font-family: 'Dancing Script', cursive !important; font-size: 48px !important; font-weight: 700 !important; color: #c5721f !important; margin: 0 !important; line-height: 1.1 !important; }
+.header-subtitle { font-size: 15px !important; font-weight: 600 !important; color: #5a3b28 !important; margin-top: 6px !important; margin-bottom: 0 !important; letter-spacing: 0.5px; }
 
-.header-banner { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 1.5rem; background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%); padding: 20px; border-radius: 20px; border: 1px solid #e8ddd3; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.04); }
-.header-logo { width: 80px; height: auto; object-fit: contain; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.05)); }
-.header-text { display: flex; flex-direction: column; justify-content: center; }
-.header-title { font-size: 26px !important; font-weight: 800 !important; color: #c5721f !important; margin: 0 !important; line-height: 1.1 !important; }
-.header-subtitle { font-size: 13px !important; color: #775a46 !important; font-weight: 600 !important; margin-top: 4px !important; }
+.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 2.5rem; }
+.info-card { background: linear-gradient(145deg, #ffffff 0%, #fdfcfb 100%); border: 1px solid #e8ddd3; border-radius: 18px; padding: 20px 28px; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03); display: flex; flex-direction: column; height: 100%; position: relative; top: 0; transition: all 0.3s ease; }
+.info-card:hover { border-color: #d2bfae; box-shadow: 0 8px 25px rgba(90, 59, 40, 0.06); top: -3px; }
+.info-title { font-family: 'Dancing Script', cursive !important; font-size: 38px !important; font-weight: 700 !important; color: #c5721f !important; margin-top: 0 !important; margin-bottom: 16px !important; text-align: center; }
+.info-text { font-size: 14.5px !important; color: #4a2e1b !important; line-height: 1.6 !important; font-weight: 500 !important; text-align: justify; }
+.info-text strong { color: #2e7d32 !important; font-weight: 700 !important; }
+.como-pedir-list { text-align: left; font-size: 14px; color: #4a2e1b; line-height: 1.6; margin: 0; padding-left: 20px; font-weight: 500; }
+.como-pedir-list li { margin-bottom: 12px; } .como-pedir-list li:last-child { margin-bottom: 0; }
 
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #ffffff; border: 1px solid #e8ddd3 !important; border-radius: 16px !important;
-    padding: 20px 24px !important; margin-bottom: 12px !important; box-shadow: 0 4px 12px rgba(90, 59, 40, 0.03); transition: all 0.2s ease;
-}
-div[data-testid="stVerticalBlockBorderWrapper"]:focus-within { border-color: #cbab92 !important; box-shadow: 0 6px 18px rgba(197, 114, 31, 0.08); }
+div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1px solid #e8ddd3 !important; border-radius: 20px !important; padding: 24px !important; margin-bottom: 20px !important; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03); position: relative; top: 0; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important; }
+div[data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: #cbab92 !important; box-shadow: 0 12px 30px rgba(90, 59, 40, 0.08); top: -4px; }
+@media (min-width: 641px) { div[data-testid="stHorizontalBlock"] { align-items: center !important; } }
 
-.secao-titulo { font-size: 18px !important; font-weight: 800 !important; color: #5a3b28 !important; border-bottom: 1px solid #f3ece6; padding-bottom: 6px; margin-bottom: 12px !important; }
+.card-cesta-titulo { font-family: 'Dancing Script', cursive !important; font-size: 42px !important; font-weight: 700 !important; color: #c5721f !important; margin-top: 0px !important; margin-bottom: 10px !important; line-height: 1.1 !important; }
+.card-cesta-desc { font-size: 14px !important; color: #4d3e35 !important; line-height: 1.6 !important; text-align: justify !important; margin-bottom: 16px !important; background: #faf7f3; padding: 16px; border-radius: 14px; border: 1px solid #f0e6dc; }
+.card-cesta-preco { font-size: 26px !important; font-weight: 800 !important; color: #137333 !important; margin-bottom: 18px !important; }
 
-div[data-testid="stCheckbox"] { background: #faf7f3; border: 1px solid #e8ddd3; padding: 10px 14px; border-radius: 12px; margin-bottom: 6px; transition: all 0.2s ease; }
-div[data-testid="stCheckbox"]:hover { background: #fdfcfb; border-color: #d2bfae; transform: translateX(2px); }
+div[data-testid="stButton"] button { background: linear-gradient(135deg, #c5721f 0%, #9e520b 100%) !important; color: white !important; border-radius: 14px !important; height: 54px !important; font-size: 16px !important; font-weight: 800 !important; border: none !important; box-shadow: 0 4px 15px rgba(197, 114, 31, 0.25) !important; position: relative; top: 0; transition: all 0.3s ease !important; text-transform: uppercase; letter-spacing: 1px; }
+div[data-testid="stButton"] button:hover { top: -3px !important; box-shadow: 0 8px 20px rgba(197, 114, 31, 0.4) !important; background: linear-gradient(135deg, #b56210 0%, #874609 100%) !important; }
 
-div[data-testid="stFileUploader"] { width: 100% !important; }
-div[data-testid="stFileUploader"] section { 
-    background-color: #faf7f3 !important; border: 2px dashed #dfcdbb !important; 
-    border-radius: 14px !important; padding: 16px !important; text-align: center !important; 
-    transition: all 0.3s ease !important; 
-}
-div[data-testid="stFileUploader"] section:hover { border-color: #a87b57 !important; background-color: #fdfcfb !important; }
-div[data-testid="stFileUploader"] section button { 
-    background-color: #ffffff !important; border: 1px solid #dfcdbb !important; 
-    color: #5a3b28 !important; font-weight: 800 !important; border-radius: 10px !important; 
-    padding: 6px 16px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.03) !important; 
-}
-div[data-testid="stFileUploader"] section button span { display: none !important; }
-div[data-testid="stFileUploader"] section button::after { content: "📷 Anexar Fotos" !important; font-size: 14px !important; font-weight: 800 !important; display: block; }
+.lightbox-wrapper { text-align: center; margin-bottom: 10px; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.lightbox-toggle { display: none !important; }
+.lightbox-image { width: 65%; border-radius: 14px; cursor: zoom-in; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.1); object-fit: cover; border: 1px solid #e8ddd3; }
+.lightbox-image:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(90, 59, 40, 0.15); }
+.imagem-legenda { text-align: center; font-size: 12px; color: #888; margin-top: 10px; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.lightbox-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.85); z-index: 999999; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s ease; cursor: zoom-out; }
+.lightbox-modal img { max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+.lightbox-toggle:checked ~ .lightbox-modal { opacity: 1; visibility: visible; }
 
-.resumo-box { background: linear-gradient(145deg, #ffffff 0%, #fdfcfb 100%); border: 1px solid #dfcdbb; border-radius: 14px; padding: 18px; text-align: left; }
-.stButton button { background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%) !important; color: white !important; border-radius: 14px !important; height: 54px !important; font-size: 16px !important; font-weight: 800 !important; border: none !important; box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3) !important; text-transform: uppercase; letter-spacing: 1px; margin-top: 15px; }
+.adicionais-hero-card { background: linear-gradient(135deg, #ffffff 0%, #faf7f3 100%); border: 1px solid #e8ddd3; border-radius: 20px; padding: 24px 30px; margin-top: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03); }
+.adicionais-hero-title { font-size: 18px; font-weight: 800; color: #5a3b28; margin-bottom: 20px; }
+.adicionais-grid-css { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+.adicional-item-box { background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 16px 10px; text-align: center; box-shadow: 0 4px 10px rgba(90, 59, 40, 0.02); display: flex; flex-direction: column; justify-content: space-between; align-items: center; position: relative; top: 0; transition: all 0.3s ease; }
+.adicional-item-box:hover { border-color: #d2bfae; top: -4px; box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08); }
+.adicional-img-small { width: 70px; height: 70px; object-fit: cover; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); cursor: zoom-in; display: block; margin: 0 auto; border: 1px solid #f0e6dc; transition: transform 0.2s ease; }
+.adicional-img-small:hover { transform: scale(1.05); }
+.adicional-img-placeholder { width: 70px; height: 70px; background: linear-gradient(135deg, #fdfbf8 0%, #f5eee6 100%); display: flex; align-items: center; justify-content: center; font-size: 26px; border-radius: 10px; border: 1px dashed #dfcdbb; margin: 0 auto; }
+.adicional-nome { font-size: 12.5px; font-weight: 700; color: #4a2e1b; margin-top: 10px; margin-bottom: 6px; min-height: 32px; line-height: 1.3; }
+.adicional-preco-fixo { color: #137333; font-weight: 800; font-size: 14px; }
+.adicional-preco-consulta { color: #c5721f; font-weight: 800; background: #fff8ef; padding: 4px 8px; border-radius: 8px; font-size: 10px; text-transform: uppercase; border: 1px solid #fce8b2; display: inline-block; }
 
-.sucesso-container { background: #f0f7f4; border: 2px solid #2e7d32; border-radius: 16px; padding: 30px; text-align: center; margin-top: 20px; box-shadow: 0 10px 30px rgba(46,125,50,0.1); }
-.sucesso-titulo { font-size: 26px; font-weight: 800; color: #137333; margin-bottom: 10px; }
-.sucesso-texto { font-size: 15px; color: #333; line-height: 1.6; margin-bottom: 20px; font-weight: 500; }
-
-.stImage img { border-radius: 12px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-
+.footer-container { background: #ffffff; border: 1px solid #e8ddd3; border-radius: 20px; padding: 30px; text-align: center; margin-top: 3rem; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03); }
+.footer-title { font-family: 'Dancing Script', cursive !important; font-size: 38px !important; font-weight: 700 !important; color: #c5721f; margin-bottom: 10px; }
+.footer-text { font-size: 14px; color: #5a3b28; margin-bottom: 20px; line-height: 1.6; font-weight: 500; }
+.social-btn-box { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+.social-btn-box a { display: inline-flex; align-items: center; gap: 8px; color: white !important; padding: 14px 28px; border-radius: 14px; font-weight: 800; text-decoration: none; font-size: 15px; position: relative; top: 0; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 0.5px; }
+.social-btn-box a:hover { top: -3px; }
+.btn-whatsapp { background: #25d366 !important; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3); }
+.btn-whatsapp:hover { box-shadow: 0 6px 16px rgba(37, 211, 102, 0.45); }
+.btn-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important; box-shadow: 0 4px 12px rgba(220, 39, 67, 0.3); }
+.btn-instagram:hover { box-shadow: 0 6px 16px rgba(220, 39, 67, 0.45); }
+@media (max-width: 900px) { .adicionais-grid-css { grid-template-columns: repeat(3, 1fr) !important; } }
 @media (max-width: 640px) {
-    .block-container { padding: 1rem 0.6rem !important; }
-    .header-banner { flex-direction: column; text-align: center; padding: 20px 16px; gap: 12px; }
-    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 16px 14px !important; }
-    .header-logo { width: 100px; }
+    .block-container { padding-top: 1rem !important; padding-left: 0.6rem !important; padding-right: 0.6rem !important; }
+    .header-banner { flex-direction: column !important; align-items: center !important; text-align: center !important; padding: 24px 16px !important; gap: 16px !important; }
+    .header-text { align-items: center !important; text-align: center !important; width: 100% !important; }
+    .header-logo { width: 120px !important; margin: 0 auto !important; }
+    .header-title { font-size: 40px !important; margin-bottom: 6px !important; text-align: center !important; }
+    .header-subtitle { text-align: center !important; font-size: 14px !important; }
+    .info-card { padding: 16px 20px !important; } 
+    .info-title { font-size: 34px !important; }
+    .card-cesta-titulo { font-size: 32px !important; text-align: center; }
+    .card-cesta-preco { font-size: 24px !important; text-align: center; }
+    .lightbox-image { width: 85%; }
+    .adicionais-grid-css { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ==========================================================
-# CONTROLE DE ESTADO E INICIALIZAÇÃO
-# ==========================================================
-if "pedido_enviado_com_sucesso" not in st.session_state: st.session_state["pedido_enviado_com_sucesso"] = False
-if "ultimo_cep_buscado" not in st.session_state: st.session_state["ultimo_cep_buscado"] = ""
-if "cesta_selecionada_id" not in st.session_state: st.session_state["cesta_selecionada_id"] = None
-if "fotos_polaroid_cliente" not in st.session_state: st.session_state["fotos_polaroid_cliente"] = []
+logo_path = Path("assets/logo.webp")
+logo_html = ""
+if logo_path.exists():
+    with open(logo_path, "rb") as img_file:
+        encoded_logo = base64.b64encode(img_file.read()).decode()
+    logo_html = f'<img src="data:image/webp;base64,{encoded_logo}" class="header-logo" alt="Logo">'
 
-
-# ==========================================================
-# TELA DE SUCESSO
-# ==========================================================
-if st.session_state["pedido_enviado_com_sucesso"]:
-    dados = st.session_state.get("resumo_pedido_sucesso", {})
-    
-    st.markdown(f'<div class="header-banner">{carregar_logo_base64()}<div class="header-text"><h1 class="header-title">Doce Cesta Brasília</h1></div></div>', unsafe_allow_html=True)
-    
-    st.markdown(f"""
-    <div class="sucesso-container">
-        <div class="sucesso-titulo">✅ Seu pedido foi recebido!</div>
-        <div class="sucesso-texto">
-            Muito obrigado, <b>{dados.get('cliente_nome')}</b>! Recebemos o seu pedido com muito carinho. <br>
-            Nossa equipe vai analisar e entrar em contato com você pelo WhatsApp em instantes para enviar o link de pagamento e confirmar o valor do frete.
-        </div>
-        <div class="resumo-box">
-            <span style="font-size: 16px; font-weight: 800; color: #5a3b28;">📋 Resumo do Pedido:</span><br><br>
-            💝 <b>Para:</b> {dados.get('destinatario_nome', '-')}<br>
-            🎁 <b>Opção Escolhida:</b> {dados.get('cesta_nome')}<br>
-            🎀 <b>Complementos:</b> {dados.get('adicionais_str') if dados.get('adicionais_str') else 'Nenhum'}<br>
-            📅 <b>Data:</b> {dados.get('data_entrega')} ({dados.get('periodo_entrega')})<br>
-            📍 <b>Endereço:</b> {dados.get('endereco')}<br>
-            <hr style="border: 0; border-top: 1px dashed #dfcdbb; margin: 12px 0;">
-            💰 <b>Total Estimado (sem frete):</b> <span style="color: #2e7d32; font-size: 18px; font-weight: 800;">{dados.get('valor_total')}</span>
+st.markdown(
+    f"""
+    <div class="header-banner">
+        {logo_html}
+        <div class="header-text">
+            <h1 class="header-title">Doce Cesta Brasília</h1>
+            <p class="header-subtitle">Cestas personalizadas para criar memórias inesquecíveis 💝</p>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.write("")
-    if st.button("🎁 Fazer Novo Pedido", use_container_width=True):
-        for key in list(st.session_state.keys()):
-            if key.startswith("input_") or key in ["pedido_enviado_com_sucesso", "cesta_selecionada_id", "fotos_polaroid_cliente", "ultimo_cep_buscado", "secao_form"]:
-                del st.session_state[key]
-        st.rerun()
-    st.stop()
+st.markdown(
+    """<div class="info-grid"><div class="info-card"><div class="info-title">Bem-vindo(a)</div><div class="info-text"><div style="text-align: center; margin-bottom: 12px;">É uma alegria receber você aqui! Acreditamos que todo dia alguém que amamos está vivendo um momento especial.</div>Nossas opções são cuidadosamente montadas e proporcionam não apenas sabores únicos, como também a oportunidade de <strong>criar memórias inesquecíveis!</strong><br><br><div style="text-align: center;">Desfrute o melhor da vida com um bom café e excelente companhia!</div></div></div><div class="info-card"><div class="info-title">Como fazer o pedido</div><ul class="como-pedir-list"><li>✨ Escolha através do nosso catálogo abaixo a opção desejada e clique no botão de montar.</li><li>⏳ Peça com no mínimo <b>24h de antecedência</b> (ou <b>72h</b> caso possua mini bolo).</li><li>🕒 <b>Atendimento:</b> Segunda a sexta de 7h às 19h | Sábado de 8h às 12h.</li><li>🚗 A entrega poderá ser realizada via <b>Uber Flash / 99 Entrega</b> ou retirada em mãos.</li><li>💌 Todas as opções contêm um <b>cartão personalizável</b> para o homenageado.</li><li>💳 <b>Pagamento:</b> PIX ou link de Cartão de Crédito.</li></ul></div></div>""", unsafe_allow_html=True)
 
 
 # ==========================================================
-# CABEÇALHO DO FORMULÁRIO DE COMPRA
+# MOTOR DE RENDERIZAÇÃO RIGOROSO (BLINDADO CONTRA INATIVAS)
 # ==========================================================
-st.markdown(f'<div class="header-banner">{carregar_logo_base64()}<div class="header-text"><h1 class="header-title">Doce Cesta Brasília</h1><p class="header-subtitle">Monte o seu presente perfeito 💝</p></div></div>', unsafe_allow_html=True)
-
-
-# ==========================================================
-# 1. DADOS DO COMPRADOR
-# ==========================================================
-with st.container(border=True):
-    st.markdown('<div class="secao-titulo">👤 Seus Dados (Comprador)</div>', unsafe_allow_html=True)
-    st.caption("Preencha com os dados de quem está realizando o pagamento.")
-    nome = st.text_input("Nome completo *", placeholder="Ex: João da Silva", key="input_nome_comprador")
+try:
+    from config.supabase import supabase
     
-    col_ddi, col_tel, col_cpf = st.columns([1.2, 2.5, 2.5])
-    with col_ddi:
-        st.selectbox("País (DDI) *", ["🇧🇷 +55", "🇺🇸 +1", "🇵🇹 +351", "🇪🇸 +34", "🇮🇹 +39", "🇫🇷 +33"], key="input_ddi_comprador")
-    with col_tel:
-        st.text_input("WhatsApp *", placeholder="(61) 99999-9999", key="input_tel_comprador")
-    with col_cpf:
-        st.text_input("Seu CPF *", placeholder="Apenas números", max_chars=14, key="input_cpf_comprador")
-
-
-# ==========================================================
-# 2. SELEÇÃO INTELIGENTE DA CESTA / PRESENTE
-# ==========================================================
-cestas = obter_cestas_cacheadas()
-secoes_disponiveis = obter_secoes_ordenadas()
-
-cesta_obj = None
-selecoes_cliente = {}
-
-if cestas and secoes_disponiveis:
+    # 1. Busca exclusivamente as seções marcadas como ATIVAS na tabela 'vitrine_secoes'
+    res_ordem = supabase.table("vitrine_secoes").select("*").eq("ativa", True).order("ordem").execute()
+    secoes_ordenadas_bd = res_ordem.data or []
     
-    # -- LÓGICA DE PREENCHIMENTO AUTOMÁTICO VIA VITRINE --
-    cesta_veio_da_home = st.session_state.get("cesta_selecionada_home")
-    if cesta_veio_da_home:
-        for c in cestas:
-            if c["id"] == cesta_veio_da_home:
-                st.session_state["secao_form"] = c.get("secao_vitrine", "Cestas de Café")
-                st.session_state["cesta_selecionada_id"] = cesta_veio_da_home
-                break
-        st.session_state["cesta_selecionada_home"] = None # Reseta o gatilho da home
+    # Cria uma lista apenas com os nomes das seções ativas permitidas
+    nomes_secoes_ativas = {s["nome"] for s in secoes_ordenadas_bd}
 
-    if "secao_form" not in st.session_state or st.session_state["secao_form"] not in secoes_disponiveis:
-        st.session_state["secao_form"] = secoes_disponiveis[0]
+    # 2. Busca todos os produtos ativos
+    todos_produtos = listar_cestas()
+    todos_produtos = [c for c in todos_produtos if c.get("ativa", True)]
+    
+    # 3. FILTRO DE SEGURANÇA MÁXIMA: 
+    # Remove qualquer produto cuja seção não esteja na lista de seções ativas
+    todos_produtos = [
+        p for p in todos_produtos 
+        if p.get("secao_vitrine", "Cestas de Café") in nomes_secoes_ativas
+    ]
 
+    for p in todos_produtos:
+        if "ordem" not in p or p["ordem"] is None: p["ordem"] = 999 
+    todos_produtos = sorted(todos_produtos, key=lambda c: c["ordem"])
+    
+except Exception as erro:
+    st.error(f"Erro ao carregar catálogo: {erro}")
+    secoes_ordenadas_bd = []
+    todos_produtos = []
+
+# Função auxiliar para desenhar o card de cada produto
+def desenhar_card_produto(produto, nome_secao_atual):
     with st.container(border=True):
-        st.markdown('<div class="secao-titulo">🎁 Escolha sua Opção</div>', unsafe_allow_html=True)
-        
-        def ao_mudar_secao():
-            st.session_state["cesta_selecionada_id"] = None
-
-        # -- SE EXISTE MAIS DE UMA CATEGORIA ATIVA (Mostra as duas caixas lado a lado)
-        if len(secoes_disponiveis) > 1:
-            col_categoria, col_modelo = st.columns(2)
-            
-            with col_categoria:
-                st.selectbox(
-                    "💌 1. O que você gostaria de enviar?", 
-                    secoes_disponiveis,
-                    index=secoes_disponiveis.index(st.session_state["secao_form"]),
-                    key="secao_form",
-                    on_change=ao_mudar_secao
+        col_img, col_text = st.columns([1.2, 2], gap="large")
+        with col_img:
+            imagem_url = produto.get("imagem")
+            if imagem_url and str(imagem_url).strip():
+                img_src = image_to_base64(imagem_url)
+                st.markdown(
+                    f"""
+                    <div class="lightbox-wrapper">
+                        <label style="cursor: zoom-in; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                            <input type="checkbox" class="lightbox-toggle">
+                            <img src="{img_src}" class="lightbox-image" title="Clique para ampliar">
+                            <div class="lightbox-modal"><img src="{img_src}"></div>
+                        </label>
+                        <div class="imagem-legenda">👆 Toque na foto para ampliar</div>
+                    </div>
+                    """, unsafe_allow_html=True
                 )
+            fotos_extras = produto.get("fotos_adicionais", [])
+            if isinstance(fotos_extras, list) and len(fotos_extras) > 0:
+                st.markdown("<div style='font-size: 11px; font-weight: 800; color: #775a46; margin-bottom: 6px; text-transform: uppercase;'>📸 Outros ângulos:</div>", unsafe_allow_html=True)
+                cols_extras = st.columns(min(len(fotos_extras), 3))
+                for f_idx, f_url in enumerate(fotos_extras[:3]):
+                    if f_url and str(f_url).strip():
+                        with cols_extras[f_idx]: st.image(str(f_url).strip(), use_container_width=True)
 
-            cestas_da_secao = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") == st.session_state["secao_form"]]
-            opcoes_cestas = [{"id": None, "nome": "Selecione o presente..."}] + cestas_da_secao
-            
-            cesta_idx = 0
-            if st.session_state.get("cesta_selecionada_id"):
-                for i, c in enumerate(opcoes_cestas):
-                    if c["id"] == st.session_state["cesta_selecionada_id"]:
-                        cesta_idx = i
-                        break
-
-            with col_modelo:
-                cesta_selecionada = st.selectbox(
-                    "💝 2. Escolha o modelo perfeito", 
-                    opcoes_cestas, 
-                    format_func=lambda c: c["nome"], 
-                    index=cesta_idx
-                )
-                
-        # -- SE EXISTE APENAS 1 CATEGORIA (Oculta a categoria e expande o presente)
-        else:
-            st.session_state["secao_form"] = secoes_disponiveis[0]
-            cestas_da_secao = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") == st.session_state["secao_form"]]
-            opcoes_cestas = [{"id": None, "nome": "Selecione a opção desejada..."}] + cestas_da_secao
-            
-            cesta_idx = 0
-            if st.session_state.get("cesta_selecionada_id"):
-                for i, c in enumerate(opcoes_cestas):
-                    if c["id"] == st.session_state["cesta_selecionada_id"]:
-                        cesta_idx = i
-                        break
-
-            cesta_selecionada = st.selectbox(
-                "💝 Escolha o modelo perfeito", 
-                opcoes_cestas, 
-                format_func=lambda c: c["nome"], 
-                index=cesta_idx
-            )
-
-
-        # SE UMA CESTA FOR ESCOLHIDA, EXIBE OS DETALHES ABAIXO
-        if cesta_selecionada and cesta_selecionada.get("id"):
-            cesta_obj = cesta_selecionada
-            st.session_state["cesta_selecionada_id"] = cesta_selecionada.get("id")
-            
-            st.write("") # Espaçamento
-            col_img, col_txt = st.columns([1, 2])
-            with col_img:
-                if cesta_obj.get("imagem"):
-                    st.image(cesta_obj["imagem"], use_container_width=True)
-            with col_txt:
-                sec_txt = cesta_obj.get("secao_vitrine", "Cestas de Café")
-                st.markdown(f"**Categoria:** <span style='color: #775a46; font-size:13px;'>{sec_txt}</span>", unsafe_allow_html=True)
-                if cesta_obj.get("descricao"): st.caption(cesta_obj["descricao"])
-                valor = float(cesta_obj.get("preco", 0))
-                st.markdown(f"**Valor Base:** <span style='font-size:18px; color:#137333; font-weight:800;'>R$ {valor:,.2f}</span>".replace(",", "X").replace(".", ",").replace("X","."), unsafe_allow_html=True)
-            
-            st.markdown("<hr style='margin: 15px 0; border: none; border-top: 1px dashed #dfcdbb;'>", unsafe_allow_html=True)
-            st.markdown('<div style="font-size: 15px; font-weight: 800; color: #5a3b28; margin-bottom: 10px;">🍓 Personalize os Itens</div>', unsafe_allow_html=True)
-            
-            configuracao = obter_configuracao_cesta_cacheada(cesta_obj["id"])
-            if configuracao:
-                for grupo in configuracao:
-                    cat = grupo.get("categoria", "Categoria")
-                    prods = grupo.get("produtos", [])
-                    maximo = grupo.get("max_escolhas", 1)
-
-                    if not prods: continue
-                    
-                    st.markdown(f"<div style='font-size: 13px; font-weight: 700; color: #775a46; margin-bottom: 4px; margin-top: 10px;'>📦 {cat}</div>", unsafe_allow_html=True)
-                    if maximo == 1:
-                        escolhido = st.radio(f"Escolha 1", prods, format_func=lambda p: p["nome"], key=f"rad_{cesta_obj['id']}_{cat}", label_visibility="collapsed")
-                        if escolhido: selecoes_cliente[cat] = [escolhido]
-                    else:
-                        escolhidos = st.multiselect(f"Escolha até {maximo}", prods, format_func=lambda p: p["nome"], max_selections=maximo, key=f"mul_{cesta_obj['id']}_{cat}")
-                        selecoes_cliente[cat] = escolhidos
-            else:
-                st.info("Esta opção possui itens padronizados e não requer personalização.")
-else:
-    st.error("O catálogo está vazio no momento.")
-
-
-# ==========================================================
-# 3. COMPLEMENTOS E FOTOS
-# ==========================================================
-adicionais_selecionados = []
-polaroid = False
-
-categorias = obter_categorias_cacheadas()
-cat_adicionais = next((c for c in categorias if c.get("nome", "").strip().lower() == "adicionais"), None)
-
-if cat_adicionais:
-    produtos_adicionais = obter_produtos_por_categoria_cacheados(cat_adicionais["id"])
-    if produtos_adicionais:
-        with st.container(border=True):
-            st.markdown('<div class="secao-titulo">🎀 Adicionar Complementos</div>', unsafe_allow_html=True)
-            st.caption("Deixe o presente ainda mais inesquecível com itens extras.")
-            
-            colunas = st.columns(2)
-            for indice, prod in enumerate(produtos_adicionais):
-                preco = prod.get("preco")
-                txt_val = f"R$ {float(preco):,.2f}".replace(",", "X").replace(".", ",").replace("X",".") if preco else "Consulta"
-                
-                with colunas[indice % 2]:
-                    if st.checkbox(f"{prod['nome']} | {txt_val}", key=f"add_{prod['id']}"):
-                        adicionais_selecionados.append({
-                            "produto_id": prod["id"], "nome": prod["nome"], 
-                            "preco": float(preco) if preco else None, "categoria": "Adicionais"
-                        })
-                        if prod["nome"].lower().strip() == "polaroid": polaroid = True
-
-if polaroid:
-    with st.container(border=True):
-        st.markdown('<div class="secao-titulo">📷 Envie suas Fotos (Polaroid)</div>', unsafe_allow_html=True)
-        st.caption("Você selecionou o item Polaroid. Envie até 2 fotos para revelação.")
-        
-        fotos_upload = st.file_uploader("Upload", type=["jpg", "jpeg", "png", "webp", "heic"], accept_multiple_files=True, key="fotos_polaroid_cliente", label_visibility="collapsed")
-        
-        if fotos_upload:
-            if len(fotos_upload) > 2:
-                st.error("⚠️ Você enviou mais de 2 fotos. Por favor, remova algumas na lixeirinha acima.")
-            else:
-                st.success(f"✅ {len(fotos_upload)} foto(s) anexada(s) com sucesso!")
-
-
-# ==========================================================
-# 4. VIACEP E DADOS DE ENTREGA INTELIGENTES
-# ==========================================================
-with st.container(border=True):
-    st.markdown('<div class="secao-titulo">📍 Endereço de Entrega</div>', unsafe_allow_html=True)
-    
-    cep_input = st.text_input("CEP (Opcional - Preenche Automático)", max_chars=8, placeholder="Somente números", key="input_cep")
-    cep_limpo = re.sub(r'\D', '', cep_input)
-    
-    if len(cep_limpo) == 8 and st.session_state["ultimo_cep_buscado"] != cep_limpo:
-        try:
-            res = requests.get(f"https://viacep.com.br/ws/{cep_limpo}/json/", timeout=3)
-            if res.status_code == 200 and "erro" not in res.json():
-                dados_cep = res.json()
-                st.session_state["input_rua"] = dados_cep.get("logradouro", "")
-                st.session_state["input_bairro"] = dados_cep.get("bairro", "")
-                st.session_state["input_cidade"] = f"{dados_cep.get('localidade', '')} - {dados_cep.get('uf', '')}"
-        except: pass
-        st.session_state["ultimo_cep_buscado"] = cep_limpo
-
-    col_cid, col_bairro = st.columns([1.5, 1])
-    with col_cid: st.text_input("Cidade - UF *", placeholder="Ex: Brasília - DF", key="input_cidade")
-    with col_bairro: st.text_input("Bairro *", placeholder="Ex: Asa Sul", key="input_bairro")
-    
-    st.text_input("Rua / Logradouro *", placeholder="Ex: SQS 101 Bloco A", key="input_rua")
-    st.text_input("Número / Complemento *", placeholder="Ex: Apto 202, Lote 5", key="input_numero")
-    
-    st.divider()
-    st.markdown('<div style="font-size: 15px; font-weight: 800; color: #5a3b28; margin-bottom: 8px;">💝 O Destinatário</div>', unsafe_allow_html=True)
-    
-    col_d1, col_d2 = st.columns(2)
-    with col_d1: st.text_input("Nome do Homenageado *", placeholder="Quem receberá?", key="input_dest_nome")
-    with col_d2: st.text_input("WhatsApp do Homenageado", placeholder="(Opcional)", key="input_dest_tel")
-    
-    st.text_area("💌 Mensagem do Cartão", height=90, placeholder="Escreva uma mensagem especial para ir impressa no cartão...", key="input_mensagem")
-    st.text_input("Motivo da Homenagem", placeholder="Ex: Aniversário, Aniversário de Namoro...", key="input_motivo")
-    
-    st.divider()
-    st.markdown('<div style="font-size: 15px; font-weight: 800; color: #5a3b28; margin-bottom: 8px;">📅 Agendamento</div>', unsafe_allow_html=True)
-    col_ent1, col_ent2 = st.columns(2)
-    with col_ent1: st.date_input("Data de entrega", format="DD/MM/YYYY", key="input_data_entrega")
-    with col_ent2: st.selectbox("Período Ideal", ["Manhã", "Tarde", "Noite"], key="input_periodo_entrega")
-    st.text_input("✨ Solicitação Especial (Opcional)", placeholder="Ex: Entregar exatamente às 09h00...", key="input_pedido_especial")
-
-
-# ==========================================================
-# 5. RESUMO, PAGAMENTO E ENVIO
-# ==========================================================
-with st.container(border=True):
-    st.markdown('<div class="secao-titulo">💳 Fechamento</div>', unsafe_allow_html=True)
-    pagamento = st.radio("Como deseja pagar?", ["Pix", "Cartão de Crédito"], horizontal=True, key="forma_pagamento_radio")
-
-valor_base = float(cesta_obj.get("preco", 0)) if cesta_obj and cesta_obj.get("preco") is not None else 0
-valor_adicionais = 0
-tem_consulta = False
-
-for item in adicionais_selecionados:
-    if item["preco"] is None: tem_consulta = True
-    else: valor_adicionais += float(item["preco"])
-
-total_estimado = valor_base + valor_adicionais
-
-if cesta_obj:
-    with st.container(border=True):
-        st.markdown('<div class="secao-titulo">💰 Resumo do Pedido</div>', unsafe_allow_html=True)
-        st.markdown(f"""
-        <div class="resumo-box">
-            <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>🎁 Opção Escolhida</span> <strong>R$ {valor_base:,.2f}</strong></div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>🎀 Adicionais</span> <strong>R$ {valor_adicionais:,.2f}</strong></div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>🚚 Taxa de Entrega</span> <strong>A calcular</strong></div>
-            <hr style="border:0; border-top:1px dashed #dfcdbb; margin:10px 0;">
-            <div style="display:flex; justify-content:space-between; font-size:16px;"><span><strong>TOTAL ESTIMADO</strong></span> <strong style="color:#137333;">R$ {total_estimado:,.2f}</strong></div>
-        </div>
-        """.replace(",", "X").replace(".", ",").replace("X","."), unsafe_allow_html=True)
-        
-        if tem_consulta:
-            st.warning("⚠️ **Aviso:** Existem itens *Sob Consulta* no seu pacote. O valor final será atualizado pela nossa equipe.")
-
-# ==========================================================
-# PROCESSAMENTO DO BOTÃO DE ENVIO
-# ==========================================================
-st.write("")
-enviar = st.button("🎁 CONFIRMAR E ENVIAR PEDIDO", use_container_width=True, type="primary")
-
-if enviar:
-    
-    # 1. Coleta de Dados Pessoais
-    nome = st.session_state.get("input_nome_comprador", "")
-    cpf_bruto = st.session_state.get("input_cpf_comprador", "")
-    tel_bruto = st.session_state.get("input_tel_comprador", "")
-    ddi = re.sub(r'\D', '', st.session_state.get("input_ddi_comprador", "55"))
-    
-    if not nome.strip(): st.error("❌ Preencha o nome do comprador."); st.stop()
-    if not tel_bruto.strip(): st.error("❌ Preencha o telefone do comprador."); st.stop()
-    if not validar_cpf(cpf_bruto): st.error("❌ CPF inválido. Verifique os números digitados."); st.stop()
-    
-    cpf_limpo = re.sub(r'\D', '', cpf_bruto)
-    tel_limpo = re.sub(r'\D', '', tel_bruto)
-    telefone_oficial = f"{ddi}{tel_limpo}"
-
-    # 2. Coleta da Cesta e Endereço
-    if not cesta_obj: st.error("❌ Selecione uma opção."); st.stop()
-    
-    dest_nome = st.session_state.get("input_dest_nome", "")
-    if not dest_nome.strip(): st.error("❌ Informe o nome de quem receberá a cesta."); st.stop()
-    
-    rua = st.session_state.get("input_rua", "")
-    num = st.session_state.get("input_numero", "")
-    if not rua.strip() or not num.strip(): st.error("❌ Informe a Rua e o Número de entrega."); st.stop()
-    
-    fotos_upload = st.session_state.get("fotos_polaroid_cliente", [])
-    if polaroid and len(fotos_upload) > 2: st.error("❌ O limite para Polaroid é de 2 fotos."); st.stop()
-
-    # 3. Formatação Final
-    cep = st.session_state.get("input_cep", "")
-    bairro = st.session_state.get("input_bairro", "")
-    cidade = st.session_state.get("input_cidade", "")
-    endereco_completo = f"{rua}, {num} - {bairro}, {cidade}" + (f" (CEP: {cep})" if cep else "")
-    
-    dt_ent = st.session_state.get("input_data_entrega")
-    
-    produtos_txt = [f"{c}: {i['nome']}" for c, itens in selecoes_cliente.items() for i in itens]
-    adicionais_txt = [f"{i['nome']} (Consulta)" if i["preco"] is None else f"{i['nome']} (R$ {i['preco']:,.2f})".replace(".",",") for i in adicionais_selecionados]
-    
-    dados = {
-        "cliente_nome": nome.strip(),
-        "cliente_cpf": cpf_limpo,
-        "cliente_telefone": telefone_oficial,
-        "destinatario_nome": dest_nome.strip(),
-        "destinatario_telefone": re.sub(r'\D', '', st.session_state.get("input_dest_tel", "")),
-        "motivo_homenagem": st.session_state.get("input_motivo", "").strip(),
-        "cesta_id": cesta_obj["id"],
-        "cesta_nome": cesta_obj["nome"],
-        "produtos": "\n".join(produtos_txt),
-        "adicionais": ", ".join(adicionais_txt),
-        "pagamento": pagamento,
-        "mensagem": st.session_state.get("input_mensagem", "").strip(),
-        "pedido_especial": st.session_state.get("input_pedido_especial", "").strip(),
-        "endereco": endereco_completo,
-        "data_entrega": dt_ent.strftime("%Y-%m-%d") if dt_ent else str(date.today()),
-        "periodo_entrega": st.session_state.get("input_periodo_entrega", "Manhã"),
-        "status": "Recebido",
-        "valor_frete": 0,
-        "valor_total": total_estimado
-    }
-
-    # 4. Salvar Banco de Dados
-    with st.spinner("Registrando seu pedido seguro..."):
-        try: sucesso, pedido_id = salvar_pedido(dados)
-        except Exception as e: st.error(f"❌ Erro de conexão: {e}"); st.stop()
-        
-        if sucesso:
-            if adicionais_selecionados: salvar_adicionais_pedido(pedido_id, adicionais_selecionados)
-            if polaroid and fotos_upload:
-                try: salvar_fotos(pedido_id, fotos_upload[:2])
-                except Exception as e: print(f"Aviso foto: {e}")
-                
+        with col_text:
+            st.markdown(f'<div class="card-cesta-titulo">{produto.get("nome", "")}</div>', unsafe_allow_html=True)
+            if produto.get("descricao") and str(produto["descricao"]).strip(): st.markdown(f'<div class="card-cesta-desc">{produto["descricao"]}</div>', unsafe_allow_html=True)
             try:
-                # Novo layout profissional para a mensagem do Telegram
-                texto_aviso = (
-                    f"🚨 *NOVO PEDIDO REGISTRADO (SITE)!* 🚨\n\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"📦 *ID do Pedido:* `#{pedido_id}`\n"
-                    f"👤 *Cliente:* {nome}\n"
-                    f"📱 *Contato:* [{telefone_oficial}](https://wa.me/{telefone_oficial})\n"
-                    f"🎁 *Opção Escolhida:* {cesta_obj['nome']} ({cesta_obj.get('secao_vitrine', 'Cestas de Café')})\n"
-                    f"💝 *Para:* {dest_nome}\n"
-                    f"📍 *Bairro / Região:* {bairro}\n"
-                    f"💰 *Estimativa:* R$ {total_estimado:,.2f}\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"⚡ *Ação:* Acesse o painel para verificar os detalhes e despachar!"
-                )
-                enviar_notificacao_telegram(texto_aviso)
-            except: pass 
+                valor = float(produto.get("preco", 0))
+                valor_fmt = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
+                st.markdown(f'<div class="card-cesta-preco">{valor_fmt}</div>', unsafe_allow_html=True)
+            except: st.markdown('<div class="card-cesta-preco">Preço sob consulta</div>', unsafe_allow_html=True)
+            
+            st.write("")
+            btn_text = "🛒 Quero Montar Esta Opção"
+            if "tábua" in produto.get("nome", "").lower() or "tabua" in produto.get("nome", "").lower(): btn_text = "🛒 Quero Montar Esta Tábua"
+            elif "cesta" in produto.get("nome", "").lower(): btn_text = "🛒 Quero Montar Esta Cesta"
+            elif "corporativo" in nome_secao_atual.lower(): btn_text = "🛒 Quero Este Kit"
 
-            # Configura Tela de Sucesso
-            st.session_state["resumo_pedido_sucesso"] = {
-                "cliente_nome": nome.strip(),
-                "destinatario_nome": dest_nome.strip(),
-                "cesta_nome": f"{cesta_obj['nome']} ({cesta_obj.get('secao_vitrine', 'Cestas de Café')})",
-                "adicionais_str": ", ".join(adicionais_txt),
-                "data_entrega": dt_ent.strftime("%d/%m/%Y") if dt_ent else "",
-                "periodo_entrega": st.session_state.get("input_periodo_entrega", ""),
-                "endereco": endereco_completo,
-                "valor_total": f"R$ {total_estimado:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
-            }
-            st.session_state["pedido_enviado_com_sucesso"] = True
-            st.rerun()
+            if st.button(btn_text, key=f"prod_btn_{produto['id']}", use_container_width=True):
+                st.session_state["cesta_selecionada_home"] = produto["id"]
+                st.switch_page("pages/01_Inicio.py")
+
+# ==========================================================
+# LÓGICA DE EXIBIÇÃO: ÚNICA SEÇÃO VS ABAS (TABS)
+# ==========================================================
+if not secoes_ordenadas_bd:
+    st.info("Nenhuma seção ativa no momento. O catálogo está sendo atualizado.")
+else:
+    st.markdown("<h3 style='font-family: \"Montserrat\", sans-serif; color:#4a2e1b; margin-top:10px; margin-bottom:14px; font-weight:800; font-size: 26px; letter-spacing: -0.5px;'>🎁 Catálogo Oficial</h3>", unsafe_allow_html=True)
+    
+    # -----------------------------------------------
+    # CENÁRIO 1: APENAS 1 SEÇÃO ATIVA (Layout Antigo)
+    # -----------------------------------------------
+    if len(secoes_ordenadas_bd) == 1:
+        secao_unica = secoes_ordenadas_bd[0]
+        nome = secao_unica["nome"]
+        icone = "🎁"
+        if "tábua" in nome.lower() or "tabua" in nome.lower() or "frios" in nome.lower(): icone = "🧀"
+        elif "corporativo" in nome.lower(): icone = "💼"
+            
+        st.markdown(f"<h3 style='font-family: \"Montserrat\", sans-serif; color:#c5721f; margin-top:30px; margin-bottom:14px; font-weight:800; font-size: 32px; letter-spacing: -0.5px;'>{icone} {nome}</h3>", unsafe_allow_html=True)
+        
+        produtos_desta_secao = [p for p in todos_produtos if p.get("secao_vitrine", "Cestas de Café") == nome]
+        if not produtos_desta_secao:
+            st.info(f"✨ Em breve teremos novidades em **{nome}**!")
         else:
-            st.error("❌ Não foi possível registrar o pedido agora. Tente novamente.")
+            for produto in produtos_desta_secao:
+                desenhar_card_produto(produto, nome)
 
+    # -----------------------------------------------
+    # CENÁRIO 2: 2 OU MAIS SEÇÕES ATIVAS (Layout de Abas)
+    # -----------------------------------------------
+    else:
+        titulos_abas = []
+        for s in secoes_ordenadas_bd:
+            nome = s["nome"]
+            icone = "🎁"
+            if "tábua" in nome.lower() or "tabua" in nome.lower() or "frios" in nome.lower(): icone = "🧀"
+            elif "corporativo" in nome.lower(): icone = "💼"
+            titulos_abas.append(f"{icone} {nome}")
+
+        abas = st.tabs(titulos_abas)
+
+        for i, aba in enumerate(abas):
+            nome_secao_atual = secoes_ordenadas_bd[i]["nome"]
+            with aba:
+                st.write("") 
+                produtos_desta_secao = [p for p in todos_produtos if p.get("secao_vitrine", "Cestas de Café") == nome_secao_atual]
+                
+                if not produtos_desta_secao:
+                    st.info(f"✨ Em breve teremos novidades incríveis na categoria de **{nome_secao_atual}**!")
+                else:
+                    for produto in produtos_desta_secao:
+                        desenhar_card_produto(produto, nome_secao_atual)
+
+# ==========================================================
+# ADICIONAIS E RODAPÉ
+# ==========================================================
+produtos_adicionais = []
+try:
+    categorias = obter_categorias() 
+    cat_adicionais = next((c for c in categorias if c.get("nome", "").strip().lower() == "adicionais"), None)
+    if cat_adicionais: produtos_adicionais = listar_produtos_por_categoria_id(cat_adicionais["id"])
+except: pass
+
+if produtos_adicionais:
+    cards_html = ""
+    for prod in produtos_adicionais:
+        nome_p = prod.get("nome", "")
+        preco_p = prod.get("preco")
+        imagem_p = prod.get("imagem")
+        span_preco = '<span class="adicional-preco-consulta">Consulta</span>'
+        if preco_p is not None and str(preco_p).strip() != "":
+            try:
+                val_f = float(preco_p)
+                span_preco = f'<span class="adicional-preco-fixo">R$ {val_f:,.2f}</span>'.replace(",", "X").replace(".", ",").replace("X",".")
+            except: pass
+        if imagem_p and str(imagem_p).strip():
+            img_src = image_to_base64(imagem_p)
+            img_html = f'<label style="cursor: zoom-in; display: inline-block; margin-bottom: 6px;"><input type="checkbox" class="lightbox-toggle"><img src="{img_src}" class="adicional-img-small" title="Clique para ampliar"><div class="lightbox-modal"><img src="{img_src}"></div></label>'
+        else:
+            img_html = f'<div class="adicional-img-placeholder" style="margin-bottom: 6px;">🎀</div>'
+        cards_html += f'<div class="adicional-item-box">{img_html}<div class="adicional-nome">{nome_p}</div><div>{span_preco}</div></div>'
+
+    st.markdown(
+        f"""
+        <div class="adicionais-hero-card">
+            <div class="adicionais-hero-title">
+                🎀 Incremente seu presente com nossos Adicionais:
+                <span style="font-size: 13px; font-weight: 500; color: #888; display: block; margin-top: 6px;">
+                    👉 Você poderá escolher os adicionais na próxima tela de montagem. (Toque na foto para ampliar).
+                </span>
+            </div>
+            <div class="adicionais-grid-css">{cards_html}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+st.markdown(
+    """
+    <div class="footer-container">
+        <div class="footer-title">Fale Conosco</div>
+        <div class="footer-text">Ficou com alguma dúvida sobre entregas, prazos ou quer fazer uma encomenda corporativa?<br>Nossa equipe está pronta para te atender.</div>
+        <div class="social-btn-box">
+            <a href="https://wa.me/5561999759079?text=Olá!%20Gostaria%20de%20tirar%20dúvidas." target="_blank" class="btn-whatsapp">💬 (61) 99975-9079</a>
+            <a href="https://instagram.com/docecestabrasilia" target="_blank" class="btn-instagram">📸 @docecestabrasilia</a>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+st.write("")
 st.divider()
-st.markdown('<div style="text-align:center; font-size:12px; color:#888; font-weight: 500;">Doce Cesta Brasília © 2026<br>Ambiente Seguro</div>', unsafe_allow_html=True)
-st.page_link("app.py", label="Voltar para a Vitrine", icon="🛍️")
+st.page_link("pages/99_Admin.py", label="Acesso Restrito Administrativo", icon="🔒")
