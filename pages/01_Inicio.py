@@ -138,20 +138,6 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     letter-spacing: -0.3px; display: flex; align-items: center; gap: 8px;
 }
 
-/* Nome da Cesta em destaque elegante e tamanho moderado */
-.destaque-cesta-nome {
-    font-family: 'Montserrat', sans-serif !important;
-    font-size: 14.5px !important;
-    font-weight: 700 !important;
-    color: #c5721f !important;
-    background: #fff8ef;
-    border: 1px solid #fce8b2;
-    padding: 8px 14px;
-    border-radius: 10px;
-    margin-bottom: 14px;
-    display: inline-block;
-}
-
 /* Campos de Entrada Modernos */
 input, textarea, select {
     border-radius: 12px !important; border: 1px solid #dfcdbb !important; background-color: #faf7f3 !important;
@@ -318,13 +304,6 @@ if cestas and secoes_disponiveis:
         def ao_mudar_secao():
             st.session_state["cesta_selecionada_id"] = None
 
-        # --- SE UMA CESTA JÁ FOI ESCOLHIDA, EXIBE O NOME EM DESTAQUE LOGO ACIMA DOS SELECTS ---
-        if st.session_state.get("cesta_selecionada_id"):
-            for c_item in cestas:
-                if c_item["id"] == st.session_state["cesta_selecionada_id"]:
-                    st.markdown(f'<div class="destaque-cesta-nome">✨ Item selecionado: <b>{c_item["nome"]}</b></div>', unsafe_allow_html=True)
-                    break
-
         if len(secoes_disponiveis) > 1:
             col_categoria, col_modelo = st.columns(2)
             
@@ -385,6 +364,8 @@ if cestas and secoes_disponiveis:
                     st.image(cesta_obj["imagem"], use_container_width=True)
             with col_txt:
                 sec_txt = cesta_obj.get("secao_vitrine", "Cestas de Café")
+                # Nome da cesta em destaque logo acima da descrição da Categoria
+                st.markdown(f"<div style='font-size: 16px; font-weight: 800; color: #c5721f; margin-bottom: 4px;'>{cesta_obj.get('nome', '')}</div>", unsafe_allow_html=True)
                 st.markdown(f"**Categoria:** <span style='color: #775a46; font-size:13px;'>{sec_txt}</span>", unsafe_allow_html=True)
                 if cesta_obj.get("descricao"): st.caption(cesta_obj["descricao"])
                 valor = float(cesta_obj.get("preco", 0))
