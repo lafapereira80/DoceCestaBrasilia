@@ -60,18 +60,25 @@ def formatar_data(data_str):
     except: return str(data_str)
 
 # =====================================================
-# CACHING DINÂMICO PARA SEÇÕES E CESTAS
+# CACHING DINÂMICO PARA SEÇÕES E CESTAS (BLINDADO)
 # =====================================================
 @st.cache_data(ttl=5, show_spinner=False)
 def obter_secoes_e_cestas_ativas():
     try:
+        # Busca exclusivamente as seções ativas na tabela vitrine_secoes ordenadas
         secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
-        secoes_ativas = sorted([s["nome"] for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
-        
+        secoes_ativas = sorted([s for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
+        nomes_secoes_ativas = [s["nome"] for s in secoes_ativas]
+
+        # Busca todas as cestas ativas
         cestas_todas = listar_cestas()
         cestas_ativas = [c for c in cestas_todas if c.get("ativa", True)]
         
-        return secoes_ativas, sorted(cestas_ativas, key=lambda x: x.get("ordem", 999))
+        # Garante fallback se alguma seção ativa não tiver nome
+        if not nomes_secoes_ativas:
+            nomes_secoes_ativas = ["Cestas de Café"]
+
+        return nomes_secoes_ativas, sorted(cestas_ativas, key=lambda x: x.get("ordem", 999))
     except:
         return ["Cestas de Café"], []
 
@@ -223,8 +230,11 @@ def render_criar_pedido_manual():
         with col_sec:
             secao_escolhida = st.selectbox("💌 1. Escolha a Seção", secoes_ativas, key="man_sel_secao")
             
-        # Filtra apenas as cestas pertencentes à seção escolhida
-        cestas_da_secao = [c for c in todas_cestas if c.get("secao_vitrine", "Cestas de Café") == secao_escolhida]
+        # Filtra as cestas correspondentes à seção escolhida (ignorando maiúsculas/minúsculas para maior segurança)
+        cestas_da_secao = [
+            c for c in todas_cestas 
+            if str(c.get("secao_vitrine", "")).strip().lower() == str(secao_escolhida).strip().lower()
+        ]
         
         # 2. Caixa com os Modelos Cadastrados na Seção
         with col_mod:
