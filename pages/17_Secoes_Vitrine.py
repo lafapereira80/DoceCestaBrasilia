@@ -49,24 +49,20 @@ with col_t1:
 
 
 # =====================================================
-# SINCRONIZAÇÃO E CORREÇÃO AUTOMÁTICA (Cestas de Café)
+# SINCRONIZAÇÃO INTELIGENTE (Garante a Seção Nº 1)
 # =====================================================
 try:
-    # 1. Renomeia 'Cestas Tradicionais' para 'Cestas de Café' (se existir)
-    supabase.table("vitrine_secoes").update({"nome": "Cestas de Café"}).eq("nome", "Cestas Tradicionais").execute()
-    supabase.table("cestas").update({"secao_vitrine": "Cestas de Café"}).eq("secao_vitrine", "Cestas Tradicionais").execute()
-    
-    # 2. Busca todas as seções ordenadas
+    # 1. Busca todas as seções ordenadas
     res_sec = supabase.table("vitrine_secoes").select("*").order("ordem").execute()
     secoes_bd = res_sec.data or []
         
-    # 3. Garante que 'Cestas de Café' sempre exista
-    if not any(s["nome"] == "Cestas de Café" for s in secoes_bd):
+    # 2. Garante que exista pelo menos UMA seção no sistema
+    if len(secoes_bd) == 0:
         nova = supabase.table("vitrine_secoes").insert({"nome": "Cestas de Café", "ordem": 1}).execute()
         if nova.data:
-            secoes_bd.insert(0, nova.data[0])
+            secoes_bd.append(nova.data[0])
 
-    # 4. Normaliza as ordens para não ter "buracos"
+    # 3. Normaliza as ordens para não ter "buracos"
     for i, s in enumerate(secoes_bd):
         ordem_correta = i + 1
         if s["ordem"] != ordem_correta:
@@ -78,6 +74,8 @@ except Exception as e:
     secoes_bd = []
 
 total_secoes = len(secoes_bd)
+# A seção que estiver na Posição 1 sempre será o "Padrão" que não pode ser excluído
+secao_padrao = secoes_bd[0] if total_secoes > 0 else None
 
 
 # =====================================================
@@ -172,7 +170,7 @@ for sec in secoes_bd:
                 # Modo de visualização (Bloqueado)
                 st.text_input("Nome", value=sec["nome"], key=f"nome_block_{sec_id}", disabled=True, label_visibility="collapsed")
             
-        # --- COLUNA 3: AÇÕES DE EDIÇÃO ---
+        # --- COLUNA 3: AÇÕES DE EDIÇÃO (LIVRE PARA TODAS) ---
         with c3:
             if st.session_state[f"editando_{sec_id}"]:
                 # Mostra Salvar e Cancelar lado a lado
@@ -199,23 +197,20 @@ for sec in secoes_bd:
                         st.session_state[f"editando_{sec_id}"] = False
                         st.rerun()
             else:
-                # Botão para destravar a edição
-                if sec["nome"] == "Cestas de Café":
-                    st.button("🔒 Nome Fixo", disabled=True, key=f"editar_{sec_id}", use_container_width=True)
-                else:
-                    if st.button("✏️ Alterar Nome", key=f"editar_{sec_id}", use_container_width=True):
-                        st.session_state[f"editando_{sec_id}"] = True
-                        st.rerun()
+                # Agora o botão Alterar Nome está disponível inclusive para a seção número 1
+                if st.button("✏️ Alterar Nome", key=f"editar_{sec_id}", use_container_width=True):
+                    st.session_state[f"editando_{sec_id}"] = True
+                    st.rerun()
 
-        # --- COLUNA 4: EXCLUSÃO ---
+        # --- COLUNA 4: EXCLUSÃO (BLOQUEIA APENAS A Nº 1) ---
         with c4:
-            if sec["nome"] == "Cestas de Café":
-                st.button("🔒 Padrão", disabled=True, key=f"excluir_{sec_id}", use_container_width=True, help="A seção principal não pode ser excluída.")
+            if secao_padrao and sec["id"] == secao_padrao["id"]:
+                st.button("🔒 Padrão", disabled=True, key=f"excluir_{sec_id}", use_container_width=True, help="A seção Posição 1 é o padrão do sistema e não pode ser excluída.")
             else:
                 if st.button("🗑️ Excluir", key=f"excluir_{sec_id}", use_container_width=True):
                     try:
-                        # Move os produtos para o padrão e apaga a seção
-                        supabase.table("cestas").update({"secao_vitrine": "Cestas de Café"}).eq("secao_vitrine", sec["nome"]).execute()
+                        # Move os produtos para a seção padrão atual (posição 1) e apaga a seção
+                        supabase.table("cestas").update({"secao_vitrine": secao_padrao["nome"]}).eq("secao_vitrine", sec["nome"]).execute()
                         supabase.table("vitrine_secoes").delete().eq("id", sec_id).execute()
                         
                         # Reorganiza as posições que sobraram
@@ -223,7 +218,7 @@ for sec in secoes_bd:
                         for i, s in enumerate(lista_sem_ela):
                             supabase.table("vitrine_secoes").update({"ordem": i + 1}).eq("id", s["id"]).execute()
 
-                        st.success("✅ Seção apagada! Produtos movidos para 'Cestas de Café'.")
+                        st.success(f"✅ Seção apagada! Produtos movidos para '{secao_padrao['nome']}'.")
                         time.sleep(1.5)
                         st.rerun()
                     except Exception as e:
