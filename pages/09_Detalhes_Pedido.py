@@ -4,7 +4,6 @@ import requests
 import re
 import urllib.parse
 from datetime import datetime, date
-import streamlit.components.v1 as components
 
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
@@ -42,12 +41,6 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .val-total { font-size: 22px; font-weight: 800; color: #137333; text-align: right; margin-top: 15px; padding-top: 15px; border-top: 2px solid #e8ddd3;}
 
 div[data-testid="stButton"] button { border-radius: 12px !important; font-weight: 800 !important; }
-
-@media print {
-    header, footer, section[data-testid="stSidebar"], div[data-testid="stButton"] { display: none !important; }
-    .block-container { padding: 0 !important; max-width: 100% !important; margin: 0 !important;}
-    .ficha-card { box-shadow: none !important; border: none !important; padding: 0 !important; }
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -86,6 +79,10 @@ def formata_moeda(v):
     try: return f"R$ {float(v):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     except: return "R$ 0,00"
 
+def tratar_preco(v):
+    try: return float(str(v).replace(",", "."))
+    except: return 0.0
+
 # Botão Voltar
 if st.button("⬅️ Voltar para o Mural de Pedidos"):
     st.switch_page("pages/02_Pedidos.py")
@@ -94,7 +91,7 @@ st.markdown(f"""
 <div class="ficha-card">
     <div class="ficha-header {cor_classe}">
         <div>
-            <h2 style="margin:0; color: {'#137333' if is_b2b else '#c5721f'}; font-weight: 800;">FICHA DE PRODUÇÃO</h2>
+            <h2 style="margin:0; color: {'#137333' if is_b2b else '#c5721f'}; font-weight: 800;">DETALHES DO PEDIDO</h2>
             <div style="font-size:12px; color:#666; font-weight:700;">Pedido #{pedido['id']}</div>
         </div>
         <div style="text-align: right;">
@@ -126,14 +123,6 @@ with col1:
     </div>
     """, unsafe_allow_html=True)
 
-    if pedido.get('mensagem'):
-        st.markdown(f"<div class='section-title {cor_classe}'>💌 MENSAGEM DO CARTÃO</div>", unsafe_allow_html=True)
-        st.markdown(f"""
-        <div style="background:#f9f9f9; padding:12px; border-radius:8px; font-size:14px; font-style:italic; color:#4a2e1b; border-left: 3px solid #c5721f;">
-            "{pedido.get('mensagem')}"
-        </div>
-        """, unsafe_allow_html=True)
-
 with col2:
     st.markdown(f"<div class='section-title {cor_classe}'>🎁 DETALHAMENTO DOS PRODUTOS</div>", unsafe_allow_html=True)
     
@@ -155,7 +144,7 @@ with col2:
                 elif "EXTRAS" not in linha_limpa:
                     st.markdown(f"<div class='item-box'>✨ {linha_limpa}</div>", unsafe_allow_html=True)
 
-    st.markdown(f"<div class='section-title {cor_classe}'>💰 RESUMO FINANCEIRO</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='section-title {cor_classe}'>💰 RESUMO FINANCEIRO ATUAL</div>", unsafe_allow_html=True)
     st.markdown(f"""
     <div class="finance-row"><span class="info-label">Forma Pagamento:</span><span class="info-value" style="text-align: right;">{pedido.get('pagamento', '')}</span></div>
     <div class="finance-row"><span class="info-label">Taxa de Frete:</span><span class="info-value" style="text-align: right;">{formata_moeda(pedido.get('valor_frete', 0))}</span></div>
@@ -165,64 +154,107 @@ with col2:
 st.markdown("</div>", unsafe_allow_html=True)
 
 # ==========================================
-# CAMPOS DE FECHAMENTO RÁPIDO E WHATSAPP NA TELA PRINCIPAL
+# PAINEL DE FECHAMENTO (FRETE, DESCONTO, EXTRAS NÃO CADASTRADOS)
 # ==========================================
 with st.container(border=True):
-    st.markdown("<h4 style='color: #c5721f; margin-top: 0;'>⚙️ Fechamento Rápido & Ações do Pedido</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color: #c5721f; margin-top: 0;'>⚙️ Fechamento e Ajustes Financeiros</h4>", unsafe_allow_html=True)
     
-    col_fc1, col_fc2, col_fc3 = st.columns(3)
+    # Extrai o valor do frete e total atual para os inputs
+    frete_atual = tratar_preco(pedido.get('valor_frete', 0))
+    total_atual = tratar_preco(pedido.get('valor_total', 0))
+    
+    col_fc1, col_fc2 = st.columns(2)
     with col_fc1:
-        novo_frete = st.number_input("Atualizar Frete (R$)", min_value=0.0, step=5.0, value=float(pedido.get('valor_frete', 0) or 0), key="input_atualiza_frete")
+        novo_frete = st.number_input("Taxa de Frete (R$)", min_value=0.0, step=5.0, value=frete_atual)
     with col_fc2:
-        novo_total = st.number_input("Atualizar Valor Total Líquido (R$)", min_value=0.0, step=10.0, value=float(pedido.get('valor_total', 0) or 0), key="input_atualiza_total")
-    with col_fc3:
-        # Inserção rápida de produto extra não cadastrado
-        extra_rapido = st.text_input("Inserir Extra Rápido (Ex: Cartão Especial)", placeholder="Nome do item...", key="input_extra_rapido")
+        desconto_perc = st.number_input("Desconto Concedido (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0)
 
-    if st.button("💾 Salvar Ajustes Rápidos de Fechamento", use_container_width=True):
-        updates = {"valor_frete": novo_frete, "valor_total": novo_total}
-        if extra_rapido.strip():
-            adicionais_atuais = pedido.get('adicionais', '') or ""
-            updates["adicionais"] = adicionais_atuais + f"\n✨ {extra_rapido.strip()}"
-        
+    st.markdown("<div style='font-size: 13px; font-weight: 700; color: #5a3b28; margin-top: 10px;'>➕ Inserir Produto/Extra Não Cadastrado</div>", unsafe_allow_html=True)
+    col_ex1, col_ex2 = st.columns([3, 1])
+    with col_ex1:
+        nome_extra_novo = st.text_input("Nome do Item Extra", placeholder="Ex: Urso de pelúcia extra", label_visibility="collapsed")
+    with col_ex2:
+        valor_extra_novo = st.number_input("Valor R$", min_value=0.0, step=5.0, value=0.0, label_visibility="collapsed")
+
+    # Cálculo automático preliminar
+    # Estima subtotal a partir do total atual menos frete
+    sub_estimado = total_atual - frete_atual
+    v_desconto = sub_estimado * (desconto_perc / 100)
+    v_extra = valor_extra_novo if nome_extra_novo.strip() else 0.0
+    total_calculado = sub_estimado - v_desconto + novo_frete + v_extra
+
+    if st.button("💾 Aplicar e Salvar Ajustes de Fechamento", use_container_width=True, type="primary"):
+        adicionais_atuais = pedido.get('adicionais', '') or ""
+        novo_adicional = adicionais_atuais
+        if desconto_perc > 0:
+            novo_adicional += f"\n🔻 Desconto de {desconto_perc}% aplicado."
+        if nome_extra_novo.strip():
+            novo_adicional += f"\n✨ 1x {nome_extra_novo.strip()} (R$ {formata_moeda(v_extra)})"
+
+        dados_fechamento = {
+            "valor_frete": novo_frete,
+            "valor_total": total_calculado,
+            "adicionais": novo_adicional.strip()
+        }
         try:
-            supabase.table("pedidos").update(updates).eq("id", pedido_id).execute()
-            st.success("✅ Ajustes salvos com sucesso!")
+            supabase.table("pedidos").update(dados_fechamento).eq("id", pedido_id).execute()
+            st.success("✅ Fechamento atualizado com sucesso!")
             st.rerun()
         except Exception as e:
             st.error(f"Erro ao salvar: {e}")
 
-    st.write("")
-    fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone', ''))
-    resumo_wpp = f"""*RESUMO DO PEDIDO — DOCE CESTA BRASÍLIA* 🎁\n\n👤 *Olá {cliente_limpo}!* Segue o status e resumo do seu pedido:\n\n📦 *Produto:* {pedido.get('cesta_nome')}\n💰 *Valor Total:* {formata_moeda(pedido.get('valor_total'))}\n💳 *Pagamento:* {pedido.get('pagamento')}\n📅 *Entrega:* {formata_data(pedido.get('data_entrega'))} ({pedido.get('periodo_entrega')})\n📍 *Local:* {pedido.get('endereco')}\n\nQualquer dúvida estamos à disposição! 🌻"""
-    link_wpp = f"https://wa.me/55{fone_cliente}?text={urllib.parse.quote(resumo_wpp)}" if fone_cliente else "#"
+# ==========================================
+# RESUMO PARA PAGAMENTO COM OS ITENS
+# ==========================================
+with st.container(border=True):
+    st.markdown("<h3 style='color: #137333; margin-top: 0; border-bottom: 2px solid #ceead6; padding-bottom: 8px;'>💳 Resumo Oficial para Pagamento</h3>", unsafe_allow_html=True)
+    
+    st.markdown(f"**Cliente:** {cliente_limpo} | **Telefone:** {pedido.get('cliente_telefone', '-')}")
+    st.markdown("**Composição do Pedido:**")
+    
+    if produtos_str:
+        for linha in produtos_str.split("\n"):
+            if linha.strip(): st.markdown(f"- 📦 {linha.strip()}")
+            
+    if adicionais_str:
+        for linha in adicionais_str.split("\n"):
+            if linha.strip(): st.markdown(f"- ✨ {linha.strip()}")
 
+    st.markdown("---")
+    col_r1, col_r2 = st.columns(2)
+    with col_r1:
+        st.markdown(f"**Forma de Pagamento:** {pedido.get('pagamento', 'Pix')}")
+        st.markdown(f"**Taxa de Frete:** {formata_moeda(pedido.get('valor_frete', 0))}")
+    with col_r2:
+        st.markdown(f"### Valor Final: <span style='color: #137333;'>{formata_moeda(pedido.get('valor_total', 0))}</span>", unsafe_allow_html=True)
+
+    # Botão WhatsApp
+    fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone', ''))
+    resumo_pagamento_wpp = f"""*RESUMO PARA PAGAMENTO — DOCE CESTA BRASÍLIA* 🎁\n\n👤 *Olá {cliente_limpo}!* Segue o resumo dos itens e valor para pagamento:\n\n📦 *Produto:* {pedido.get('cesta_nome')}\n💰 *Valor Total a Pagar:* {formata_moeda(pedido.get('valor_total'))}\n💳 *Forma de Pagamento:* {pedido.get('pagamento')}\n📅 *Entrega:* {formata_data(pedido.get('data_entrega'))} ({pedido.get('periodo_entrega')})\n📍 *Local:* {pedido.get('endereco')}\n\nQualquer dúvida estamos à disposição! 🌻"""
+    link_wpp = f"https://wa.me/55{fone_cliente}?text={urllib.parse.quote(resumo_pagamento_wpp)}" if fone_cliente else "#"
+
+    st.write("")
     if fone_cliente:
-        st.markdown(f'<a href="{link_wpp}" target="_blank" style="background-color: #25d366 !important; color: white !important; font-weight: 800; border-radius: 12px; padding: 12px; text-align: center; display: block; text-decoration: none;">📱 Enviar Resumo via WhatsApp para o Comprador</a>', unsafe_allow_html=True)
+        st.markdown(f'<a href="{link_wpp}" target="_blank" style="background-color: #25d366 !important; color: white !important; font-weight: 800; border-radius: 12px; padding: 14px; text-align: center; display: block; text-decoration: none;">📱 Enviar Resumo de Pagamento via WhatsApp</a>', unsafe_allow_html=True)
     else:
         st.warning("⚠️ Telefone do comprador não cadastrado para envio via WhatsApp.")
 
 st.write("")
 
 # ==========================================
-# BOTÕES DE AÇÃO NA FICHA
+# BOTÕES DE AÇÃO INFERIORES
 # ==========================================
 col_a1, col_a2, col_a3, col_a4 = st.columns(4)
 
 with col_a1:
-    if st.button("🖨️ Imprimir Ficha", use_container_width=True):
-        components.html("<script>window.print();</script>", height=0)
-
-with col_a2:
     if st.button("✏️ Alterar Pedido Completo", use_container_width=True):
-        # Salva o ID na sessão para que a página correspondente carregue os dados
         st.session_state['editar_pedido_id'] = pedido_id
         if is_b2b:
             st.switch_page("pages/18_Corporativo.py")
         else:
             st.switch_page("pages/19_Pedido_Manual.py")
 
-with col_a3:
+with col_a2:
     status_atual = pedido.get('status')
     if status_atual in ["Pendente", "Pago"]:
         if st.button("⏩ Prod.", use_container_width=True, type="primary"):
@@ -239,8 +271,8 @@ with col_a3:
     else:
         st.button("✔️ Finalizado", disabled=True, use_container_width=True)
 
-with col_a4:
-    if st.button("🗑️ Excluir", type="primary", use_container_width=True):
+with col_a3:
+    if st.button("🗑️ Excluir Pedido", type="primary", use_container_width=True):
         supabase.table("pedidos").delete().eq("id", pedido_id).execute()
         st.session_state['pedido_detalhe_id'] = None
         st.switch_page("pages/02_Pedidos.py")
