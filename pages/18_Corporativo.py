@@ -250,11 +250,10 @@ with aba_proposta:
                 with c_nome:
                     st.markdown(f"<div style='margin-top:32px; font-weight:600; font-size:14px;'>📌 {item['nome']}</div>", unsafe_allow_html=True)
                 with c_preco:
-                    novo_preco = st.number_input("Valor Un. (R$)", value=float(item["preco"]), min_value=0.0, step=1.0, format="%.2f", key=f"p_{item['id']}")
-                    st.session_state["adc_temporarios"][i]["preco"] = novo_preco
+                    # Somente cria o input numérico, a captura real será no clique do botão final
+                    st.number_input("Valor Un. (R$)", value=float(item["preco"]), min_value=0.0, step=1.0, format="%.2f", key=f"p_{item['id']}")
                 with c_qtd:
-                    nova_qtd = st.number_input("Quantidade", value=int(item["qtd"]), min_value=1, step=1, key=f"q_{item['id']}")
-                    st.session_state["adc_temporarios"][i]["qtd"] = nova_qtd
+                    st.number_input("Quantidade", value=int(item["qtd"]), min_value=1, step=1, key=f"q_{item['id']}")
                 with c_del:
                     st.markdown("<div style='margin-top:27px;'></div>", unsafe_allow_html=True)
                     if st.button("🗑️", key=f"del_{item['id']}", help="Remover"):
@@ -265,11 +264,19 @@ with aba_proposta:
     if st.button("✅ FECHAR PACOTE E LANÇAR NO CONTRATO", use_container_width=True):
         if cesta_selecionada.get("id"):
             preco_base = tratar_preco(cesta_selecionada.get("preco"))
-            valor_extras = sum(float(it["preco"]) * int(it["qtd"]) for it in st.session_state["adc_temporarios"])
-            preco_unitario_final = preco_base + valor_extras
             
-            # Formata os adicionais para salvar no banco textualmente
-            lista_extras_txt = [f"{it['qtd']}x {it['nome']}" for it in st.session_state["adc_temporarios"]]
+            # Aqui está a mágica: puxa os valores diretamente das chaves (keys) dos inputs numéricos!
+            valor_extras = 0
+            lista_extras_txt = []
+            
+            for it in st.session_state["adc_temporarios"]:
+                preco_it = st.session_state.get(f"p_{it['id']}", float(it["preco"]))
+                qtd_it = st.session_state.get(f"q_{it['id']}", int(it["qtd"]))
+                
+                valor_extras += preco_it * qtd_it
+                lista_extras_txt.append(f"{qtd_it}x {it['nome']}")
+                
+            preco_unitario_final = preco_base + valor_extras
             desc_extras = f" | Extras Inclusos: {', '.join(lista_extras_txt)}" if lista_extras_txt else ""
             
             st.session_state["itens_orcamento"].append({
@@ -280,6 +287,7 @@ with aba_proposta:
                 "descricao": cesta_selecionada.get("descricao", "") + desc_extras,
                 "extras_raw": ", ".join(lista_extras_txt)
             })
+            
             # Limpa o carrinho temporário de adicionais
             st.session_state["adc_temporarios"] = []
             st.rerun()
