@@ -52,6 +52,12 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .badge-b2b { background: #e6f4ea; color: #137333; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 8px; margin-bottom: 3px; display: inline-block;}
 .badge-b2c { background: #fef7e0; color: #b06000; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 8px; margin-bottom: 3px; display: inline-block;}
 
+.badge-status { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 6px; display: inline-block; margin-top: 4px; }
+.status-pago { background: #e6f4ea; color: #137333; }
+.status-producao { background: #fef7e0; color: #b06000; }
+.status-rota { background: #e8f0fe; color: #1967d2; }
+.status-entregue { background: #f1f3f4; color: #5f6368; }
+
 .col-info { flex: 1; min-width: 150px; font-size: 12.5px; color: #5a3b28; }
 .col-info b { color: #2c1e14; }
 
@@ -95,8 +101,8 @@ pedidos = get_pedidos()
 tipo_filtro = st.radio("Filtrar por Canal:", ["Todos os Canais", "Varejo (B2C)", "Corporativo (B2B)"], horizontal=True)
 st.write("")
 
-# SEPARAÇÃO POR ABAS EXATAS (Recebidos, Pago, Desistência)
-aba_rec, aba_pag, aba_des = st.tabs(["📥 Recebidos", "💳 Pago", "❌ Desistência"])
+# SEPARAÇÃO POR ABAS EXATAS (Recebidos, Pago & Produção, Desistência)
+aba_rec, aba_pag, aba_des = st.tabs(["📥 Recebidos", "💳 Pago, Produção & Rota", "❌ Desistência"])
 
 def renderizar_lista_pedidos(lista_pedidos_etapa):
     if not lista_pedidos_etapa:
@@ -110,7 +116,6 @@ def renderizar_card_linha(p):
     is_b2b = "[B2B]" in p['cliente_nome']
     nome_exibicao = p['cliente_nome'].replace("[B2B]", "").strip()
     badge = "<div class='badge-b2b'>CORP</div>" if is_b2b else "<div class='badge-b2c'>VAREJO</div>"
-    css_class = "pedido-card-linha b2b" if is_b2b else "pedido-card-linha"
     
     dt_entrega = "A confirmar"
     if p.get('data_entrega'):
@@ -118,9 +123,17 @@ def renderizar_card_linha(p):
         except: dt_entrega = p['data_entrega']
     
     status_atual = p.get('status', 'Recebido')
+    
+    # Badge visual do substatus dentro da aba Pago
+    badge_substatus = ""
+    if status_atual == "Pago": badge_substatus = "<span class='badge-status status-pago'>PAGO</span>"
+    elif status_atual == "Em Produção": badge_substatus = "<span class='badge-status status-producao'>PRODUÇÃO</span>"
+    elif status_atual == "Em Rota de Entrega": badge_substatus = "<span class='badge-status status-rota'>ROTA</span>"
+    elif status_atual == "Entregue": badge_substatus = "<span class='badge-status status-entregue'>ENTREGUE</span>"
+
     valor_f = f"R$ {float(p.get('valor_total', 0) or 0):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     
-    col_c1, col_c2, col_c3, col_c4, col_c5 = st.columns([2.2, 2.2, 2.8, 1.4, 1.6])
+    col_c1, col_c2, col_c3, col_c4, col_c5 = st.columns([2.2, 2.2, 2.6, 1.3, 1.7])
     
     with col_c1:
         st.markdown(f"""
@@ -128,6 +141,7 @@ def renderizar_card_linha(p):
             {badge}
             <div style="font-weight: 800; font-size: 14px; color: #2c1e14;">👤 {nome_exibicao}</div>
             <div style="font-size: 11.5px; color: #775a46;">📞 {p.get('cliente_telefone', '-')}</div>
+            {badge_substatus}
         </div>
         """, unsafe_allow_html=True)
         
@@ -153,29 +167,50 @@ def renderizar_card_linha(p):
             st.switch_page("pages/09_Detalhes_Pedido.py")
 
     with col_c5:
-        b_acao, b_canc = st.columns(2)
-        with b_acao:
-            if status_atual in ["Recebido", "Pendente"]:
+        # Ações dinâmicas de fluxo baseadas no status exato
+        if status_atual in ["Recebido", "Pendente"]:
+            b_pg, b_des = st.columns(2)
+            with b_pg:
                 if st.button("💳", key=f"pg_{p['id']}", help="Marcar como Pago", use_container_width=True): mudar_status(p['id'], "Pago")
-            elif status_atual == "Pago":
+            with b_des:
+                if st.button("❌", key=f"des_{p['id']}", help="Desistência", use_container_width=True): mudar_status(p['id'], "Desistência")
+        
+        elif status_atual == "Pago":
+            b_vol, b_av = st.columns(2)
+            with b_vol:
                 if st.button("↩️", key=f"rec_{p['id']}", help="Retornar para Recebidos", use_container_width=True): mudar_status(p['id'], "Recebido")
-            else:
-                st.markdown("<div style='font-size:10px; color:#137333; font-weight:800; text-align:center; padding-top:6px;'>-</div>", unsafe_allow_html=True)
-        with b_canc:
-            if status_atual != "Desistência":
-                if st.button("❌", key=f"des_{p['id']}", help="Marcar como Desistência", use_container_width=True): mudar_status(p['id'], "Desistência")
-            else:
-                if st.button("🔄", key=f"ret_{p['id']}", help="Restaurar para Recebidos", use_container_width=True): mudar_status(p['id'], "Recebido")
+            with b_av:
+                if st.button("🏭", key=f"prod_{p['id']}", help="Avançar para Produção", use_container_width=True): mudar_status(p['id'], "Em Produção")
+                
+        elif status_atual == "Em Produção":
+            b_vol, b_av = st.columns(2)
+            with b_vol:
+                if st.button("↩️", key=f"vol_pag_{p['id']}", help="Retornar para Pago", use_container_width=True): mudar_status(p['id'], "Pago")
+            with b_av:
+                if st.button("🚚", key=f"rota_{p['id']}", help="Avançar para Rota de Entrega", use_container_width=True): mudar_status(p['id'], "Em Rota de Entrega")
+                
+        elif status_atual == "Em Rota de Entrega":
+            b_vol, b_av = st.columns(2)
+            with b_vol:
+                if st.button("↩️", key=f"vol_prod_{p['id']}", help="Retornar para Produção", use_container_width=True): mudar_status(p['id'], "Em Produção")
+            with b_av:
+                if st.button("✅", key=f"ent_{p['id']}", help="Concluir como Entregue", use_container_width=True): mudar_status(p['id'], "Entregue")
+                
+        elif status_atual == "Entregue":
+            st.markdown("<div style='font-size:10px; color:#137333; font-weight:800; text-align:center; padding-top:6px;'>CONCLUÍDO</div>", unsafe_allow_html=True)
+            
+        elif status_atual == "Desistência":
+            if st.button("🔄 Restaurar", key=f"ret_{p['id']}", help="Restaurar para Recebidos", use_container_width=True): mudar_status(p['id'], "Recebido")
 
 # FILTRA OS PEDIDOS POR CANAL
 pedidos_filtrados = []
 for p in pedidos:
     is_b2b = "[B2B]" in p['cliente_nome']
     if tipo_filtro == "Varejo (B2C)" and is_b2b: continue
-    if tipo_filtro == "Empresas (B2B)" and not is_b2b: continue
+    if tipo_filtro == "Corporativo (B2B)" and not is_b2b: continue
     pedidos_filtrados.append(p)
 
-# SEPARAÇÃO EXATA POR ABAS DE ACORDO COM O STATUS DO BANCO
+# SEPARAÇÃO EXATA POR ABAS
 rec_list = [p for p in pedidos_filtrados if p.get("status", "Recebido") in ["Recebido", "Pendente"]]
 pag_list = [p for p in pedidos_filtrados if p.get("status") in ["Pago", "Em Produção", "Em Rota de Entrega", "Entregue"]]
 des_list = [p for p in pedidos_filtrados if p.get("status") == "Desistência"]
