@@ -1,6 +1,6 @@
 import streamlit as st
+from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
-from utils.permissao import administrador_operador
 
 # =====================================================
 # CONFIGURAÇÃO DA PÁGINA
@@ -9,12 +9,8 @@ st.set_page_config(page_title="Painel Administrativo", page_icon="⚙️", layou
 configurar_pagina()
 menu_lateral()
 
-# Apenas Admins e Operadores podem ver esta página
-administrador_operador()
-usuario = st.session_state.get("usuario", {})
-
 # =====================================================
-# CSS PREMIUM
+# CSS PREMIUM (GLOBAL E LOGIN)
 # =====================================================
 st.markdown("""
 <style>
@@ -22,6 +18,20 @@ st.markdown("""
 html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; color: #4a2e1b; }
 .block-container { max-width: 1000px; padding-top: 2rem; padding-bottom: 4rem; }
 
+/* Estilos da Tela de Login */
+.login-header {
+    text-align: center; margin-top: 4vh; margin-bottom: 20px;
+}
+.login-logo { font-size: 50px; margin-bottom: 10px; }
+.login-title { font-size: 26px; font-weight: 800; color: #c5721f; margin-bottom: 5px; }
+.login-subtitle { font-size: 14px; color: #775a46; font-weight: 500; }
+
+div[data-testid="stForm"] {
+    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 20px;
+    padding: 30px; box-shadow: 0 8px 30px rgba(90, 59, 40, 0.05);
+}
+
+/* Dashboard Pós-Login */
 .welcome-box {
     background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%);
     border: 1px solid #e8ddd3; border-radius: 20px; padding: 30px;
@@ -32,17 +42,6 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 
 .section-title { font-size: 18px; font-weight: 800; color: #5a3b28; margin-top: 20px; margin-bottom: 15px; border-bottom: 2px dashed #f5eee6; padding-bottom: 8px; }
 
-/* Botões do Menu Grid */
-div[data-testid="stVerticalBlock"] div[data-testid="stButton"] button {
-    height: 70px !important; border-radius: 14px !important; font-weight: 700 !important;
-    font-size: 15px !important; border: 1px solid #e8ddd3 !important; background: #ffffff !important;
-    transition: all 0.2s ease; display: flex; justify-content: flex-start; padding-left: 20px !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
-}
-div[data-testid="stVerticalBlock"] div[data-testid="stButton"] button:hover {
-    border-color: #c5721f !important; transform: translateY(-3px) !important; box-shadow: 0 8px 15px rgba(197,114,31,0.1) !important;
-}
-
 /* Links nativos (page_link) */
 a[data-testid="stPageLink"] {
     background: #ffffff !important; border: 1px solid #e8ddd3 !important; border-radius: 14px !important;
@@ -52,22 +51,67 @@ a[data-testid="stPageLink"] {
 a[data-testid="stPageLink"]:hover {
     border-color: #c5721f !important; transform: translateY(-3px) !important; box-shadow: 0 8px 15px rgba(197,114,31,0.1) !important; text-decoration: none !important;
 }
+div[data-testid="stFormSubmitButton"] button { border-radius: 12px !important; font-weight: 800 !important; height: 45px !important; background: linear-gradient(135deg, #137333 0%, #0d4e22) !important; color: white !important; border: none !important;}
+div[data-testid="stFormSubmitButton"] button:hover { transform: translateY(-2px) !important; box-shadow: 0 6px 15px rgba(19, 115, 51, 0.2) !important; }
 </style>
 """, unsafe_allow_html=True)
 
 # =====================================================
-# CABEÇALHO
+# SISTEMA DE LOGIN (EXIBIDO SE NÃO HOUVER SESSÃO)
 # =====================================================
+if "usuario" not in st.session_state or not st.session_state["usuario"]:
+    st.markdown("""
+    <div class="login-header">
+        <div class="login-logo">🔒</div>
+        <div class="login-title">Acesso Restrito</div>
+        <div class="login-subtitle">Área de Gestão - Doce Cesta Brasília</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col_esp1, col_login, col_esp2 = st.columns([1, 1.5, 1])
+    
+    with col_login:
+        with st.form("form_login"):
+            usuario_input = st.text_input("Login", placeholder="Digite seu usuário")
+            senha_input = st.text_input("Senha", type="password", placeholder="Digite sua senha")
+            st.write("")
+            submit_login = st.form_submit_button("Entrar no Sistema", use_container_width=True)
+            
+            if submit_login:
+                if usuario_input and senha_input:
+                    with st.spinner("Autenticando..."):
+                        try:
+                            # Faz a consulta segura no banco
+                            res = supabase.table("usuarios").select("*").eq("login", usuario_input.strip()).eq("senha", senha_input.strip()).execute()
+                            if res.data and len(res.data) > 0:
+                                st.session_state["usuario"] = res.data[0]
+                                st.rerun()  # Recarrega a página para sumir com o form e mostrar o painel
+                            else:
+                                st.error("❌ Usuário ou senha incorretos.")
+                        except Exception as e:
+                            st.error("⚠️ Erro de conexão com o banco de dados. Tente novamente.")
+                else:
+                    st.warning("⚠️ Preencha usuário e senha para continuar.")
+    
+    # Interrompe a leitura da página aqui se não estiver logado!
+    st.stop()
+
+
+# =====================================================
+# DASHBOARD CENTRAL (APÓS O LOGIN)
+# =====================================================
+
+# Só chega aqui se o código não for interrompido pelo st.stop() acima
+from utils.permissao import administrador_operador
+administrador_operador()
+usuario = st.session_state.get("usuario", {})
+
 st.markdown(f"""
 <div class="welcome-box">
     <div class="welcome-title">Central de Comando</div>
     <div class="welcome-sub">Bem-vindo(a), <b>{usuario.get('login', 'Admin')}</b>. Selecione um módulo abaixo para começar.</div>
 </div>
 """, unsafe_allow_html=True)
-
-# =====================================================
-# GRID DE MÓDULOS
-# =====================================================
 
 st.markdown('<div class="section-title">📦 Operação & Atendimento</div>', unsafe_allow_html=True)
 col1, col2, col3 = st.columns(3)
