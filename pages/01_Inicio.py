@@ -8,6 +8,7 @@ from PIL import Image
 from datetime import date
 import requests
 import time
+import uuid
 
 from services.pedido_service import salvar_pedido
 from services.cesta_service import listar_cestas
@@ -406,6 +407,15 @@ if cestas_ativas and secoes_disponiveis:
                 valor_base_txt = f"R$ {valor_base_num:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                 
                 st.markdown(f"**Investimento Base:** <br><span style='font-size:24px; color:#137333; font-weight:800;'>{valor_base_txt}</span>", unsafe_allow_html=True)
+                
+                # ADIÇÃO 1: EXIBIÇÃO DA DESCRIÇÃO DA CESTA
+                if cesta_obj.get("descricao"):
+                    st.markdown(f"""
+                    <div class="cesta-desc-box">
+                        <b>O que vem nesta cesta?</b><br>
+                        {cesta_obj.get('descricao')}
+                    </div>
+                    """, unsafe_allow_html=True)
             
             # PERSONALIZAÇÃO DA CESTA (APARECE SÓ SE TIVER ITENS)
             configuracao = obter_configuracao_cesta_cacheada(cesta_obj["id"])
@@ -458,7 +468,7 @@ if cat_adicionais:
                             "produto_id": prod["id"], "nome": prod["nome"], 
                             "preco": float(preco_add) if preco_add is not None else None, "categoria": "Adicionais"
                         })
-                        if prod["nome"].lower().strip() == "polaroid": polaroid = True
+                        if prod["nome"].lower().strip() == "polaroid" or "foto" in prod["nome"].lower().strip(): polaroid = True
 
 if polaroid:
     with st.container(border=True):
@@ -596,6 +606,20 @@ if enviar:
     fotos_upload = st.session_state.get("fotos_polaroid_cliente", [])
     if polaroid and len(fotos_upload) > 2: st.error("❌ O limite para Polaroid é de 2 fotos."); st.stop()
 
+    # ADIÇÃO 2: UPLOAD DAS FOTOS PARA O SUPABASE STORAGE BUCKET "polaroids"
+    links_polaroid = []
+    if polaroid and fotos_upload:
+        with st.spinner("📦 Salvando suas fotos com segurança..."):
+            for foto in fotos_upload[:2]:
+                ext = foto.name.split('.')[-1]
+                file_name = f"polaroid_{uuid.uuid4().hex}.{ext}"
+                try:
+                    supabase.storage.from_("polaroids").upload(file_name, foto.read(), {"content-type": foto.type})
+                    url = supabase.storage.from_("polaroids").get_public_url(file_name)
+                    links_polaroid.append(url)
+                except Exception as e:
+                    pass
+
     # 3. Montagem dos Dados Finais
     cep = st.session_state.get("input_cep", "")
     bairro = st.session_state.get("input_bairro", "")
@@ -604,8 +628,14 @@ if enviar:
     
     dt_ent = st.session_state.get("input_data_entrega")
     produtos_txt = [f"{c}: {i['nome']}" for c, itens in selecoes_cliente.items() for i in itens]
-    adicionais_txt = [f"{i['nome']}" for i in adicionais_selecionados]
+    adicionais_lista = [f"{i['nome']}" for i in adicionais_selecionados]
     
+    texto_adicionais_final = ", ".join(adicionais_lista) if adicionais_lista else "Nenhum"
+    
+    # Acopla os links das fotos diretamente no texto de adicionais para visualização no painel
+    if links_polaroid:
+        texto_adicionais_final += "\n\n📸 LINKS FOTOS POLAROID:\n" + "\n".join(links_polaroid)
+
     dados = {
         "cliente_nome": nome.strip(),
         "cliente_cpf": cpf_limpo,
@@ -616,7 +646,7 @@ if enviar:
         "cesta_id": cesta_obj["id"],
         "cesta_nome": cesta_obj["nome"],
         "produtos": "\n".join(produtos_txt),
-        "adicionais": ", ".join(adicionais_txt),
+        "adicionais": texto_adicionais_final,
         "pagamento": pagamento,
         "mensagem": st.session_state.get("input_mensagem", "").strip(),
         "pedido_especial": st.session_state.get("input_pedido_especial", "").strip(),
@@ -635,10 +665,7 @@ if enviar:
         
         if sucesso:
             if adicionais_selecionados: salvar_adicionais_pedido(pedido_id, adicionais_selecionados)
-            if polaroid and fotos_upload:
-                try: salvar_fotos(pedido_id, fotos_upload[:2])
-                except: pass
-                
+            
             try:
                 texto_aviso = (
                     f"🚨 *NOVO PEDIDO RECEBIDO (SITE)!* 🚨\n\n"
@@ -658,7 +685,7 @@ if enviar:
                 "cliente_nome": nome.strip(),
                 "destinatario_nome": dest_nome.strip(),
                 "cesta_nome": f"{cesta_obj['nome']}",
-                "adicionais_str": ", ".join(adicionais_txt),
+                "adicionais_str": ", ".join(adicionais_lista),
                 "data_entrega": dt_ent.strftime("%d/%m/%Y") if dt_ent else "",
                 "periodo_entrega": st.session_state.get("input_periodo_entrega", ""),
                 "endereco": f"{rua}, {num} - {bairro}",
