@@ -44,6 +44,10 @@ def obter_secoes_e_cestas_ativas():
         secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
         secoes_ativas = sorted([s["nome"] for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
         
+        # Garante fallback se a tabela de seções estiver vazia
+        if not secoes_ativas:
+            secoes_ativas = ["Cestas de Café"]
+            
         cestas_todas = listar_cestas()
         cestas_ativas = [c for c in cestas_todas if c.get("ativa", True)]
         
@@ -284,7 +288,7 @@ with st.container(border=True):
 
 
 # ==========================================================
-# PASSO 2: SELEÇÃO DO PRESENTE (MÚLTIPLAS OU ÚNICA SEÇÃO)
+# PASSO 2: SELEÇÃO DO PRESENTE (CORRIGIDA E BLINDADA)
 # ==========================================================
 with st.spinner():
     secoes_disponiveis, cestas_ativas = obter_secoes_e_cestas_ativas()
@@ -299,7 +303,8 @@ if cestas_ativas and secoes_disponiveis:
     if cesta_veio_da_home:
         for c in cestas_ativas:
             if c["id"] == cesta_veio_da_home:
-                st.session_state["secao_form"] = c.get("secao_vitrine", "Cestas de Café")
+                # Extrai seguro a seção
+                st.session_state["secao_form"] = c.get("secao_vitrine") or "Cestas de Café"
                 st.session_state["cesta_selecionada_id"] = cesta_veio_da_home
                 break
         st.session_state["cesta_selecionada_home"] = None
@@ -313,7 +318,9 @@ if cestas_ativas and secoes_disponiveis:
         def ao_mudar_secao():
             st.session_state["cesta_selecionada_id"] = None
 
-        # Tratamento: Tem mais de 1 seção? Mostra 2 colunas. Se não, mostra só a escolha do modelo.
+        # =========================================================
+        # Lógica Condicional: Tem mais de 1 seção ou apenas 1?
+        # =========================================================
         if len(secoes_disponiveis) > 1:
             col_categoria, col_modelo = st.columns(2)
             
@@ -326,9 +333,12 @@ if cestas_ativas and secoes_disponiveis:
                     on_change=ao_mudar_secao
                 )
 
-            # Filtra os produtos da seção selecionada
-            cestas_da_secao = [c for c in cestas_ativas if str(c.get("secao_vitrine", "")).strip().lower() == str(st.session_state["secao_form"]).strip().lower()]
-            opcoes_cestas = [{"id": None, "nome": "Clique para selecionar..."}] + cestas_da_secao
+            # Filtra os produtos da seção selecionada garantindo compatibilidade de nomes e nulos
+            cestas_da_secao = [
+                c for c in cestas_ativas 
+                if (c.get("secao_vitrine") or "Cestas de Café").strip().lower() == str(st.session_state["secao_form"]).strip().lower()
+            ]
+            opcoes_cestas = [{"id": None, "nome": "Clique para selecionar o modelo..."}] + cestas_da_secao
             
             cesta_idx = 0
             if st.session_state.get("cesta_selecionada_id"):
@@ -344,9 +354,13 @@ if cestas_ativas and secoes_disponiveis:
                     index=cesta_idx
                 )
         else:
-            # Apenas 1 Seção Cadastrada
+            # Apenas 1 Seção Cadastrada (Ex: Só Cestas de Café)
             st.session_state["secao_form"] = secoes_disponiveis[0]
-            cestas_da_secao = [c for c in cestas_ativas if str(c.get("secao_vitrine", "")).strip().lower() == str(st.session_state["secao_form"]).strip().lower()]
+            
+            cestas_da_secao = [
+                c for c in cestas_ativas 
+                if (c.get("secao_vitrine") or "Cestas de Café").strip().lower() == str(st.session_state["secao_form"]).strip().lower()
+            ]
             opcoes_cestas = [{"id": None, "nome": "Clique para selecionar o modelo..."}] + cestas_da_secao
             
             cesta_idx = 0
@@ -374,7 +388,7 @@ if cestas_ativas and secoes_disponiveis:
                 if cesta_obj.get("imagem"):
                     st.image(cesta_obj["imagem"], use_container_width=True)
             with col_txt:
-                sec_txt = cesta_obj.get("secao_vitrine", "Cestas de Café")
+                sec_txt = cesta_obj.get("secao_vitrine") or "Cestas de Café"
                 st.markdown(f'<div class="destaque-cesta-nome-local">{cesta_obj.get("nome", "")}</div>', unsafe_allow_html=True)
                 st.markdown(f"**Categoria:** <span style='color: #775a46; font-size:13.5px;'>{sec_txt}</span>", unsafe_allow_html=True)
                 
