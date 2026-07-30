@@ -54,6 +54,16 @@ h1, h2, h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-
 .proposta-header { text-align: center; border-bottom: 3px solid #137333; padding-bottom: 15px; margin-bottom: 25px; }
 .proposta-total { font-size: 22px; font-weight: bold; color: #137333; text-align: right; margin-top: 20px; border-top: 2px solid #e8ddd3; padding-top: 15px;}
 
+/* Painel de Resumo Financeiro Real-Time */
+.resumo-financeiro {
+    background: #fdfbf8; border: 1px solid #e8ddd3; border-radius: 12px; padding: 15px 20px;
+    display: flex; justify-content: space-between; align-items: center; margin-top: 15px;
+}
+.resumo-item { text-align: center; }
+.resumo-label { font-size: 12px; font-weight: 700; color: #775a46; text-transform: uppercase; letter-spacing: 0.5px; }
+.resumo-valor { font-size: 20px; font-weight: 800; color: #4a2e1b; }
+.resumo-destaque { font-size: 24px; font-weight: 800; color: #137333; }
+
 /* Botões Nativos */
 div[data-testid="stButton"] button { border-radius: 12px !important; font-weight: 800 !important; transition: all 0.2s ease !important; }
 div[data-testid="stButton"] button[kind="primary"] { background: linear-gradient(135deg, #137333 0%, #0d4e22) !important; color: white !important; border: none !important; box-shadow: 0 4px 15px rgba(19, 115, 51, 0.2) !important; }
@@ -81,7 +91,7 @@ div[data-testid="stDataFrame"] { border-radius: 10px !important; border: 1px sol
 st.markdown("""
 <div class="header-banner">
     <h1 class="header-title">Vendas Corporativas (B2B)</h1>
-    <p class="header-subtitle">Gere orçamentos em lote, PDF, textos para WhatsApp e registre pedidos 🏢</p>
+    <p class="header-subtitle">Gere orçamentos em lote, adicione extras, gere PDFs e registre pedidos 🏢</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -92,6 +102,16 @@ st.markdown("""
 def obter_cestas_admin():
     cestas = listar_cestas()
     return sorted([c for c in cestas if c.get("ativa", True)], key=lambda x: x.get("nome", ""))
+
+@st.cache_data(ttl=60, show_spinner=False)
+def obter_adicionais_admin():
+    try:
+        res = supabase.table("produtos").select("*").execute()
+        # Filtra apenas os que estão ativos e garante o preço float
+        ativos = [p for p in (res.data or []) if p.get("ativo", True)]
+        return sorted(ativos, key=lambda x: x.get("nome", ""))
+    except:
+        return []
 
 @st.cache_data(ttl=15, show_spinner=False)
 def carregar_pedidos_b2b():
@@ -116,12 +136,14 @@ def buscar_cnpj_api(cnpj_str):
         return False, "Erro de conexão ao buscar o CNPJ."
 
 cestas_disponiveis = obter_cestas_admin()
+adicionais_disponiveis = obter_adicionais_admin()
 
 # Sessões para preenchimento automático do CNPJ
 if "corp_cnpj" not in st.session_state: st.session_state.corp_cnpj = ""
 if "corp_nome" not in st.session_state: st.session_state.corp_nome = ""
 if "corp_tel" not in st.session_state: st.session_state.corp_tel = ""
 if "corp_end" not in st.session_state: st.session_state.corp_end = ""
+if "itens_orcamento" not in st.session_state: st.session_state["itens_orcamento"] = []
 
 # =====================================================
 # ABAS DO MÓDULO
@@ -138,7 +160,7 @@ with aba_proposta:
     # --- Busca por CNPJ ---
     col_c1, col_c2, col_c3 = st.columns([2, 1, 3])
     with col_c1:
-        cnpj_input = st.text_input("Consulta Rápida por CNPJ", value=st.session_state.corp_cnpj, placeholder="Somente números", key="cnpj_in")
+        cnpj_input = st.text_input("Consulta Rápida por CNPJ", value=st.session_state.corp_cnpj, placeholder="Somente números")
     with col_c2:
         st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
         if st.button("🔍 Buscar Dados", use_container_width=True):
@@ -146,7 +168,6 @@ with aba_proposta:
                 sucesso, dados = buscar_cnpj_api(cnpj_input)
                 if sucesso:
                     st.session_state.corp_cnpj = cnpj_input
-                    # Tenta Nome Fantasia, se não houver, usa Razão Social
                     st.session_state.corp_nome = dados.get("nome_fantasia") or dados.get("razao_social", "")
                     st.session_state.corp_tel = dados.get("ddd_telefone_1", "")
                     
@@ -172,41 +193,54 @@ with aba_proposta:
         telefone_empresa = st.text_input("WhatsApp / Telefone da Empresa", value=st.session_state.corp_tel, placeholder="Ex: (61) 99999-9999")
         contato_nome = st.text_input("A/C (Nome do Contato do RH/Compras)", placeholder="Ex: Ana Clara - Coord. de RH")
     with col_e2:
-        validade = st.date_input("Validade da Proposta", value=datetime.now() + timedelta(days=7))
+        validade = st.date_input("Validade da Proposta", value=datetime.now() + timedelta(days=7), format="DD/MM/YYYY")
         motivo = st.text_input("Motivo / Evento", placeholder="Ex: Brindes de Fim de Ano, Dia da Mulher")
-        data_entrega = st.date_input("Data Acordada para Entrega", value=date.today())
+        data_entrega = st.date_input("Data Acordada para Entrega", value=date.today(), format="DD/MM/YYYY")
 
-    st.markdown("#### 🎁 2. Adicionar Itens ao Lote")
-    
-    if "itens_orcamento" not in st.session_state:
-        st.session_state["itens_orcamento"] = []
+    st.markdown("#### 🎁 2. Adicionar Itens e Extras ao Lote")
 
-    col_i1, col_i2, col_i3 = st.columns([3, 1, 1])
+    # Mapeamento de adicionais para exibição no multiselect
+    mapa_adicionais = {f"{a['nome']} (+ R$ {float(a.get('preco', 0)):.2f})": a for a in adicionais_disponiveis}
+
+    col_i1, col_i2 = st.columns([3, 1])
     with col_i1:
-        cesta_selecionada = st.selectbox("Selecione o Produto", [{"id": None, "nome": "Escolha uma cesta...", "preco": 0}] + cestas_disponiveis, format_func=lambda x: x["nome"])
+        cesta_selecionada = st.selectbox("Selecione o Pacote Principal", [{"id": None, "nome": "Escolha uma cesta...", "preco": 0}] + cestas_disponiveis, format_func=lambda x: x["nome"])
     with col_i2:
-        quantidade = st.number_input("Qtd", min_value=1, step=1)
-    with col_i3:
+        quantidade = st.number_input("Quantidade do Lote", min_value=1, step=1)
+        
+    col_a1, col_a2 = st.columns([3, 1])
+    with col_a1:
+        selecionados_adc = st.multiselect("Adicionais / Extras (Aplicados a cada unidade do lote)", list(mapa_adicionais.keys()), placeholder="Ex: Caneca, Trufas, Espumante...")
+    with col_a2:
         st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
-        if st.button("➕ Inserir Lote", use_container_width=True):
+        if st.button("➕ Inserir no Contrato", use_container_width=True):
             if cesta_selecionada.get("id"):
+                # Calcula o valor base da cesta + soma dos adicionais escolhidos
+                preco_base = float(cesta_selecionada.get("preco", 0))
+                valor_extras = sum(float(mapa_adicionais[k].get("preco", 0)) for k in selecionados_adc)
+                preco_unitario_final = preco_base + valor_extras
+                
+                # Monta a string de descrição informando os extras
+                nomes_extras = [mapa_adicionais[k]["nome"] for k in selecionados_adc]
+                desc_extras = f" | Extras inclusos: {', '.join(nomes_extras)}" if nomes_extras else ""
+                
                 st.session_state["itens_orcamento"].append({
                     "cesta_id": cesta_selecionada["id"],
                     "nome": cesta_selecionada["nome"],
-                    "preco_unitario": float(cesta_selecionada.get("preco", 0)),
+                    "preco_unitario": preco_unitario_final,
                     "quantidade": quantidade,
-                    "descricao": cesta_selecionada.get("descricao", "")
+                    "descricao": cesta_selecionada.get("descricao", "") + desc_extras,
+                    "extras_raw": ", ".join(nomes_extras)
                 })
                 st.rerun()
 
+    # Tabela de Itens Adicionados
     total_bruto = 0
-    total_liquido = 0
-    valor_desconto = 0
-
     if st.session_state["itens_orcamento"]:
         st.markdown("<hr style='border-top: 1px dashed #e8ddd3; margin: 20px 0;'>", unsafe_allow_html=True)
         df_itens = pd.DataFrame(st.session_state["itens_orcamento"])
         df_itens["Subtotal"] = df_itens["preco_unitario"] * df_itens["quantidade"]
+        total_bruto = df_itens["Subtotal"].sum()
         
         st.write("📋 **Itens do Contrato:**")
         st.dataframe(
@@ -229,9 +263,31 @@ with aba_proposta:
 
     endereco_empresa = st.text_input("📍 Endereço de Entrega da Empresa", value=st.session_state.corp_end, placeholder="Ex: SQS 101, Bloco A, Ed. Comercial")
 
-    total_bruto = sum(item["preco_unitario"] * item["quantidade"] for item in st.session_state["itens_orcamento"])
+    # Cálculos Financeiros Dinâmicos
     valor_desconto = total_bruto * (desconto_perc / 100)
     total_liquido = total_bruto - valor_desconto + frete_lote
+
+    # Exibição do Valor Total Dinâmico na Tela
+    st.markdown(f"""
+    <div class="resumo-financeiro">
+        <div class="resumo-item">
+            <div class="resumo-label">Subtotal dos Itens</div>
+            <div class="resumo-valor">R$ {total_bruto:,.2f}</div>
+        </div>
+        <div class="resumo-item">
+            <div class="resumo-label">Desconto Aplicado</div>
+            <div class="resumo-valor" style="color: #c5221f;">- R$ {valor_desconto:,.2f}</div>
+        </div>
+        <div class="resumo-item">
+            <div class="resumo-label">Logística</div>
+            <div class="resumo-valor">R$ {frete_lote:,.2f}</div>
+        </div>
+        <div class="resumo-item">
+            <div class="resumo-label">VALOR TOTAL B2B</div>
+            <div class="resumo-destaque">R$ {total_liquido:,.2f}</div>
+        </div>
+    </div>
+    """.replace(",", "X").replace(".", ",").replace("X", "."), unsafe_allow_html=True)
 
     st.write("")
     col_btn1, col_btn2 = st.columns(2)
@@ -246,14 +302,22 @@ with aba_proposta:
             if not endereco_empresa: st.error("Informe o Endereço de Entrega para a logística."); st.stop()
                 
             lista_str_produtos = []
+            lista_str_extras_totais = []
+            
             for item in st.session_state["itens_orcamento"]:
                 lista_str_produtos.append(f"{item['quantidade']}x {item['nome']} (R$ {item['preco_unitario']:.2f})")
+                if item.get("extras_raw"):
+                    lista_str_extras_totais.append(f"{item['quantidade']}x lote de: {item['extras_raw']}")
             
             nome_da_cesta_principal = "Lote Corporativo Misto"
             if len(st.session_state["itens_orcamento"]) == 1:
                 nome_da_cesta_principal = st.session_state["itens_orcamento"][0]["nome"]
 
-            cnpj_formatado = re.sub(r'\D', '', cnpj_input) if cnpj_input else "00000000000"
+            cnpj_formatado = re.sub(r'\D', '', st.session_state.corp_cnpj) if st.session_state.corp_cnpj else "00000000000"
+            
+            msg_adicionais = f"Desconto de {desconto_perc}% aplicado."
+            if lista_str_extras_totais:
+                msg_adicionais += "\nEXTRAS INCLUSOS:\n" + "\n".join(lista_str_extras_totais)
 
             dados_b2b = {
                 "cliente_nome": f"[B2B] {empresa_nome.strip()}",
@@ -265,7 +329,7 @@ with aba_proposta:
                 "cesta_id": st.session_state["itens_orcamento"][0]["cesta_id"],
                 "cesta_nome": nome_da_cesta_principal,
                 "produtos": "\n".join(lista_str_produtos),
-                "adicionais": f"Desconto de {desconto_perc}% aplicado.",
+                "adicionais": msg_adicionais,
                 "pagamento": prazo_pagamento,
                 "mensagem": "Pedido corporativo gerado pelo painel B2B.",
                 "endereco": endereco_empresa,
@@ -280,7 +344,6 @@ with aba_proposta:
             sucesso, p_id = salvar_pedido(dados_b2b)
             if sucesso:
                 st.success(f"🎉 Pedido corporativo {empresa_nome} salvo com sucesso! Já foi enviado para a fila de Produção.")
-                # Limpa os dados em cache para não atrapalhar o próximo pedido
                 st.session_state["itens_orcamento"] = []
                 st.session_state.corp_cnpj = ""
                 st.session_state.corp_nome = ""
@@ -305,7 +368,7 @@ with aba_proposta:
             
             linhas_html = ""
             for item in st.session_state["itens_orcamento"]:
-                desc_curta = (item['descricao'][:80] + '...') if item['descricao'] and len(item['descricao']) > 80 else (item['descricao'] or '')
+                desc_curta = (item['descricao'][:120] + '...') if item['descricao'] and len(item['descricao']) > 120 else (item['descricao'] or '')
                 linhas_html += f"""
                 <tr>
                     <td style="padding: 10px; border-bottom: 1px solid #f5eee6;"><b>{item['nome']}</b><br><span style="font-size:11px; color:#666;">{desc_curta}</span></td>
@@ -338,7 +401,7 @@ with aba_proposta:
                 
                 <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                     <tr style="background-color: #faf7f3;">
-                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e8ddd3;">Descrição do Item</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e8ddd3;">Descrição do Item (Inclui Extras se selecionado)</th>
                         <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e8ddd3;">Qtd</th>
                         <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">V. Unitário</th>
                         <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">Subtotal</th>
@@ -371,7 +434,8 @@ with aba_proposta:
             
             linhas_whatsapp = ""
             for item in st.session_state["itens_orcamento"]:
-                linhas_whatsapp += f"▪️ {item['quantidade']}x *{item['nome']}* (R$ {item['preco_unitario']:,.2f})\n"
+                ext_str = f" (+ Extras: {item['extras_raw']})" if item.get('extras_raw') else ""
+                linhas_whatsapp += f"▪️ {item['quantidade']}x *{item['nome']}*{ext_str} (R$ {item['preco_unitario']:,.2f})\n"
                 
             texto_wpp = f"""*PROPOSTA COMERCIAL - DOCE CESTA BRASÍLIA* 🎁
             
