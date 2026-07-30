@@ -96,8 +96,17 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================
-# FUNÇÕES E CACHES
+# FUNÇÕES, CACHES E BLINDAGENS
 # =====================================================
+def tratar_preco(valor):
+    """Garante que o preço será um número float, mesmo se vier vazio ou nulo do banco"""
+    if valor is None or str(valor).strip() == "":
+        return 0.0
+    try:
+        return float(str(valor).replace(",", "."))
+    except:
+        return 0.0
+
 @st.cache_data(ttl=60, show_spinner=False)
 def obter_cestas_admin():
     cestas = listar_cestas()
@@ -107,7 +116,6 @@ def obter_cestas_admin():
 def obter_adicionais_admin():
     try:
         res = supabase.table("produtos").select("*").execute()
-        # Filtra apenas os que estão ativos e garante o preço float
         ativos = [p for p in (res.data or []) if p.get("ativo", True)]
         return sorted(ativos, key=lambda x: x.get("nome", ""))
     except:
@@ -138,7 +146,7 @@ def buscar_cnpj_api(cnpj_str):
 cestas_disponiveis = obter_cestas_admin()
 adicionais_disponiveis = obter_adicionais_admin()
 
-# Sessões para preenchimento automático do CNPJ
+# Sessões para preenchimento automático
 if "corp_cnpj" not in st.session_state: st.session_state.corp_cnpj = ""
 if "corp_nome" not in st.session_state: st.session_state.corp_nome = ""
 if "corp_tel" not in st.session_state: st.session_state.corp_tel = ""
@@ -199,8 +207,8 @@ with aba_proposta:
 
     st.markdown("#### 🎁 2. Adicionar Itens e Extras ao Lote")
 
-    # Mapeamento de adicionais para exibição no multiselect
-    mapa_adicionais = {f"{a['nome']} (+ R$ {float(a.get('preco', 0)):.2f})": a for a in adicionais_disponiveis}
+    # Mapeamento de adicionais seguro usando a função tratar_preco
+    mapa_adicionais = {f"{a['nome']} (+ R$ {tratar_preco(a.get('preco')):.2f})": a for a in adicionais_disponiveis}
 
     col_i1, col_i2 = st.columns([3, 1])
     with col_i1:
@@ -215,12 +223,11 @@ with aba_proposta:
         st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
         if st.button("➕ Inserir no Contrato", use_container_width=True):
             if cesta_selecionada.get("id"):
-                # Calcula o valor base da cesta + soma dos adicionais escolhidos
-                preco_base = float(cesta_selecionada.get("preco", 0))
-                valor_extras = sum(float(mapa_adicionais[k].get("preco", 0)) for k in selecionados_adc)
+                # Calcula seguro
+                preco_base = tratar_preco(cesta_selecionada.get("preco"))
+                valor_extras = sum(tratar_preco(mapa_adicionais[k].get("preco")) for k in selecionados_adc)
                 preco_unitario_final = preco_base + valor_extras
                 
-                # Monta a string de descrição informando os extras
                 nomes_extras = [mapa_adicionais[k]["nome"] for k in selecionados_adc]
                 desc_extras = f" | Extras inclusos: {', '.join(nomes_extras)}" if nomes_extras else ""
                 
