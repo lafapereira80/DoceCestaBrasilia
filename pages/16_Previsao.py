@@ -157,17 +157,23 @@ if "pedido_em_montagem" not in st.session_state:
     st.session_state.pedido_em_montagem = None
 
 # =====================================================
-# BUSCA GERAL (INCLUINDO PEDIDOS PAGOS E CORPORATIVOS)
+# BUSCA GERAL (PEDIDOS COM STATUS "Pago" OU "Em Produção")
 # =====================================================
-def buscar_pedidos_pagos():
-    # Busca todos os pedidos com status "Pago" (independentemente de ser Varejo ou B2B)
-    res = supabase.table("pedidos").select("*").eq("status", "Pago").execute()
-    return res.data or []
+def buscar_pedidos_producao():
+    # Busca tanto os pedidos com status "Pago" quanto "Em Produção" (Varejo e B2B)
+    res_pago = supabase.table("pedidos").select("*").eq("status", "Pago").execute()
+    res_prod = supabase.table("pedidos").select("*").eq("status", "Em Produção").execute()
+    
+    lista_total = (res_pago.data or []) + (res_prod.data or [])
+    
+    # Remove duplicados caso haja sobreposição de IDs
+    unicos = {p["id"]: p for p in lista_total}.values()
+    return list(unicos)
 
-pedidos = buscar_pedidos_pagos()
+pedidos = buscar_pedidos_producao()
 
 if not pedidos:
-    st.success("🎉 Excelente trabalho! A fila de produção está limpa. Não há pedidos pagos aguardando montagem.")
+    st.success("🎉 Excelente trabalho! A fila de produção está limpa. Não há pedidos aguardando montagem.")
     st.stop()
 
 # =====================================================
@@ -181,7 +187,7 @@ for p in pedidos:
     if not dt_str: continue
         
     try:
-        dt_obj = datetime.strptime(dt_str[:10], "%Y-%m-%d").date()
+        dt_obj = datetime.strptime(str(dt_str)[:10], "%Y-%m-%d").date()
         if dt_obj < hoje: continue 
         
         dias_diff = (dt_obj - hoje).days
@@ -205,7 +211,7 @@ dados_previsao = dict(sorted(resumo.items()))
 
 
 # =====================================================
-# TELA DE CHECKLIST EM MODO "GAVETA" (COM SUPORTE A B2B)
+# TELA DE CHECKLIST EM MODO "GAVETA" (COM SUPORTE A B2B E VAREJO)
 # =====================================================
 if st.session_state.pedido_em_montagem:
     p_ativo = next((p for p in pedidos if p["id"] == st.session_state.pedido_em_montagem), None)
@@ -263,7 +269,7 @@ if st.session_state.pedido_em_montagem:
                 for item in [i.strip() for i in bloco_inclusos.split(";") if i.strip()]:
                     chaves_itens_pedido.append(f"📦 {item}")
             
-            # 2. Personalização / Produtos (Funciona tanto para Varejo quanto para os itens em lote do B2B)
+            # 2. Personalização / Produtos
             produtos = p_ativo.get("produtos", "")
             if produtos:
                 for prod_limpo in [p.replace('•', '').strip() for p in produtos.split("\n") if p.replace('•', '').strip()]:
@@ -420,9 +426,9 @@ if st.session_state.pedido_em_montagem:
                         supabase.table("pedidos").update({
                             "checklist": novo_checklist,
                             "cesta_montada": True,
-                            "status": "Enviado"
+                            "status": "Em Rota de Entrega"
                         }).eq("id", p_ativo['id']).execute()
-                        st.success("✅ Excelente! Cesta pronta e despachada para a equipe de rotas/entregas.")
+                        st.success("✅ Excelente! Cesta pronta e despachada para a rota de entrega.")
                         st.session_state.pedido_em_montagem = None
                         time.sleep(1.5)
                         st.rerun(scope="app")
@@ -478,7 +484,6 @@ if dados_previsao:
                 endereco_completo = p.get('endereco', 'Endereço não informado')
                 bairro = endereco_completo.split(',')[-1].split('(')[0].strip() if ',' in endereco_completo else endereco_completo
                 
-                # Formata exibição corporativa caso seja B2B
                 is_b2b = "[B2B]" in p.get('cliente_nome', '')
                 nome_cliente_card = p.get('cliente_nome', '-').replace("[B2B]", "").strip()
                 tag_tipo = '<span style="background: #e6f4ea; color: #137333; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px; margin-left: 6px;">CORP</span>' if is_b2b else ''
