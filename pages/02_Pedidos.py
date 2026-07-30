@@ -11,7 +11,7 @@ menu_lateral()
 administrador_operador()
 
 # ==========================================
-# CSS PREMIUM (KANBAN E CARDS)
+# CSS PREMIUM (KANBAN, CARDS E BOTÕES)
 # ==========================================
 st.markdown("""
 <style>
@@ -21,10 +21,13 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .header-banner {
     background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%); padding: 25px;
     border-radius: 20px; border: 1px solid #e8ddd3; box-shadow: 0 8px 24px rgba(90, 59, 40, 0.04);
-    text-align: center; margin-bottom: 25px;
+    margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;
 }
-.header-title { font-family: 'Dancing Script', cursive !important; font-size: 42px; font-weight: 700; color: #c5721f; margin: 0; }
-.header-sub { font-size: 14px; font-weight: 600; color: #775a46; }
+.header-title { font-family: 'Dancing Script', cursive !important; font-size: 42px; font-weight: 700; color: #c5721f; margin: 0; line-height: 1.2; }
+.header-sub { font-size: 14px; font-weight: 600; color: #775a46; margin: 0;}
+
+/* Estilo para a caixa de ações rápidas no topo */
+.action-box { display: flex; gap: 15px; align-items: center; }
 
 .kanban-title { font-weight: 800; color: #5a3b28; margin-bottom: 15px; text-align: center; font-size: 15px; border-bottom: 2px dashed #e8ddd3; padding-bottom: 10px;}
 
@@ -42,25 +45,26 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .p-title { font-size: 14px; font-weight: 800; color: #2c1e14; margin-bottom: 3px;}
 .p-info { font-size: 12px; color: #666; margin-bottom: 2px;}
 
-div[data-testid="stButton"] button { border-radius: 8px !important; font-weight: 700 !important; font-size: 12px !important; padding: 2px 10px !important; height: auto !important;}
+div[data-testid="stButton"] button { border-radius: 10px !important; font-weight: 700 !important; font-size: 13px !important; transition: all 0.2s ease;}
+div[data-testid="stButton"] button:hover { transform: translateY(-2px); }
 </style>
 """, unsafe_allow_html=True)
 
-# Cabeçalho com botões separados para Varejo e B2B
-col_h1, col_h2, col_h3 = st.columns([2, 1, 1])
+# Cabeçalho Integrado com Botões de Ação
+col_h1, col_h2, col_h3 = st.columns([2.5, 1, 1])
 with col_h1:
     st.markdown("""
-    <div class="header-banner" style="text-align: left; margin-bottom: 0;">
+    <div style="padding: 10px 0;">
         <h1 class="header-title">Gestão de Pedidos</h1>
-        <p class="header-sub">Acompanhe o fluxo completo de Varejo e Corporativo 📋</p>
+        <p class="header-sub">Acompanhe o fluxo de produção do Varejo e Corporativo 📋</p>
     </div>
     """, unsafe_allow_html=True)
 with col_h2:
-    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-    if st.button("➕ Pedido Varejo (PF)", use_container_width=True, type="primary"):
+    st.markdown("<div style='margin-top: 18px;'></div>", unsafe_allow_html=True)
+    if st.button("🛍️ Novo Pedido (PF)", use_container_width=True, type="primary"):
         st.switch_page("pages/19_Pedido_Manual.py")
 with col_h3:
-    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 18px;'></div>", unsafe_allow_html=True)
     if st.button("🏢 Venda B2B (PJ)", use_container_width=True):
         st.switch_page("pages/18_Corporativo.py")
 
@@ -77,7 +81,7 @@ def get_pedidos():
 
 pedidos = get_pedidos()
 
-tipo_filtro = st.radio("Filtrar por:", ["Todos os Pedidos", "Varejo (B2C)", "Empresas (B2B)"], horizontal=True)
+tipo_filtro = st.radio("Filtrar visualização:", ["Todos os Pedidos", "Varejo (B2C)", "Empresas (B2B)"], horizontal=True)
 
 st.markdown("<hr style='border-top: 1px solid #e8ddd3; margin: 15px 0;'>", unsafe_allow_html=True)
 
