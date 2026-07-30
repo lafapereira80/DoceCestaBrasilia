@@ -29,7 +29,7 @@ st.set_page_config(
 )
 
 # ==========================================================
-# CACHING DINÂMICO
+# CACHING DINÂMICO UNIFICADO (BLINDADO)
 # ==========================================================
 @st.cache_data(ttl=600, show_spinner=False)
 def obter_categorias_cacheadas():
@@ -39,23 +39,17 @@ def obter_categorias_cacheadas():
         return []
 
 @st.cache_data(ttl=5, show_spinner=False)
-def obter_secoes_ordenadas():
+def obter_secoes_e_cestas_ativas():
     try:
         secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
-        secoes_ativas = sorted([s for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
-        return [s["nome"] for s in secoes_ativas]
+        secoes_ativas = sorted([s["nome"] for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
+        
+        cestas_todas = listar_cestas()
+        cestas_ativas = [c for c in cestas_todas if c.get("ativa", True)]
+        
+        return secoes_ativas, sorted(cestas_ativas, key=lambda x: x.get("ordem", 999))
     except:
-        return ["Cestas de Café"]
-
-@st.cache_data(ttl=5, show_spinner=False)
-def obter_cestas_cacheadas():
-    try:
-        cestas = supabase.table("cestas").select("*").eq("ativa", True).execute().data or []
-        secoes_ativas = obter_secoes_ordenadas()
-        cestas_filtradas = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") in secoes_ativas]
-        return sorted(cestas_filtradas, key=lambda x: x.get("ordem", 999))
-    except:
-        return []
+        return ["Cestas de Café"], []
 
 @st.cache_data(ttl=300, show_spinner=False)
 def obter_configuracao_cesta_cacheada(cesta_id):
@@ -291,21 +285,20 @@ with st.container(border=True):
 
 
 # ==========================================================
-# PASSO 2: SELEÇÃO DO PRESENTE
+# PASSO 2: SELEÇÃO DO PRESENTE DINÂMICA
 # ==========================================================
 with st.spinner():
-    cestas = obter_cestas_cacheadas()
-    secoes_disponiveis = obter_secoes_ordenadas()
+    secoes_disponiveis, cestas_ativas = obter_secoes_e_cestas_ativas()
 
 cesta_obj = None
 selecoes_cliente = {}
 
-if cestas and secoes_disponiveis:
+if cestas_ativas and secoes_disponiveis:
     
-    # Mapeamento do item vindo da Vitrine
+    # 1. Verifica se veio da vitrine inicial (app.py)
     cesta_veio_da_home = st.session_state.get("cesta_selecionada_home")
     if cesta_veio_da_home:
-        for c in cestas:
+        for c in cestas_ativas:
             if c["id"] == cesta_veio_da_home:
                 st.session_state["secao_form"] = c.get("secao_vitrine", "Cestas de Café")
                 st.session_state["cesta_selecionada_id"] = cesta_veio_da_home
@@ -321,46 +314,36 @@ if cestas and secoes_disponiveis:
         def ao_mudar_secao():
             st.session_state["cesta_selecionada_id"] = None
 
-        if len(secoes_disponiveis) > 1:
-            col_categoria, col_modelo = st.columns(2)
-            
-            with col_categoria:
-                st.selectbox(
-                    "💌 O que você deseja enviar?", 
-                    secoes_disponiveis,
-                    index=secoes_disponiveis.index(st.session_state["secao_form"]),
-                    key="secao_form",
-                    on_change=ao_mudar_secao
-                )
+        col_categoria, col_modelo = st.columns(2)
+        
+        # 2. Exibe Seções Cadastradas
+        with col_categoria:
+            st.selectbox(
+                "💌 O que você deseja enviar?", 
+                secoes_disponiveis,
+                index=secoes_disponiveis.index(st.session_state["secao_form"]) if st.session_state["secao_form"] in secoes_disponiveis else 0,
+                key="secao_form",
+                on_change=ao_mudar_secao
+            )
 
-            cestas_da_secao = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") == st.session_state["secao_form"]]
-            opcoes_cestas = [{"id": None, "nome": "Clique para selecionar..."}] + cestas_da_secao
-            
-            cesta_idx = 0
-            if st.session_state.get("cesta_selecionada_id"):
-                for i, c in enumerate(opcoes_cestas):
-                    if c["id"] == st.session_state["cesta_selecionada_id"]:
-                        cesta_idx = i; break
+        # 3. Filtra as cestas correspondentes
+        cestas_da_secao = [c for c in cestas_ativas if str(c.get("secao_vitrine", "")).strip().lower() == str(st.session_state["secao_form"]).strip().lower()]
+        opcoes_cestas = [{"id": None, "nome": "Clique para selecionar..."}] + cestas_da_secao
+        
+        cesta_idx = 0
+        if st.session_state.get("cesta_selecionada_id"):
+            for i, c in enumerate(opcoes_cestas):
+                if c["id"] == st.session_state["cesta_selecionada_id"]:
+                    cesta_idx = i; break
 
-            with col_modelo:
-                cesta_selecionada = st.selectbox(
-                    "💝 Modelo escolhido", 
-                    opcoes_cestas, 
-                    format_func=lambda c: c["nome"], 
-                    index=cesta_idx
-                )
-        else:
-            st.session_state["secao_form"] = secoes_disponiveis[0]
-            cestas_da_secao = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") == st.session_state["secao_form"]]
-            opcoes_cestas = [{"id": None, "nome": "Clique para selecionar..."}] + cestas_da_secao
-            
-            cesta_idx = 0
-            if st.session_state.get("cesta_selecionada_id"):
-                for i, c in enumerate(opcoes_cestas):
-                    if c["id"] == st.session_state["cesta_selecionada_id"]:
-                        cesta_idx = i; break
-
-            cesta_selecionada = st.selectbox("💝 Modelo escolhido", opcoes_cestas, format_func=lambda c: c["nome"], index=cesta_idx)
+        # 4. Exibe os Modelos
+        with col_modelo:
+            cesta_selecionada = st.selectbox(
+                "💝 Modelo escolhido", 
+                opcoes_cestas, 
+                format_func=lambda c: c["nome"], 
+                index=cesta_idx
+            )
 
         # SE UMA CESTA FOR ESCOLHIDA, EXIBE OS DETALHES COM LAYOUT PREMIUM
         if cesta_selecionada and cesta_selecionada.get("id"):
@@ -377,11 +360,12 @@ if cestas and secoes_disponiveis:
                 sec_txt = cesta_obj.get("secao_vitrine", "Cestas de Café")
                 st.markdown(f'<div class="destaque-cesta-nome-local">{cesta_obj.get("nome", "")}</div>', unsafe_allow_html=True)
                 st.markdown(f"**Categoria:** <span style='color: #775a46; font-size:13.5px;'>{sec_txt}</span>", unsafe_allow_html=True)
-                if cesta_obj.get("descricao"): 
-                    st.markdown(f"<div style='font-size: 13px; color: #775a46; margin: 10px 0; line-height: 1.5;'>{cesta_obj['descricao']}</div>", unsafe_allow_html=True)
                 
-                valor = float(cesta_obj.get("preco", 0))
-                st.markdown(f"**Investimento Base:** <br><span style='font-size:24px; color:#137333; font-weight:800;'>R$ {valor:,.2f}</span>".replace(",", "X").replace(".", ",").replace("X","."), unsafe_allow_html=True)
+                # Formatando Valor Seguro para injetar no HTML
+                valor_base_num = float(cesta_obj.get("preco", 0))
+                valor_base_txt = f"R$ {valor_base_num:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                
+                st.markdown(f"**Investimento Base:** <br><span style='font-size:24px; color:#137333; font-weight:800;'>{valor_base_txt}</span>", unsafe_allow_html=True)
             
             # PERSONALIZAÇÃO DA CESTA (APARECE SÓ SE TIVER ITENS)
             configuracao = obter_configuracao_cesta_cacheada(cesta_obj["id"])
@@ -425,15 +409,16 @@ if cat_adicionais:
             
             colunas = st.columns(2)
             for indice, prod in enumerate(produtos_adicionais):
-                preco = prod.get("preco")
-                txt_val = f"+ R$ {float(preco):,.2f}".replace(",", "X").replace(".", ",").replace("X",".") if preco else "Sob Consulta"
+                preco_add = prod.get("preco")
+                # Formata seguro e sem quebrar HTML
+                txt_val_add = f"+ R$ {float(preco_add):,.2f}".replace(",", "X").replace(".", ",").replace("X",".") if preco_add is not None else "Sob Consulta"
                 
                 with colunas[indice % 2]:
                     # Estilo da pílula direto no título do checkbox
-                    if st.checkbox(f"✨ {prod['nome']} **{txt_val}**", key=f"add_{prod['id']}"):
+                    if st.checkbox(f"✨ {prod['nome']} **{txt_val_add}**", key=f"add_{prod['id']}"):
                         adicionais_selecionados.append({
                             "produto_id": prod["id"], "nome": prod["nome"], 
-                            "preco": float(preco) if preco else None, "categoria": "Adicionais"
+                            "preco": float(preco_add) if preco_add is not None else None, "categoria": "Adicionais"
                         })
                         if prod["nome"].lower().strip() == "polaroid": polaroid = True
 
@@ -503,7 +488,7 @@ with st.container(border=True):
 
 
 # ==========================================================
-# PASSO 6: RESUMO E FECHAMENTO
+# PASSO 6: RESUMO E FECHAMENTO (CORRIGIDO E SEGURO)
 # ==========================================================
 with st.container(border=True):
     renderizar_passo("6", "Pagamento e Resumo")
@@ -515,22 +500,28 @@ valor_adicionais = sum([float(item["preco"]) for item in adicionais_selecionados
 tem_consulta = any(item["preco"] is None for item in adicionais_selecionados)
 total_estimado = valor_base + valor_adicionais
 
+# FORMATAÇÃO PRÉVIA (Evita que o replace quebre o CSS HTML do recibo)
+valor_base_fmt = f"R$ {valor_base:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+valor_adc_fmt = f"R$ {valor_adicionais:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+total_fmt = f"R$ {total_estimado:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
 if cesta_obj:
     with st.container(border=True):
+        # HTML 100% blindado, injetando as variáveis já formatadas no lugar certo
         st.markdown(f"""
         <div class="receipt-box">
             <div style="font-size: 16px; font-weight: 800; color: #5a3b28; margin-bottom: 15px; text-align: center;">RESUMO DO PEDIDO</div>
             
-            <div class="receipt-line"><span>🎁 <b>{cesta_obj['nome']}</b></span> <strong>R$ {valor_base:,.2f}</strong></div>
-            <div class="receipt-line"><span>🎀 Mimos Extras</span> <strong>R$ {valor_adicionais:,.2f}</strong></div>
+            <div class="receipt-line"><span>🎁 <b>{cesta_obj['nome']}</b></span> <strong>{valor_base_fmt}</strong></div>
+            <div class="receipt-line"><span>🎀 Mimos Extras</span> <strong>{valor_adc_fmt}</strong></div>
             <div class="receipt-line"><span>🚚 Taxa de Entrega</span> <strong>A calcular pelo WhatsApp</strong></div>
             
             <div class="receipt-total">
                 <span>SUBTOTAL:</span> 
-                <span>R$ {total_estimado:,.2f}</span>
+                <span>{total_fmt}</span>
             </div>
         </div>
-        """.replace(",", "X").replace(".", ",").replace("X","."), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
         
         if tem_consulta:
             st.warning("⚠️ **Nota:** Você incluiu itens '*Sob Consulta*'. O valor exato será confirmado por nossa equipe.")
@@ -634,7 +625,7 @@ if enviar:
                 "data_entrega": dt_ent.strftime("%d/%m/%Y") if dt_ent else "",
                 "periodo_entrega": st.session_state.get("input_periodo_entrega", ""),
                 "endereco": f"{rua}, {num} - {bairro}",
-                "valor_total": f"R$ {total_estimado:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
+                "valor_total": total_fmt
             }
             st.session_state["pedido_enviado_com_sucesso"] = True
             st.rerun()
