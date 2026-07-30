@@ -123,7 +123,7 @@ div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
-   CARDS DE ADICIONAIS (MIMOS EXTRAS)
+   CARDS DE ADICIONAIS (MIMOS EXTRAS COM FOTOS)
 ========================================== */
 .addon-section-title {
     font-family: 'Dancing Script', cursive !important; font-size: 38px !important; 
@@ -132,14 +132,19 @@ div[data-testid="stButton"] button:hover {
 .addon-section-subtitle { text-align: center; color: #775a46; font-size: 14px; font-weight: 500; margin-bottom: 25px; }
 
 .addon-card {
-    background: #faf7f3; border: 1px solid #dfcdbb; border-radius: 16px; padding: 15px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-    height: 100%; box-shadow: 0 2px 8px rgba(90, 59, 40, 0.02); transition: all 0.2s ease;
+    background: #ffffff; border: 1px solid #dfcdbb; border-radius: 16px; padding: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center;
+    height: 100%; box-shadow: 0 4px 10px rgba(90, 59, 40, 0.03); transition: all 0.2s ease;
 }
-.addon-card:hover { border-color: #c5721f; transform: scale(1.02); background: #ffffff; }
-.addon-icone { font-size: 28px; margin-bottom: 8px; }
-.addon-nome { font-size: 14px; font-weight: 800; color: #4a2e1b; line-height: 1.2; margin-bottom: 6px; }
-.addon-preco { font-size: 15px; font-weight: 800; color: #137333; }
+.addon-card:hover { border-color: #c5721f; transform: translateY(-3px); box-shadow: 0 8px 20px rgba(90, 59, 40, 0.06); }
+.addon-img-container {
+    width: 100%; aspect-ratio: 1 / 1; border-radius: 12px; overflow: hidden; margin-bottom: 12px;
+    background: #faf7f3; display: flex; align-items: center; justify-content: center;
+}
+.addon-img-container img { width: 100%; height: 100%; object-fit: cover; }
+.addon-icone { font-size: 38px; opacity: 0.6; }
+.addon-nome { font-size: 14.5px; font-weight: 800; color: #4a2e1b; line-height: 1.2; margin-bottom: 6px; }
+.addon-preco { font-size: 15px; font-weight: 800; color: #137333; margin-top: auto; }
 
 /* Responsividade Mobile */
 @media (max-width: 640px) {
@@ -237,7 +242,7 @@ for i, aba in enumerate(abas):
                 st.markdown("</div>", unsafe_allow_html=True)
 
 # ==========================================================
-# 2. SEÇÃO DE MIMOS EXTRAS E ADICIONAIS
+# 2. SEÇÃO DE MIMOS EXTRAS E ADICIONAIS (AGORA COM FOTOS)
 # ==========================================================
 if adicionais:
     st.markdown("<hr style='border: none; border-top: 2px dashed #e8ddd3; margin-top: 40px;'>", unsafe_allow_html=True)
@@ -248,13 +253,22 @@ if adicionais:
     cols_add = st.columns(3)
     for i, add in enumerate(adicionais):
         with cols_add[i % 3]:
-            icone = "📷" if "polaroid" in str(add.get("nome", "")).lower() else "✨"
+            # Lógica de Imagem: Puxa a foto do banco, se não existir coloca o Ícone
+            imagem_add = add.get("imagem")
+            if imagem_add:
+                midia_html = f'<img src="{imagem_add}" alt="{add["nome"]}">'
+            else:
+                icone = "📷" if "polaroid" in str(add.get("nome", "")).lower() else "✨"
+                midia_html = f'<div class="addon-icone">{icone}</div>'
+                
             preco_add = add.get("preco")
             txt_preco = f"R$ {float(preco_add):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if preco_add else "Sob Consulta"
             
             st.markdown(f"""
             <div class="addon-card">
-                <div class="addon-icone">{icone}</div>
+                <div class="addon-img-container">
+                    {midia_html}
+                </div>
                 <div class="addon-nome">{add['nome']}</div>
                 <div class="addon-preco">{txt_preco}</div>
             </div>
