@@ -81,11 +81,23 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
     display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
     background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%); padding: 30px 20px;
     border-radius: 24px; border: 1px solid #e8ddd3; box-shadow: 0 8px 24px rgba(90, 59, 40, 0.04);
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 .header-logo { width: 110px; height: auto; object-fit: contain; margin-bottom: 12px; filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.06)); }
 .header-title { font-family: 'Dancing Script', cursive !important; font-size: 46px !important; font-weight: 700 !important; color: #c5721f !important; margin: 0 !important; line-height: 1.1 !important; }
 .header-subtitle { font-size: 15px !important; color: #775a46 !important; font-weight: 500 !important; margin-top: 8px !important; }
+
+/* Seção Bem-vindo e Como Pedir */
+.welcome-section { text-align: center; margin-bottom: 2rem; padding: 0 10px; }
+.welcome-title { font-size: 22px; font-weight: 800; color: #5a3b28; margin-bottom: 8px; letter-spacing: -0.3px; }
+.welcome-text { font-size: 14px; color: #775a46; line-height: 1.6; max-width: 700px; margin: 0 auto 25px auto; }
+
+.steps-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 850px; margin: 0 auto; }
+.step-card { background: #ffffff; border: 1px dashed #dfcdbb; border-radius: 16px; padding: 15px; text-align: center; box-shadow: 0 4px 10px rgba(90,59,40,0.02); transition: transform 0.2s ease; }
+.step-card:hover { transform: translateY(-3px); border-color: #c5721f; }
+.step-icon { font-size: 26px; margin-bottom: 6px; }
+.step-title { font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 4px; }
+.step-desc { font-size: 12.5px; color: #775a46; line-height: 1.4; }
 
 /* Estilização das Abas (Tabs) */
 div[data-testid="stTabs"] button {
@@ -156,6 +168,7 @@ div[data-testid="stButton"] button:hover {
     .header-title { font-size: 38px !important; }
     .produto-titulo { font-size: 26px !important; }
     .addon-section-title { font-size: 32px !important; }
+    .steps-container { grid-template-columns: 1fr; gap: 10px; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -167,13 +180,38 @@ if "cesta_selecionada_home" not in st.session_state:
     st.session_state["cesta_selecionada_home"] = None
 
 # ==========================================================
-# CABEÇALHO DA LOJA
+# CABEÇALHO E INSTRUÇÕES (BEM-VINDO)
 # ==========================================================
 st.markdown(f"""
 <div class="header-banner">
     {carregar_logo_base64()}
     <h1 class="header-title">Doce Cesta Brasília</h1>
-    <p class="header-subtitle">Monte e personalize o presente perfeito 💝</p>
+    <p class="header-subtitle">Presentes Inesquecíveis 💝</p>
+</div>
+
+<div class="welcome-section">
+    <div class="welcome-title">Bem-vindo(a) à nossa loja! 🌻</div>
+    <div class="welcome-text">
+        Transforme momentos especiais em memórias inesquecíveis. Nossos presentes são montados com ingredientes selecionados e muito carinho para surpreender quem você ama.
+    </div>
+    
+    <div class="steps-container">
+        <div class="step-card">
+            <div class="step-icon">🎁</div>
+            <div class="step-title">1. Escolha a Opção</div>
+            <div class="step-desc">Selecione o modelo ideal na nossa vitrine abaixo.</div>
+        </div>
+        <div class="step-card">
+            <div class="step-icon">🍓</div>
+            <div class="step-title">2. Personalize</div>
+            <div class="step-desc">Escolha os itens internos, adicione extras e escreva seu cartão.</div>
+        </div>
+        <div class="step-card">
+            <div class="step-icon">🛵</div>
+            <div class="step-title">3. Agende a Entrega</div>
+            <div class="step-desc">Defina o local, horário e nós cuidamos do resto!</div>
+        </div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
