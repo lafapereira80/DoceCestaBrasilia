@@ -8,7 +8,6 @@ from datetime import datetime, timedelta, date
 from config.supabase import supabase
 from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
-from services.pedido_service import salvar_pedido
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 
@@ -213,15 +212,16 @@ with aba_proposta:
 
         if st.button("➕ Inserir Cesta", use_container_width=True):
             if cesta_sel:
-                desc_cesta = cesta_sel.get("descricao", "")
+                # Monta a string apenas com os itens selecionados para a cesta (sem a descrição longa da cesta)
+                itens_sel_str = ""
                 if selecoes_cesta_corp:
                     opcoes_str = " | ".join([f"{cat}: {', '.join([i['nome'] for i in itens])}" for cat, itens in selecoes_cesta_corp.items() if itens])
                     if opcoes_str:
-                        desc_cesta = (desc_cesta + " | " if desc_cesta else "") + f"Opções: {opcoes_str}"
+                        itens_sel_str = f"Itens: {opcoes_str}"
 
                 st.session_state["itens_orcamento"].append({
                     "id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": cesta_sel["id"], "nome": cesta_sel["nome"], 
-                    "preco_unitario": tratar_preco(cesta_sel.get("preco")), "quantidade": 1, "descricao": desc_cesta
+                    "preco_unitario": tratar_preco(cesta_sel.get("preco")), "quantidade": 1, "descricao": itens_sel_str
                 })
                 st.rerun()
 
@@ -266,6 +266,7 @@ with aba_proposta:
             with c1:
                 icone = "📦" if item["tipo"] == "Cesta" else "✨"
                 st.markdown(f"<div style='margin-top:8px; font-weight:700; font-size:14px; color:#4a2e1b;'>{icone} {item['nome']}</div>", unsafe_allow_html=True)
+                # Exibe apenas os itens selecionados da cesta (sem a descrição longa da cesta)
                 if item.get("descricao"):
                     st.caption(item["descricao"])
                 
