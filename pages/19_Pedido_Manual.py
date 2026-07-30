@@ -14,8 +14,8 @@ menu_lateral()
 administrador_operador()
 
 # =====================================================
-# CSS PREMIUM
-# ==========================================
+# CSS PREMIUM E OTIMIZAÇÃO PARA IMPRESSÃO (PDF)
+# =====================================================
 st.markdown(
 """
 <style>
@@ -55,15 +55,11 @@ h1, h2, h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-
 .resumo-valor { font-size: 20px; font-weight: 800; color: #4a2e1b; }
 .resumo-destaque { font-size: 24px; font-weight: 800; color: #137333; }
 
-.polaroid-box {
-    background: #fff8f8; border: 2px dashed #ffb6c1; border-radius: 12px; padding: 15px; margin-top: 15px;
-}
+.polaroid-box { background: #fff8f8; border: 2px dashed #ffb6c1; border-radius: 12px; padding: 15px; margin-top: 15px;}
 
 div[data-testid="stButton"] button { border-radius: 12px !important; font-weight: 800 !important; transition: all 0.2s ease !important; }
 div[data-testid="stButton"] button[kind="primary"] { background: linear-gradient(135deg, #c5721f 0%, #a65d14) !important; color: white !important; border: none !important; box-shadow: 0 4px 15px rgba(197, 114, 31, 0.2) !important; }
 div[data-testid="stButton"] button[kind="primary"]:hover { background: linear-gradient(135deg, #a65d14 0%, #874c10) !important; transform: translateY(-2px) !important; }
-
-div[data-testid="stNumberInput"] label { display: none !important; }
 
 @media print {
     header, footer, section[data-testid="stSidebar"], .stAppDeployMenu, 
@@ -86,7 +82,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================
-# FUNÇÕES, CACHES E BLINDAGENS
+# FUNÇÕES E CARREGAMENTO
 # =====================================================
 def tratar_preco(valor):
     if valor is None or str(valor).strip() == "": return 0.0
@@ -128,9 +124,6 @@ if "itens_varejo" not in st.session_state: st.session_state["itens_varejo"] = []
 # =====================================================
 aba_proposta, aba_historico = st.tabs(["📝 Novo Pedido (Varejo)", "👤 Histórico de Clientes"])
 
-# =====================================================
-# ABA 1: GERADOR E CADASTRO DE PEDIDO VAREJO
-# =====================================================
 with aba_proposta:
     st.markdown('<div class="corp-card">', unsafe_allow_html=True)
     st.markdown('<div class="corp-title">👤 1. Dados do Cliente e Destinatário</div>', unsafe_allow_html=True)
@@ -146,7 +139,6 @@ with aba_proposta:
         motivo = st.text_input("Ocasião / Motivo", placeholder="Ex: Aniversário, Dia dos Namorados")
 
     st.markdown("#### 🎁 2. Adicionar Itens (Pacotes e Extras)")
-    
     col_add1, col_add2, col_add3 = st.columns(3)
     with col_add1:
         st.markdown("<div style='font-size: 13px; font-weight: 700; color: #775a46;'>📦 Cestas Base</div>", unsafe_allow_html=True)
@@ -181,9 +173,7 @@ with aba_proposta:
                 })
                 st.rerun()
 
-    # ===================================================================
     # INTELIGÊNCIA DE FOTOS POLAROID
-    # ===================================================================
     tem_polaroid = any("polaroid" in item["nome"].lower() or "foto" in item["nome"].lower() for item in st.session_state["itens_varejo"])
     link_polaroid = ""
     
@@ -191,16 +181,12 @@ with aba_proposta:
         st.markdown("""
         <div class="polaroid-box">
             <h4 style="color: #d1476a; margin-top: 0;">📸 Instruções para Fotos Polaroid</h4>
-            <p style="font-size: 13px; color: #5a3b28;">O sistema identificou que este pedido contém fotos. Cole o link do Google Drive/Fotos abaixo ou anote que o cliente enviou via WhatsApp.</p>
+            <p style="font-size: 13px; color: #5a3b28;">O sistema identificou que este pedido contém fotos. Cole o link do Drive/Fotos abaixo ou anote que o cliente enviou via WhatsApp.</p>
         </div>
         """, unsafe_allow_html=True)
         link_polaroid = st.text_area("Link / Instruções das Fotos", placeholder="Ex: Fotos enviadas no WhatsApp dia 20/10 ou https://drive.google.com/...", height=68)
 
-    # ===================================================================
-    # 3. CARRINHO DE COMPRAS EDITÁVEL (AO VIVO)
-    # ===================================================================
     total_bruto = 0
-    
     if st.session_state["itens_varejo"]:
         st.markdown("<hr style='border-top: 1px dashed #e8ddd3; margin: 25px 0;'>", unsafe_allow_html=True)
         st.markdown("### 🛒 Resumo do Pedido (Edite Preços e Quantidades)")
@@ -219,11 +205,11 @@ with aba_proposta:
                 st.markdown(f"<div style='margin-top:8px; font-weight:700; font-size:14px; color:#4a2e1b;'>{icone} {item['nome']}</div>", unsafe_allow_html=True)
                 
             with c2:
-                novo_preco = st.number_input("Valor", value=float(item["preco_unitario"]), min_value=0.0, step=1.0, format="%.2f", key=f"p_{item['id']}")
+                novo_preco = st.number_input("Valor", value=float(item["preco_unitario"]), min_value=0.0, step=1.0, format="%.2f", key=f"p_{item['id']}", label_visibility="collapsed")
                 st.session_state["itens_varejo"][i]["preco_unitario"] = novo_preco
                 
             with c3:
-                nova_qtd = st.number_input("Qtd", value=int(item["quantidade"]), min_value=1, step=1, key=f"q_{item['id']}")
+                nova_qtd = st.number_input("Qtd", value=int(item["quantidade"]), min_value=1, step=1, key=f"q_{item['id']}", label_visibility="collapsed")
                 st.session_state["itens_varejo"][i]["quantidade"] = nova_qtd
                 
             with c4:
@@ -246,20 +232,21 @@ with aba_proposta:
     st.markdown("#### 💌 4. Mensagem do Cartão")
     mensagem_cartao = st.text_area("Digite o texto exatamente como o cliente pediu (Opcional)", height=100, placeholder="Ex: Feliz aniversário, meu amor! Com carinho, João.")
 
-    st.markdown("#### 💰 5. Logística e Fechamento")
+    st.markdown("#### 💰 5. Logística, Desconto e Fechamento")
+    
     col_d1, col_d2, col_d3 = st.columns(3)
     with col_d1:
-        data_entrega = st.date_input("Data de Entrega", value=date.today(), format="DD/MM/YYYY")
+        frete_lote = st.number_input("Valor do Frete / Entrega (R$)", min_value=0.0, step=5.0, value=0.0)
     with col_d2:
-        horario = st.text_input("Horário Acordado", placeholder="Ex: 09h às 10h")
+        desconto_perc = st.number_input("Desconto Concedido (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0)
     with col_d3:
         prazo_pagamento = st.selectbox("Forma de Pagamento", ["Pix", "Cartão de Crédito", "Dinheiro", "Link de Pagamento"])
         
-    col_f1, col_f2 = st.columns(2)
-    with col_f1:
-        frete_lote = st.number_input("Valor do Frete (R$)", min_value=0.0, step=5.0, value=15.0)
-    with col_f2:
-        desconto_perc = st.number_input("Desconto Concedido (%)", min_value=0.0, max_value=100.0, step=1.0)
+    col_e1, col_e2 = st.columns(2)
+    with col_e1:
+        data_entrega = st.date_input("Data de Entrega", value=date.today(), format="DD/MM/YYYY")
+    with col_e2:
+        horario = st.text_input("Horário Acordado", placeholder="Ex: 09h às 10h")
         
     endereco_empresa = st.text_input("📍 Endereço de Entrega", placeholder="Ex: SQS 101, Bloco A, Apto 101 - Asa Sul")
 
@@ -271,15 +258,15 @@ with aba_proposta:
     st.markdown(f"""
     <div class="resumo-financeiro">
         <div class="resumo-item">
-            <div class="resumo-label">Subtotal dos Itens</div>
+            <div class="resumo-label">Subtotal</div>
             <div class="resumo-valor">R$ {formatar_moeda(total_bruto)}</div>
         </div>
         <div class="resumo-item">
-            <div class="resumo-label">Desconto Aplicado</div>
+            <div class="resumo-label">Desconto</div>
             <div class="resumo-valor" style="color: #c5221f;">- R$ {formatar_moeda(valor_desconto)}</div>
         </div>
         <div class="resumo-item">
-            <div class="resumo-label">Taxa de Frete</div>
+            <div class="resumo-label">Frete</div>
             <div class="resumo-valor">R$ {formatar_moeda(frete_lote)}</div>
         </div>
         <div class="resumo-item">
@@ -296,7 +283,7 @@ with aba_proposta:
         ver_preview = st.checkbox("👁️ Gerar Espelho do Pedido (PDF / WhatsApp)", value=False)
         
     with col_btn2:
-        if st.button("✅ SALVAR PEDIDO NO SISTEMA", type="primary", use_container_width=True):
+        if st.button("✅ REGISTRAR PEDIDO DE VAREJO", type="primary", use_container_width=True):
             if not cliente_nome: st.error("Informe o Nome do Cliente."); st.stop()
             if not st.session_state["itens_varejo"]: st.error("Adicione itens ao carrinho."); st.stop()
             if not endereco_empresa: st.error("Informe o Endereço de Entrega para a logística."); st.stop()
@@ -323,7 +310,6 @@ with aba_proposta:
                 if lista_str_extras:
                     msg_adicionais += "\n\nADICIONAIS:\n" + "\n".join(lista_str_extras)
 
-            # Anexa as instruções da foto polaroid nos adicionais para a produção ver
             if tem_polaroid and link_polaroid.strip():
                 msg_adicionais += f"\n\n📸 INFO FOTOS POLAROID:\n{link_polaroid.strip()}"
 
@@ -343,7 +329,7 @@ with aba_proposta:
                 "endereco": endereco_empresa,
                 "data_entrega": data_entrega.strftime("%Y-%m-%d"),
                 "periodo_entrega": horario.strip() or "A combinar",
-                "status": "Recebido",
+                "status": "Recebido", # Nasce como recebido para confirmação de pagamento no painel!
                 "valor_frete": frete_lote,
                 "valor_total": total_liquido,
                 "cesta_montada": False
@@ -351,23 +337,19 @@ with aba_proposta:
             
             sucesso, p_id = salvar_pedido(dados_pf)
             if sucesso:
-                st.success(f"🎉 Pedido de Varejo para {cliente_nome} salvo com sucesso! Vá para o Mural de Pedidos.")
+                st.success(f"🎉 Pedido de Varejo para {cliente_nome} registrado! Ele está aguardando confirmação de pagamento no Mural.")
                 st.session_state["itens_varejo"] = []
             else:
                 st.error("Erro ao registrar o pedido no banco de dados.")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # =================================================
-    # PREVIEW DA PROPOSTA (PDF E WHATSAPP)
-    # =================================================
     if st.session_state["itens_varejo"] and cliente_nome and ver_preview:
         st.markdown("### 👁️ Espelho do Pedido para Conferência")
-        
         aba_pdf, aba_whats = st.tabs(["📄 Documento Limpo (PDF)", "📱 Resumo WhatsApp"])
 
         with aba_pdf:
-            st.info("🖨️ **Dica de Ouro:** Pressione `Ctrl + P` para Salvar como PDF ou Imprimir este espelho de pedido.")
+            st.info("🖨️ **Dica de Ouro:** Pressione `Ctrl + P` para Salvar como PDF.")
             
             linhas_html = ""
             for item in st.session_state["itens_varejo"]:
@@ -421,9 +403,6 @@ Qualquer dúvida, nossa equipe está à disposição. Agradecemos a preferência
             
             st.code(texto_wpp, language="markdown")
 
-# =====================================================
-# ABA 2: HISTÓRICO DE CLIENTES (VAREJO)
-# =====================================================
 with aba_historico:
     st.markdown('<div class="corp-card"><div class="corp-title">👤 Histórico de Pedidos de Varejo</div>', unsafe_allow_html=True)
     
@@ -437,13 +416,7 @@ with aba_historico:
         df_pf["Valor"] = pd.to_numeric(df_pf["valor_total"]).apply(lambda x: f"R$ {formatar_moeda(x)}")
         
         colunas_exibir = ["Data", "cliente_nome", "destinatario_nome", "cesta_nome", "Valor", "status", "pagamento"]
-        df_display = df_pf[colunas_exibir].rename(columns={
-            "cliente_nome": "Cliente",
-            "destinatario_nome": "Para",
-            "cesta_nome": "Pacote Vendido",
-            "status": "Status",
-            "pagamento": "Condição"
-        })
+        df_display = df_pf[colunas_exibir].rename(columns={"cliente_nome": "Cliente", "destinatario_nome": "Para", "cesta_nome": "Pacote Vendido", "status": "Status", "pagamento": "Condição"})
         
         total_faturado_pf = df_pf["valor_total"].sum()
         total_clientes = df_pf["cliente_nome"].nunique()
