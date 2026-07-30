@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import streamlit.components.v1 as components
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
@@ -28,23 +29,19 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .section-title { font-size: 16px; font-weight: 800; color: #c5721f; margin-bottom: 10px; margin-top: 20px;}
 .section-title.b2b { color: #137333; }
 
-/* Linhas de Dados Cadastrais (Texto colado ao título) */
 .info-row { border-bottom: 1px dashed #f5eee6; padding: 8px 0; font-size: 14px;}
 .info-label { font-weight: 700; color: #775a46; margin-right: 6px; }
 .info-value { font-weight: 600; color: #2c1e14; }
 
-/* Linhas Financeiras (Valores jogados para a direita) */
 .finance-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #f5eee6; padding: 8px 0; font-size: 14px;}
-
 .item-box { background: #fdfbf8; border: 1px solid #e8ddd3; border-radius: 8px; padding: 12px; margin-bottom: 10px; font-size: 14px; }
 .item-box b { color: #5a3b28; }
-
 .val-total { font-size: 22px; font-weight: 800; color: #137333; text-align: right; margin-top: 15px; padding-top: 15px; border-top: 2px solid #e8ddd3;}
 
 div[data-testid="stButton"] button { border-radius: 12px !important; font-weight: 800 !important; }
 
 @media print {
-    header, footer, section[data-testid="stSidebar"], div[data-testid="stButton"] { display: none !important; }
+    header, footer, section[data-testid="stSidebar"], div[data-testid="stButton"], .st-key-btn_voltar, .st-key-modo_edicao { display: none !important; }
     .block-container { padding: 0 !important; max-width: 100% !important; margin: 0 !important;}
     .ficha-card { box-shadow: none !important; border: none !important; padding: 0 !important; }
 }
@@ -56,12 +53,11 @@ pedido_id = st.session_state.get('pedido_detalhe_id')
 
 if not pedido_id:
     st.warning("Nenhum pedido selecionado.")
-    if st.button("⬅️ Voltar aos Pedidos"):
+    if st.button("⬅️ Voltar aos Pedidos", key="btn_voltar_vazio"):
         st.switch_page("pages/02_Pedidos.py")
     st.stop()
 
-# Carrega os dados do pedido
-@st.cache_data(ttl=5, show_spinner=False)
+# Carrega os dados do pedido (sem cache agressivo para refletir edições instantâneas)
 def obter_detalhe(p_id):
     res = supabase.table("pedidos").select("*").eq("id", p_id).execute()
     return res.data[0] if res.data else None
@@ -72,25 +68,98 @@ if not pedido:
     st.error("Pedido não encontrado.")
     st.stop()
 
-is_b2b = "[B2B]" in pedido['cliente_nome']
-cliente_limpo = pedido['cliente_nome'].replace("[B2B]", "").strip()
+is_b2b = "[B2B]" in pedido.get('cliente_nome', '')
+cliente_limpo = pedido.get('cliente_nome', '').replace("[B2B]", "").strip()
 cor_classe = "b2b" if is_b2b else ""
 tipo_texto = "🏢 PEDIDO CORPORATIVO (B2B)" if is_b2b else "👤 PEDIDO VAREJO (B2C)"
 
 # Funções de formatação
 def formata_data(d_str):
     if not d_str: return ""
-    try: return datetime.strptime(d_str, "%Y-%m-%d").strftime("%d/%m/%Y")
+    try: return datetime.strptime(str(d_str)[:10], "%Y-%m-%d").strftime("%d/%m/%Y")
     except: return d_str
 
 def formata_moeda(v):
     try: return f"R$ {float(v):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     except: return "R$ 0,00"
 
-# Botão Voltar Corrigido (Sem erro de callback)
-if st.button("⬅️ Voltar para o Mural de Pedidos"):
+# Botão Voltar
+if st.button("⬅️ Voltar para o Mural de Pedidos", key="btn_voltar_mural"):
     st.switch_page("pages/02_Pedidos.py")
 
+# ==========================================
+# GERENCIAMENTO DO MODO DE EDIÇÃO COMPLETA
+# ==========================================
+if "modo_edicao" not in st.session_state:
+    st.session_state.modo_edicao = False
+
+if st.session_state.modo_edicao:
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("### ✏️ Editando Pedido Completo")
+    
+    with st.form("form_edicao_completa"):
+        col_e1, col_e2 = st.columns(2)
+        
+        with col_e1:
+            novo_nome = st.text_input("Nome do Cliente / Empresa", value=pedido.get('cliente_nome', ''))
+            novo_tel = st.text_input("Telefone / WhatsApp", value=pedido.get('cliente_telefone', ''))
+            novo_cpf = st.text_input("CPF / CNPJ", value=pedido.get('cliente_cpf', ''))
+            novo_dest = st.text_input("Destinatário (A/C)", value=pedido.get('destinatario_nome', ''))
+            novo_motivo = st.text_input("Homenagem / Motivo", value=pedido.get('motivo_homenagem', ''))
+            novo_status = st.selectbox("Status do Pedido", ["Recebido", "Pendente", "Pago", "Em Produção", "Em Rota de Entrega", "Entregue", "Desistência"], index=["Recebido", "Pendente", "Pago", "Em Produção", "Em Rota de Entrega", "Entregue", "Desistência"].index(pedido.get('status', 'Recebido')) if pedido.get('status', 'Recebido') in ["Recebido", "Pendente", "Pago", "Em Produção", "Em Rota de Entrega", "Entregue", "Desistência"] else 0)
+
+        with col_e2:
+            try: dt_ini = datetime.strptime(str(pedido.get('data_entrega', datetime.today().strftime("%Y-%m-%d")))[:10], "%Y-%m-%d").date()
+            except: dt_ini = datetime.today().date()
+            
+            nova_data = st.date_input("Data de Entrega", value=dt_ini, format="DD/MM/YYYY")
+            novo_periodo = st.text_input("Período de Entrega", value=pedido.get('periodo_entrega', ''))
+            novo_pag = st.selectbox("Forma de Pagamento", ["Pix", "Cartão de Crédito", "Faturamento (Boleto)", "Transferência Bancária"], index=0 if pedido.get('pagamento') not in ["Pix", "Cartão de Crédito", "Faturamento (Boleto)", "Transferência Bancária"] else ["Pix", "Cartão de Crédito", "Faturamento (Boleto)", "Transferência Bancária"].index(pedido.get('pagamento')))
+            novo_frete = st.number_input("Taxa de Frete (R$)", value=float(pedido.get('valor_frete', 0) or 0), min_value=0.0, step=5.0)
+            novo_total = st.number_input("Valor Total (R$)", value=float(pedido.get('valor_total', 0) or 0), min_value=0.0, step=10.0)
+
+        novo_end = st.text_area("Endereço de Entrega Completo", value=pedido.get('endereco', ''))
+        nova_msg = st.text_area("Mensagem do Cartão", value=pedido.get('mensagem', ''))
+        
+        c_salvar, c_cancelar = st.columns(2)
+        with c_salvar:
+            submit_edicao = st.form_submit_button("💾 Salvar Alterações", type="primary", use_container_width=True)
+        with c_cancelar:
+            cancelar_edicao = st.form_submit_button("❌ Cancelar", use_container_width=True)
+
+        if submit_edicao:
+            dados_atualizados = {
+                "cliente_nome": novo_nome.strip(),
+                "cliente_telefone": novo_tel.strip(),
+                "cliente_cpf": novo_cpf.strip(),
+                "destinatario_nome": novo_dest.strip(),
+                "motivo_homenagem": novo_motivo.strip(),
+                "status": novo_status,
+                "data_entrega": nova_data.strftime("%Y-%m-%d"),
+                "periodo_entrega": novo_periodo.strip(),
+                "pagamento": novo_pag,
+                "valor_frete": novo_frete,
+                "valor_total": novo_total,
+                "endereco": novo_end.strip(),
+                "mensagem": nova_msg.strip()
+            }
+            try:
+                supabase.table("pedidos").update(dados_atualizados).eq("id", pedido_id).execute()
+                st.success("✅ Pedido atualizado com sucesso!")
+                st.session_state.modo_edicao = False
+                st.rerun()
+            except Exception as e:
+                st.error(f"Erro ao salvar alterações: {e}")
+
+        if cancelar_edicao:
+            st.session_state.modo_edicao = False
+            st.rerun()
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+
+# ==========================================
+# EXIBIÇÃO DA FICHA TÉCNICA
+# ==========================================
 st.markdown(f"""
 <div class="ficha-card">
     <div class="ficha-header {cor_classe}">
@@ -173,20 +242,18 @@ col_a1, col_a2, col_a3, col_a4 = st.columns(4)
 
 with col_a1:
     if st.button("🖨️ Imprimir Ficha", use_container_width=True):
-        st.info("Pressione Ctrl + P (ou Cmd + P) no seu teclado para gerar o documento limpo!")
+        components.html("""
+            <script>
+                window.print();
+            </script>
+        """, height=0)
 
 with col_a2:
     if st.button("✏️ Alterar Pedido", use_container_width=True):
-        # Salva o ID para edição e redireciona dependendo do tipo
-        st.session_state['editar_pedido_id'] = pedido_id
-        if is_b2b:
-            st.switch_page("pages/18_Corporativo.py")
-        else:
-            # Caso queira direcionar para o fluxo de varejo caso possua
-            st.warning("A edição direta está otimizada para o painel Corporativo (B2B).")
+        st.session_state.modo_edicao = not st.session_state.modo_edicao
+        st.rerun()
 
 with col_a3:
-    # Botão rápido para avançar status
     status_atual = pedido.get('status')
     if status_atual in ["Pendente", "Pago"]:
         if st.button("⏩ Prod.", use_container_width=True, type="primary"):
