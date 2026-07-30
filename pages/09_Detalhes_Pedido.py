@@ -4,54 +4,76 @@ import requests
 import re
 import urllib.parse
 from datetime import datetime, date
-import streamlit.components.v1 as components
 
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 
+# =====================================================
+# CONFIGURAÇÃO DA PÁGINA
+# =====================================================
 st.set_page_config(page_title="Detalhes do Pedido", page_icon="🔍", layout="wide")
 configurar_pagina()
 menu_lateral()
 administrador_operador()
 
-# ==========================================
-# CSS PREMIUM (ESTILO NOTA FISCAL / FICHA TÉCNICA)
-# ==========================================
+# =====================================================
+# CSS PREMIUM (UI/UX DASHBOARD CARDS)
+# =====================================================
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
-html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; color: #4a2e1b; }
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
 
-.ficha-card {
-    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 30px;
-    box-shadow: 0 4px 20px rgba(90, 59, 40, 0.05); margin-bottom: 20px;
+html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; color: #2c1e14; }
+.block-container { padding-top: 1.5rem !important; padding-bottom: 4rem !important; max-width: 1300px !important; }
+
+/* Header Banner */
+.order-header {
+    background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%);
+    padding: 24px 30px; border-radius: 20px; border: 1px solid #e8ddd3;
+    box-shadow: 0 8px 24px rgba(90, 59, 40, 0.04); margin-bottom: 24px;
+    display: flex; justify-content: space-between; align-items: center;
 }
-.ficha-header { border-bottom: 3px solid #c5721f; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;}
-.ficha-header.b2b { border-bottom-color: #137333; }
+.order-id { font-size: 32px; font-weight: 800; color: #4a2e1b; margin: 0; line-height: 1.2; letter-spacing: -0.5px; }
+.order-type-badge { background: #fef7e0; color: #b06000; padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid #fce8b2; display: inline-block; margin-top: 6px; }
+.order-type-badge.corp { background: #e6f4ea; color: #137333; border-color: #ceead6; }
+.status-label { font-size: 12px; color: #775a46; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; text-align: right; }
+.status-value { font-size: 18px; font-weight: 800; color: #c5721f; text-align: right; }
 
-.section-title { font-size: 16px; font-weight: 800; color: #c5721f; margin-bottom: 10px; margin-top: 20px;}
-.section-title.b2b { color: #137333; }
-
-.info-row { border-bottom: 1px dashed #f5eee6; padding: 8px 0; font-size: 14px;}
-.info-label { font-weight: 700; color: #775a46; margin-right: 6px; }
-.info-value { font-weight: 600; color: #2c1e14; }
-
-.finance-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #f5eee6; padding: 8px 0; font-size: 14px;}
-.item-box { background: #fdfbf8; border: 1px solid #e8ddd3; border-radius: 8px; padding: 12px; margin-bottom: 10px; font-size: 14px; }
-.val-total { font-size: 22px; font-weight: 800; color: #137333; text-align: right; margin-top: 15px; padding-top: 15px; border-top: 2px solid #e8ddd3;}
-
-div[data-testid="stButton"] button { border-radius: 12px !important; font-weight: 800 !important; }
-
-@media print {
-    header, footer, section[data-testid="stSidebar"], div[data-testid="stButton"] { display: none !important; }
-    .block-container { padding: 0 !important; max-width: 100% !important; margin: 0 !important;}
-    .ficha-card { box-shadow: none !important; border: none !important; padding: 0 !important; }
+/* Content Cards */
+.info-card {
+    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 24px;
+    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.02); margin-bottom: 20px; height: 100%;
 }
+.card-title { font-size: 15px; font-weight: 800; color: #c5721f; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; border-bottom: 2px dashed #f5eee6; padding-bottom: 10px; text-transform: uppercase; }
+.card-title.finance { color: #137333; border-bottom-color: #ceead6; }
+
+/* Data Rows */
+.data-group { margin-bottom: 14px; }
+.data-label { font-size: 11.5px; color: #8c7362; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+.data-value { font-size: 14.5px; color: #2c1e14; font-weight: 600; }
+.highlight-box { background: #fdfbf8; border: 1px solid #e8ddd3; border-radius: 10px; padding: 12px; font-size: 14px; font-style: italic; color: #4a2e1b; border-left: 4px solid #c5721f; margin-top: 8px; }
+
+/* Items / Products */
+.item-pill { background: #faf7f3; border: 1px solid #e8ddd3; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 13.5px; font-weight: 600; color: #4a2e1b; display: flex; align-items: center; gap: 8px; }
+.item-pill.discount { background: #fef7e0; border-color: #fce8b2; color: #b06000; }
+
+/* Finance Summary */
+.receipt-box { background: #f9f9f9; border: 1px dashed #ccc; border-radius: 12px; padding: 18px; margin-top: 20px; }
+.receipt-line { display: flex; justify-content: space-between; font-size: 14px; color: #555; margin-bottom: 8px; font-weight: 500;}
+.receipt-line.total { border-top: 2px solid #ddd; padding-top: 10px; margin-top: 10px; font-size: 20px; font-weight: 800; color: #137333; }
+
+/* Buttons */
+div[data-testid="stButton"] button { border-radius: 10px !important; font-weight: 800 !important; font-size: 14px !important; transition: all 0.2s ease !important; }
+div[data-testid="stButton"] button:hover { transform: translateY(-2px) !important; box-shadow: 0 4px 10px rgba(0,0,0,0.08) !important; }
+.wpp-btn > a { background: #25d366 !important; color: white !important; font-weight: 800 !important; font-size: 15px !important; border-radius: 12px !important; padding: 14px !important; display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none !important; transition: all 0.2s ease !important; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2) !important; }
+.wpp-btn > a:hover { background: #1ebd5a !important; transform: translateY(-2px) !important; box-shadow: 0 6px 15px rgba(37, 211, 102, 0.3) !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# Pega o ID da sessão
+# =====================================================
+# CARREGAMENTO E VALIDAÇÃO DO PEDIDO
+# =====================================================
 pedido_id = st.session_state.get('pedido_detalhe_id')
 
 if not pedido_id:
@@ -60,7 +82,6 @@ if not pedido_id:
         st.switch_page("pages/02_Pedidos.py")
     st.stop()
 
-# Carrega os dados do pedido
 def obter_detalhe(p_id):
     res = supabase.table("pedidos").select("*").eq("id", p_id).execute()
     return res.data[0] if res.data else None
@@ -71,14 +92,14 @@ if not pedido:
     st.error("Pedido não encontrado.")
     st.stop()
 
+# Helpers de Formatação
 is_b2b = "[B2B]" in pedido.get('cliente_nome', '')
 cliente_limpo = pedido.get('cliente_nome', '').replace("[B2B]", "").strip()
-cor_classe = "b2b" if is_b2b else ""
-tipo_texto = "🏢 PEDIDO CORPORATIVO (B2B)" if is_b2b else "👤 PEDIDO VAREJO (B2C)"
+tipo_classe = "corp" if is_b2b else ""
+tipo_texto = "🏢 CORPORATIVO (B2B)" if is_b2b else "🛍️ VAREJO (B2C)"
 
-# Funções de formatação
 def formata_data(d_str):
-    if not d_str: return ""
+    if not d_str: return "-"
     try: return datetime.strptime(str(d_str)[:10], "%Y-%m-%d").strftime("%d/%m/%Y")
     except: return d_str
 
@@ -90,191 +111,194 @@ def tratar_preco(v):
     try: return float(str(v).replace(",", "."))
     except: return 0.0
 
-# Botão Voltar
-if st.button("⬅️ Voltar para o Mural de Pedidos"):
+if st.button("⬅️ Voltar para o Mural", key="btn_voltar_topo"):
     st.switch_page("pages/02_Pedidos.py")
 
+# =====================================================
+# BANNER SUPERIOR
+# =====================================================
 st.markdown(f"""
-<div class="ficha-card">
-    <div class="ficha-header {cor_classe}">
-        <div>
-            <h2 style="margin:0; color: {'#137333' if is_b2b else '#c5721f'}; font-weight: 800;">DETALHES DO PEDIDO</h2>
-            <div style="font-size:12px; color:#666; font-weight:700;">Pedido #{pedido['id']}</div>
-        </div>
-        <div style="text-align: right;">
-            <div style="font-size:14px; font-weight:800;">STATUS: {pedido.get('status', '')}</div>
-            <div style="font-size:11px; font-weight:700; color: {'#137333' if is_b2b else '#c5721f'};">{tipo_texto}</div>
-        </div>
+<div class="order-header">
+    <div>
+        <h1 class="order-id">Pedido #{pedido['id']}</h1>
+        <span class="order-type-badge {tipo_classe}">{tipo_texto}</span>
     </div>
+    <div>
+        <div class="status-label">STATUS ATUAL</div>
+        <div class="status-value">{pedido.get('status', 'Recebido')}</div>
+    </div>
+</div>
 """, unsafe_allow_html=True)
 
-col1, col2 = st.columns(2)
+# =====================================================
+# GRID DE INFORMAÇÕES (2 COLUNAS)
+# =====================================================
+col_info1, col_info2 = st.columns(2)
 
-with col1:
-    st.markdown(f"<div class='section-title {cor_classe}'>👤 DADOS DO CLIENTE / DESTINATÁRIO</div>", unsafe_allow_html=True)
+with col_info1:
     st.markdown(f"""
-    <div class="info-row"><span class="info-label">Nome / Empresa:</span><span class="info-value">{cliente_limpo}</span></div>
-    <div class="info-row"><span class="info-label">Contato/Telefone:</span><span class="info-value">{pedido.get('cliente_telefone', '')}</span></div>
-    <div class="info-row"><span class="info-label">CPF / CNPJ:</span><span class="info-value">{pedido.get('cliente_cpf', '')}</span></div>
-    <div class="info-row"><span class="info-label">Homenagem/Motivo:</span><span class="info-value">{pedido.get('motivo_homenagem', 'Não informado')}</span></div>
-    """, unsafe_allow_html=True)
-
-    st.markdown(f"<div class='section-title {cor_classe}'>📍 LOGÍSTICA E ENTREGA</div>", unsafe_allow_html=True)
-    st.markdown(f"""
-    <div class="info-row"><span class="info-label">Data Acordada:</span><span class="info-value">{formata_data(pedido.get('data_entrega'))}</span></div>
-    <div class="info-row"><span class="info-label">Período:</span><span class="info-value">{pedido.get('periodo_entrega', '')}</span></div>
-    <div class="info-row"><span class="info-label">Recebedor (A/C):</span><span class="info-value">{pedido.get('destinatario_nome', '')}</span></div>
-    <div class="info-row" style="border:none;"><span class="info-label">Endereço de Entrega:</span></div>
-    <div style="background:#f9f9f9; padding:10px; border-radius:8px; font-size:13px; font-weight:600; color:#333; margin-top:5px;">
-        {pedido.get('endereco', 'Não informado')}
+    <div class="info-card">
+        <div class="card-title">👤 Comprador & Destinatário</div>
+        <div class="data-group"><div class="data-label">Cliente / Empresa</div><div class="data-value">{cliente_limpo}</div></div>
+        <div class="data-group"><div class="data-label">Contato (WhatsApp)</div><div class="data-value">{pedido.get('cliente_telefone', '-')}</div></div>
+        <div class="data-group"><div class="data-label">CPF / CNPJ</div><div class="data-value">{pedido.get('cliente_cpf', '-')}</div></div>
+        <div class="data-group" style="margin-top: 20px;"><div class="data-label">Recebedor (Destinatário)</div><div class="data-value">{pedido.get('destinatario_nome', '-')}</div></div>
+        <div class="data-group"><div class="data-label">Ocasião / Motivo</div><div class="data-value">{pedido.get('motivo_homenagem', '-')}</div></div>
     </div>
     """, unsafe_allow_html=True)
 
-    if pedido.get('mensagem'):
-        st.markdown(f"<div class='section-title {cor_classe}'>💌 MENSAGEM DO CARTÃO</div>", unsafe_allow_html=True)
-        st.markdown(f"""
-        <div style="background:#f9f9f9; padding:12px; border-radius:8px; font-size:14px; font-style:italic; color:#4a2e1b; border-left: 3px solid #c5721f;">
-            "{pedido.get('mensagem')}"
-        </div>
-        """, unsafe_allow_html=True)
+with col_info2:
+    endereco_formatado = pedido.get('endereco', 'Não informado')
+    msg_cartao = pedido.get('mensagem', '')
+    
+    html_entrega = f"""
+    <div class="info-card">
+        <div class="card-title">📍 Logística e Entrega</div>
+        <div class="data-group"><div class="data-label">Data Agendada</div><div class="data-value">{formata_data(pedido.get('data_entrega'))}</div></div>
+        <div class="data-group"><div class="data-label">Período / Horário</div><div class="data-value">{pedido.get('periodo_entrega', '-')}</div></div>
+        <div class="data-group"><div class="data-label">Endereço de Entrega</div><div class="highlight-box" style="border-left-color: #1a73e8;">{endereco_formatado}</div></div>
+    """
+    if msg_cartao:
+        html_entrega += f"""<div class="data-group" style="margin-top: 15px;"><div class="data-label">💌 Mensagem do Cartão</div><div class="highlight-box">"{msg_cartao}"</div></div>"""
+    
+    html_entrega += "</div>"
+    st.markdown(html_entrega, unsafe_allow_html=True)
 
-with col2:
-    st.markdown(f"<div class='section-title {cor_classe}'>🎁 DETALHAMENTO DOS PRODUTOS</div>", unsafe_allow_html=True)
+
+# =====================================================
+# GRID DE PRODUTOS E FECHAMENTO FINANCEIRO
+# =====================================================
+col_prod, col_fin = st.columns(2)
+
+with col_prod:
+    st.markdown('<div class="info-card">', unsafe_allow_html=True)
+    st.markdown('<div class="card-title">🎁 Detalhamento do Pedido</div>', unsafe_allow_html=True)
     
     produtos_str = pedido.get('produtos', '')
     adicionais_str = pedido.get('adicionais', '')
     
     if produtos_str:
-        st.markdown("<div style='font-size:12px; font-weight:700; color:#666; margin-bottom:5px;'>PACOTES E CESTAS:</div>", unsafe_allow_html=True)
+        st.markdown("<div class='data-label'>Cestas e Pacotes</div>", unsafe_allow_html=True)
         for linha in produtos_str.split("\n"):
-            if linha.strip(): st.markdown(f"<div class='item-box'>📦 {linha.strip()}</div>", unsafe_allow_html=True)
+            if linha.strip(): st.markdown(f"<div class='item-pill'>📦 {linha.strip()}</div>", unsafe_allow_html=True)
             
     if adicionais_str:
-        st.markdown("<div style='font-size:12px; font-weight:700; color:#666; margin-top:15px; margin-bottom:5px;'>EXTRAS E INFORMAÇÕES:</div>", unsafe_allow_html=True)
+        st.markdown("<div class='data-label' style='margin-top: 15px;'>Extras e Adicionais</div>", unsafe_allow_html=True)
         for linha in adicionais_str.split("\n"):
             linha_limpa = linha.strip()
             if linha_limpa:
                 if "Desconto" in linha_limpa:
-                    st.markdown(f"<div class='item-box' style='border-color:#fce8b2; background:#fef7e0; color:#b06000;'>🔻 <b>{linha_limpa}</b></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='item-pill discount'>🔻 {linha_limpa}</div>", unsafe_allow_html=True)
                 elif "EXTRAS" not in linha_limpa:
-                    st.markdown(f"<div class='item-box'>✨ {linha_limpa}</div>", unsafe_allow_html=True)
-
-    st.markdown(f"<div class='section-title {cor_classe}'>💰 RESUMO FINANCEIRO ATUAL</div>", unsafe_allow_html=True)
-    st.markdown(f"""
-    <div class="finance-row"><span class="info-label">Forma Pagamento:</span><span class="info-value" style="text-align: right;">{pedido.get('pagamento', '')}</span></div>
-    <div class="finance-row"><span class="info-label">Taxa de Frete:</span><span class="info-value" style="text-align: right;">{formata_moeda(pedido.get('valor_frete', 0))}</span></div>
-    <div class="val-total">TOTAL: {formata_moeda(pedido.get('valor_total', 0))}</div>
-    """, unsafe_allow_html=True)
-
-st.markdown("</div>", unsafe_allow_html=True)
-
-# ==========================================
-# PAINEL DE FECHAMENTO (FRETE, DESCONTO, EXTRAS NÃO CADASTRADOS E STATUS)
-# ==========================================
-with st.container(border=True):
-    st.markdown("<h4 style='color: #c5721f; margin-top: 0;'>⚙️ Fechamento e Ajustes Financeiros</h4>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='item-pill'>✨ {linha_limpa}</div>", unsafe_allow_html=True)
     
-    # Extrai o valor do frete e total atual para os inputs
+    if not produtos_str and not adicionais_str:
+        st.caption("Nenhum item detalhado neste pedido.")
+        
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with col_fin:
+    st.markdown('<div class="info-card">', unsafe_allow_html=True)
+    st.markdown('<div class="card-title finance">💰 Fechamento & Pagamento</div>', unsafe_allow_html=True)
+    
     frete_atual = tratar_preco(pedido.get('valor_frete', 0))
     total_atual = tratar_preco(pedido.get('valor_total', 0))
+    forma_pagamento = pedido.get('pagamento', 'Pix')
     
-    col_fc1, col_fc2, col_fc3 = st.columns(3)
-    with col_fc1:
-        novo_frete = st.number_input("Taxa de Frete (R$)", min_value=0.0, step=5.0, value=frete_atual)
-    with col_fc2:
-        desconto_perc = st.number_input("Desconto Concedido (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0)
-    with col_fc3:
-        lista_status = ["Recebido", "Pendente", "Pago", "Em Produção", "Em Rota de Entrega", "Entregue", "Desistência"]
-        novo_status = st.selectbox("Status do Pedido", lista_status, index=lista_status.index(pedido.get('status', 'Recebido')) if pedido.get('status') in lista_status else 0)
+    # 1. Inputs de Fechamento
+    c_f1, c_f2 = st.columns(2)
+    with c_f1:
+        novo_frete = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=frete_atual)
+    with c_f2:
+        desconto_perc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0)
 
-    st.markdown("<div style='font-size: 13px; font-weight: 700; color: #5a3b28; margin-top: 10px;'>➕ Inserir Produto/Extra Não Cadastrado</div>", unsafe_allow_html=True)
-    col_ex1, col_ex2 = st.columns([3, 1])
-    with col_ex1:
-        nome_extra_novo = st.text_input("Nome do Item Extra", placeholder="Ex: Urso de pelúcia extra", label_visibility="collapsed")
-    with col_ex2:
-        valor_extra_novo = st.number_input("Valor R$", min_value=0.0, step=5.0, value=0.0, label_visibility="collapsed")
+    lista_status = ["Recebido", "Pendente", "Pago", "Em Produção", "Em Rota de Entrega", "Entregue", "Desistência"]
+    novo_status = st.selectbox("Status do Pedido", lista_status, index=lista_status.index(pedido.get('status', 'Recebido')) if pedido.get('status') in lista_status else 0)
 
-    # Cálculo automático preliminar
-    # Estima subtotal a partir do total atual menos frete
+    st.markdown("<div class='data-label' style='margin-top: 8px;'>Inserir Extra Não Cadastrado</div>", unsafe_allow_html=True)
+    c_ex1, c_ex2 = st.columns([2.5, 1])
+    with c_ex1: nome_extra_novo = st.text_input("Nome", placeholder="Ex: Vinho", label_visibility="collapsed")
+    with c_ex2: valor_extra_novo = st.number_input("Valor", min_value=0.0, step=5.0, value=0.0, label_visibility="collapsed")
+
+    # Cálculos
     sub_estimado = total_atual - frete_atual
     v_desconto = sub_estimado * (desconto_perc / 100)
     v_extra = valor_extra_novo if nome_extra_novo.strip() else 0.0
     total_calculado = sub_estimado - v_desconto + novo_frete + v_extra
 
-    if st.button("💾 Aplicar e Salvar Ajustes de Fechamento", use_container_width=True, type="primary"):
+    if st.button("💾 Aplicar Ajustes", use_container_width=True):
         adicionais_atuais = pedido.get('adicionais', '') or ""
         novo_adicional = adicionais_atuais
-        if desconto_perc > 0:
-            novo_adicional += f"\n🔻 Desconto de {desconto_perc}% aplicado."
-        if nome_extra_novo.strip():
-            novo_adicional += f"\n✨ 1x {nome_extra_novo.strip()} (R$ {formata_moeda(v_extra)})"
+        if desconto_perc > 0: novo_adicional += f"\n🔻 Desconto de {desconto_perc}% aplicado."
+        if nome_extra_novo.strip(): novo_adicional += f"\n✨ 1x {nome_extra_novo.strip()} (R$ {formata_moeda(v_extra)})"
 
-        dados_fechamento = {
-            "valor_frete": novo_frete,
-            "valor_total": total_calculado,
-            "adicionais": novo_adicional.strip(),
-            "status": novo_status
-        }
         try:
-            supabase.table("pedidos").update(dados_fechamento).eq("id", pedido_id).execute()
-            st.success("✅ Fechamento atualizado com sucesso!")
+            supabase.table("pedidos").update({
+                "valor_frete": novo_frete,
+                "valor_total": total_calculado,
+                "adicionais": novo_adicional.strip(),
+                "status": novo_status
+            }).eq("id", pedido_id).execute()
+            st.success("✅ Pedido atualizado!")
             st.rerun()
         except Exception as e:
-            st.error(f"Erro ao salvar: {e}")
+            st.error(f"Erro: {e}")
 
-# ==========================================
-# RESUMO PARA PAGAMENTO COM OS ITENS
-# ==========================================
-with st.container(border=True):
-    st.markdown("<h3 style='color: #137333; margin-top: 0; border-bottom: 2px solid #ceead6; padding-bottom: 8px;'>💳 Resumo Oficial para Pagamento</h3>", unsafe_allow_html=True)
-    
-    st.markdown(f"**Cliente:** {cliente_limpo} | **Telefone:** {pedido.get('cliente_telefone', '-')}")
-    st.markdown("**Composição do Pedido:**")
-    
-    if produtos_str:
-        for linha in produtos_str.split("\n"):
-            if linha.strip(): st.markdown(f"- 📦 {linha.strip()}")
-            
-    if adicionais_str:
-        for linha in adicionais_str.split("\n"):
-            if linha.strip(): st.markdown(f"- ✨ {linha.strip()}")
+    # 2. Resumo Extrato
+    st.markdown(f"""
+    <div class="receipt-box">
+        <div class="receipt-line"><span>Cesta Base & Itens</span> <span>R$ {formata_moeda(sub_estimado)}</span></div>
+        <div class="receipt-line"><span>Adicionais Atuais</span> <span>Inclusos no Subtotal</span></div>
+        <div class="receipt-line" style="color: #b06000;"><span>Desconto Aplicado</span> <span>- R$ {formata_moeda(v_desconto)}</span></div>
+        <div class="receipt-line"><span>Taxa de Entrega</span> <span>R$ {formata_moeda(novo_frete)}</span></div>
+        <div class="receipt-line"><span>Item Extra Avulso</span> <span>R$ {formata_moeda(v_extra)}</span></div>
+        <div class="receipt-line total"><span>TOTAL A PAGAR</span> <span>R$ {formata_moeda(total_calculado)}</span></div>
+        <div style="text-align: center; margin-top: 10px; font-size: 12px; font-weight: 700; color: #888;">💳 Forma de Pagamento: {forma_pagamento}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.markdown("---")
-    col_r1, col_r2 = st.columns(2)
-    with col_r1:
-        st.markdown(f"**Forma de Pagamento:** {pedido.get('pagamento', 'Pix')}")
-        st.markdown(f"**Taxa de Frete:** {formata_moeda(pedido.get('valor_frete', 0))}")
-    with col_r2:
-        st.markdown(f"### Valor Final: <span style='color: #137333;'>{formata_moeda(pedido.get('valor_total', 0))}</span>", unsafe_allow_html=True)
-
-    # Botão WhatsApp
+    # 3. Botão WhatsApp
     fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone', ''))
-    resumo_pagamento_wpp = f"""*RESUMO PARA PAGAMENTO — DOCE CESTA BRASÍLIA* 🎁\n\n👤 *Olá {cliente_limpo}!* Segue o resumo dos itens e valor para pagamento:\n\n📦 *Produto:* {pedido.get('cesta_nome')}\n💰 *Valor Total a Pagar:* {formata_moeda(pedido.get('valor_total'))}\n💳 *Forma de Pagamento:* {pedido.get('pagamento')}\n📅 *Entrega:* {formata_data(pedido.get('data_entrega'))} ({pedido.get('periodo_entrega')})\n📍 *Local:* {pedido.get('endereco')}\n\nQualquer dúvida estamos à disposição! 🌻"""
-    link_wpp = f"https://wa.me/55{fone_cliente}?text={urllib.parse.quote(resumo_pagamento_wpp)}" if fone_cliente else "#"
+    
+    texto_resumo = f"""*RESUMO DO PEDIDO — DOCE CESTA BRASÍLIA* 🎁\n\n👤 *Olá {cliente_limpo}!* Segue o resumo para pagamento do seu pedido:\n\n📦 *Produto Principal:* {pedido.get('cesta_nome')}\n💳 *Forma de Pagamento:* {forma_pagamento}\n\n*VALORES:*\n🔸 Subtotal: R$ {formata_moeda(sub_estimado)}\n🚚 Frete: R$ {formata_moeda(novo_frete)}\n"""
+    if v_desconto > 0: texto_resumo += f"🔻 Desconto: - R$ {formata_moeda(v_desconto)}\n"
+    if v_extra > 0: texto_resumo += f"✨ Adicionais: R$ {formata_moeda(v_extra)}\n"
+    texto_resumo += f"━━━━━━━━━━━━━━━━━━━━\n💰 *TOTAL A PAGAR: R$ {formata_moeda(total_calculado)}*\n\n📅 *Entrega:* {formata_data(pedido.get('data_entrega'))} ({pedido.get('periodo_entrega')})\n📍 *Local:* {pedido.get('endereco')}\n\nQualquer dúvida, estamos à disposição! 🌻"
+    
+    link_wpp = f"https://wa.me/55{fone_cliente}?text={urllib.parse.quote(texto_resumo)}" if fone_cliente else "#"
 
     st.write("")
     if fone_cliente:
-        st.markdown(f'<a href="{link_wpp}" target="_blank" style="background-color: #25d366 !important; color: white !important; font-weight: 800; border-radius: 12px; padding: 14px; text-align: center; display: block; text-decoration: none;">📱 Enviar Resumo de Pagamento via WhatsApp</a>', unsafe_allow_html=True)
+        st.markdown(f'<div class="wpp-btn"><a href="{link_wpp}" target="_blank">💬 Enviar Resumo p/ Pagamento no WhatsApp</a></div>', unsafe_allow_html=True)
     else:
-        st.warning("⚠️ Telefone do comprador não cadastrado para envio via WhatsApp.")
+        st.warning("⚠️ O comprador não possui telefone cadastrado.")
 
-st.write("")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# BOTÕES DE AÇÃO INFERIORES
+# BOTÕES DE AÇÃO INFERIORES (EDIÇÃO COMPLETA E EXCLUSÃO)
 # ==========================================
-col_a1, col_a2 = st.columns(2)
+st.markdown("<hr style='border-top: 1px dashed #e8ddd3; margin: 10px 0 20px 0;'>", unsafe_allow_html=True)
+col_a1, col_a2, col_a3, col_a4 = st.columns(4)
 
 with col_a1:
-    if st.button("✏️ Alterar Pedido Completo", use_container_width=True):
+    if st.button("✏️ Editar Pedido Inteiro", use_container_width=True):
         st.session_state['editar_pedido_id'] = pedido_id
-        if is_b2b:
-            st.switch_page("pages/18_Corporativo.py")
-        else:
-            st.switch_page("pages/19_Pedido_Manual.py")
+        if is_b2b: st.switch_page("pages/18_Corporativo.py")
+        else: st.switch_page("pages/19_Pedido_Manual.py")
 
 with col_a2:
-    if st.button("🗑️ Excluir Pedido", type="primary", use_container_width=True):
+    if st.button("⏩ Produção", use_container_width=True):
+        supabase.table("pedidos").update({"status": "Em Produção"}).eq("id", pedido_id).execute()
+        st.rerun()
+
+with col_a3:
+    if st.button("⏩ Rota", use_container_width=True):
+        supabase.table("pedidos").update({"status": "Em Rota de Entrega"}).eq("id", pedido_id).execute()
+        st.rerun()
+
+with col_a4:
+    if st.button("🗑️ Excluir", type="primary", use_container_width=True):
         supabase.table("pedidos").delete().eq("id", pedido_id).execute()
         st.session_state['pedido_detalhe_id'] = None
         st.switch_page("pages/02_Pedidos.py")
