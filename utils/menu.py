@@ -1,11 +1,13 @@
 import streamlit as st
 
 def configurar_pagina():
-    """Oculta elementos padrão do Streamlit (incluindo a lista feia de páginas) e aplica estilos globais"""
+    """Oculta elementos padrão do Streamlit e aplica estilos globais e fontes premium"""
     st.markdown(
         """
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+        /* Importando as fontes premium */
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
+        
         html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; }
         
         #MainMenu {visibility: hidden;}
@@ -24,14 +26,99 @@ def menu_lateral():
     usuario = st.session_state.get("usuario")
 
     with st.sidebar:
-        st.markdown("<h2 style='text-align: center; color: #c5721f; font-weight: 800;'>Doce Cesta</h2>", unsafe_allow_html=True)
-        st.divider()
+        # ==========================================
+        # NOVO BRANDING PREMIUM (TOPO DO MENU)
+        # ==========================================
+        st.markdown(
+            """
+            <div style="
+                background: linear-gradient(135deg, #c5721f 0%, #a65d14 100%);
+                padding: 25px 15px;
+                border-radius: 18px;
+                text-align: center;
+                margin-bottom: 25px;
+                margin-top: 10px;
+                box-shadow: 0 8px 20px rgba(197, 114, 31, 0.25);
+                position: relative;
+                overflow: hidden;
+                border: 1px solid #d88e44;
+            ">
+                <!-- Efeitos de Brilho no Fundo (Glassmorphism) -->
+                <div style="position: absolute; top: -20px; left: -20px; width: 70px; height: 70px; background: rgba(255,255,255,0.15); border-radius: 50%;"></div>
+                <div style="position: absolute; bottom: -30px; right: -10px; width: 90px; height: 90px; background: rgba(255,255,255,0.08); border-radius: 50%;"></div>
+                
+                <h2 style="
+                    color: #ffffff;
+                    font-family: 'Dancing Script', cursive !important;
+                    font-size: 42px;
+                    font-weight: 700;
+                    margin: 0;
+                    line-height: 1.1;
+                    text-shadow: 2px 2px 4px rgba(0,0,0,0.15);
+                    position: relative;
+                    z-index: 1;
+                ">Doce Cesta</h2>
+                
+                <div style="
+                    color: #fdfbf8;
+                    font-size: 11px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 2px;
+                    margin-top: 8px;
+                    opacity: 0.95;
+                    position: relative;
+                    z-index: 1;
+                ">Painel de Gestão</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         if usuario:
-            perfil = usuario.get("perfil")
-            st.caption(f"👤 Olá, **{usuario.get('login')}** ({perfil})")
-            st.write("")
+            perfil = usuario.get("perfil", "Usuário")
+            login = usuario.get("login", "Admin")
+            
+            # ==========================================
+            # NOVO CRACHÁ DE USUÁRIO
+            # ==========================================
+            st.markdown(
+                f"""
+                <div style="
+                    background: #ffffff;
+                    border: 1px solid #e8ddd3;
+                    padding: 12px 15px;
+                    border-radius: 14px;
+                    margin-bottom: 25px;
+                    box-shadow: 0 4px 12px rgba(90, 59, 40, 0.04);
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                ">
+                    <div style="
+                        background: linear-gradient(135deg, #fef7e0 0%, #fffbf7 100%);
+                        border: 1px solid #fce8b2;
+                        color: #b06000;
+                        width: 42px;
+                        height: 42px;
+                        border-radius: 10px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 20px;
+                    ">🧑‍💻</div>
+                    <div>
+                        <div style="color: #2c1e14; font-size: 14px; font-weight: 800; line-height: 1.2;">{login}</div>
+                        <div style="color: #137333; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">{perfil}</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
+            # ==========================================
+            # MENU DE NAVEGAÇÃO
+            # ==========================================
             if perfil in ["Administrador", "Operador"]:
                 st.markdown("**📦 OPERAÇÃO & VENDAS**")
                 st.page_link("pages/02_Pedidos.py", label="Gestão de Pedidos", icon="📋")
