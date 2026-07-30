@@ -97,12 +97,29 @@ def get_pedidos():
 
 pedidos = get_pedidos()
 
-# FILTRO DE VISUALIZAÇÃO GERAL (Opções corrigidas para mapear corretamente o Varejo e o Corporativo)
+# FILTRO DE VISUALIZAÇÃO GERAL
 tipo_filtro = st.radio("Filtrar por Canal:", ["Todos os Canais", "Varejo (B2C)", "Corporativo (B2B)"], horizontal=True)
 st.write("")
 
-# SEPARAÇÃO POR ABAS EXATAS
-aba_rec, aba_pag, aba_des = st.tabs(["📥 Recebidos", "💳 Pago", "❌ Desistência"])
+# FILTRA OS PEDIDOS POR CANAL
+pedidos_filtrados = []
+for p in pedidos:
+    is_b2b = "[B2B]" in p.get('cliente_nome', '')
+    if tipo_filtro == "Varejo (B2C)" and is_b2b: continue
+    if tipo_filtro == "Corporativo (B2B)" and not is_b2b: continue
+    pedidos_filtrados.append(p)
+
+# SEPARAÇÃO EXATA POR LISTAS PARA CONTAGEM NAS ABAS
+rec_list = [p for p in pedidos_filtrados if p.get("status", "Recebido") in ["Recebido", "Pendente"]]
+pag_list = [p for p in pedidos_filtrados if p.get("status") in ["Pago", "Em Produção", "Em Rota de Entrega", "Entregue"]]
+des_list = [p for p in pedidos_filtrados if p.get("status") == "Desistência"]
+
+# CRIAÇÃO DAS ABAS COM AS QUANTIDADES DINÂMICAS
+aba_rec, aba_pag, aba_des = st.tabs([
+    f"📥 Recebidos ({len(rec_list)})", 
+    f"💳 Pago ({len(pag_list)})", 
+    f"❌ Desistência ({len(des_list)})"
+])
 
 def renderizar_lista_pedidos(lista_pedidos_etapa):
     if not lista_pedidos_etapa:
@@ -199,19 +216,6 @@ def renderizar_card_linha(p):
             
         elif status_atual == "Desistência":
             if st.button("🔄 Restaurar", key=f"ret_{p['id']}", help="Restaurar para Recebidos", use_container_width=True): mudar_status(p['id'], "Recebido")
-
-# FILTRA OS PEDIDOS POR CANAL (Corrigido para mapear perfeitamente a tag [B2B])
-pedidos_filtrados = []
-for p in pedidos:
-    is_b2b = "[B2B]" in p.get('cliente_nome', '')
-    if tipo_filtro == "Varejo (B2C)" and is_b2b: continue
-    if tipo_filtro == "Corporativo (B2B)" and not is_b2b: continue
-    pedidos_filtrados.append(p)
-
-# SEPARAÇÃO EXATA POR ABAS
-rec_list = [p for p in pedidos_filtrados if p.get("status", "Recebido") in ["Recebido", "Pendente"]]
-pag_list = [p for p in pedidos_filtrados if p.get("status") in ["Pago", "Em Produção", "Em Rota de Entrega", "Entregue"]]
-des_list = [p for p in pedidos_filtrados if p.get("status") == "Desistência"]
 
 with aba_rec: renderizar_lista_pedidos(rec_list)
 with aba_pag: renderizar_lista_pedidos(pag_list)
