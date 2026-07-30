@@ -28,9 +28,13 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .section-title { font-size: 16px; font-weight: 800; color: #c5721f; margin-bottom: 10px; margin-top: 20px;}
 .section-title.b2b { color: #137333; }
 
-.info-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #f5eee6; padding: 8px 0; font-size: 14px;}
-.info-label { font-weight: 700; color: #775a46; }
-.info-value { font-weight: 600; color: #2c1e14; text-align: right; }
+/* Linhas de Dados Cadastrais (Texto colado ao título) */
+.info-row { border-bottom: 1px dashed #f5eee6; padding: 8px 0; font-size: 14px;}
+.info-label { font-weight: 700; color: #775a46; margin-right: 6px; }
+.info-value { font-weight: 600; color: #2c1e14; }
+
+/* Linhas Financeiras (Valores jogados para a direita) */
+.finance-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #f5eee6; padding: 8px 0; font-size: 14px;}
 
 .item-box { background: #fdfbf8; border: 1px solid #e8ddd3; border-radius: 8px; padding: 12px; margin-bottom: 10px; font-size: 14px; }
 .item-box b { color: #5a3b28; }
@@ -83,7 +87,9 @@ def formata_moeda(v):
     try: return f"R$ {float(v):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     except: return "R$ 0,00"
 
-st.button("⬅️ Voltar para Mural", on_click=lambda: st.switch_page("pages/02_Pedidos.py"))
+# Botão Voltar Corrigido (Sem erro de callback)
+if st.button("⬅️ Voltar para o Mural de Pedidos"):
+    st.switch_page("pages/02_Pedidos.py")
 
 st.markdown(f"""
 <div class="ficha-card">
@@ -132,7 +138,6 @@ with col1:
 with col2:
     st.markdown(f"<div class='section-title {cor_classe}'>🎁 DETALHAMENTO DOS PRODUTOS</div>", unsafe_allow_html=True)
     
-    # Intérprete Inteligente do B2B e B2C
     produtos_str = pedido.get('produtos', '')
     adicionais_str = pedido.get('adicionais', '')
     
@@ -153,21 +158,53 @@ with col2:
 
     st.markdown(f"<div class='section-title {cor_classe}'>💰 RESUMO FINANCEIRO</div>", unsafe_allow_html=True)
     st.markdown(f"""
-    <div class="info-row"><span class="info-label">Forma Pagamento:</span><span class="info-value">{pedido.get('pagamento', '')}</span></div>
-    <div class="info-row"><span class="info-label">Taxa de Frete:</span><span class="info-value">{formata_moeda(pedido.get('valor_frete', 0))}</span></div>
+    <div class="finance-row"><span class="info-label">Forma Pagamento:</span><span class="info-value" style="text-align: right;">{pedido.get('pagamento', '')}</span></div>
+    <div class="finance-row"><span class="info-label">Taxa de Frete:</span><span class="info-value" style="text-align: right;">{formata_moeda(pedido.get('valor_frete', 0))}</span></div>
     <div class="val-total">TOTAL: {formata_moeda(pedido.get('valor_total', 0))}</div>
     """, unsafe_allow_html=True)
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# Botões de Ação na Ficha
+# ==========================================
+# BOTÕES DE AÇÃO NA FICHA
+# ==========================================
 st.write("")
-col_a1, col_a2, col_a3 = st.columns(3)
+col_a1, col_a2, col_a3, col_a4 = st.columns(4)
+
 with col_a1:
-    if st.button("🖨️ Imprimir Ficha (Ctrl+P)", use_container_width=True):
-        st.info("Pressione Ctrl + P (ou Cmd + P) no seu teclado. O sistema já está configurado para esconder os menus e imprimir a ficha de produção perfeitamente!")
+    if st.button("🖨️ Imprimir Ficha", use_container_width=True):
+        st.info("Pressione Ctrl + P (ou Cmd + P) no seu teclado para gerar o documento limpo!")
+
 with col_a2:
-    if st.button("🗑️ Excluir Pedido", type="primary", use_container_width=True):
+    if st.button("✏️ Alterar Pedido", use_container_width=True):
+        # Salva o ID para edição e redireciona dependendo do tipo
+        st.session_state['editar_pedido_id'] = pedido_id
+        if is_b2b:
+            st.switch_page("pages/18_Corporativo.py")
+        else:
+            # Caso queira direcionar para o fluxo de varejo caso possua
+            st.warning("A edição direta está otimizada para o painel Corporativo (B2B).")
+
+with col_a3:
+    # Botão rápido para avançar status
+    status_atual = pedido.get('status')
+    if status_atual in ["Pendente", "Pago"]:
+        if st.button("⏩ Prod.", use_container_width=True, type="primary"):
+            supabase.table("pedidos").update({"status": "Em Produção"}).eq("id", pedido_id).execute()
+            st.rerun()
+    elif status_atual == "Em Produção":
+        if st.button("⏩ Rota", use_container_width=True, type="primary"):
+            supabase.table("pedidos").update({"status": "Em Rota de Entrega"}).eq("id", pedido_id).execute()
+            st.rerun()
+    elif status_atual == "Em Rota de Entrega":
+        if st.button("✅ Entregue", use_container_width=True, type="primary"):
+            supabase.table("pedidos").update({"status": "Entregue"}).eq("id", pedido_id).execute()
+            st.rerun()
+    else:
+        st.button("✔️ Finalizado", disabled=True, use_container_width=True)
+
+with col_a4:
+    if st.button("🗑️ Excluir", type="primary", use_container_width=True):
         supabase.table("pedidos").delete().eq("id", pedido_id).execute()
         st.session_state['pedido_detalhe_id'] = None
         st.switch_page("pages/02_Pedidos.py")
