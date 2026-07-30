@@ -20,15 +20,12 @@ st.set_page_config(
 def obter_vitrine_oficial():
     """Busca as seções e cestas ativas direto do banco de dados"""
     try:
-        # Busca seções ativas e ordenadas
         res_secoes = supabase.table("vitrine_secoes").select("*").eq("ativa", True).order("ordem").execute()
         secoes = res_secoes.data or []
         
-        # Busca cestas ativas e ordenadas
         res_cestas = supabase.table("cestas").select("*").eq("ativa", True).order("ordem").execute()
         cestas = res_cestas.data or []
         
-        # Se não houver seção cadastrada, cria uma virtual para não quebrar a loja
         if not secoes:
             secoes = [{"nome": "Cestas de Café", "ordem": 1}]
             
@@ -36,6 +33,20 @@ def obter_vitrine_oficial():
     except Exception as e:
         print(f"Erro ao carregar vitrine: {e}")
         return [{"nome": "Catálogo", "ordem": 1}], []
+
+@st.cache_data(ttl=5, show_spinner=False)
+def obter_adicionais_vitrine():
+    """Busca os produtos cadastrados na categoria de Adicionais"""
+    try:
+        categorias = supabase.table("categorias").select("*").execute().data or []
+        cat_add = next((c for c in categorias if c.get("nome", "").strip().lower() == "adicionais"), None)
+        
+        if cat_add:
+            res_prods = supabase.table("produtos").select("*").eq("categoria_id", cat_add["id"]).eq("ativo", True).execute()
+            return res_prods.data or []
+    except:
+        pass
+    return []
 
 @st.cache_data(show_spinner=False)
 def carregar_logo_base64():
@@ -76,35 +87,31 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .header-title { font-family: 'Dancing Script', cursive !important; font-size: 46px !important; font-weight: 700 !important; color: #c5721f !important; margin: 0 !important; line-height: 1.1 !important; }
 .header-subtitle { font-size: 15px !important; color: #775a46 !important; font-weight: 500 !important; margin-top: 8px !important; }
 
-/* Estilização das Abas (Tabs) do Streamlit */
+/* Estilização das Abas (Tabs) */
 div[data-testid="stTabs"] button {
     font-family: 'Montserrat', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 16px !important;
-    color: #8c7362 !important;
-    padding-bottom: 10px !important;
+    font-weight: 700 !important; font-size: 16px !important; color: #8c7362 !important; padding-bottom: 10px !important;
 }
-div[data-testid="stTabs"] button[aria-selected="true"] {
-    color: #c5721f !important;
-    border-bottom-color: #c5721f !important;
-}
+div[data-testid="stTabs"] button[aria-selected="true"] { color: #c5721f !important; border-bottom-color: #c5721f !important; }
 
-/* Cards de Produtos */
+/* =========================================
+   CARDS DE PRODUTOS (CESTAS)
+========================================== */
 .produto-card {
     background: #ffffff; border: 1px solid #e8ddd3; border-radius: 20px; padding: 16px;
     box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03); transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    height: 100%; display: flex; flex-direction: column; justify-content: space-between;
+    height: 100%; display: flex; flex-direction: column;
 }
 .produto-card:hover {
     border-color: #d2bfae; box-shadow: 0 10px 25px rgba(90, 59, 40, 0.08); transform: translateY(-4px);
 }
-.produto-img-container { width: 100%; border-radius: 14px; overflow: hidden; margin-bottom: 14px; aspect-ratio: 1 / 1; background: #faf7f3; display: flex; align-items: center; justify-content: center; }
-.produto-img-container img { width: 100%; height: 100%; object-fit: cover; }
-.produto-titulo { font-family: 'Dancing Script', cursive !important; font-size: 28px !important; font-weight: 700; color: #c5721f; margin-bottom: 4px; line-height: 1.1; }
-.produto-desc { font-size: 12.5px; color: #775a46; line-height: 1.4; flex-grow: 1; margin-bottom: 12px; }
+.produto-img-container { width: 100%; border-radius: 14px; overflow: hidden; margin-bottom: 14px; background: #faf7f3; display: flex; align-items: center; justify-content: center; }
+.produto-img-container img { width: 100%; height: auto; object-fit: cover; aspect-ratio: 1 / 1; }
+.produto-titulo { font-family: 'Dancing Script', cursive !important; font-size: 28px !important; font-weight: 700; color: #c5721f; margin-bottom: 8px; line-height: 1.1; }
+.produto-desc { font-size: 13.5px; color: #775a46; line-height: 1.5; flex-grow: 1; margin-bottom: 15px; text-align: justify; }
 .produto-preco { font-size: 20px; font-weight: 800; color: #137333; margin-bottom: 14px; }
 
-/* Botões Nativos Streamlit dentro do Card */
+/* Botões Nativos Streamlit dentro do Card Principal */
 div[data-testid="stButton"] button {
     background: linear-gradient(135deg, #137333 0%, #0d4e22 100%) !important; color: white !important;
     border-radius: 12px !important; height: 46px !important; font-size: 14px !important;
@@ -115,12 +122,30 @@ div[data-testid="stButton"] button:hover {
     transform: translateY(-2px) !important; box-shadow: 0 6px 16px rgba(19, 115, 51, 0.35) !important;
 }
 
-/* Modal / Botões Flutuantes (Admin) */
-.admin-btn { position: fixed; bottom: 20px; right: 20px; background: rgba(255,255,255,0.9); backdrop-filter: blur(5px); border: 1px solid #dfcdbb; padding: 10px 15px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 9999; font-size: 12px; font-weight: 700; color: #5a3b28; text-decoration: none; display: flex; align-items: center; gap: 6px; }
+/* =========================================
+   CARDS DE ADICIONAIS (MIMOS EXTRAS)
+========================================== */
+.addon-section-title {
+    font-family: 'Dancing Script', cursive !important; font-size: 38px !important; 
+    font-weight: 700 !important; color: #c5721f !important; text-align: center; margin-top: 40px; margin-bottom: 5px;
+}
+.addon-section-subtitle { text-align: center; color: #775a46; font-size: 14px; font-weight: 500; margin-bottom: 25px; }
 
+.addon-card {
+    background: #faf7f3; border: 1px solid #dfcdbb; border-radius: 16px; padding: 15px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    height: 100%; box-shadow: 0 2px 8px rgba(90, 59, 40, 0.02); transition: all 0.2s ease;
+}
+.addon-card:hover { border-color: #c5721f; transform: scale(1.02); background: #ffffff; }
+.addon-icone { font-size: 28px; margin-bottom: 8px; }
+.addon-nome { font-size: 14px; font-weight: 800; color: #4a2e1b; line-height: 1.2; margin-bottom: 6px; }
+.addon-preco { font-size: 15px; font-weight: 800; color: #137333; }
+
+/* Responsividade Mobile */
 @media (max-width: 640px) {
     .header-title { font-size: 38px !important; }
-    .produto-titulo { font-size: 24px !important; }
+    .produto-titulo { font-size: 26px !important; }
+    .addon-section-title { font-size: 32px !important; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -143,74 +168,98 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==========================================================
-# CARREGAMENTO DOS DADOS (SEÇÕES E CESTAS)
+# CARREGAMENTO DOS DADOS (SEÇÕES, CESTAS E ADICIONAIS)
 # ==========================================================
 with st.spinner("Preparando a vitrine..."):
     secoes, cestas = obter_vitrine_oficial()
+    adicionais = obter_adicionais_vitrine()
 
 if not cestas:
     st.info("Nossos presentes estão sendo preparados e o catálogo será atualizado em breve. Volte mais tarde! 🎀")
     st.stop()
 
 # ==========================================================
-# CRIAÇÃO DAS ABAS (TABS) DINÂMICAS
+# 1. VITRINE DE CESTAS (COM DESCRIÇÃO COMPLETA)
 # ==========================================================
 nomes_secoes = [sec["nome"] for sec in secoes]
 
-# Se houver apenas 1 seção, não precisa criar abas. Caso contrário, cria abas.
 if len(nomes_secoes) > 1:
     abas = st.tabs(nomes_secoes)
 else:
-    abas = [st.container()] # Container simples se for só 1
+    abas = [st.container()]
 
-# ==========================================================
-# RENDERIZAÇÃO DOS PRODUTOS
-# ==========================================================
 for i, aba in enumerate(abas):
     secao_atual = nomes_secoes[i]
     
     with aba:
         st.write("") # Respiro
         
-        # Filtra cestas desta aba específica
         cestas_da_aba = [c for c in cestas if c.get("secao_vitrine", "Cestas de Café") == secao_atual]
         
         if not cestas_da_aba:
             st.write(f"*(Nenhuma opção disponível no momento em {secao_atual})*")
             continue
 
-        # Renderiza os cards em 2 colunas (responsivo)
+        # Renderiza os cards em 2 colunas
         colunas = st.columns(2)
         
         for idx, cesta in enumerate(cestas_da_aba):
             with colunas[idx % 2]:
-                imagem_html = f'<img src="{cesta["imagem"]}" alt="{cesta["nome"]}">' if cesta.get("imagem") else '<div style="height:100%; display:flex; align-items:center; justify-content:center; color:#ccc;">Sem Imagem</div>'
-                descricao_txt = cesta.get("descricao", "")
-                if len(descricao_txt) > 85:
-                    descricao_txt = descricao_txt[:85] + "..."
+                imagem_html = f'<img src="{cesta["imagem"]}" alt="{cesta["nome"]}">' if cesta.get("imagem") else '<div style="height:250px; display:flex; align-items:center; justify-content:center; color:#ccc; border-radius:14px; background:#f5eee6;">Sem Imagem</div>'
+                
+                # Exibe a DESCRIÇÃO COMPLETA, formatando quebras de linha para HTML
+                descricao_txt = str(cesta.get("descricao", "")).replace("\n", "<br>")
                     
                 valor = float(cesta.get("preco", 0))
                 preco_fmt = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                 
-                # Desenha o visual do Card
+                # Construção visual fluida do Card
                 st.markdown(f"""
                 <div class="produto-card">
-                    <div class="produto-img-container">
-                        {imagem_html}
+                    <div>
+                        <div class="produto-img-container">
+                            {imagem_html}
+                        </div>
+                        <div class="produto-titulo">{cesta['nome']}</div>
+                        <div class="produto-desc">{descricao_txt}</div>
                     </div>
-                    <div class="produto-titulo">{cesta['nome']}</div>
-                    <div class="produto-desc">{descricao_txt}</div>
-                    <div class="produto-preco">{preco_fmt}</div>
+                    <div>
+                        <div class="produto-preco">{preco_fmt}</div>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # O botão nativo fica por cima para capturar o clique (hack de UI do Streamlit)
-                # Aplicamos um margem negativa visual via container para ele encaixar dentro do card
+                # Botão de ação (Hack de alinhamento com margem negativa)
                 st.markdown("<div style='margin-top: -55px; position: relative; z-index: 10; padding: 0 16px 16px 16px;'>", unsafe_allow_html=True)
                 if st.button("🎁 Montar e Comprar", key=f"comprar_{cesta['id']}", use_container_width=True):
                     st.session_state["cesta_selecionada_home"] = cesta["id"]
                     st.switch_page("pages/01_Inicio.py")
                 st.markdown("</div>", unsafe_allow_html=True)
+
+# ==========================================================
+# 2. SEÇÃO DE MIMOS EXTRAS E ADICIONAIS
+# ==========================================================
+if adicionais:
+    st.markdown("<hr style='border: none; border-top: 2px dashed #e8ddd3; margin-top: 40px;'>", unsafe_allow_html=True)
+    st.markdown('<div class="addon-section-title">🎀 Mimos Extras & Adicionais</div>', unsafe_allow_html=True)
+    st.markdown('<div class="addon-section-subtitle">Surpreenda ainda mais adicionando estes itens na próxima etapa!</div>', unsafe_allow_html=True)
+    
+    # Exibe adicionais em grid responsivo (3 colunas)
+    cols_add = st.columns(3)
+    for i, add in enumerate(adicionais):
+        with cols_add[i % 3]:
+            icone = "📷" if "polaroid" in str(add.get("nome", "")).lower() else "✨"
+            preco_add = add.get("preco")
+            txt_preco = f"R$ {float(preco_add):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if preco_add else "Sob Consulta"
+            
+            st.markdown(f"""
+            <div class="addon-card">
+                <div class="addon-icone">{icone}</div>
+                <div class="addon-nome">{add['nome']}</div>
+                <div class="addon-preco">{txt_preco}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.write("") # Respiro entre as linhas
 
 # ==========================================================
 # RODAPÉ E ACESSO RESTRITO
