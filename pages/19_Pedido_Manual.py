@@ -16,9 +16,9 @@ from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA E CSS PREMIUM
+# CONFIGURAÇÃO DA PÁGINA E CSS DASHBOARD PREMIUM
 # =====================================================
-st.set_page_config(page_title="Painel de Pedido Varejo", page_icon="🛍️", layout="wide")
+st.set_page_config(page_title="Painel PDV | Pedido Varejo", page_icon="🛍️", layout="wide")
 configurar_pagina()
 menu_lateral()
 administrador_operador()
@@ -28,21 +28,21 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
 
 html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; color: #4a2e1b !important; }
-.block-container { padding-top: 1.5rem !important; padding-bottom: 4rem !important; max-width: 1300px !important; }
+.block-container { padding-top: 1.5rem !important; padding-bottom: 4rem !important; max-width: 1350px !important; }
 
-/* CABEÇALHO DASHBOARD */
+/* TOPO DO DASHBOARD */
 .dash-header { 
-    background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%); padding: 20px 25px; 
-    border-radius: 16px; border: 1px solid #e8ddd3; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03); 
-    margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; 
+    background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%); padding: 22px 30px; 
+    border-radius: 20px; border: 1px solid #e8ddd3; box-shadow: 0 4px 20px rgba(90, 59, 40, 0.04); 
+    margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; 
 }
-.dash-title { font-family: 'Dancing Script', cursive !important; font-size: 38px !important; font-weight: 700 !important; color: #c5721f !important; margin: 0 !important; line-height: 1; }
-.dash-subtitle { font-size: 13px !important; color: #775a46 !important; font-weight: 600 !important; margin-top: 4px !important; }
+.dash-title { font-family: 'Dancing Script', cursive !important; font-size: 40px !important; font-weight: 700 !important; color: #c5721f !important; margin: 0 !important; line-height: 1; }
+.dash-subtitle { font-size: 13.5px !important; color: #775a46 !important; font-weight: 600 !important; margin-top: 4px !important; }
 
-/* CARTÕES DE SEPARAÇÃO (CAIXAS) */
+/* CARDS DE SEPARAÇÃO (WIDGETS) */
 .dash-card {
-    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 24px;
-    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.02); margin-bottom: 20px;
+    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 18px; padding: 25px;
+    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.02); margin-bottom: 22px;
 }
 .dash-card-title {
     font-size: 16px; font-weight: 800; color: #c5721f; margin-bottom: 18px;
@@ -51,23 +51,23 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 
 /* TICKET LATERAL DE RESUMO */
 .dash-ticket {
-    background: #faf7f3; border: 2px solid #137333; border-radius: 16px; padding: 22px;
-    box-shadow: 0 8px 25px rgba(19, 115, 51, 0.06); position: sticky; top: 20px;
+    background: #faf7f3; border: 2px solid #137333; border-radius: 18px; padding: 25px;
+    box-shadow: 0 8px 30px rgba(19, 115, 51, 0.08); position: sticky; top: 20px;
 }
-.ticket-title { font-size: 16px; font-weight: 800; color: #137333; margin-bottom: 15px; text-align: center; border-bottom: 2px solid #ceead6; padding-bottom: 8px;}
-.ticket-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #5a3b28; }
+.ticket-title { font-size: 17px; font-weight: 800; color: #137333; margin-bottom: 15px; text-align: center; border-bottom: 2px solid #ceead6; padding-bottom: 10px;}
+.ticket-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13.5px; color: #5a3b28; }
 .ticket-line strong { font-weight: 700; color: #2c1e14; text-align: right;}
-.ticket-total { display: flex; justify-content: space-between; font-size: 20px; font-weight: 800; color: #137333; margin-top: 15px; padding-top: 12px; border-top: 2px dashed #137333; }
+.ticket-total { display: flex; justify-content: space-between; font-size: 22px; font-weight: 800; color: #137333; margin-top: 15px; padding-top: 15px; border-top: 2px dashed #137333; }
 
-/* CHECKBOXES E POLAROID */
-div[data-testid="stCheckbox"] { background: #faf7f3; border: 1px solid #e8ddd3; padding: 8px 12px; border-radius: 10px; margin-bottom: 6px; }
-.polaroid-box { background: #fffcf8; border: 2px dashed #ffb6c1; border-radius: 12px; padding: 15px; margin-top: 15px;}
+/* CHECKBOXES E CAIXAS */
+div[data-testid="stCheckbox"] { background: #faf7f3; border: 1px solid #e8ddd3; padding: 8px 14px; border-radius: 12px; margin-bottom: 8px; }
+.polaroid-box { background: #fffcf8; border: 2px dashed #ffb6c1; border-radius: 14px; padding: 18px; margin-top: 15px;}
 
 /* BOTÃO DE AÇÃO PRINCIPAL */
 div[data-testid="stButton"] button[kind="primary"] { 
     background: linear-gradient(135deg, #137333 0%, #0d4e22) !important; color: white !important; 
-    border-radius: 12px !important; font-weight: 800 !important; border: none !important; 
-    box-shadow: 0 6px 20px rgba(19, 115, 51, 0.25) !important; font-size: 16px !important; padding: 18px !important; width: 100% !important; 
+    border-radius: 14px !important; font-weight: 800 !important; border: none !important; 
+    box-shadow: 0 6px 20px rgba(19, 115, 51, 0.25) !important; font-size: 16px !important; padding: 20px !important; width: 100% !important; 
 }
 div[data-testid="stButton"] button[kind="primary"]:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 25px rgba(19, 115, 51, 0.35) !important;}
 </style>
@@ -80,7 +80,7 @@ with c_head:
     <div class="dash-header">
         <div>
             <h1 class="dash-title">Painel de Vendas Varejo (PDV)</h1>
-            <p class="dash-subtitle">Cadastre pedidos com agilidade utilizando o layout de painel corporativo 🛍️</p>
+            <p class="dash-subtitle">Controle completo de balcão e WhatsApp com cálculo automatizado 🛍️</p>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -124,7 +124,7 @@ secoes_disponiveis, cestas_ativas = obter_secoes_e_cestas()
 adicionais_catalogo = obter_adicionais_catalogo()
 
 # =====================================================
-# ESTADOS DA SESSÃO (COM RESET SEGURO PARA NOVO PEDIDO)
+# ESTADOS DA SESSÃO (GARANTINDO QUE O PRODUTO BASE INICIE VAZIO)
 # =====================================================
 for key in ["man_nome", "man_cpf", "man_tel", "man_rua", "man_num", "man_comp", "man_bairro", "man_cidade", "man_cep", "ultimo_cep_man"]:
     if key not in st.session_state: st.session_state[key] = ""
@@ -135,11 +135,11 @@ if "man_cesta_sel_id" not in st.session_state: st.session_state.man_cesta_sel_id
 # =====================================================
 # LAYOUT EM DUAS COLUNAS (DASHBOARD)
 # =====================================================
-col_form, col_ticket = st.columns([2.2, 1.2], gap="large")
+col_form, col_ticket = st.columns([2.3, 1.3], gap="large")
 
 with col_form:
     # -----------------------------------------------------
-    # CAIXA 1: CLIENTE
+    # WIDGET 1: CLIENTE
     # -----------------------------------------------------
     st.markdown('<div class="dash-card"><div class="dash-card-title">👤 1. Dados do Comprador</div>', unsafe_allow_html=True)
     cc1, cc_btn = st.columns([3.5, 1])
@@ -177,7 +177,7 @@ with col_form:
     st.markdown('</div>', unsafe_allow_html=True)
 
     # -----------------------------------------------------
-    # CAIXA 2: PRODUTO PRINCIPAL (SEMPRE ZERADO/LIMPO)
+    # WIDGET 2: PRODUTO PRINCIPAL (TRATAMENTO MULTI-CATÁLOGO E RESET VAZIO)
     # -----------------------------------------------------
     st.markdown('<div class="dash-card"><div class="dash-card-title">🎁 2. Seleção de Catálogo e Produto</div>', unsafe_allow_html=True)
     selecoes_admin = {}
@@ -185,7 +185,8 @@ with col_form:
     if "man_secao_form" not in st.session_state or st.session_state["man_secao_form"] not in secoes_disponiveis:
         st.session_state["man_secao_form"] = secoes_disponiveis[0]
 
-    def reset_cesta(): st.session_state["man_cesta_sel_id"] = None
+    def reset_cesta(): 
+        st.session_state["man_cesta_sel_id"] = None
 
     if len(secoes_disponiveis) > 1:
         c_sec, c_prod = st.columns(2)
@@ -197,16 +198,18 @@ with col_form:
     cestas_da_secao = [c for c in cestas_ativas if (c.get("secao_vitrine") or "Cestas de Café").strip().lower() == secao_escolhida.strip().lower()]
     opcoes_cestas = [{"id": None, "nome": "Selecione o Produto...", "preco": 0}] + cestas_da_secao
     
+    # Garante que inicia na posição 0 (vazio) caso nenhuma cesta tenha sido explicitamente gravada na sessão
     idx_cesta = 0
     if st.session_state.get("man_cesta_sel_id"):
         for i, c in enumerate(opcoes_cestas):
             if c["id"] == st.session_state["man_cesta_sel_id"]: idx_cesta = i; break
 
     if len(secoes_disponiveis) > 1:
-        with c_prod: cesta_sel = st.selectbox("Produto Base", opcoes_cestas, format_func=lambda c: f"{c['nome']} (R$ {tratar_preco(c.get('preco')):.2f})" if c.get("id") else c["nome"], index=idx_cesta)
+        with c_prod: cesta_sel = st.selectbox("Produto Base", opcoes_cestas, format_func=lambda c: f"{c['nome']} (R$ {tratar_preco(c.get('preco')):.2f})" if c.get("id") else c["nome"], index=idx_cesta, key="selectbox_produto_base")
     else:
-        cesta_sel = st.selectbox("Produto Base", opcoes_cestas, format_func=lambda c: f"{c['nome']} (R$ {tratar_preco(c.get('preco')):.2f})" if c.get("id") else c["nome"], index=idx_cesta)
+        cesta_sel = st.selectbox("Produto Base", opcoes_cestas, format_func=lambda c: f"{c['nome']} (R$ {tratar_preco(c.get('preco')):.2f})" if c.get("id") else c["nome"], index=idx_cesta, key="selectbox_produto_base")
 
+    # Atualiza o ID na sessão se o usuário escolheu uma válida
     if cesta_sel and cesta_sel.get("id"):
         st.session_state["man_cesta_sel_id"] = cesta_sel["id"]
         cfg = carregar_configuracao_cesta(cesta_sel["id"])
@@ -225,10 +228,13 @@ with col_form:
                     else:
                         escs = st.multiselect(f"Opções de {cat}", prods, format_func=lambda p: p["nome"], max_selections=maximo, key=f"adm_mul_{cat}")
                         selecoes_admin[cat] = escs
+    else:
+        st.session_state["man_cesta_sel_id"] = None
+
     st.markdown('</div>', unsafe_allow_html=True)
 
     # -----------------------------------------------------
-    # CAIXA 3: ADICIONAIS E EXTRAS (TOTALMENTE VAZIOS PARA ESCOLHA)
+    # WIDGET 3: ADICIONAIS E EXTRAS (TOTALMENTE VAZIOS)
     # -----------------------------------------------------
     adicionais_selecionados_finais = []
     st.markdown('<div class="dash-card"><div class="dash-card-title">🎀 3. Adicionais e Extras Globais</div>', unsafe_allow_html=True)
@@ -278,7 +284,7 @@ with col_form:
     st.markdown('</div>', unsafe_allow_html=True)
 
     # -----------------------------------------------------
-    # CAIXA 4: DESTINATÁRIO
+    # WIDGET 4: DESTINATÁRIO
     # -----------------------------------------------------
     st.markdown('<div class="dash-card"><div class="dash-card-title">💌 4. Destinatário e Cartão</div>', unsafe_allow_html=True)
     cd1, cd2 = st.columns(2)
@@ -289,7 +295,7 @@ with col_form:
     st.markdown('</div>', unsafe_allow_html=True)
 
     # -----------------------------------------------------
-    # CAIXA 5: ENDEREÇO
+    # WIDGET 5: ENDEREÇO
     # -----------------------------------------------------
     st.markdown('<div class="dash-card"><div class="dash-card-title">📍 5. Endereço e Entrega</div>', unsafe_allow_html=True)
     cx1, cx2 = st.columns([1.5, 2.5])
@@ -340,7 +346,7 @@ with col_ticket:
     frete = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=0.0, key="man_frete")
     desc_perc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0, key="man_desc")
     
-    # CÁLCULOS TOTAIS EM TEMPO REAL
+    # CÁLCULOS TOTAIS
     valor_c = float(cesta_sel.get("preco", 0)) if cesta_sel and cesta_sel.get("id") else 0.0
     valor_a = sum(extra.get("preco", 0.0) for extra in adicionais_selecionados_finais)
     subtotal = valor_c + valor_a
@@ -349,17 +355,15 @@ with col_ticket:
 
     st.markdown("<hr style='border: none; border-top: 1px dashed #ceead6; margin: 15px 0;'>", unsafe_allow_html=True)
     
-    # EXIBIÇÃO DETALHADA NO TICKET
+    # EXIBIÇÃO DETALHADA NO TICKET DE TUDO O QUE FOI MARCADO/SELECIONADO
     nome_c_print = cesta_sel['nome'] if cesta_sel and cesta_sel.get('id') else "Nenhum produto selecionado"
     st.markdown(f'<div class="ticket-line"><span>📦 <b>{nome_c_print}</b></span> <strong>R$ {formatar_moeda(valor_c)}</strong></div>', unsafe_allow_html=True)
     
-    # Renderiza escolhas obrigatórias da cesta no ticket se houver
     if selecoes_admin:
         for cat, itens in selecoes_admin.items():
             for it in itens:
                 st.markdown(f'<div class="ticket-line" style="font-size:11.5px; color:#775a46; padding-left:10px;"><span>&bull; {cat}: {it["nome"]}</span></div>', unsafe_allow_html=True)
 
-    # Renderiza cada adicional/extra marcado no ticket
     if adicionais_selecionados_finais:
         for ad in adicionais_selecionados_finais:
             st.markdown(f'<div class="ticket-line" style="font-size:12px;"><span>🎀 {ad["nome"]}</span> <strong>R$ {formatar_moeda(ad["preco"])}</strong></div>', unsafe_allow_html=True)
@@ -384,7 +388,7 @@ with col_ticket:
         if not dest_nome: st.error("Informe o Nome do Destinatário."); st.stop()
         if not rua or not num or not bairro: st.error("Complete Rua, Número e Bairro."); st.stop()
 
-        # UPLOAD FOTOS POLAROID
+        # UPLOAD FOTOS POLAROID NO BUCKET PEDIDO_FOTOS
         links_polaroid = []
         if polaroid and fotos_upload:
             with st.spinner("📦 Salvando fotos no bucket 'pedido_fotos'..."):
@@ -447,6 +451,9 @@ with col_ticket:
                 
                 # MENSAGEM WHATSAPP ESTRUTURADA
                 linhas_wpp = f"📦 {cesta_sel['nome']} (R$ {formatar_moeda(valor_c)})\n"
+                if selecoes_admin:
+                    for cat, itens in selecoes_admin.items():
+                        for it in itens: linhas_wpp += f"  • {cat}: {it['nome']}\n"
                 for a in adicionais_selecionados_finais: linhas_wpp += f"🎀 {a['nome']} (R$ {formatar_moeda(a.get('preco', 0.0))})\n"
                 
                 texto_wpp = f"""*NOVO PEDIDO - DOCE CESTA BRASÍLIA* 🎁\n\n👤 *De:* {nome_comp}\n💝 *Para:* {dest_nome}\n📅 *Entrega:* {dt_ent.strftime("%d/%m/%Y")} ({per_ent})\n📍 *Local:* {bairro} - {cidade}\n\n*ITENS:*\n{linhas_wpp}\n*VALORES:*\n💰 Subtotal: R$ {formatar_moeda(subtotal)}\n🚚 Frete: R$ {formatar_moeda(frete)}\n🔻 Desconto: - R$ {formatar_moeda(valor_desconto)}\n━━━━━━━━━━━━━━━━━━━━\n*TOTAL:* R$ {formatar_moeda(total_liquido)}\n\n💳 *Pagamento:* {pag}"""
