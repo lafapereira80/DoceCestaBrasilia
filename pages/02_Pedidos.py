@@ -172,7 +172,6 @@ div[data-testid="stCheckbox"] { margin-top: 6px; }
 </style>
 """, unsafe_allow_html=True)
 
-
 st.title("📋 Gestão de Pedidos")
 st.caption("Central de acompanhamento de vendas, pagamentos e fila de produção.")
 
@@ -225,21 +224,33 @@ def render_criar_pedido_manual():
         st.markdown("#### 🎁 Seleção da Cesta e Montagem")
         secoes_ativas, todas_cestas = obter_secoes_e_cestas_ativas()
         
-        # 1. Caixa de Seleção do Tipo de Seção
-        col_sec, col_mod = st.columns(2)
-        with col_sec:
-            secao_escolhida = st.selectbox("💌 1. Escolha a Seção", secoes_ativas, key="man_sel_secao")
+        # =======================================================
+        # Lógica Condicional e Blindada (Múltiplas ou Única Seção)
+        # =======================================================
+        if len(secoes_ativas) > 1:
+            col_sec, col_mod = st.columns(2)
+            with col_sec:
+                secao_escolhida = st.selectbox("💌 1. Escolha a Seção", secoes_ativas, key="man_sel_secao")
             
-        # Filtra as cestas correspondentes à seção escolhida (ignorando maiúsculas/minúsculas para maior segurança)
-        cestas_da_secao = [
-            c for c in todas_cestas 
-            if str(c.get("secao_vitrine", "")).strip().lower() == str(secao_escolhida).strip().lower()
-        ]
-        
-        # 2. Caixa com os Modelos Cadastrados na Seção
-        with col_mod:
+            with col_mod:
+                cestas_da_secao = [
+                    c for c in todas_cestas 
+                    if (c.get("secao_vitrine") or "Cestas de Café").strip().lower() == str(secao_escolhida).strip().lower()
+                ]
+                cesta_sel = st.selectbox(
+                    "💝 2. Escolha o Modelo", 
+                    [{"id": None, "nome": "Selecione o modelo..."}] + cestas_da_secao, 
+                    format_func=lambda x: x["nome"], 
+                    key="man_sel_cesta_modelo"
+                )
+        else:
+            secao_escolhida = secoes_ativas[0] if secoes_ativas else "Cestas de Café"
+            cestas_da_secao = [
+                c for c in todas_cestas 
+                if (c.get("secao_vitrine") or "Cestas de Café").strip().lower() == str(secao_escolhida).strip().lower()
+            ]
             cesta_sel = st.selectbox(
-                "💝 2. Escolha o Modelo", 
+                "💝 Escolha o Modelo da Cesta", 
                 [{"id": None, "nome": "Selecione o modelo..."}] + cestas_da_secao, 
                 format_func=lambda x: x["nome"], 
                 key="man_sel_cesta_modelo"
@@ -369,16 +380,15 @@ def render_criar_pedido_manual():
 render_criar_pedido_manual()
 st.write("")
 
-
 # =====================================================
-# LISTAGEM COM EXPURGO DE FINALIZADOS
+# LISTAGEM COM EXPURGO DE FINALIZADOS E OTIMIZAÇÃO
 # =====================================================
 try: pedidos = listar_pedidos_ativos()
 except Exception as erro:
     st.error(f"Erro ao carregar pedidos: {erro}")
     pedidos = []
 
-df = pd.DataFrame(pedidos) if pedidos else pd.DataFrame(columns=["id", "cliente_nome", "status", "created_at", "cesta_montada"])
+df = pd.DataFrame(pedidos) if pedidos else pd.DataFrame(columns=["id", "cliente_nome", "status", "created_at", "cesta_montada", "pagamento", "cliente_telefone", "cesta_nome", "data_entrega", "valor_total"])
 
 if not df.empty and "status" in df.columns:
     df["status_limpo"] = df["status"].astype(str).str.strip().str.capitalize()
@@ -393,7 +403,7 @@ def status_visual_html(status):
     if status_str == "Pago": return '<span class="badge-status badge-pago">🟢 Pago</span>'
     elif status_str == "Recebido": return '<span class="badge-status badge-recebido">🟡 Recebido</span>'
     elif status_str == "Enviado": return '<span class="badge-status badge-enviado">🛵 Enviado (Rota)</span>'
-    elif status_str == "Desistência" or status_str == "Desistencia": return '<span class="badge-status badge-desistencia">🔴 Desistência</span>'
+    elif status_str in ["Desistência", "Desistencia"]: return '<span class="badge-status badge-desistencia">🔴 Desistência</span>'
     return f'<span class="badge-status">{status}</span>'
 
 def mostrar_lista(titulo, status_filtro_lista, eh_pago=False, permitir_exclusao=False):
@@ -416,11 +426,7 @@ def mostrar_lista(titulo, status_filtro_lista, eh_pago=False, permitir_exclusao=
             return
 
     for _, pedido in pedidos_status.iterrows():
-        try:
-            pedido_atualizado = buscar_pedido(pedido["id"])
-            if pedido_atualizado: pedido = pedido_atualizado
-        except: pass
-
+        # Otimização: Não fazemos mais 1 requisição por pedido na tela (evita lentidão extrema)
         with st.container(border=True):
             if eh_pago: 
                 col_check, col_info1, col_info2, col_status, col_valor, col_acoes = st.columns([0.8, 3.8, 2.5, 1.8, 1.8, 1.8])
@@ -440,6 +446,7 @@ def mostrar_lista(titulo, status_filtro_lista, eh_pago=False, permitir_exclusao=
 
             with col_info2:
                 tag_montada = ""
+                # Utiliza o valor que já veio consolidado do banco no listar_pedidos_ativos
                 if eh_pago and pedido.get("cesta_montada"):
                     tag_montada = '<span class="badge-montada">🧺 MONTADA</span>'
                 
