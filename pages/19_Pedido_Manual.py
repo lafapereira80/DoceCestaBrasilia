@@ -39,6 +39,12 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# Função para blindar preços nulos
+def tratar_preco(valor):
+    if valor is None or str(valor).strip() == "": return 0.0
+    try: return float(str(valor).replace(",", "."))
+    except: return 0.0
+
 # Carrega Cestas e Produtos Adicionais
 @st.cache_data(ttl=60, show_spinner=False)
 def get_dados():
@@ -73,13 +79,13 @@ with st.container():
     col3, col4 = st.columns(2)
     with col3:
         st.markdown("#### 📦 Escolha do Pacote / Cesta")
-        cesta_escolhida = st.selectbox("Selecione a Cesta Principal", [None] + cestas_disp, format_func=lambda x: f"{x['nome']} - R$ {float(x.get('preco', 0)):.2f}" if x else "Selecione...")
+        cesta_escolhida = st.selectbox("Selecione a Cesta Principal", [None] + cestas_disp, format_func=lambda x: f"{x['nome']} - R$ {tratar_preco(x.get('preco')):.2f}" if x else "Selecione...")
         
-        # Adicionais opcionais
+        # Adicionais opcionais com proteção de preço
         adicionais_selecionados = st.multiselect(
             "Adicionais Extras para esta Cesta", 
             produtos_disp, 
-            format_func=lambda x: f"{x['nome']} (+ R$ {float(x.get('preco', 0)):.2f})"
+            format_func=lambda x: f"{x['nome']} (+ R$ {tratar_preco(x.get('preco')):.2f})"
         )
         
     with col4:
@@ -101,9 +107,9 @@ with st.container():
 
     endereco = st.text_input("📍 Endereço Completo de Entrega", placeholder="SQS 202, Bloco C, Apto 204 - Asa Sul, Brasília - DF")
 
-    # Cálculo do Valor Total
-    preco_cesta = float(cesta_escolhida.get("preco", 0)) if cesta_escolhida else 0.0
-    soma_adicionais = sum(float(a.get("preco", 0)) for a in adicionais_selecionados)
+    # Cálculo do Valor Total Seguro
+    preco_cesta = tratar_preco(cesta_escolhida.get("preco")) if cesta_escolhida else 0.0
+    soma_adicionais = sum(tratar_preco(a.get("preco")) for a in adicionais_selecionados)
     valor_total_pedido = preco_cesta + soma_adicionais + valor_frete
 
     st.markdown(f"""
@@ -120,11 +126,10 @@ with st.container():
         if not cesta_escolhida: st.error("Selecione ao menos uma cesta principal."); st.stop()
         if not endereco: st.error("Informe o endereço de entrega."); st.stop()
 
-        # Monta string de produtos e adicionais
         lista_produtos = [f"1x {cesta_escolhida['nome']} (R$ {preco_cesta:.2f})"]
         lista_extras_txt = []
         for adc in adicionais_selecionados:
-            lista_extras_txt.append(f"1x {adc['nome']} (R$ {float(adc.get('preco', 0)):.2f})")
+            lista_extras_txt.append(f"1x {adc['nome']} (R$ {tratar_preco(adc.get('preco')):.2f})")
 
         msg_adicionais = "Nenhum adicional."
         if lista_extras_txt:
