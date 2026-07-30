@@ -46,8 +46,8 @@ div[data-testid="stButton"] button { border-radius: 8px !important; font-weight:
 </style>
 """, unsafe_allow_html=True)
 
-# Cabeçalho com o botão de Criar Pedido Manual de volta
-col_h1, col_h2 = st.columns([3, 1])
+# Cabeçalho com botões separados para Varejo e B2B
+col_h1, col_h2, col_h3 = st.columns([2, 1, 1])
 with col_h1:
     st.markdown("""
     <div class="header-banner" style="text-align: left; margin-bottom: 0;">
@@ -57,17 +57,19 @@ with col_h1:
     """, unsafe_allow_html=True)
 with col_h2:
     st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-    if st.button("➕ Criar Pedido Manual", use_container_width=True, type="primary"):
-        st.switch_page("pages/18_Corporativo.py") # Ou para a página de cadastro manual se houver outra
+    if st.button("➕ Pedido Varejo (PF)", use_container_width=True, type="primary"):
+        st.switch_page("pages/19_Pedido_Manual.py")
+with col_h3:
+    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+    if st.button("🏢 Venda B2B (PJ)", use_container_width=True):
+        st.switch_page("pages/18_Corporativo.py")
 
 st.write("")
 
-# Função para atualizar status rápido
 def mudar_status(p_id, novo_status):
     supabase.table("pedidos").update({"status": novo_status}).eq("id", p_id).execute()
     st.rerun()
 
-# Carrega Pedidos
 @st.cache_data(ttl=5, show_spinner=False)
 def get_pedidos():
     res = supabase.table("pedidos").select("*").order("created_at", desc=True).execute()
@@ -75,12 +77,10 @@ def get_pedidos():
 
 pedidos = get_pedidos()
 
-# Filtro rápido
 tipo_filtro = st.radio("Filtrar por:", ["Todos os Pedidos", "Varejo (B2C)", "Empresas (B2B)"], horizontal=True)
 
 st.markdown("<hr style='border-top: 1px solid #e8ddd3; margin: 15px 0;'>", unsafe_allow_html=True)
 
-# KANBAN BOARD COM OS 4 STATUS ORIGINAIS + DESISTÊNCIA
 col_rec, col_pag, col_prod, col_ent = st.columns(4)
 
 def renderizar_card(p, coluna):
@@ -107,7 +107,6 @@ def renderizar_card(p, coluna):
         </div>
         """, unsafe_allow_html=True)
         
-        # Botões de Ação por Card
         if st.button("🔍 Detalhes", key=f"det_{p['id']}", use_container_width=True):
             st.session_state['pedido_detalhe_id'] = p['id']
             st.switch_page("pages/09_Detalhes_Pedido.py")
@@ -124,13 +123,11 @@ def renderizar_card(p, coluna):
             if status_atual != "Desistência":
                 if st.button("❌", key=f"des_{p['id']}", help="Marcar como Desistência", use_container_width=True): mudar_status(p['id'], "Desistência")
 
-# Títulos das Colunas
 with col_rec: st.markdown("<div class='kanban-title'>📥 Recebidos</div>", unsafe_allow_html=True)
 with col_pag: st.markdown("<div class='kanban-title'>💳 Pagos</div>", unsafe_allow_html=True)
 with col_prod: st.markdown("<div class='kanban-title'>🍳 Em Produção / Entregues</div>", unsafe_allow_html=True)
 with col_ent: st.markdown("<div class='kanban-title'>⚠️ Desistência</div>", unsafe_allow_html=True)
 
-# Distribuição dos Pedidos nas Colunas
 for p in pedidos:
     is_b2b = "[B2B]" in p['cliente_nome']
     if tipo_filtro == "Varejo (B2C)" and is_b2b: continue
