@@ -225,7 +225,6 @@ if "fotos_polaroid_cliente" not in st.session_state: st.session_state["fotos_pol
 # TELA DE SUCESSO (DISPARA BALÕES 🎉)
 # ==========================================================
 if st.session_state["pedido_enviado_com_sucesso"]:
-    # Efeito visual de comemoração!
     st.balloons()
     
     dados = st.session_state.get("resumo_pedido_sucesso", {})
@@ -285,7 +284,7 @@ with st.container(border=True):
 
 
 # ==========================================================
-# PASSO 2: SELEÇÃO DO PRESENTE DINÂMICA
+# PASSO 2: SELEÇÃO DO PRESENTE (MÚLTIPLAS OU ÚNICA SEÇÃO)
 # ==========================================================
 with st.spinner():
     secoes_disponiveis, cestas_ativas = obter_secoes_e_cestas_ativas()
@@ -295,7 +294,7 @@ selecoes_cliente = {}
 
 if cestas_ativas and secoes_disponiveis:
     
-    # 1. Verifica se veio da vitrine inicial (app.py)
+    # 1. Verifica se a requisição veio da vitrine inicial (app.py)
     cesta_veio_da_home = st.session_state.get("cesta_selecionada_home")
     if cesta_veio_da_home:
         for c in cestas_ativas:
@@ -314,38 +313,56 @@ if cestas_ativas and secoes_disponiveis:
         def ao_mudar_secao():
             st.session_state["cesta_selecionada_id"] = None
 
-        col_categoria, col_modelo = st.columns(2)
-        
-        # 2. Exibe Seções Cadastradas
-        with col_categoria:
-            st.selectbox(
-                "💌 O que você deseja enviar?", 
-                secoes_disponiveis,
-                index=secoes_disponiveis.index(st.session_state["secao_form"]) if st.session_state["secao_form"] in secoes_disponiveis else 0,
-                key="secao_form",
-                on_change=ao_mudar_secao
-            )
+        # Tratamento: Tem mais de 1 seção? Mostra 2 colunas. Se não, mostra só a escolha do modelo.
+        if len(secoes_disponiveis) > 1:
+            col_categoria, col_modelo = st.columns(2)
+            
+            with col_categoria:
+                st.selectbox(
+                    "💌 1. O que você deseja enviar?", 
+                    secoes_disponiveis,
+                    index=secoes_disponiveis.index(st.session_state["secao_form"]) if st.session_state["secao_form"] in secoes_disponiveis else 0,
+                    key="secao_form",
+                    on_change=ao_mudar_secao
+                )
 
-        # 3. Filtra as cestas correspondentes
-        cestas_da_secao = [c for c in cestas_ativas if str(c.get("secao_vitrine", "")).strip().lower() == str(st.session_state["secao_form"]).strip().lower()]
-        opcoes_cestas = [{"id": None, "nome": "Clique para selecionar..."}] + cestas_da_secao
-        
-        cesta_idx = 0
-        if st.session_state.get("cesta_selecionada_id"):
-            for i, c in enumerate(opcoes_cestas):
-                if c["id"] == st.session_state["cesta_selecionada_id"]:
-                    cesta_idx = i; break
+            # Filtra os produtos da seção selecionada
+            cestas_da_secao = [c for c in cestas_ativas if str(c.get("secao_vitrine", "")).strip().lower() == str(st.session_state["secao_form"]).strip().lower()]
+            opcoes_cestas = [{"id": None, "nome": "Clique para selecionar..."}] + cestas_da_secao
+            
+            cesta_idx = 0
+            if st.session_state.get("cesta_selecionada_id"):
+                for i, c in enumerate(opcoes_cestas):
+                    if c["id"] == st.session_state["cesta_selecionada_id"]:
+                        cesta_idx = i; break
 
-        # 4. Exibe os Modelos
-        with col_modelo:
+            with col_modelo:
+                cesta_selecionada = st.selectbox(
+                    "💝 2. Escolha o modelo", 
+                    opcoes_cestas, 
+                    format_func=lambda c: c["nome"], 
+                    index=cesta_idx
+                )
+        else:
+            # Apenas 1 Seção Cadastrada
+            st.session_state["secao_form"] = secoes_disponiveis[0]
+            cestas_da_secao = [c for c in cestas_ativas if str(c.get("secao_vitrine", "")).strip().lower() == str(st.session_state["secao_form"]).strip().lower()]
+            opcoes_cestas = [{"id": None, "nome": "Clique para selecionar o modelo..."}] + cestas_da_secao
+            
+            cesta_idx = 0
+            if st.session_state.get("cesta_selecionada_id"):
+                for i, c in enumerate(opcoes_cestas):
+                    if c["id"] == st.session_state["cesta_selecionada_id"]:
+                        cesta_idx = i; break
+
             cesta_selecionada = st.selectbox(
-                "💝 Modelo escolhido", 
+                "💝 Escolha o modelo do presente", 
                 opcoes_cestas, 
                 format_func=lambda c: c["nome"], 
                 index=cesta_idx
             )
 
-        # SE UMA CESTA FOR ESCOLHIDA, EXIBE OS DETALHES COM LAYOUT PREMIUM
+        # SE UMA CESTA FOR ESCOLHIDA (ID != None), EXIBE OS DETALHES
         if cesta_selecionada and cesta_selecionada.get("id"):
             cesta_obj = cesta_selecionada
             st.session_state["cesta_selecionada_id"] = cesta_selecionada.get("id")
@@ -361,7 +378,7 @@ if cestas_ativas and secoes_disponiveis:
                 st.markdown(f'<div class="destaque-cesta-nome-local">{cesta_obj.get("nome", "")}</div>', unsafe_allow_html=True)
                 st.markdown(f"**Categoria:** <span style='color: #775a46; font-size:13.5px;'>{sec_txt}</span>", unsafe_allow_html=True)
                 
-                # Formatando Valor Seguro para injetar no HTML
+                # Formatando Valor Seguro para o HTML
                 valor_base_num = float(cesta_obj.get("preco", 0))
                 valor_base_txt = f"R$ {valor_base_num:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                 
@@ -410,11 +427,9 @@ if cat_adicionais:
             colunas = st.columns(2)
             for indice, prod in enumerate(produtos_adicionais):
                 preco_add = prod.get("preco")
-                # Formata seguro e sem quebrar HTML
                 txt_val_add = f"+ R$ {float(preco_add):,.2f}".replace(",", "X").replace(".", ",").replace("X",".") if preco_add is not None else "Sob Consulta"
                 
                 with colunas[indice % 2]:
-                    # Estilo da pílula direto no título do checkbox
                     if st.checkbox(f"✨ {prod['nome']} **{txt_val_add}**", key=f"add_{prod['id']}"):
                         adicionais_selecionados.append({
                             "produto_id": prod["id"], "nome": prod["nome"], 
@@ -488,7 +503,7 @@ with st.container(border=True):
 
 
 # ==========================================================
-# PASSO 6: RESUMO E FECHAMENTO (CORRIGIDO E SEGURO)
+# PASSO 6: RESUMO E FECHAMENTO (CORRIGIDO E BLINDADO)
 # ==========================================================
 with st.container(border=True):
     renderizar_passo("6", "Pagamento e Resumo")
@@ -500,14 +515,13 @@ valor_adicionais = sum([float(item["preco"]) for item in adicionais_selecionados
 tem_consulta = any(item["preco"] is None for item in adicionais_selecionados)
 total_estimado = valor_base + valor_adicionais
 
-# FORMATAÇÃO PRÉVIA (Evita que o replace quebre o CSS HTML do recibo)
+# FORMATAÇÃO PRÉVIA DAS MOEDAS (Isso impede que o HTML quebre)
 valor_base_fmt = f"R$ {valor_base:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 valor_adc_fmt = f"R$ {valor_adicionais:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 total_fmt = f"R$ {total_estimado:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 if cesta_obj:
     with st.container(border=True):
-        # HTML 100% blindado, injetando as variáveis já formatadas no lugar certo
         st.markdown(f"""
         <div class="receipt-box">
             <div style="font-size: 16px; font-weight: 800; color: #5a3b28; margin-bottom: 15px; text-align: center;">RESUMO DO PEDIDO</div>
