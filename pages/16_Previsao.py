@@ -157,9 +157,10 @@ if "pedido_em_montagem" not in st.session_state:
     st.session_state.pedido_em_montagem = None
 
 # =====================================================
-# BUSCA GERAL (SOMENTE STATUS PAGO)
+# BUSCA GERAL (INCLUINDO PEDIDOS PAGOS E CORPORATIVOS)
 # =====================================================
 def buscar_pedidos_pagos():
+    # Busca todos os pedidos com status "Pago" (independentemente de ser Varejo ou B2B)
     res = supabase.table("pedidos").select("*").eq("status", "Pago").execute()
     return res.data or []
 
@@ -204,7 +205,7 @@ dados_previsao = dict(sorted(resumo.items()))
 
 
 # =====================================================
-# TELA DE CHECKLIST EM MODO "GAVETA" (COM SELECIONAR TODOS)
+# TELA DE CHECKLIST EM MODO "GAVETA" (COM SUPORTE A B2B)
 # =====================================================
 if st.session_state.pedido_em_montagem:
     p_ativo = next((p for p in pedidos if p["id"] == st.session_state.pedido_em_montagem), None)
@@ -214,17 +215,19 @@ if st.session_state.pedido_em_montagem:
         with st.container(border=True):
             col_tit, col_fechar = st.columns([4, 1])
             with col_tit:
-                st.markdown(f"### 🛠️ Montagem da Cesta (Pedido #{p_ativo['id']})")
+                st.markdown(f"### 🛠️ Montagem da Cesta / Lote (Pedido #{p_ativo['id']})")
             with col_fechar:
                 if st.button("❌ Fechar Painel", use_container_width=True):
                     st.session_state.pedido_em_montagem = None
                     st.rerun()
             
-            # Cabeçalho Compacto do Pedido
+            is_b2b = "[B2B]" in p_ativo.get('cliente_nome', '')
+            nome_cli_exibicao = p_ativo.get('cliente_nome', '').replace("[B2B]", "").strip()
+
             st.markdown(
                 f"""
                 <div class="montagem-header">
-                    <div style="font-size: 18px; font-weight: 800; color: #2c1e14;">👤 {p_ativo.get('cliente_nome')}</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #2c1e14;">👤 {nome_cli_exibicao}</div>
                     <div style="font-size: 15px; font-weight: 800; color: #b06000; margin-top: 4px; margin-bottom: 8px;">🎁 {p_ativo.get('cesta_nome')}</div>
                     <div style="font-size: 13px; color: #444; margin-top: 4px;">📍 <strong>Endereço:</strong> {p_ativo.get('endereco', 'N/I')}</div>
                     <div style="font-size: 13px; color: #444; margin-top: 2px;">🕒 <strong>Turno Ideal:</strong> {p_ativo.get('periodo_entrega', '')} ({p_ativo.get('horario_combinado', 'Livre')})</div>
@@ -242,16 +245,14 @@ if st.session_state.pedido_em_montagem:
                 try: checklist_salvo = json.loads(checklist_salvo)
                 except: checklist_salvo = {}
 
-            # Tratamento seguro para itens_consulta do banco (onde ficam salvos os extras dinâmicos e manuais)
             itens_consulta_salvos = p_ativo.get("itens_consulta") or {}
             if isinstance(itens_consulta_salvos, str):
                 try: itens_consulta_salvos = json.loads(itens_consulta_salvos)
                 except: itens_consulta_salvos = {}
 
-            # Descobre antecipadamente todas as chaves de itens que compõem este pedido específico
             chaves_itens_pedido = []
             
-            # 1. Itens Padrão
+            # 1. Itens Padrão (se for Cesta cadastrada)
             cesta_obj = buscar_cesta(p_ativo.get("cesta_id")) if p_ativo.get("cesta_id") else {}
             descricao_cesta = cesta_obj.get("descricao", "") if cesta_obj else ""
             if descricao_cesta:
@@ -262,7 +263,7 @@ if st.session_state.pedido_em_montagem:
                 for item in [i.strip() for i in bloco_inclusos.split(";") if i.strip()]:
                     chaves_itens_pedido.append(f"📦 {item}")
             
-            # 2. Personalização
+            # 2. Personalização / Produtos (Funciona tanto para Varejo quanto para os itens em lote do B2B)
             produtos = p_ativo.get("produtos", "")
             if produtos:
                 for prod_limpo in [p.replace('•', '').strip() for p in produtos.split("\n") if p.replace('•', '').strip()]:
@@ -287,7 +288,7 @@ if st.session_state.pedido_em_montagem:
                     if chave_ad not in chaves_itens_pedido:
                         chaves_itens_pedido.append(chave_ad)
 
-            # 4. Extras Dinâmicos / Personalizados salvos no JSON do pedido
+            # 4. Extras Dinâmicos
             for k, v in itens_consulta_salvos.items():
                 if "Valor Manual de" not in k and not k.startswith("Valor de "):
                     chave_extra = f"🔹 {k}"
@@ -298,7 +299,6 @@ if st.session_state.pedido_em_montagem:
             if p_ativo.get("mensagem", ""):
                 chaves_itens_pedido.append("✅ Cartão impresso e posicionado")
 
-            # Botões de Ação Rápida em Lote (Marcar / Desmarcar Todos)
             col_m1, col_m2 = st.columns(2)
             marcar_todos_click = col_m1.button("✅ Marcar Todos os Itens", use_container_width=True)
             desmarcar_todos_click = col_m2.button("❌ Desmarcar Todos", use_container_width=True)
@@ -316,7 +316,7 @@ if st.session_state.pedido_em_montagem:
 
             novo_checklist = {}
             
-            # --- RENDERIZAÇÃO DOS ITENS PADRÃO ---
+            # Renderiza Itens Padrão
             itens_desc = []
             if descricao_cesta:
                 bloco_inclusos = descricao_cesta
@@ -338,9 +338,9 @@ if st.session_state.pedido_em_montagem:
                     with cols_padrao[idx % 2]:
                         novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
             
-            # --- RENDERIZAÇÃO DA PERSONALIZAÇÃO ---
+            # Renderiza Produtos / Lotes
             if produtos:
-                st.markdown("<div class='secao-titulo'>🍓 Personalização Escolhida no Fechamento</div>", unsafe_allow_html=True)
+                st.markdown("<div class='secao-titulo'>🍓 Produtos / Lote do Pedido</div>", unsafe_allow_html=True)
                 prods_lista = [p.replace('•', '').strip() for p in produtos.split("\n") if p.replace('•', '').strip()]
                 cols_pers = st.columns(2)
                 for idx, prod_limpo in enumerate(prods_lista):
@@ -353,13 +353,12 @@ if st.session_state.pedido_em_montagem:
                     with cols_pers[idx % 2]:
                         novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
 
-            # --- RENDERIZAÇÃO DOS ADICIONAIS DE CATÁLOGO E EXTRAS DINÂMICOS ---
+            # Renderiza Adicionais e Extras
             if adicionais_bd or itens_consulta_salvos:
                 st.markdown("<div class='secao-titulo'>🎀 Adicionais e Extras do Pedido</div>", unsafe_allow_html=True)
                 cols_add = st.columns(2)
                 contador_add = 0
                 
-                # Adicionais de Catálogo
                 for ad in adicionais_bd:
                     nome_ad = ad.get('nome_produto', '')
                     if nome_ad:
@@ -373,7 +372,6 @@ if st.session_state.pedido_em_montagem:
                             novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
                         contador_add += 1
 
-                # Extras Dinâmicos / Personalizados
                 for k, v in itens_consulta_salvos.items():
                     if "Valor Manual de" not in k and not k.startswith("Valor de "):
                         chave_chk = f"🔹 {k}"
@@ -386,7 +384,7 @@ if st.session_state.pedido_em_montagem:
                             novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
                         contador_add += 1
             
-            # --- RENDERIZAÇÃO DA MENSAGEM DO CARTÃO ---
+            # Renderiza Mensagem do Cartão
             mensagem = p_ativo.get("mensagem", "")
             if mensagem:
                 st.markdown("<div class='secao-titulo'>💌 Mensagem do Cartão</div>", unsafe_allow_html=True)
@@ -402,7 +400,6 @@ if st.session_state.pedido_em_montagem:
             st.write("")
             st.divider()
             
-            # --- BOTÕES DE AÇÃO INFERIORES ---
             col_b1, col_b2 = st.columns(2)
             with col_b1:
                 if st.button("💾 Salvar Checklist (Progresso)", use_container_width=True):
@@ -452,7 +449,7 @@ if dados_previsao:
             st.markdown(
                 f"""
                 <div class='resumo-bar'>
-                    <div class='resumo-header'>📊 Resumo de Metas do Dia (Total Fila: {info['total']} cestas)</div>
+                    <div class='resumo-header'>📊 Resumo de Metas do Dia (Total Fila: {info['total']} cestas/lotes)</div>
                     <div class='pills-container'>
                         {html_pills}
                     </div>
@@ -481,13 +478,18 @@ if dados_previsao:
                 endereco_completo = p.get('endereco', 'Endereço não informado')
                 bairro = endereco_completo.split(',')[-1].split('(')[0].strip() if ',' in endereco_completo else endereco_completo
                 
+                # Formata exibição corporativa caso seja B2B
+                is_b2b = "[B2B]" in p.get('cliente_nome', '')
+                nome_cliente_card = p.get('cliente_nome', '-').replace("[B2B]", "").strip()
+                tag_tipo = '<span style="background: #e6f4ea; color: #137333; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px; margin-left: 6px;">CORP</span>' if is_b2b else ''
+                
                 card_html = f"""
                 <div class="pedido-card">
                     <div class="card-top">
                         <span class="pedido-id">Pedido #{pid}</span>
                         {status_badge}
                     </div>
-                    <div class="cliente-titulo">{p.get('cliente_nome', '-')}</div>
+                    <div class="cliente-titulo">{nome_cliente_card} {tag_tipo}</div>
                     <div class="cesta-subtitulo">🎁 {p.get('cesta_nome', '-')}</div>
                     <div class="info-linha-card">📍 <strong>Localização:</strong> {bairro}</div>
                     <div class="info-linha-card">🕒 <strong>Turno Ideal:</strong> {p.get('periodo_entrega', 'Livre')} ({p.get('horario_combinado', 'Flexível')})</div>
