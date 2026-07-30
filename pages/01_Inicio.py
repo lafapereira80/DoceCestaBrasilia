@@ -29,7 +29,6 @@ st.set_page_config(
 )
 
 # ==========================================================
-# CACHING DINÂMICO UNIFICADO (BLINDADO)
 # CACHING DINÂMICO UNIFICADO (BLINDADO E OTIMIZADO)
 # ==========================================================
 @st.cache_data(ttl=600, show_spinner=False)
@@ -42,24 +41,19 @@ def obter_categorias_cacheadas():
 @st.cache_data(ttl=5, show_spinner=False)
 def obter_secoes_e_cestas_ativas():
     try:
-        secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
-        secoes_ativas = sorted([s["nome"] for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
         # Busca ordenando diretamente no banco (mais seguro e à prova de falhas)
         res_secoes = supabase.table("vitrine_secoes").select("nome", "ativa").eq("ativa", True).order("ordem").execute()
         secoes_ativas = [s["nome"] for s in (res_secoes.data or [])]
-
+        
         # Garante fallback se a tabela de seções estiver vazia
         if not secoes_ativas:
             secoes_ativas = ["Cestas de Café"]
-
+            
         # Busca todas as cestas
         cestas_todas = listar_cestas()
         cestas_ativas = [c for c in cestas_todas if c.get("ativa", True)]
         cestas_ativas = sorted(cestas_ativas, key=lambda x: x.get("ordem", 999))
-
-        return secoes_ativas, sorted(cestas_ativas, key=lambda x: x.get("ordem", 999))
-    except:
-        return ["Cestas de Café"], []
+        
         return secoes_ativas, cestas_ativas
     except Exception as e:
         # Fallback de emergência caso haja instabilidade
@@ -245,10 +239,10 @@ if "fotos_polaroid_cliente" not in st.session_state: st.session_state["fotos_pol
 # ==========================================================
 if st.session_state["pedido_enviado_com_sucesso"]:
     st.balloons()
-
+    
     dados = st.session_state.get("resumo_pedido_sucesso", {})
     st.markdown(f'<div class="header-banner">{carregar_logo_base64()}<div class="header-text"><h1 class="header-title">Doce Cesta Brasília</h1></div></div>', unsafe_allow_html=True)
-
+    
     st.markdown(f"""
     <div class="sucesso-container">
         <div class="sucesso-icone">🎉</div>
@@ -290,9 +284,9 @@ st.markdown(f'<div class="header-banner">{carregar_logo_base64()}<div class="hea
 with st.container(border=True):
     renderizar_passo("1", "Quem está presenteando?")
     st.caption("Precisamos dos seus dados para confirmar o pagamento e te enviar atualizações do pedido.")
-
+    
     nome = st.text_input("Seu Nome Completo *", placeholder="Ex: Maria Clara Souza", key="input_nome_comprador")
-
+    
     col_ddi, col_tel, col_cpf = st.columns([1.2, 2.5, 2.5])
     with col_ddi:
         st.selectbox("DDI *", ["🇧🇷 +55", "🇺🇸 +1", "🇵🇹 +351", "🇪🇸 +34", "🇮🇹 +39", "🇫🇷 +33"], key="input_ddi_comprador")
@@ -303,7 +297,6 @@ with st.container(border=True):
 
 
 # ==========================================================
-# PASSO 2: SELEÇÃO DO PRESENTE (CORRIGIDA E BLINDADA)
 # PASSO 2: SELEÇÃO DO PRESENTE (CORRIGIDA)
 # ==========================================================
 with st.spinner():
@@ -313,13 +306,12 @@ cesta_obj = None
 selecoes_cliente = {}
 
 if cestas_ativas and secoes_disponiveis:
-
+    
     # 1. Verifica se a requisição veio da vitrine inicial (app.py)
     cesta_veio_da_home = st.session_state.get("cesta_selecionada_home")
     if cesta_veio_da_home:
         for c in cestas_ativas:
             if c["id"] == cesta_veio_da_home:
-                # Extrai seguro a seção
                 # Extrai a seção. Se vier null do banco, é 'Cestas de Café'
                 st.session_state["secao_form"] = c.get("secao_vitrine") or "Cestas de Café"
                 st.session_state["cesta_selecionada_id"] = cesta_veio_da_home
@@ -331,17 +323,16 @@ if cestas_ativas and secoes_disponiveis:
 
     with st.container(border=True):
         renderizar_passo("2", "A Escolha do Presente")
-
+        
         def ao_mudar_secao():
             st.session_state["cesta_selecionada_id"] = None
 
         # =========================================================
-        # Lógica Condicional: Tem mais de 1 seção ou apenas 1?
         # Tratamento: Tem mais de 1 seção ou apenas 1?
         # =========================================================
         if len(secoes_disponiveis) > 1:
             col_categoria, col_modelo = st.columns(2)
-
+            
             with col_categoria:
                 st.selectbox(
                     "💌 1. O que você deseja enviar?", 
@@ -351,14 +342,13 @@ if cestas_ativas and secoes_disponiveis:
                     on_change=ao_mudar_secao
                 )
 
-            # Filtra os produtos da seção selecionada garantindo compatibilidade de nomes e nulos
             # Filtra os produtos da seção selecionada garantindo fallback e comparando texto minúsculo
             cestas_da_secao = [
                 c for c in cestas_ativas 
                 if (c.get("secao_vitrine") or "Cestas de Café").strip().lower() == str(st.session_state["secao_form"]).strip().lower()
             ]
             opcoes_cestas = [{"id": None, "nome": "Clique para selecionar o modelo..."}] + cestas_da_secao
-
+            
             cesta_idx = 0
             if st.session_state.get("cesta_selecionada_id"):
                 for i, c in enumerate(opcoes_cestas):
@@ -375,13 +365,13 @@ if cestas_ativas and secoes_disponiveis:
         else:
             # Apenas 1 Seção Cadastrada (Ex: Só Cestas de Café)
             st.session_state["secao_form"] = secoes_disponiveis[0]
-
+            
             cestas_da_secao = [
                 c for c in cestas_ativas 
                 if (c.get("secao_vitrine") or "Cestas de Café").strip().lower() == str(st.session_state["secao_form"]).strip().lower()
             ]
             opcoes_cestas = [{"id": None, "nome": "Clique para selecionar o modelo..."}] + cestas_da_secao
-
+            
             cesta_idx = 0
             if st.session_state.get("cesta_selecionada_id"):
                 for i, c in enumerate(opcoes_cestas):
@@ -401,7 +391,7 @@ if cestas_ativas and secoes_disponiveis:
             st.session_state["cesta_selecionada_id"] = cesta_selecionada.get("id")
 
             st.markdown("<hr style='border: none; border-top: 1px dashed #dfcdbb; margin: 20px 0;'>", unsafe_allow_html=True)
-
+            
             col_img, col_txt = st.columns([1.2, 2], gap="large")
             with col_img:
                 if cesta_obj.get("imagem"):
@@ -410,26 +400,26 @@ if cestas_ativas and secoes_disponiveis:
                 sec_txt = cesta_obj.get("secao_vitrine") or "Cestas de Café"
                 st.markdown(f'<div class="destaque-cesta-nome-local">{cesta_obj.get("nome", "")}</div>', unsafe_allow_html=True)
                 st.markdown(f"**Categoria:** <span style='color: #775a46; font-size:13.5px;'>{sec_txt}</span>", unsafe_allow_html=True)
-
+                
                 # Formatando Valor Seguro para o HTML
                 valor_base_num = float(cesta_obj.get("preco", 0))
                 valor_base_txt = f"R$ {valor_base_num:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
+                
                 st.markdown(f"**Investimento Base:** <br><span style='font-size:24px; color:#137333; font-weight:800;'>{valor_base_txt}</span>", unsafe_allow_html=True)
-
+            
             # PERSONALIZAÇÃO DA CESTA (APARECE SÓ SE TIVER ITENS)
             configuracao = obter_configuracao_cesta_cacheada(cesta_obj["id"])
             if configuracao and any(grp.get("produtos") for grp in configuracao):
                 st.markdown("<hr style='border: none; border-top: 1px dashed #dfcdbb; margin: 20px 0;'>", unsafe_allow_html=True)
                 st.markdown('<div style="font-size: 16px; font-weight: 800; color: #5a3b28; margin-bottom: 15px;">🍓 Personalize os Itens da Cesta</div>', unsafe_allow_html=True)
-
+                
                 for grupo in configuracao:
                     cat = grupo.get("categoria", "Categoria")
                     prods = grupo.get("produtos", [])
                     maximo = grupo.get("max_escolhas", 1)
 
                     if not prods: continue
-
+                    
                     st.markdown(f"<div style='font-size: 14px; font-weight: 700; color: #775a46; margin-bottom: 6px; margin-top: 10px;'>📦 {cat}</div>", unsafe_allow_html=True)
                     if maximo == 1:
                         escolhido = st.radio(f"Escolha 1 opção", prods, format_func=lambda p: p["nome"], key=f"rad_{cesta_obj['id']}_{cat}", label_visibility="collapsed")
@@ -456,12 +446,12 @@ if cat_adicionais:
         with st.container(border=True):
             renderizar_passo("3", "Adicionar Mimos Extras")
             st.caption("Deixe o presente ainda mais surpreendente com itens exclusivos.")
-
+            
             colunas = st.columns(2)
             for indice, prod in enumerate(produtos_adicionais):
                 preco_add = prod.get("preco")
                 txt_val_add = f"+ R$ {float(preco_add):,.2f}".replace(",", "X").replace(".", ",").replace("X",".") if preco_add is not None else "Sob Consulta"
-
+                
                 with colunas[indice % 2]:
                     if st.checkbox(f"✨ {prod['nome']} **{txt_val_add}**", key=f"add_{prod['id']}"):
                         adicionais_selecionados.append({
@@ -475,7 +465,7 @@ if polaroid:
         st.markdown('<div class="secao-titulo">📷 Envie suas Fotos (Polaroid)</div>', unsafe_allow_html=True)
         st.caption("Você selecionou as fotos Polaroid. Envie até 2 imagens para revelarmos.")
         fotos_upload = st.file_uploader("Toque para anexar do seu celular/PC", type=["jpg", "jpeg", "png", "webp", "heic"], accept_multiple_files=True, key="fotos_polaroid_cliente", label_visibility="collapsed")
-
+        
         if fotos_upload:
             if len(fotos_upload) > 2:
                 st.error("⚠️ Limite excedido: Por favor, mantenha apenas 2 fotos anexadas.")
@@ -488,11 +478,11 @@ if polaroid:
 # ==========================================================
 with st.container(border=True):
     renderizar_passo("4", "Para Quem é o Presente?")
-
+    
     col_d1, col_d2 = st.columns(2)
     with col_d1: st.text_input("Nome de quem vai receber *", placeholder="Ex: Ana Clara", key="input_dest_nome")
     with col_d2: st.text_input("WhatsApp do destinatário", placeholder="(Opcional)", key="input_dest_tel", help="Caso o entregador precise ligar na hora.")
-
+    
     st.text_input("Qual a Ocasião? (Opcional)", placeholder="Ex: Aniversário, Dia das Mães, Pedido de Desculpas...", key="input_motivo")
     st.text_area("💌 Cartão de Presente", height=100, placeholder="Escreva aqui a mensagem especial que iremos imprimir e colocar junto ao presente...", key="input_mensagem")
 
@@ -502,11 +492,11 @@ with st.container(border=True):
 # ==========================================================
 with st.container(border=True):
     renderizar_passo("5", "Local e Agendamento")
-
+    
     # --- AUTOCOMPLETAR CEP ---
     cep_input = st.text_input("CEP da Entrega", max_chars=8, placeholder="Somente números (Preenche automático)", key="input_cep")
     cep_limpo = re.sub(r'\D', '', cep_input)
-
+    
     if len(cep_limpo) == 8 and st.session_state["ultimo_cep_buscado"] != cep_limpo:
         try:
             res = requests.get(f"https://viacep.com.br/ws/{cep_limpo}/json/", timeout=3)
@@ -521,27 +511,26 @@ with st.container(border=True):
     col_cid, col_bairro = st.columns([1.5, 1])
     with col_cid: st.text_input("Cidade - UF *", placeholder="Ex: Brasília - DF", key="input_cidade")
     with col_bairro: st.text_input("Bairro *", placeholder="Ex: Asa Sul", key="input_bairro")
-
+    
     col_rua, col_num = st.columns([2.5, 1])
     with col_rua: st.text_input("Rua / Logradouro *", placeholder="Ex: SQS 101 Bloco A", key="input_rua")
     with col_num: st.text_input("Nº / Apto *", placeholder="Ex: Apto 202", key="input_numero")
-
+    
     st.markdown("<hr style='border: none; border-top: 1px dashed #dfcdbb; margin: 15px 0;'>", unsafe_allow_html=True)
-
+    
     col_ent1, col_ent2 = st.columns(2)
     with col_ent1: st.date_input("📅 Data da Entrega", format="DD/MM/YYYY", key="input_data_entrega")
     with col_ent2: st.selectbox("🕒 Período Desejado", ["Manhã", "Tarde", "Noite"], key="input_periodo_entrega")
-
+    
     st.text_input("✨ Solicitação de Horário Especial (Opcional)", placeholder="Ex: Pode entregar exatamente às 07h00? (Sujeito a taxa)", key="input_pedido_especial")
 
 
 # ==========================================================
-# PASSO 6: RESUMO E FECHAMENTO (CORRIGIDO E BLINDADO)
 # PASSO 6: RESUMO E FECHAMENTO
 # ==========================================================
 with st.container(border=True):
     renderizar_passo("6", "Pagamento e Resumo")
-
+    
     pagamento = st.radio("Como você prefere pagar?", ["Pix (Aprovação Imediata)", "Cartão de Crédito"], horizontal=True, key="forma_pagamento_radio")
 
 valor_base = float(cesta_obj.get("preco", 0)) if cesta_obj and cesta_obj.get("preco") is not None else 0
@@ -570,7 +559,7 @@ if cesta_obj:
             </div>
         </div>
         """, unsafe_allow_html=True)
-
+        
         if tem_consulta:
             st.warning("⚠️ **Nota:** Você incluiu itens '*Sob Consulta*'. O valor exato será confirmado por nossa equipe.")
 
@@ -586,24 +575,24 @@ if enviar:
     cpf_bruto = st.session_state.get("input_cpf_comprador", "")
     tel_bruto = st.session_state.get("input_tel_comprador", "")
     ddi = re.sub(r'\D', '', st.session_state.get("input_ddi_comprador", "55"))
-
+    
     if not nome.strip(): st.error("❌ Por favor, informe seu Nome."); st.stop()
     if not tel_bruto.strip(): st.error("❌ Por favor, informe seu WhatsApp."); st.stop()
     if not validar_cpf(cpf_bruto): st.error("❌ CPF inválido. Verifique os números."); st.stop()
-
+    
     cpf_limpo = re.sub(r'\D', '', cpf_bruto)
     telefone_oficial = f"{ddi}{re.sub(r'\D', '', tel_bruto)}"
 
     # 2. Validações da Cesta e Endereço
     if not cesta_obj: st.error("❌ Selecione uma opção de Cesta."); st.stop()
-
+    
     dest_nome = st.session_state.get("input_dest_nome", "")
     if not dest_nome.strip(): st.error("❌ Informe o nome de quem vai receber o presente."); st.stop()
-
+    
     rua = st.session_state.get("input_rua", "")
     num = st.session_state.get("input_numero", "")
     if not rua.strip() or not num.strip(): st.error("❌ Informe a Rua e o Número de entrega."); st.stop()
-
+    
     fotos_upload = st.session_state.get("fotos_polaroid_cliente", [])
     if polaroid and len(fotos_upload) > 2: st.error("❌ O limite para Polaroid é de 2 fotos."); st.stop()
 
@@ -612,11 +601,11 @@ if enviar:
     bairro = st.session_state.get("input_bairro", "")
     cidade = st.session_state.get("input_cidade", "")
     endereco_completo = f"{rua}, {num} - {bairro}, {cidade}" + (f" (CEP: {cep})" if cep else "")
-
+    
     dt_ent = st.session_state.get("input_data_entrega")
     produtos_txt = [f"{c}: {i['nome']}" for c, itens in selecoes_cliente.items() for i in itens]
     adicionais_txt = [f"{i['nome']}" for i in adicionais_selecionados]
-
+    
     dados = {
         "cliente_nome": nome.strip(),
         "cliente_cpf": cpf_limpo,
@@ -643,13 +632,13 @@ if enviar:
     with st.spinner("Reservando seu presente e finalizando pedido..."):
         try: sucesso, pedido_id = salvar_pedido(dados)
         except Exception as e: st.error("❌ Erro de conexão ao salvar pedido. Tente novamente."); st.stop()
-
+        
         if sucesso:
             if adicionais_selecionados: salvar_adicionais_pedido(pedido_id, adicionais_selecionados)
             if polaroid and fotos_upload:
                 try: salvar_fotos(pedido_id, fotos_upload[:2])
                 except: pass
-
+                
             try:
                 texto_aviso = (
                     f"🚨 *NOVO PEDIDO RECEBIDO (SITE)!* 🚨\n\n"
