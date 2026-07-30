@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import requests
 import re
+import uuid
 from datetime import datetime, timedelta, date
 
 from config.supabase import supabase
@@ -72,9 +73,6 @@ div[data-testid="stButton"] button[kind="primary"]:hover { background: linear-gr
 /* Tabela Histórico */
 div[data-testid="stDataFrame"] { border-radius: 10px !important; border: 1px solid #e8ddd3 !important; }
 
-/* =========================================
-   REGRAS DE IMPRESSÃO (CTRL+P PARA PDF)
-========================================== */
 @media print {
     header, footer, section[data-testid="stSidebar"], .stAppDeployMenu, 
     div[data-testid="stButton"], .header-banner, .stTabs > div[role="tablist"],
@@ -91,7 +89,7 @@ div[data-testid="stDataFrame"] { border-radius: 10px !important; border: 1px sol
 st.markdown("""
 <div class="header-banner">
     <h1 class="header-title">Vendas Corporativas (B2B)</h1>
-    <p class="header-subtitle">Gere orçamentos em lote, adicione extras precisos, gere PDFs e registre pedidos 🏢</p>
+    <p class="header-subtitle">Monte orçamentos, insira extras sob medida, gere PDFs e confirme os pedidos 🏢</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -99,13 +97,9 @@ st.markdown("""
 # FUNÇÕES, CACHES E BLINDAGENS
 # =====================================================
 def tratar_preco(valor):
-    """Garante que o preço será um número float, mesmo se vier vazio ou nulo do banco"""
-    if valor is None or str(valor).strip() == "":
-        return 0.0
-    try:
-        return float(str(valor).replace(",", "."))
-    except:
-        return 0.0
+    if valor is None or str(valor).strip() == "": return 0.0
+    try: return float(str(valor).replace(",", "."))
+    except: return 0.0
 
 @st.cache_data(ttl=60, show_spinner=False)
 def obter_cestas_admin():
@@ -131,27 +125,24 @@ def carregar_pedidos_b2b():
 
 def buscar_cnpj_api(cnpj_str):
     cnpj_limpo = re.sub(r'\D', '', cnpj_str)
-    if len(cnpj_limpo) != 14:
-        return False, "CNPJ inválido. Digite 14 números."
+    if len(cnpj_limpo) != 14: return False, "CNPJ inválido. Digite 14 números."
     try:
         url = f"https://brasilapi.com.br/api/cnpj/v1/{cnpj_limpo}"
         r = requests.get(url, timeout=5)
-        if r.status_code == 200:
-            return True, r.json()
-        else:
-            return False, "CNPJ não encontrado na Receita Federal."
-    except Exception as e:
-        return False, "Erro de conexão ao buscar o CNPJ."
+        if r.status_code == 200: return True, r.json()
+        else: return False, "CNPJ não encontrado."
+    except Exception as e: return False, "Erro de conexão."
 
 cestas_disponiveis = obter_cestas_admin()
 adicionais_disponiveis = obter_adicionais_admin()
 
-# Sessões para preenchimento automático
+# Sessões do sistema
 if "corp_cnpj" not in st.session_state: st.session_state.corp_cnpj = ""
 if "corp_nome" not in st.session_state: st.session_state.corp_nome = ""
 if "corp_tel" not in st.session_state: st.session_state.corp_tel = ""
 if "corp_end" not in st.session_state: st.session_state.corp_end = ""
 if "itens_orcamento" not in st.session_state: st.session_state["itens_orcamento"] = []
+if "adc_temporarios" not in st.session_state: st.session_state["adc_temporarios"] = []
 
 # =====================================================
 # ABAS DO MÓDULO
@@ -163,7 +154,7 @@ aba_proposta, aba_empresas = st.tabs(["📝 Novo Orçamento / Pedido", "🤝 His
 # =====================================================
 with aba_proposta:
     st.markdown('<div class="corp-card">', unsafe_allow_html=True)
-    st.markdown('<div class="corp-title">⚙️ 1. Dados da Negociação</div>', unsafe_allow_html=True)
+    st.markdown('<div class="corp-title">⚙️ 1. Dados da Empresa e Negociação</div>', unsafe_allow_html=True)
     
     # --- Busca por CNPJ ---
     col_c1, col_c2, col_c3 = st.columns([2, 1, 3])
@@ -199,88 +190,106 @@ with aba_proposta:
     with col_e1:
         empresa_nome = st.text_input("Nome da Empresa Cliente *", value=st.session_state.corp_nome, placeholder="Ex: Sicoob, Tribunal de Justiça, etc.")
         telefone_empresa = st.text_input("WhatsApp / Telefone da Empresa", value=st.session_state.corp_tel, placeholder="Ex: (61) 99999-9999")
-        contato_nome = st.text_input("A/C (Nome do Contato do RH/Compras)", placeholder="Ex: Ana Clara - Coord. de RH")
+        contato_nome = st.text_input("A/C (Nome do Contato)", placeholder="Ex: Ana Clara - Coord. de RH")
     with col_e2:
         validade = st.date_input("Validade da Proposta", value=datetime.now() + timedelta(days=7), format="DD/MM/YYYY")
         motivo = st.text_input("Motivo / Evento", placeholder="Ex: Brindes de Fim de Ano, Dia da Mulher")
         data_entrega = st.date_input("Data Acordada para Entrega", value=date.today(), format="DD/MM/YYYY")
 
-    st.markdown("#### 🎁 2. Adicionar Itens e Extras ao Lote")
+    st.markdown("#### 🎁 2. Montagem do Lote (Pacote e Extras)")
 
+    # Escolha da Cesta
     col_i1, col_i2 = st.columns([3, 1])
     with col_i1:
-        cesta_selecionada = st.selectbox("Selecione o Pacote Principal", [{"id": None, "nome": "Escolha uma cesta...", "preco": 0}] + cestas_disponiveis, format_func=lambda x: x["nome"])
+        cesta_selecionada = st.selectbox("Selecione o Pacote / Cesta Base", [{"id": None, "nome": "Escolha uma cesta...", "preco": 0}] + cestas_disponiveis, format_func=lambda x: x["nome"])
     with col_i2:
-        quantidade = st.number_input("Quantidade do Lote", min_value=1, step=1)
+        quantidade_lote = st.number_input("Qtd. de Cestas no Lote", min_value=1, step=1)
         
-    st.markdown("<div style='font-size: 14px; font-weight: 700; color: #5a3b28; margin-top: 10px;'>➕ Personalizar (Adicionais Extras)</div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size: 14px; font-weight: 700; color: #5a3b28; margin-top: 10px;'>➕ Inserir Adicionais ou Extras na Cesta</div>", unsafe_allow_html=True)
     
-    adicionais_selecionados = []
+    # -------------------------------------------------------------------
+    # SISTEMA DINÂMICO DE EXTRAS E ADICIONAIS
+    # -------------------------------------------------------------------
+    col_add_sys, col_btn_sys, col_add_man, col_btn_man = st.columns([2.5, 1, 2.5, 1])
     
-    # Área Inteligente de Adicionais
-    with st.container(border=True):
-        st.markdown("<div style='font-size: 12px; color: #666; margin-bottom: 15px;'>Marque os itens extras que irão compor <b>cada unidade</b> deste lote. Defina a quantidade e ajuste o valor para itens sob consulta.</div>", unsafe_allow_html=True)
-        
-        for adc in adicionais_disponiveis:
-            adc_id = adc['id']
-            adc_nome = adc['nome']
-            adc_preco = tratar_preco(adc.get('preco'))
-            
-            c_chk, c_qtd, c_val = st.columns([2.5, 1, 1.5])
-            
-            with c_chk:
-                texto_label = f"{adc_nome} (R$ {adc_preco:.2f})" if adc_preco > 0 else f"{adc_nome} (Sob Consulta)"
-                chk = st.checkbox(texto_label, key=f"chk_adc_{adc_id}")
-            
-            if chk:
-                with c_qtd:
-                    qtd_adc = st.number_input("Qtd", min_value=1, value=1, step=1, key=f"qtd_adc_{adc_id}", help="Quantidade por Cesta")
-                with c_val:
-                    if adc_preco == 0:
-                        # Libera para o usuário digitar o valor se for sob consulta
-                        preco_final_adc = st.number_input("Valor Unitário (R$)", min_value=0.0, value=0.0, step=1.0, key=f"val_adc_{adc_id}")
-                    else:
-                        preco_final_adc = adc_preco
-                        st.markdown(f"<div style='margin-top: 35px; color: #137333; font-weight: 800;'>R$ {preco_final_adc:.2f} /un</div>", unsafe_allow_html=True)
-                
-                adicionais_selecionados.append({
-                    "nome": adc_nome,
-                    "qtd_por_cesta": qtd_adc,
-                    "preco_unit": preco_final_adc,
-                    "subtotal": qtd_adc * preco_final_adc
+    with col_add_sys:
+        adicional_selecionado = st.selectbox("Buscar do Catálogo:", [None] + adicionais_disponiveis, format_func=lambda x: x["nome"] if x else "Escolha o item...")
+    with col_btn_sys:
+        st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
+        if st.button("➕ Adicionar", key="btn_sys"):
+            if adicional_selecionado:
+                st.session_state["adc_temporarios"].append({
+                    "id": str(uuid.uuid4()),
+                    "nome": adicional_selecionado["nome"],
+                    "preco": tratar_preco(adicional_selecionado.get("preco")),
+                    "qtd": 1
                 })
-
-    st.write("")
-    col_add1, col_add2, col_add3 = st.columns([1, 2, 1])
-    with col_add2:
-        if st.button("➕ INSERIR CONJUNTO NO CONTRATO", use_container_width=True):
-            if cesta_selecionada.get("id"):
-                preco_base = tratar_preco(cesta_selecionada.get("preco"))
-                valor_extras = sum([item["subtotal"] for item in adicionais_selecionados])
-                preco_unitario_final = preco_base + valor_extras
-                
-                nomes_extras = [f"{item['qtd_por_cesta']}x {item['nome']}" for item in adicionais_selecionados]
-                desc_extras = f" | Extras Inclusos: {', '.join(nomes_extras)}" if nomes_extras else ""
-                
-                st.session_state["itens_orcamento"].append({
-                    "cesta_id": cesta_selecionada["id"],
-                    "nome": cesta_selecionada["nome"],
-                    "preco_unitario": preco_unitario_final,
-                    "quantidade": quantidade,
-                    "descricao": cesta_selecionada.get("descricao", "") + desc_extras,
-                    "extras_raw": ", ".join(nomes_extras)
-                })
-                
-                # Limpa os checkboxes após inserir
-                for k in list(st.session_state.keys()):
-                    if k.startswith("chk_adc_"):
-                        st.session_state[k] = False
-                        
                 st.rerun()
-            else:
-                st.warning("⚠️ Selecione um Pacote Principal primeiro.")
+                
+    with col_add_man:
+        extra_manual = st.text_input("Ou Extra Personalizado (Texto):", placeholder="Ex: Cartão da Empresa")
+    with col_btn_man:
+        st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
+        if st.button("➕ Inserir Extra", key="btn_man"):
+            if extra_manual.strip():
+                st.session_state["adc_temporarios"].append({
+                    "id": str(uuid.uuid4()),
+                    "nome": extra_manual.strip(),
+                    "preco": 0.0,
+                    "qtd": 1
+                })
+                st.rerun()
 
-    # Tabela de Itens Adicionados
+    # Listagem editável dos extras selecionados
+    if st.session_state["adc_temporarios"]:
+        with st.container(border=True):
+            st.markdown("<div style='font-size: 13px; color: #5a3b28; margin-bottom: 10px;'><b>Extras desta Cesta:</b> Edite o valor (se estiver zerado/sob consulta) e a quantidade desejada.</div>", unsafe_allow_html=True)
+            
+            for i, item in enumerate(st.session_state["adc_temporarios"]):
+                c_nome, c_preco, c_qtd, c_del = st.columns([3.5, 1.5, 1.5, 0.5])
+                with c_nome:
+                    st.markdown(f"<div style='margin-top:32px; font-weight:600; font-size:14px;'>📌 {item['nome']}</div>", unsafe_allow_html=True)
+                with c_preco:
+                    novo_preco = st.number_input("Valor Un. (R$)", value=float(item["preco"]), min_value=0.0, step=1.0, format="%.2f", key=f"p_{item['id']}")
+                    st.session_state["adc_temporarios"][i]["preco"] = novo_preco
+                with c_qtd:
+                    nova_qtd = st.number_input("Quantidade", value=int(item["qtd"]), min_value=1, step=1, key=f"q_{item['id']}")
+                    st.session_state["adc_temporarios"][i]["qtd"] = nova_qtd
+                with c_del:
+                    st.markdown("<div style='margin-top:27px;'></div>", unsafe_allow_html=True)
+                    if st.button("🗑️", key=f"del_{item['id']}", help="Remover"):
+                        st.session_state["adc_temporarios"].pop(i)
+                        st.rerun()
+                        
+    st.write("")
+    if st.button("✅ FECHAR PACOTE E LANÇAR NO CONTRATO", use_container_width=True):
+        if cesta_selecionada.get("id"):
+            preco_base = tratar_preco(cesta_selecionada.get("preco"))
+            valor_extras = sum(float(it["preco"]) * int(it["qtd"]) for it in st.session_state["adc_temporarios"])
+            preco_unitario_final = preco_base + valor_extras
+            
+            # Formata os adicionais para salvar no banco textualmente
+            lista_extras_txt = [f"{it['qtd']}x {it['nome']}" for it in st.session_state["adc_temporarios"]]
+            desc_extras = f" | Extras Inclusos: {', '.join(lista_extras_txt)}" if lista_extras_txt else ""
+            
+            st.session_state["itens_orcamento"].append({
+                "cesta_id": cesta_selecionada["id"],
+                "nome": cesta_selecionada["nome"],
+                "preco_unitario": preco_unitario_final,
+                "quantidade": quantidade_lote,
+                "descricao": cesta_selecionada.get("descricao", "") + desc_extras,
+                "extras_raw": ", ".join(lista_extras_txt)
+            })
+            # Limpa o carrinho temporário de adicionais
+            st.session_state["adc_temporarios"] = []
+            st.rerun()
+        else:
+            st.warning("⚠️ Selecione um Pacote Principal primeiro para lançar no contrato.")
+
+
+    # ===================================================================
+    # TABELA DE ITENS FECHADOS DO CONTRATO
+    # ===================================================================
     total_bruto = 0
     if st.session_state["itens_orcamento"]:
         st.markdown("<hr style='border-top: 1px dashed #e8ddd3; margin: 20px 0;'>", unsafe_allow_html=True)
@@ -288,13 +297,13 @@ with aba_proposta:
         df_itens["Subtotal"] = df_itens["preco_unitario"] * df_itens["quantidade"]
         total_bruto = df_itens["Subtotal"].sum()
         
-        st.write("📋 **Itens já Adicionados no Contrato:**")
+        st.write("📋 **Itens Fechados do Contrato (Cestas + Extras):**")
         st.dataframe(
             df_itens[["nome", "quantidade", "preco_unitario", "Subtotal"]].style.format({"preco_unitario": "R$ {:.2f}", "Subtotal": "R$ {:.2f}"}),
             use_container_width=True, hide_index=True
         )
         
-        if st.button("🧹 Limpar Itens"):
+        if st.button("🧹 Limpar Contrato e Recomeçar"):
             st.session_state["itens_orcamento"] = []
             st.rerun()
 
@@ -344,7 +353,7 @@ with aba_proposta:
     with col_btn2:
         if st.button("✅ SALVAR PEDIDO B2B COMO VENDA CONFIRMADA", type="primary", use_container_width=True):
             if not empresa_nome: st.error("Informe o Nome da Empresa."); st.stop()
-            if not st.session_state["itens_orcamento"]: st.error("Adicione ao menos um item ao pedido."); st.stop()
+            if not st.session_state["itens_orcamento"]: st.error("Lembre-se de clicar no botão para lançar a cesta no contrato."); st.stop()
             if not endereco_empresa: st.error("Informe o Endereço de Entrega para a logística."); st.stop()
                 
             lista_str_produtos = []
@@ -353,7 +362,7 @@ with aba_proposta:
             for item in st.session_state["itens_orcamento"]:
                 lista_str_produtos.append(f"{item['quantidade']}x {item['nome']} (R$ {item['preco_unitario']:.2f})")
                 if item.get("extras_raw"):
-                    lista_str_extras_totais.append(f"{item['quantidade']}x lote com: {item['extras_raw']}")
+                    lista_str_extras_totais.append(f"{item['quantidade']}x Lote: [{item['extras_raw']}]")
             
             nome_da_cesta_principal = "Lote Corporativo Misto"
             if len(st.session_state["itens_orcamento"]) == 1:
@@ -363,7 +372,7 @@ with aba_proposta:
             
             msg_adicionais = f"Desconto de {desconto_perc}% aplicado."
             if lista_str_extras_totais:
-                msg_adicionais += "\nEXTRAS INCLUSOS NAS CESTAS:\n" + "\n".join(lista_str_extras_totais)
+                msg_adicionais += "\nEXTRAS INCLUSOS:\n" + "\n".join(lista_str_extras_totais)
 
             dados_b2b = {
                 "cliente_nome": f"[B2B] {empresa_nome.strip()}",
