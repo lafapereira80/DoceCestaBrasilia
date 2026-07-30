@@ -94,12 +94,16 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================
-# FUNÇÕES E CACHES
+# FUNÇÕES, CACHES E BLINDAGENS
 # =====================================================
 def tratar_preco(valor):
     if valor is None or str(valor).strip() == "": return 0.0
     try: return float(str(valor).replace(",", "."))
     except: return 0.0
+
+def formatar_moeda(valor):
+    """Formata número para o padrão de moeda brasileiro (ex: 1.345,00)"""
+    return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 @st.cache_data(ttl=60, show_spinner=False)
 def obter_cestas_admin():
@@ -194,7 +198,7 @@ with aba_proposta:
         data_entrega = st.date_input("Data Acordada para Entrega", value=date.today(), format="DD/MM/YYYY")
 
     # ===================================================================
-    # 2. SISTEMA DE ADIÇÃO AO CARRINHO VIVO (SEM "FECHAR PACOTE")
+    # 2. SISTEMA DE ADIÇÃO AO CARRINHO VIVO
     # ===================================================================
     st.markdown("#### 🎁 2. Adicionar Itens ao Contrato (Pacotes e Extras)")
     
@@ -259,20 +263,17 @@ with aba_proposta:
                 st.markdown(f"<div style='margin-top:8px; font-weight:700; font-size:14px; color:#4a2e1b;'>{icone} {item['nome']}</div>", unsafe_allow_html=True)
                 
             with c2:
-                # O número digitado aqui atualiza o dict do session_state automaticamente
                 novo_preco = st.number_input("Valor", value=float(item["preco_unitario"]), min_value=0.0, step=1.0, format="%.2f", key=f"p_{item['id']}")
                 st.session_state["itens_orcamento"][i]["preco_unitario"] = novo_preco
                 
             with c3:
-                # O número digitado aqui atualiza a quantidade instantaneamente
                 nova_qtd = st.number_input("Qtd", value=int(item["quantidade"]), min_value=1, step=1, key=f"q_{item['id']}")
                 st.session_state["itens_orcamento"][i]["quantidade"] = nova_qtd
                 
             with c4:
-                # O subtotal real-time é calculado multiplicando os valores da tela
                 subtotal_linha = novo_preco * nova_qtd
                 total_bruto += subtotal_linha
-                st.markdown(f"<div style='margin-top:10px; font-weight:800; font-size:16px; color:#137333;'>R$ {subtotal_linha:,.2f}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='margin-top:10px; font-weight:800; font-size:16px; color:#137333;'>R$ {formatar_moeda(subtotal_linha)}</div>", unsafe_allow_html=True)
                 
             with c5:
                 st.markdown("<div style='margin-top:2px;'></div>", unsafe_allow_html=True)
@@ -306,22 +307,22 @@ with aba_proposta:
     <div class="resumo-financeiro">
         <div class="resumo-item">
             <div class="resumo-label">Subtotal (Cestas + Extras)</div>
-            <div class="resumo-valor">R$ {total_bruto:,.2f}</div>
+            <div class="resumo-valor">R$ {formatar_moeda(total_bruto)}</div>
         </div>
         <div class="resumo-item">
             <div class="resumo-label">Desconto Aplicado</div>
-            <div class="resumo-valor" style="color: #c5221f;">- R$ {valor_desconto:,.2f}</div>
+            <div class="resumo-valor" style="color: #c5221f;">- R$ {formatar_moeda(valor_desconto)}</div>
         </div>
         <div class="resumo-item">
             <div class="resumo-label">Logística</div>
-            <div class="resumo-valor">R$ {frete_lote:,.2f}</div>
+            <div class="resumo-valor">R$ {formatar_moeda(frete_lote)}</div>
         </div>
         <div class="resumo-item">
             <div class="resumo-label">VALOR TOTAL B2B</div>
-            <div class="resumo-destaque">R$ {total_liquido:,.2f}</div>
+            <div class="resumo-destaque">R$ {formatar_moeda(total_liquido)}</div>
         </div>
     </div>
-    """.replace(",", "X").replace(".", ",").replace("X", "."), unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
     st.write("")
     col_btn1, col_btn2 = st.columns(2)
@@ -335,14 +336,12 @@ with aba_proposta:
             if not st.session_state["itens_orcamento"]: st.error("Adicione itens ao contrato."); st.stop()
             if not endereco_empresa: st.error("Informe o Endereço de Entrega para a logística."); st.stop()
                 
-            # Organiza os itens para o banco de dados (Cestas em produtos, Extras em adicionais)
             lista_cestas = [it for it in st.session_state["itens_orcamento"] if it["tipo"] == "Cesta"]
             lista_extras = [it for it in st.session_state["itens_orcamento"] if it["tipo"] == "Extra"]
             
-            lista_str_produtos = [f"{it['quantidade']}x {it['nome']} (R$ {it['preco_unitario']:.2f})" for it in lista_cestas]
-            lista_str_extras = [f"{it['quantidade']}x {it['nome']} (R$ {it['preco_unitario']:.2f})" for it in lista_extras]
+            lista_str_produtos = [f"{it['quantidade']}x {it['nome']} (R$ {formatar_moeda(it['preco_unitario'])})" for it in lista_cestas]
+            lista_str_extras = [f"{it['quantidade']}x {it['nome']} (R$ {formatar_moeda(it['preco_unitario'])})" for it in lista_extras]
             
-            # Identifica a cesta principal para a tag
             nome_da_cesta_principal = "Lote Corporativo"
             cesta_id_principal = None
             if lista_cestas:
@@ -351,7 +350,6 @@ with aba_proposta:
             elif lista_extras:
                 nome_da_cesta_principal = "Itens Corporativos Extras"
                 
-            # Se só existirem extras (ex: cliente comprou 50 canecas avulsas), coloca eles no campo produtos
             if not lista_cestas and lista_extras:
                 lista_str_produtos = lista_str_extras
                 msg_adicionais = f"Desconto de {desconto_perc}% aplicado."
@@ -411,72 +409,37 @@ with aba_proposta:
             
             linhas_html = ""
             for item in st.session_state["itens_orcamento"]:
-                # Se for Cesta tem a descrição original, se for Extra fica vazio
                 desc_curta = (item['descricao'][:150] + '...') if item['descricao'] and len(item['descricao']) > 150 else (item['descricao'] or '')
-                linhas_html += f"""
-                <tr>
-                    <td style="padding: 10px; border-bottom: 1px solid #f5eee6;"><b>{item['nome']}</b><br><span style="font-size:11px; color:#666;">{desc_curta}</span></td>
-                    <td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: center;">{item['quantidade']}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: right;">R$ {item['preco_unitario']:,.2f}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: right;">R$ {(item['preco_unitario'] * item['quantidade']):,.2f}</td>
-                </tr>
-                """
+                preco_f = formatar_moeda(item['preco_unitario'])
+                subtotal_f = formatar_moeda(item['preco_unitario'] * item['quantidade'])
+                
+                linhas_html += f"""<tr>
+<td style="padding: 10px; border-bottom: 1px solid #f5eee6;"><b>{item['nome']}</b><br><span style="font-size:11px; color:#666;">{desc_curta}</span></td>
+<td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: center;">{item['quantidade']}</td>
+<td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: right;">R$ {preco_f}</td>
+<td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: right;">R$ {subtotal_f}</td>
+</tr>"""
 
-            st.markdown(f"""
-            <div class="proposta-preview">
-                <div class="proposta-header">
-                    <h2 style="color: #137333; margin-bottom: 5px; font-weight: 800;">PROPOSTA COMERCIAL</h2>
-                    <p style="margin: 0; color: #555; font-size: 14px;">Doce Cesta Brasília - Gestão de Encantamento B2B</p>
-                </div>
-                
-                <table style="width: 100%; border: none; margin-bottom: 25px;">
-                    <tr>
-                        <td style="width: 60%; vertical-align: top;">
-                            <p style="margin:2px 0;"><b>Para:</b> {empresa_nome}</p>
-                            <p style="margin:2px 0;"><b>A/C:</b> {contato_nome}</p>
-                            <p style="margin:2px 0;"><b>Ref:</b> {motivo or 'Orçamento de Produtos'}</p>
-                        </td>
-                        <td style="width: 40%; vertical-align: top; text-align: right;">
-                            <p style="margin:2px 0;"><b>Data Emissão:</b> {datetime.now().strftime("%d/%m/%Y")}</p>
-                            <p style="margin:2px 0;"><b>Validade:</b> {validade.strftime("%d/%m/%Y")}</p>
-                        </td>
-                    </tr>
-                </table>
-                
-                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                    <tr style="background-color: #faf7f3;">
-                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e8ddd3;">Descrição dos Itens do Contrato</th>
-                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e8ddd3;">Qtd</th>
-                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">V. Unitário</th>
-                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">Subtotal</th>
-                    </tr>
-                    {linhas_html.replace(",", "X").replace(".", ",").replace("X", ".")}
-                </table>
-                
-                <div style="margin-top: 25px; text-align: right; font-size: 15px;">
-                    <p style="margin: 4px 0;">Subtotal: R$ {total_bruto:,.2f}</p>
-                    <p style="margin: 4px 0; color: #c5221f;">Desconto ({desconto_perc}%): - R$ {valor_desconto:,.2f}</p>
-                    <p style="margin: 4px 0;">Logística/Frete: R$ {frete_lote:,.2f}</p>
-                </div>
-                
-                <div class="proposta-total">
-                    TOTAL GERAL: R$ {total_liquido:,.2f}
-                </div>
-                
-                <div style="margin-top: 40px; font-size: 13px; color: #666; background: #faf7f3; padding: 15px; border-radius: 8px;">
-                    <b style="color: #4a2e1b;">Condições Comerciais:</b><br>
-                    • Forma de Pagamento: {prazo_pagamento}<br>
-                    • O pedido só será agendado para produção após o aceite formal deste documento.<br>
-                    • Produtos sujeitos a alteração conforme disponibilidade, mantendo a mesma qualidade.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            # HTML Blindado sem quebras de linha para não quebrar a leitura do Streamlit Markdown
+            html_documento = f"""<div class="proposta-preview">
+<div class="proposta-header">
+<h2 style="color: #137333; margin-bottom: 5px; font-weight: 800;">PROPOSTA COMERCIAL</h2>
+<p style="margin: 0; color: #555; font-size: 14px;">Doce Cesta Brasília - Gestão de Encantamento B2B</p>
+</div>
+<table style="width: 100%; border: none; margin-bottom: 25px;"><tr><td style="width: 60%; vertical-align: top;"><p style="margin:2px 0;"><b>Para:</b> {empresa_nome}</p><p style="margin:2px 0;"><b>A/C:</b> {contato_nome}</p><p style="margin:2px 0;"><b>Ref:</b> {motivo or 'Orçamento de Produtos'}</p></td><td style="width: 40%; vertical-align: top; text-align: right;"><p style="margin:2px 0;"><b>Data Emissão:</b> {datetime.now().strftime("%d/%m/%Y")}</p><p style="margin:2px 0;"><b>Validade:</b> {validade.strftime("%d/%m/%Y")}</p></td></tr></table>
+<table style="width: 100%; border-collapse: collapse; margin-top: 10px;"><tr style="background-color: #faf7f3;"><th style="padding: 12px; text-align: left; border-bottom: 2px solid #e8ddd3;">Descrição dos Itens do Contrato</th><th style="padding: 12px; text-align: center; border-bottom: 2px solid #e8ddd3;">Qtd</th><th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">V. Unitário</th><th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">Subtotal</th></tr>{linhas_html}</table>
+<div style="margin-top: 25px; text-align: right; font-size: 15px;"><p style="margin: 4px 0;">Subtotal: R$ {formatar_moeda(total_bruto)}</p><p style="margin: 4px 0; color: #c5221f;">Desconto ({desconto_perc}%): - R$ {formatar_moeda(valor_desconto)}</p><p style="margin: 4px 0;">Logística/Frete: R$ {formatar_moeda(frete_lote)}</p></div>
+<div class="proposta-total">TOTAL GERAL: R$ {formatar_moeda(total_liquido)}</div>
+<div style="margin-top: 40px; font-size: 13px; color: #666; background: #faf7f3; padding: 15px; border-radius: 8px;"><b style="color: #4a2e1b;">Condições Comerciais:</b><br>• Forma de Pagamento: {prazo_pagamento}<br>• O pedido só será agendado para produção após o aceite formal deste documento.<br>• Produtos sujeitos a alteração conforme disponibilidade, mantendo a mesma qualidade.</div>
+</div>"""
+            
+            st.markdown(html_documento, unsafe_allow_html=True)
 
         # VISÃO WHATSAPP
         with aba_whats:
             linhas_whatsapp = ""
             for item in st.session_state["itens_orcamento"]:
-                linhas_whatsapp += f"▪️ {item['quantidade']}x *{item['nome']}* (R$ {item['preco_unitario']:,.2f})\n"
+                linhas_whatsapp += f"▪️ {item['quantidade']}x *{item['nome']}* (R$ {formatar_moeda(item['preco_unitario'])})\n"
                 
             texto_wpp = f"""*PROPOSTA COMERCIAL - DOCE CESTA BRASÍLIA* 🎁
             
@@ -487,16 +450,16 @@ with aba_proposta:
 *ITENS DO ORÇAMENTO:*
 {linhas_whatsapp}
 *RESUMO FINANCEIRO:*
-💰 Subtotal: R$ {total_bruto:,.2f}
-🔻 Desconto ({desconto_perc}%): - R$ {valor_desconto:,.2f}
-🚚 Logística (Frete): R$ {frete_lote:,.2f}
+💰 Subtotal: R$ {formatar_moeda(total_bruto)}
+🔻 Desconto ({desconto_perc}%): - R$ {formatar_moeda(valor_desconto)}
+🚚 Logística (Frete): R$ {formatar_moeda(frete_lote)}
 ━━━━━━━━━━━━━━━━━━━━
-*TOTAL GERAL: R$ {total_liquido:,.2f}*
+*TOTAL GERAL: R$ {formatar_moeda(total_liquido)}*
 
 💳 *Condição de Pagamento:* {prazo_pagamento}
 📍 *Endereço Cadastrado:* {endereco_empresa or 'A confirmar'}
 
-Qualquer dúvida, nossa equipe está à disposição para ajudar a criar a melhor experiência para vocês! 🌻""".replace(",", "X").replace(".", ",").replace("X", ".")
+Qualquer dúvida, nossa equipe está à disposição para ajudar a criar a melhor experiência para vocês! 🌻"""
             
             st.code(texto_wpp, language="markdown")
 
@@ -516,7 +479,7 @@ with aba_empresas:
         
         df_b2b["Empresa"] = df_b2b["cliente_nome"].str.replace("[B2B]", "", regex=False).str.strip()
         df_b2b["Data"] = pd.to_datetime(df_b2b["created_at"]).dt.strftime("%d/%m/%Y")
-        df_b2b["Valor"] = pd.to_numeric(df_b2b["valor_total"]).apply(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        df_b2b["Valor"] = pd.to_numeric(df_b2b["valor_total"]).apply(lambda x: f"R$ {formatar_moeda(x)}")
         
         colunas_exibir = ["Data", "Empresa", "cesta_nome", "Valor", "status", "pagamento"]
         df_display = df_b2b[colunas_exibir].rename(columns={
@@ -529,7 +492,7 @@ with aba_empresas:
         total_empresas = df_b2b["Empresa"].nunique()
         
         c1, c2 = st.columns(2)
-        c1.metric("💰 Faturamento Total B2B", f"R$ {total_faturado_b2b:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        c1.metric("💰 Faturamento Total B2B", f"R$ {formatar_moeda(total_faturado_b2b)}")
         c2.metric("🏢 Empresas Atendidas", total_empresas)
         
         st.write("")
