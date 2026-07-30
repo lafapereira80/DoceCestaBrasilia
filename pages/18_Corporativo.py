@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, date
 from config.supabase import supabase
 from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
+from services.pedido_service import salvar_pedido
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 
@@ -78,12 +79,21 @@ div[data-testid="stButton"] button[kind="primary"]:hover { background: linear-gr
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("""
-<div class="header-banner">
-    <h1 class="header-title">Vendas Corporativas (B2B)</h1>
-    <p class="header-subtitle">Monte orçamentos vivos, edite preços, gere PDFs e registre pedidos 🏢</p>
-</div>
-""", unsafe_allow_html=True)
+# CABEÇALHO COM BOTÃO DE VOLTAR ALINHADO
+c_head, c_btn = st.columns([4, 1], vertical_alignment="center")
+with c_head:
+    st.markdown("""
+    <div class="header-banner" style="margin-bottom: 0px !important;">
+        <h1 class="header-title">Vendas Corporativas (B2B)</h1>
+        <p class="header-subtitle">Monte orçamentos vivos, edite preços, gere PDFs e registre pedidos 🏢</p>
+    </div>
+    """, unsafe_allow_html=True)
+with c_btn:
+    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+    if st.button("⬅️ Voltar ao Mural", use_container_width=True):
+        st.switch_page("pages/02_Pedidos.py")
+
+st.write("")
 
 # =====================================================
 # FUNÇÕES, CACHES E BLINDAGENS
@@ -266,7 +276,6 @@ with aba_proposta:
             with c1:
                 icone = "📦" if item["tipo"] == "Cesta" else "✨"
                 st.markdown(f"<div style='margin-top:8px; font-weight:700; font-size:14px; color:#4a2e1b;'>{icone} {item['nome']}</div>", unsafe_allow_html=True)
-                # Exibe apenas os itens selecionados da cesta (sem a descrição longa da cesta)
                 if item.get("descricao"):
                     st.caption(item["descricao"])
                 
