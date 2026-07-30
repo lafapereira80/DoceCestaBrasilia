@@ -16,7 +16,7 @@ from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA
+# CONFIGURAÇÃO DA PÁGINA (WIDE PARA PERFORMANCE VISUAL)
 # =====================================================
 st.set_page_config(page_title="Painel PDV | Pedido Varejo", page_icon="🛍️", layout="wide")
 configurar_pagina()
@@ -24,7 +24,7 @@ menu_lateral()
 administrador_operador()
 
 # =====================================================
-# CSS PREMIUM (PADRÃO ESPELHADO DA PÁGINA CORPORATIVA)
+# CSS PREMIUM COM SUPRESSÃO DE PISCADAS (SMOOTH UI)
 # =====================================================
 st.markdown(
 """
@@ -32,35 +32,35 @@ st.markdown(
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
 
 html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; color: #4a2e1b !important; }
-.block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; max-width: 1200px; }
-h1, h2, h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-bottom: 8px !important; letter-spacing: -0.3px; }
+.block-container { padding-top: 1.2rem !important; padding-bottom: 4rem !important; max-width: 1200px; }
+h1, h2, h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-bottom: 6px !important; letter-spacing: -0.3px; }
 
 .header-banner {
-    display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; margin-bottom: 2rem;
-    background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%); padding: 25px 20px;
-    border-radius: 20px; border: 1px solid #e8ddd3; box-shadow: 0 8px 24px rgba(90, 59, 40, 0.04);
+    display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 4px; margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%); padding: 20px;
+    border-radius: 16px; border: 1px solid #e8ddd3; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03);
 }
-.header-title { font-family: 'Dancing Script', cursive !important; font-size: 42px !important; font-weight: 700 !important; color: #c5721f !important; margin: 0 !important; line-height: 1.1 !important; text-align: center;}
-.header-subtitle { font-size: 14px !important; color: #775a46 !important; font-weight: 600 !important; margin-top: 0px !important; text-align: center;}
+.header-title { font-family: 'Dancing Script', cursive !important; font-size: 38px !important; font-weight: 700 !important; color: #c5721f !important; margin: 0 !important; line-height: 1 !important; text-align: center;}
+.header-subtitle { font-size: 13px !important; color: #775a46 !important; font-weight: 600 !important; margin-top: 0px !important; text-align: center;}
 
 .corp-card {
-    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 24px;
-    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.02); margin-bottom: 15px;
+    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 20px;
+    box-shadow: 0 4px 12px rgba(90, 59, 40, 0.02); margin-bottom: 15px;
 }
-.corp-title { font-size: 18px; font-weight: 800; color: #c5721f; margin-bottom: 15px; border-bottom: 2px dashed #f5eee6; padding-bottom: 10px;}
+.corp-title { font-size: 16px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 2px dashed #f5eee6; padding-bottom: 8px;}
 
 .resumo-financeiro {
-    background: #fdfbf8; border: 1px solid #e8ddd3; border-radius: 12px; padding: 15px 20px;
+    background: #fdfbf8; border: 1px solid #e8ddd3; border-radius: 12px; padding: 12px 18px;
     display: flex; justify-content: space-between; align-items: center; margin-top: 15px;
 }
 .resumo-item { text-align: center; }
-.resumo-label { font-size: 12px; font-weight: 700; color: #775a46; text-transform: uppercase; letter-spacing: 0.5px; }
-.resumo-valor { font-size: 20px; font-weight: 800; color: #4a2e1b; }
-.resumo-destaque { font-size: 24px; font-weight: 800; color: #137333; }
+.resumo-label { font-size: 11.5px; font-weight: 700; color: #775a46; text-transform: uppercase; letter-spacing: 0.5px; }
+.resumo-valor { font-size: 18px; font-weight: 800; color: #4a2e1b; }
+.resumo-destaque { font-size: 22px; font-weight: 800; color: #137333; }
 
-div[data-testid="stButton"] button { border-radius: 12px !important; font-weight: 800 !important; transition: all 0.2s ease !important; }
-div[data-testid="stButton"] button[kind="primary"] { background: linear-gradient(135deg, #137333 0%, #0d4e22) !important; color: white !important; border: none !important; box-shadow: 0 4px 15px rgba(19, 115, 51, 0.2) !important; }
-div[data-testid="stButton"] button[kind="primary"]:hover { background: linear-gradient(135deg, #0f5c28 0%, #093818) !important; transform: translateY(-2px) !important; }
+div[data-testid="stButton"] button { border-radius: 10px !important; font-weight: 800 !important; transition: all 0.15s ease !important; }
+div[data-testid="stButton"] button[kind="primary"] { background: linear-gradient(135deg, #137333 0%, #0d4e22) !important; color: white !important; border: none !important; box-shadow: 0 4px 12px rgba(19, 115, 51, 0.2) !important; }
+div[data-testid="stButton"] button[kind="primary"]:hover { background: linear-gradient(135deg, #0f5c28 0%, #093818) !important; transform: translateY(-1px) !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -70,18 +70,18 @@ with c_head:
     st.markdown("""
     <div class="header-banner" style="margin-bottom: 0px !important;">
         <h1 class="header-title">Painel de Vendas Varejo (PDV)</h1>
-        <p class="header-subtitle">Gestão de balcão unificada com orçamentos vivos e flexíveis 🛍️</p>
+        <p class="header-subtitle">Carregamento instantâneo e sem interrupções visuais 🛍️</p>
     </div>
     """, unsafe_allow_html=True)
 with c_btn:
-    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-    if st.button("⬅️ Voltar ao Mural", use_container_width=True):
+    st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+    if st.button("⬅️ Voltar", use_container_width=True):
         st.switch_page("pages/02_Pedidos.py")
 
 st.write("")
 
 # =====================================================
-# FUNÇÕES, CACHES E BLINDAGENS
+# FUNÇÕES E CACHES OTIMIZADOS (ZERO PISCADAS)
 # =====================================================
 def tratar_preco(valor):
     if valor is None or str(valor).strip() == "": return 0.0
@@ -91,12 +91,15 @@ def tratar_preco(valor):
 def formatar_moeda(valor):
     return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
-@st.cache_data(ttl=60, show_spinner=False)
+# Cache estendido para evitar novas requisições de rede lentas ao interagir com a tela
+@st.cache_data(ttl=300, show_spinner=False)
 def obter_cestas_admin():
-    cestas = listar_cestas()
-    return sorted([c for c in cestas if c.get("ativa", True)], key=lambda x: x.get("nome", ""))
+    try:
+        cestas = listar_cestas()
+        return sorted([c for c in cestas if c.get("ativa", True)], key=lambda x: x.get("nome", ""))
+    except: return []
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def obter_adicionais_admin():
     try:
         categorias = supabase.table("categorias").select("*").execute().data or []
@@ -105,16 +108,22 @@ def obter_adicionais_admin():
             produtos_add = listar_produtos_por_categoria_id(cat_add["id"])
             return sorted([p for p in produtos_add if p.get("ativo", True)], key=lambda x: x.get("nome", ""))
         return []
-    except:
-        return []
+    except: return []
+
+@st.cache_data(ttl=300, show_spinner=False)
+def carregar_config_cesta_cached(cesta_id):
+    try:
+        return carregar_configuracao_cesta(cesta_id)
+    except: return []
 
 def buscar_cep_api(cep_str):
     cep_limpo = re.sub(r'\D', '', cep_str)
     if len(cep_limpo) != 8: return False, "CEP inválido."
     try:
-        r = requests.get(f"https://viacep.com.br/ws/{cep_limpo}/json/", timeout=3)
-        if r.status_code == 200 and "erro" not in r.json():
-            return True, r.json()
+        r = requests.get(f"https://brasilapi.com.br/api/cep/v2/{cep_limpo}", timeout=2)
+        if r.status_code == 200:
+            d = r.json()
+            return True, {"logradouro": d.get("street", ""), "bairro": d.get("neighborhood", ""), "localidade": d.get("city", ""), "uf": d.get("state", "")}
         return False, "CEP não encontrado."
     except: return False, "Erro de conexão."
 
@@ -128,18 +137,16 @@ if "modo_busca_cli" not in st.session_state: st.session_state.modo_busca_cli = F
 if "itens_orcamento_varejo" not in st.session_state: st.session_state["itens_orcamento_varejo"] = []
 
 # =====================================================
-# FORMULÁRIO PRINCIPAL
+# 1. DADOS DO COMPRADOR
 # =====================================================
 st.markdown('<div class="corp-card">', unsafe_allow_html=True)
 st.markdown('<div class="corp-title">👤 1. Dados do Comprador</div>', unsafe_allow_html=True)
 
-cc1, cc_btn = st.columns([3, 1])
+cc1, cc_btn = st.columns([3.5, 1], vertical_alignment="bottom")
 with cc1: nome_comp = st.text_input("Nome Completo *", value=st.session_state.man_nome, key="in_nome")
 with cc_btn:
-    st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
-    if st.button("🔍 Buscar", help="Buscar cliente antigo", use_container_width=True):
+    if st.button("🔍 Buscar Clientes", help="Pesquisar histórico", use_container_width=True):
         st.session_state.modo_busca_cli = not st.session_state.modo_busca_cli
-        st.rerun()
 
 c_cpf, c_tel = st.columns(2)
 with c_cpf: cpf_comp = st.text_input("CPF", value=st.session_state.man_cpf, key="in_cpf")
@@ -155,10 +162,10 @@ if st.session_state.modo_busca_cli:
     except: lista_clientes = []
     
     if termo_busca: lista_clientes = [c for c in lista_clientes if termo_busca.lower() in str(c.get("cliente_nome", "")).lower() or termo_busca in str(c.get("cliente_cpf", ""))]
-    opcoes_cli = [{"cliente_nome": "--- Selecione o cliente ---", "cliente_cpf": "", "cliente_telefone": ""}] + lista_clientes
+    opcoes_cli = [{"cliente_nome": "--- Selecione ---", "cliente_cpf": "", "cliente_telefone": ""}] + lista_clientes
     cli_sel = st.selectbox("Resultados:", opcoes_cli, format_func=lambda x: f"{x['cliente_nome']} ({x['cliente_telefone']})", key="man_busca_dropdown")
     
-    if cli_sel and cli_sel["cliente_nome"] != "--- Selecione o cliente ---":
+    if cli_sel and cli_sel["cliente_nome"] != "--- Selecione ---":
         st.session_state.man_nome = cli_sel["cliente_nome"]
         st.session_state.man_cpf = cli_sel["cliente_cpf"]
         st.session_state.man_tel = cli_sel["cliente_telefone"]
@@ -169,7 +176,7 @@ if st.session_state.modo_busca_cli:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
-# SEÇÃO 2: ITENS E CESTAS
+# 2. SELEÇÃO DE PRODUTOS E ADICIONAIS
 # =====================================================
 st.markdown('<div class="corp-card">', unsafe_allow_html=True)
 st.markdown('<div class="corp-title">🎁 2. Seleção de Produtos e Adicionais</div>', unsafe_allow_html=True)
@@ -180,10 +187,9 @@ with col_add1:
     st.markdown("<div style='font-size: 13px; font-weight: 700; color: #775a46;'>📦 Pacotes (Cestas Base)</div>", unsafe_allow_html=True)
     cesta_sel = st.selectbox("Cestas", [None] + cestas_disponiveis, format_func=lambda x: x["nome"] if x else "Selecione uma Cesta...", label_visibility="collapsed")
     
-    # ITENS SELECIONÁVEIS DA CESTA
     selecoes_cesta_varejo = {}
     if cesta_sel:
-        cfg = carregar_configuracao_cesta(cesta_sel["id"])
+        cfg = carregar_config_cesta_cached(cesta_sel["id"])
         if cfg and any(grp.get("produtos") for grp in cfg):
             st.markdown("<div style='font-size: 11.5px; font-weight: 700; color: #137333; margin-top: 5px;'>🍓 Opções da Cesta:</div>", unsafe_allow_html=True)
             for grp in cfg:
@@ -203,8 +209,7 @@ with col_add1:
             itens_sel_str = ""
             if selecoes_cesta_varejo:
                 opcoes_str = " | ".join([f"{cat}: {', '.join([i['nome'] for i in itens])}" for cat, itens in selecoes_cesta_varejo.items() if itens])
-                if opcoes_str:
-                    itens_sel_str = f"Itens: {opcoes_str}"
+                if opcoes_str: itens_sel_str = f"Itens: {opcoes_str}"
 
             st.session_state["itens_orcamento_varejo"].append({
                 "id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": cesta_sel["id"], "nome": cesta_sel["nome"], 
@@ -235,54 +240,46 @@ with col_add3:
             st.rerun()
 
 total_bruto = 0
-
 if st.session_state["itens_orcamento_varejo"]:
-    st.markdown("<hr style='border-top: 1px dashed #e8ddd3; margin: 25px 0;'>", unsafe_allow_html=True)
-    st.markdown("### 🛒 Resumo do Pedido (Edite Preços e Quantidades)")
+    st.markdown("<hr style='border-top: 1px dashed #e8ddd3; margin: 20px 0;'>", unsafe_allow_html=True)
+    st.markdown("### 🛒 Resumo do Pedido")
     
     h1, h2, h3, h4, h5 = st.columns([3.5, 1.5, 1.5, 1.5, 0.5])
-    h1.markdown("<div style='color:#775a46; font-size:12px; font-weight:700; text-transform:uppercase;'>Descrição do Item</div>", unsafe_allow_html=True)
-    h2.markdown("<div style='color:#775a46; font-size:12px; font-weight:700; text-transform:uppercase;'>Valor Un. (R$)</div>", unsafe_allow_html=True)
+    h1.markdown("<div style='color:#775a46; font-size:12px; font-weight:700; text-transform:uppercase;'>Descrição</div>", unsafe_allow_html=True)
+    h2.markdown("<div style='color:#775a46; font-size:12px; font-weight:700; text-transform:uppercase;'>V. Un. (R$)</div>", unsafe_allow_html=True)
     h3.markdown("<div style='color:#775a46; font-size:12px; font-weight:700; text-transform:uppercase;'>Qtd</div>", unsafe_allow_html=True)
     h4.markdown("<div style='color:#775a46; font-size:12px; font-weight:700; text-transform:uppercase;'>Subtotal</div>", unsafe_allow_html=True)
     
     for i, item in enumerate(st.session_state["itens_orcamento_varejo"]):
         c1, c2, c3, c4, c5 = st.columns([3.5, 1.5, 1.5, 1.5, 0.5])
-        
         with c1:
             icone = "📦" if item["tipo"] == "Cesta" else "✨"
-            st.markdown(f"<div style='margin-top:8px; font-weight:700; font-size:14px; color:#4a2e1b;'>{icone} {item['nome']}</div>", unsafe_allow_html=True)
-            if item.get("descricao"):
-                st.caption(item["descricao"])
-            
+            st.markdown(f"<div style='margin-top:6px; font-weight:700; font-size:13.5px; color:#4a2e1b;'>{icone} {item['nome']}</div>", unsafe_allow_html=True)
+            if item.get("descricao"): st.caption(item["descricao"])
         with c2:
             novo_preco = st.number_input("Valor", value=float(item["preco_unitario"]), min_value=0.0, step=1.0, format="%.2f", key=f"var_p_{item['id']}", label_visibility="collapsed")
             st.session_state["itens_orcamento_varejo"][i]["preco_unitario"] = novo_preco
-            
         with c3:
             nova_qtd = st.number_input("Qtd", value=int(item["quantidade"]), min_value=1, step=1, key=f"var_q_{item['id']}", label_visibility="collapsed")
             st.session_state["itens_orcamento_varejo"][i]["quantidade"] = nova_qtd
-            
         with c4:
             subtotal_linha = novo_preco * nova_qtd
             total_bruto += subtotal_linha
-            st.markdown(f"<div style='margin-top:10px; font-weight:800; font-size:16px; color:#137333;'>R$ {formatar_moeda(subtotal_linha)}</div>", unsafe_allow_html=True)
-            
+            st.markdown(f"<div style='margin-top:8px; font-weight:800; font-size:15px; color:#137333;'>R$ {formatar_moeda(subtotal_linha)}</div>", unsafe_allow_html=True)
         with c5:
-            st.markdown("<div style='margin-top:2px;'></div>", unsafe_allow_html=True)
-            if st.button("🗑️", key=f"var_d_{item['id']}", help="Remover item"):
+            if st.button("🗑️", key=f"var_d_{item['id']}"):
                 st.session_state["itens_orcamento_varejo"].pop(i)
                 st.rerun()
 
     st.write("")
-    if st.button("🧹 Limpar Todos os Itens"):
+    if st.button("🧹 Limpar Carrinho"):
         st.session_state["itens_orcamento_varejo"] = []
         st.rerun()
 
 st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
-# SEÇÃO 3: DESTINATÁRIO E CARTÃO
+# 3. DESTINATÁRIO E CARTÃO
 # =====================================================
 st.markdown('<div class="corp-card">', unsafe_allow_html=True)
 st.markdown('<div class="corp-title">💌 3. Destinatário e Cartão</div>', unsafe_allow_html=True)
@@ -291,31 +288,29 @@ cd1, cd2 = st.columns(2)
 with cd1: dest_nome = st.text_input("Nome do Homenageado *", key="man_dest_nome")
 with cd2: dest_tel = st.text_input("Telefone do Homenageado", key="man_dest_tel")
 motivo = st.text_input("Ocasião (Ex: Aniversário)", key="man_motivo")
-mensagem = st.text_area("Mensagem do Cartão", height=80, key="man_msg", placeholder="Texto impresso no cartão.")
+mensagem = st.text_area("Mensagem do Cartão", height=70, key="man_msg", placeholder="Texto impresso no cartão.")
 
 st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
-# SEÇÃO 5: ENDEREÇO E ENTREGA
+# 5. ENDEREÇO E ENTREGA
 # =====================================================
 st.markdown('<div class="corp-card">', unsafe_allow_html=True)
 st.markdown('<div class="corp-title">📍 5. Endereço e Entrega</div>', unsafe_allow_html=True)
 
-cx1, cx2 = st.columns([1.5, 2.5])
-with cx1:
-    cep_in = st.text_input("CEP", max_chars=8, placeholder="Somente números", key="in_cep")
-    cep_limpo = re.sub(r'\D', '', cep_in)
-    if len(cep_limpo) == 8 and st.session_state.ultimo_cep_man != cep_limpo:
+cx1, cx2 = st.columns([1.5, 2.5], vertical_alignment="bottom")
+with cx1: cep_in = st.text_input("CEP", max_chars=8, placeholder="Somente números", key="in_cep")
+with cx2:
+    if st.button("🔍 Buscar CEP", use_container_width=True):
+        cep_limpo = re.sub(r'\D', '', cep_in)
         sucesso, dados = buscar_cep_api(cep_limpo)
         if sucesso:
             st.session_state.man_rua = dados.get("logradouro", "")
             st.session_state.man_bairro = dados.get("bairro", "")
             st.session_state.man_cidade = f"{dados.get('localidade', '')} - {dados.get('uf', '')}"
-        st.session_state.ultimo_cep_man = cep_limpo
-        st.rerun()
-with cx2:
-    st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
-    st.button("🔍 Buscar CEP", use_container_width=True)
+            st.toast("✅ Endereço carregado!")
+            st.rerun()
+        else: st.warning(dados)
 
 c_r1, c_r2 = st.columns([3, 1])
 with c_r1: rua = st.text_input("Rua/Logradouro *", value=st.session_state.man_rua, key="in_rua")
@@ -325,7 +320,7 @@ c_b1, c_b2 = st.columns(2)
 with c_b1: bairro = st.text_input("Bairro *", value=st.session_state.man_bairro, key="in_bairro")
 with c_b2: cidade = st.text_input("Cidade-UF *", value=st.session_state.man_cidade, key="in_cidade")
 
-st.markdown("<hr style='border: none; border-top: 1px dashed #dfcdbb; margin: 15px 0;'>", unsafe_allow_html=True)
+st.markdown("<hr style='border: none; border-top: 1px dashed #dfcdbb; margin: 12px 0;'>", unsafe_allow_html=True)
 ce1, ce2 = st.columns(2)
 with ce1: dt_ent = st.date_input("Data da Entrega", value=date.today(), format="DD/MM/YYYY", key="man_dt")
 with ce2: per_ent = st.text_input("Horário Combinado", placeholder="Ex: 08h às 10h", key="man_per")
@@ -333,7 +328,7 @@ with ce2: per_ent = st.text_input("Horário Combinado", placeholder="Ex: 08h às
 st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
-# SEÇÃO FINAL: LOGÍSTICA, PAGAMENTO E FECHAMENTO
+# LOGÍSTICA, PAGAMENTO E FECHAMENTO
 # =====================================================
 st.markdown('<div class="corp-card">', unsafe_allow_html=True)
 st.markdown('<div class="corp-title">💰 Logística, Pagamento e Resumo</div>', unsafe_allow_html=True)
@@ -344,7 +339,6 @@ with col_d2: desconto_perc = st.number_input("Desconto (%)", min_value=0.0, max_
 with col_d3: pag = st.selectbox("Forma de Pagamento", ["Pix", "Cartão de Crédito"], key="man_pag")
 with col_d4: status = st.selectbox("Status Inicial", ["Recebido", "Pago"], key="man_status")
 
-# Cálculos Financeiros
 valor_desconto = total_bruto * (desconto_perc / 100)
 total_liquido = total_bruto - valor_desconto + frete_lote
 
@@ -433,7 +427,6 @@ if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width
             st.success(f"✅ Pedido criado com sucesso para {nome_comp}!")
             st.session_state["itens_orcamento_varejo"] = []
             
-            # GERAÇÃO DA MENSAGEM WHATSAPP
             linhas_wpp = "\n".join([f"📦 {p}" for p in lista_str_produtos])
             if lista_str_extras:
                 linhas_wpp += "\n" + "\n".join([f"🎀 {e}" for e in lista_str_extras])
