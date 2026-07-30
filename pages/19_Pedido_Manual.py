@@ -8,17 +8,14 @@ from services.pedido_service import salvar_pedido
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 
-# =====================================================
-# CONFIGURAÇÃO DA PÁGINA
-# =====================================================
 st.set_page_config(page_title="Novo Pedido (Varejo)", page_icon="🛍️", layout="wide")
 configurar_pagina()
 menu_lateral()
 administrador_operador()
 
 # =====================================================
-# CSS PREMIUM E OTIMIZAÇÃO PARA IMPRESSÃO (PDF)
-# =====================================================
+# CSS PREMIUM
+# ==========================================
 st.markdown(
 """
 <style>
@@ -28,7 +25,6 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; max-width: 1200px; }
 h1, h2, h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-bottom: 8px !important; letter-spacing: -0.3px; }
 
-/* Banner / Cabeçalho Luxuoso */
 .header-banner {
     display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; margin-bottom: 2rem;
     background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%); padding: 25px 20px;
@@ -50,7 +46,6 @@ h1, h2, h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-
 .proposta-header { text-align: center; border-bottom: 3px solid #c5721f; padding-bottom: 15px; margin-bottom: 25px; }
 .proposta-total { font-size: 22px; font-weight: bold; color: #c5721f; text-align: right; margin-top: 20px; border-top: 2px solid #e8ddd3; padding-top: 15px;}
 
-/* Painel de Resumo Financeiro Real-Time */
 .resumo-financeiro {
     background: #fdfbf8; border: 1px solid #e8ddd3; border-radius: 12px; padding: 15px 20px;
     display: flex; justify-content: space-between; align-items: center; margin-top: 15px;
@@ -60,11 +55,14 @@ h1, h2, h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-
 .resumo-valor { font-size: 20px; font-weight: 800; color: #4a2e1b; }
 .resumo-destaque { font-size: 24px; font-weight: 800; color: #137333; }
 
+.polaroid-box {
+    background: #fff8f8; border: 2px dashed #ffb6c1; border-radius: 12px; padding: 15px; margin-top: 15px;
+}
+
 div[data-testid="stButton"] button { border-radius: 12px !important; font-weight: 800 !important; transition: all 0.2s ease !important; }
 div[data-testid="stButton"] button[kind="primary"] { background: linear-gradient(135deg, #c5721f 0%, #a65d14) !important; color: white !important; border: none !important; box-shadow: 0 4px 15px rgba(197, 114, 31, 0.2) !important; }
 div[data-testid="stButton"] button[kind="primary"]:hover { background: linear-gradient(135deg, #a65d14 0%, #874c10) !important; transform: translateY(-2px) !important; }
 
-/* Remove paddings desnecessários nos inputs da lista */
 div[data-testid="stNumberInput"] label { display: none !important; }
 
 @media print {
@@ -83,7 +81,7 @@ div[data-testid="stNumberInput"] label { display: none !important; }
 st.markdown("""
 <div class="header-banner">
     <h1 class="header-title">Varejo (Pessoa Física)</h1>
-    <p class="header-subtitle">Monte orçamentos, insira extras, adicione cartões e registre pedidos 🛍️</p>
+    <p class="header-subtitle">Monte pedidos vivos, adicione fotos, edite preços e gere orçamentos 🛍️</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -123,7 +121,6 @@ def carregar_pedidos_varejo():
 cestas_disponiveis = obter_cestas_admin()
 adicionais_disponiveis = obter_adicionais_admin()
 
-# Sessões do sistema para Varejo
 if "itens_varejo" not in st.session_state: st.session_state["itens_varejo"] = []
 
 # =====================================================
@@ -185,6 +182,21 @@ with aba_proposta:
                 st.rerun()
 
     # ===================================================================
+    # INTELIGÊNCIA DE FOTOS POLAROID
+    # ===================================================================
+    tem_polaroid = any("polaroid" in item["nome"].lower() or "foto" in item["nome"].lower() for item in st.session_state["itens_varejo"])
+    link_polaroid = ""
+    
+    if tem_polaroid:
+        st.markdown("""
+        <div class="polaroid-box">
+            <h4 style="color: #d1476a; margin-top: 0;">📸 Instruções para Fotos Polaroid</h4>
+            <p style="font-size: 13px; color: #5a3b28;">O sistema identificou que este pedido contém fotos. Cole o link do Google Drive/Fotos abaixo ou anote que o cliente enviou via WhatsApp.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        link_polaroid = st.text_area("Link / Instruções das Fotos", placeholder="Ex: Fotos enviadas no WhatsApp dia 20/10 ou https://drive.google.com/...", height=68)
+
+    # ===================================================================
     # 3. CARRINHO DE COMPRAS EDITÁVEL (AO VIVO)
     # ===================================================================
     total_bruto = 0
@@ -224,23 +236,31 @@ with aba_proposta:
                 if st.button("🗑️", key=f"d_{item['id']}", help="Remover"):
                     st.session_state["itens_varejo"].pop(i)
                     st.rerun()
+                    
+        st.write("")
+        if st.button("🧹 Esvaziar Carrinho"):
+            st.session_state["itens_varejo"] = []
+            st.rerun()
 
     st.markdown("<hr style='border-top: 1px dashed #e8ddd3; margin: 20px 0;'>", unsafe_allow_html=True)
     st.markdown("#### 💌 4. Mensagem do Cartão")
     mensagem_cartao = st.text_area("Digite o texto exatamente como o cliente pediu (Opcional)", height=100, placeholder="Ex: Feliz aniversário, meu amor! Com carinho, João.")
 
-    st.markdown("#### 💰 5. Logística e Pagamento")
-    col_d1, col_d2, col_d3, col_d4 = st.columns(4)
+    st.markdown("#### 💰 5. Logística e Fechamento")
+    col_d1, col_d2, col_d3 = st.columns(3)
     with col_d1:
         data_entrega = st.date_input("Data de Entrega", value=date.today(), format="DD/MM/YYYY")
     with col_d2:
-        periodo = st.selectbox("Período", ["Manhã", "Tarde", "Horário Marcado", "Comercial"])
+        horario = st.text_input("Horário Acordado", placeholder="Ex: 09h às 10h")
     with col_d3:
-        frete_lote = st.number_input("Frete (R$)", min_value=0.0, step=5.0, value=15.0)
-    with col_d4:
-        prazo_pagamento = st.selectbox("Forma de Pag.", ["Pix", "Cartão de Crédito", "Dinheiro", "Link de Pagamento"])
+        prazo_pagamento = st.selectbox("Forma de Pagamento", ["Pix", "Cartão de Crédito", "Dinheiro", "Link de Pagamento"])
         
-    desconto_perc = st.number_input("Desconto de Varejo (%)", min_value=0.0, max_value=100.0, step=1.0)
+    col_f1, col_f2 = st.columns(2)
+    with col_f1:
+        frete_lote = st.number_input("Valor do Frete (R$)", min_value=0.0, step=5.0, value=15.0)
+    with col_f2:
+        desconto_perc = st.number_input("Desconto Concedido (%)", min_value=0.0, max_value=100.0, step=1.0)
+        
     endereco_empresa = st.text_input("📍 Endereço de Entrega", placeholder="Ex: SQS 101, Bloco A, Apto 101 - Asa Sul")
 
     # Cálculos Financeiros Dinâmicos
@@ -251,15 +271,15 @@ with aba_proposta:
     st.markdown(f"""
     <div class="resumo-financeiro">
         <div class="resumo-item">
-            <div class="resumo-label">Subtotal</div>
+            <div class="resumo-label">Subtotal dos Itens</div>
             <div class="resumo-valor">R$ {formatar_moeda(total_bruto)}</div>
         </div>
         <div class="resumo-item">
-            <div class="resumo-label">Desconto</div>
+            <div class="resumo-label">Desconto Aplicado</div>
             <div class="resumo-valor" style="color: #c5221f;">- R$ {formatar_moeda(valor_desconto)}</div>
         </div>
         <div class="resumo-item">
-            <div class="resumo-label">Frete</div>
+            <div class="resumo-label">Taxa de Frete</div>
             <div class="resumo-valor">R$ {formatar_moeda(frete_lote)}</div>
         </div>
         <div class="resumo-item">
@@ -303,6 +323,10 @@ with aba_proposta:
                 if lista_str_extras:
                     msg_adicionais += "\n\nADICIONAIS:\n" + "\n".join(lista_str_extras)
 
+            # Anexa as instruções da foto polaroid nos adicionais para a produção ver
+            if tem_polaroid and link_polaroid.strip():
+                msg_adicionais += f"\n\n📸 INFO FOTOS POLAROID:\n{link_polaroid.strip()}"
+
             dados_pf = {
                 "cliente_nome": cliente_nome.strip(),
                 "cliente_telefone": cliente_tel.strip(),
@@ -318,7 +342,7 @@ with aba_proposta:
                 "mensagem": mensagem_cartao.strip(),
                 "endereco": endereco_empresa,
                 "data_entrega": data_entrega.strftime("%Y-%m-%d"),
-                "periodo_entrega": periodo,
+                "periodo_entrega": horario.strip() or "A combinar",
                 "status": "Recebido",
                 "valor_frete": frete_lote,
                 "valor_total": total_liquido,
@@ -363,7 +387,7 @@ with aba_proposta:
 <h2 style="color: #c5721f; margin-bottom: 5px; font-weight: 800;">ESPELHO DO PEDIDO</h2>
 <p style="margin: 0; color: #555; font-size: 14px;">Doce Cesta Brasília - Encantando Pessoas</p>
 </div>
-<table style="width: 100%; border: none; margin-bottom: 25px;"><tr><td style="width: 60%; vertical-align: top;"><p style="margin:2px 0;"><b>Cliente:</b> {cliente_nome}</p><p style="margin:2px 0;"><b>Para:</b> {dest_nome or cliente_nome}</p><p style="margin:2px 0;"><b>Ocasião:</b> {motivo or 'Presente'}</p></td><td style="width: 40%; vertical-align: top; text-align: right;"><p style="margin:2px 0;"><b>Data Entrega:</b> {data_entrega.strftime("%d/%m/%Y")}</p><p style="margin:2px 0;"><b>Período:</b> {periodo}</p></td></tr></table>
+<table style="width: 100%; border: none; margin-bottom: 25px;"><tr><td style="width: 60%; vertical-align: top;"><p style="margin:2px 0;"><b>Cliente:</b> {cliente_nome}</p><p style="margin:2px 0;"><b>Para:</b> {dest_nome or cliente_nome}</p><p style="margin:2px 0;"><b>Ocasião:</b> {motivo or 'Presente'}</p></td><td style="width: 40%; vertical-align: top; text-align: right;"><p style="margin:2px 0;"><b>Data Entrega:</b> {data_entrega.strftime("%d/%m/%Y")}</p><p style="margin:2px 0;"><b>Horário:</b> {horario}</p></td></tr></table>
 <table style="width: 100%; border-collapse: collapse; margin-top: 10px;"><tr style="background-color: #faf7f3;"><th style="padding: 12px; text-align: left; border-bottom: 2px solid #e8ddd3;">Itens Adquiridos</th><th style="padding: 12px; text-align: center; border-bottom: 2px solid #e8ddd3;">Qtd</th><th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">V. Unitário</th><th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">Subtotal</th></tr>{linhas_html}</table>
 <div style="margin-top: 25px; text-align: right; font-size: 15px;"><p style="margin: 4px 0;">Subtotal: R$ {formatar_moeda(total_bruto)}</p><p style="margin: 4px 0; color: #c5221f;">Desconto ({desconto_perc}%): - R$ {formatar_moeda(valor_desconto)}</p><p style="margin: 4px 0;">Frete: R$ {formatar_moeda(frete_lote)}</p></div>
 <div class="proposta-total">TOTAL A PAGAR: R$ {formatar_moeda(total_liquido)}</div>
@@ -379,7 +403,7 @@ with aba_proposta:
             
 👤 *Cliente:* {cliente_nome}
 📦 *Para:* {dest_nome or cliente_nome}
-📅 *Data de Entrega:* {data_entrega.strftime("%d/%m/%Y")} ({periodo})
+📅 *Data de Entrega:* {data_entrega.strftime("%d/%m/%Y")} ({horario})
 
 *ITENS SELECIONADOS:*
 {linhas_whatsapp}
