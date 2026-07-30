@@ -227,21 +227,27 @@ with col_bloco1:
         mensagem = st.text_area("Mensagem do Cartão", height=70, key="man_msg", placeholder="Texto impresso no cartão.")
 
 # -----------------------------------------------------
-# COLUNA 2: ADICIONAIS, ENDEREÇO E TICKET DE RESUMO DENTRO DA CAIXA NATIVA
+# COLUNA 2: ADICIONAIS (EM 2 COLUNAS), ENDEREÇO E TICKET
 # -----------------------------------------------------
 with col_bloco2:
-    # CAIXA 4: ADICIONAIS E EXTRAS
+    # CAIXA 4: ADICIONAIS E EXTRAS (CATÁLOGO EM 2 COLUNAS)
     adicionais_selecionados_finais = []
     with st.container(border=True):
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 2px dashed #f5eee6; padding-bottom: 6px; text-transform: uppercase;'>🎀 4. Adicionais e Extras</div>", unsafe_allow_html=True)
         
         if adicionais_catalogo:
             st.markdown("<div style='font-size: 12px; font-weight: 700; color: #5a3b28; margin-bottom: 6px;'>✨ Catálogo de Adicionais</div>", unsafe_allow_html=True)
-            for p_ad in adicionais_catalogo:
+            
+            # Divide os adicionais em 2 colunas para otimizar o espaço do layout
+            col_ad1, col_ad2 = st.columns(2)
+            for idx, p_ad in enumerate(adicionais_catalogo):
                 preco_ad = tratar_preco(p_ad.get("preco"))
                 txt_preco = f"(+ R$ {preco_ad:.2f})" if preco_ad > 0 else "(Sob Consulta)"
-                if st.checkbox(f"{p_ad['nome']} {txt_preco}", key=f"man_chk_ad_{p_ad['id']}"):
-                    adicionais_selecionados_finais.append({"produto_id": p_ad["id"], "nome": p_ad["nome"], "preco": preco_ad})
+                
+                col_alvo = col_ad1 if idx % 2 == 0 else col_ad2
+                with col_alvo:
+                    if st.checkbox(f"{p_ad['nome']} {txt_preco}", key=f"man_chk_ad_{p_ad['id']}"):
+                        adicionais_selecionados_finais.append({"produto_id": p_ad["id"], "nome": p_ad["nome"], "preco": preco_ad})
 
         st.markdown("<hr style='border: none; border-top: 1px dashed #dfcdbb; margin: 12px 0;'>", unsafe_allow_html=True)
         st.markdown("<div style='font-size: 12px; font-weight: 700; color: #5a3b28; margin-bottom: 4px;'>✍️ Extra Manual</div>", unsafe_allow_html=True)
@@ -311,9 +317,7 @@ with col_bloco2:
         with ce1: dt_ent = st.date_input("Data Entrega", value=date.today(), format="DD/MM/YYYY", key="man_dt")
         with ce2: per_ent = st.text_input("Horário", placeholder="Ex: 08h-10h", key="man_per")
 
-    # =====================================================
-    # CAIXA 6: TICKET DE RESUMO & FECHAMENTO (DENTRO DE CONTAINER NATIVO VERDE)
-    # =====================================================
+    # CAIXA 6: TICKET DE RESUMO & FECHAMENTO
     with st.container(border=True):
         st.markdown("<div style='font-size: 15px; font-weight: 800; color: #137333; margin-bottom: 12px; border-bottom: 2px solid #ceead6; padding-bottom: 6px; text-align: center; text-transform: uppercase;'>📋 TICKET DE RESUMO & FECHAMENTO</div>", unsafe_allow_html=True)
         
