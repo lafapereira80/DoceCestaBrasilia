@@ -101,8 +101,8 @@ pedidos = get_pedidos()
 tipo_filtro = st.radio("Filtrar por Canal:", ["Todos os Canais", "Varejo (B2C)", "Corporativo (B2B)"], horizontal=True)
 st.write("")
 
-# SEPARAÇÃO POR ABAS EXATAS (Recebidos, Pago & Produção, Desistência)
-aba_rec, aba_pag, aba_des = st.tabs(["📥 Recebidos", "💳 Pago, Produção & Rota", "❌ Desistência"])
+# SEPARAÇÃO POR ABAS EXATAS (Recebidos, Pago, Desistência)
+aba_rec, aba_pag, aba_des = st.tabs(["📥 Recebidos", "💳 Pago", "❌ Desistência"])
 
 def renderizar_lista_pedidos(lista_pedidos_etapa):
     if not lista_pedidos_etapa:
@@ -210,7 +210,7 @@ for p in pedidos:
     if tipo_filtro == "Corporativo (B2B)" and not is_b2b: continue
     pedidos_filtrados.append(p)
 
-# SEPARAÇÃO EXATA POR ABAS
+# SEPARAÇÃO EXATA POR ABAS (Aba Pago agora engloba Pago, Em Produção, Em Rota e Entregue)
 rec_list = [p for p in pedidos_filtrados if p.get("status", "Recebido") in ["Recebido", "Pendente"]]
 pag_list = [p for p in pedidos_filtrados if p.get("status") in ["Pago", "Em Produção", "Em Rota de Entrega", "Entregue"]]
 des_list = [p for p in pedidos_filtrados if p.get("status") == "Desistência"]
