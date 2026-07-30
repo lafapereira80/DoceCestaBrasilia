@@ -19,17 +19,19 @@ st.markdown("""
 html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; color: #4a2e1b; }
 
 .header-banner {
-    background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%); padding: 25px;
+    background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%); padding: 30px 20px;
     border-radius: 20px; border: 1px solid #e8ddd3; box-shadow: 0 8px 24px rgba(90, 59, 40, 0.04);
-    margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px; text-align: center;
 }
-.header-title { font-family: 'Dancing Script', cursive !important; font-size: 42px; font-weight: 700; color: #c5721f; margin: 0; line-height: 1.2; }
-.header-sub { font-size: 14px; font-weight: 600; color: #775a46; margin: 0;}
+.header-title { font-family: 'Dancing Script', cursive !important; font-size: 46px; font-weight: 700; color: #c5721f; margin: 0; line-height: 1.1; }
+.header-sub { font-size: 15px; font-weight: 600; color: #775a46; margin-top: 5px;}
 
-/* Estilo para a caixa de ações rápidas no topo */
-.action-box { display: flex; gap: 15px; align-items: center; }
+.action-bar {
+    background: #ffffff; padding: 20px; border-radius: 16px; border: 1px solid #e8ddd3;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 25px;
+}
 
-.kanban-title { font-weight: 800; color: #5a3b28; margin-bottom: 15px; text-align: center; font-size: 15px; border-bottom: 2px dashed #e8ddd3; padding-bottom: 10px;}
+.kanban-title { font-weight: 800; color: #5a3b28; margin-bottom: 15px; text-align: center; font-size: 16px; border-bottom: 2px dashed #e8ddd3; padding-bottom: 10px;}
 
 .pedido-card {
     background: #ffffff; border: 1px solid #e8ddd3; border-radius: 12px;
@@ -45,31 +47,35 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .p-title { font-size: 14px; font-weight: 800; color: #2c1e14; margin-bottom: 3px;}
 .p-info { font-size: 12px; color: #666; margin-bottom: 2px;}
 
-div[data-testid="stButton"] button { border-radius: 10px !important; font-weight: 700 !important; font-size: 13px !important; transition: all 0.2s ease;}
+div[data-testid="stButton"] button { border-radius: 10px !important; font-weight: 700 !important; transition: all 0.2s ease;}
 div[data-testid="stButton"] button:hover { transform: translateY(-2px); }
 </style>
 """, unsafe_allow_html=True)
 
-# Cabeçalho Integrado com Botões de Ação
-col_h1, col_h2, col_h3 = st.columns([2.5, 1, 1])
-with col_h1:
-    st.markdown("""
-    <div style="padding: 10px 0;">
-        <h1 class="header-title">Gestão de Pedidos</h1>
-        <p class="header-sub">Acompanhe o fluxo de produção do Varejo e Corporativo 📋</p>
-    </div>
-    """, unsafe_allow_html=True)
-with col_h2:
-    st.markdown("<div style='margin-top: 18px;'></div>", unsafe_allow_html=True)
-    if st.button("🛍️ Novo Pedido (PF)", use_container_width=True, type="primary"):
-        st.switch_page("pages/19_Pedido_Manual.py")
-with col_h3:
-    st.markdown("<div style='margin-top: 18px;'></div>", unsafe_allow_html=True)
-    if st.button("🏢 Venda B2B (PJ)", use_container_width=True):
-        st.switch_page("pages/18_Corporativo.py")
+# CABEÇALHO CENTRALIZADO
+st.markdown("""
+<div class="header-banner">
+    <h1 class="header-title">Gestão de Pedidos</h1>
+    <p class="header-sub">Acompanhe o fluxo de produção do Varejo e Corporativo 📋</p>
+</div>
+""", unsafe_allow_html=True)
 
-st.write("")
+# NOVA BARRA DE AÇÕES RÁPIDAS
+with st.container():
+    st.markdown("<div style='text-align: center; font-weight: 800; color: #775a46; margin-bottom: 10px; font-size: 14px; text-transform: uppercase;'>⚡ Ações Rápidas</div>", unsafe_allow_html=True)
+    col_btn1, col_btn2, col_btn3, col_btn4 = st.columns([1, 2, 2, 1])
+    
+    with col_btn2:
+        if st.button("🛍️ + Novo Pedido Varejo (PF)", use_container_width=True, type="primary"):
+            st.switch_page("pages/19_Pedido_Manual.py")
+            
+    with col_btn3:
+        if st.button("🏢 + Venda Corporativa (B2B)", use_container_width=True):
+            st.switch_page("pages/18_Corporativo.py")
 
+st.markdown("<hr style='border-top: 1px dashed #e8ddd3; margin: 25px 0;'>", unsafe_allow_html=True)
+
+# FUNÇÕES E CARREGAMENTO
 def mudar_status(p_id, novo_status):
     supabase.table("pedidos").update({"status": novo_status}).eq("id", p_id).execute()
     st.rerun()
@@ -81,10 +87,12 @@ def get_pedidos():
 
 pedidos = get_pedidos()
 
-tipo_filtro = st.radio("Filtrar visualização:", ["Todos os Pedidos", "Varejo (B2C)", "Empresas (B2B)"], horizontal=True)
+# FILTRO DE VISUALIZAÇÃO
+tipo_filtro = st.radio("Filtrar visualização do Mural:", ["Todos os Pedidos", "Varejo (B2C)", "Empresas (B2B)"], horizontal=True)
 
-st.markdown("<hr style='border-top: 1px solid #e8ddd3; margin: 15px 0;'>", unsafe_allow_html=True)
+st.write("")
 
+# KANBAN BOARD
 col_rec, col_pag, col_prod, col_ent = st.columns(4)
 
 def renderizar_card(p, coluna):
