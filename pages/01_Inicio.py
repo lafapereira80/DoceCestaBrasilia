@@ -29,7 +29,7 @@ st.set_page_config(
 )
 
 # ==========================================================
-# CACHING DINÂMICO UNIFICADO (BLINDADO)
+# CACHING DINÂMICO UNIFICADO (BLINDADO E OTIMIZADO)
 # ==========================================================
 @st.cache_data(ttl=600, show_spinner=False)
 def obter_categorias_cacheadas():
@@ -41,19 +41,28 @@ def obter_categorias_cacheadas():
 @st.cache_data(ttl=5, show_spinner=False)
 def obter_secoes_e_cestas_ativas():
     try:
-        secoes_bd = supabase.table("vitrine_secoes").select("nome", "ativa", "ordem").execute().data or []
-        secoes_ativas = sorted([s["nome"] for s in secoes_bd if s.get("ativa", True)], key=lambda x: x.get("ordem", 99))
+        # Busca ordenando diretamente no banco (mais seguro e à prova de falhas)
+        res_secoes = supabase.table("vitrine_secoes").select("nome", "ativa").eq("ativa", True).order("ordem").execute()
+        secoes_ativas = [s["nome"] for s in (res_secoes.data or [])]
         
         # Garante fallback se a tabela de seções estiver vazia
         if not secoes_ativas:
             secoes_ativas = ["Cestas de Café"]
             
+        # Busca todas as cestas
         cestas_todas = listar_cestas()
         cestas_ativas = [c for c in cestas_todas if c.get("ativa", True)]
+        cestas_ativas = sorted(cestas_ativas, key=lambda x: x.get("ordem", 999))
         
-        return secoes_ativas, sorted(cestas_ativas, key=lambda x: x.get("ordem", 999))
-    except:
-        return ["Cestas de Café"], []
+        return secoes_ativas, cestas_ativas
+    except Exception as e:
+        # Fallback de emergência caso haja instabilidade
+        print(f"Erro ao carregar catálogo: {e}")
+        try:
+            cestas = [c for c in listar_cestas() if c.get("ativa", True)]
+            return ["Cestas de Café"], sorted(cestas, key=lambda x: x.get("ordem", 999))
+        except:
+            return ["Cestas de Café"], []
 
 @st.cache_data(ttl=300, show_spinner=False)
 def obter_configuracao_cesta_cacheada(cesta_id):
@@ -288,7 +297,7 @@ with st.container(border=True):
 
 
 # ==========================================================
-# PASSO 2: SELEÇÃO DO PRESENTE (CORRIGIDA E BLINDADA)
+# PASSO 2: SELEÇÃO DO PRESENTE (CORRIGIDA)
 # ==========================================================
 with st.spinner():
     secoes_disponiveis, cestas_ativas = obter_secoes_e_cestas_ativas()
@@ -303,7 +312,7 @@ if cestas_ativas and secoes_disponiveis:
     if cesta_veio_da_home:
         for c in cestas_ativas:
             if c["id"] == cesta_veio_da_home:
-                # Extrai seguro a seção
+                # Extrai a seção. Se vier null do banco, é 'Cestas de Café'
                 st.session_state["secao_form"] = c.get("secao_vitrine") or "Cestas de Café"
                 st.session_state["cesta_selecionada_id"] = cesta_veio_da_home
                 break
@@ -319,7 +328,7 @@ if cestas_ativas and secoes_disponiveis:
             st.session_state["cesta_selecionada_id"] = None
 
         # =========================================================
-        # Lógica Condicional: Tem mais de 1 seção ou apenas 1?
+        # Tratamento: Tem mais de 1 seção ou apenas 1?
         # =========================================================
         if len(secoes_disponiveis) > 1:
             col_categoria, col_modelo = st.columns(2)
@@ -333,7 +342,7 @@ if cestas_ativas and secoes_disponiveis:
                     on_change=ao_mudar_secao
                 )
 
-            # Filtra os produtos da seção selecionada garantindo compatibilidade de nomes e nulos
+            # Filtra os produtos da seção selecionada garantindo fallback e comparando texto minúsculo
             cestas_da_secao = [
                 c for c in cestas_ativas 
                 if (c.get("secao_vitrine") or "Cestas de Café").strip().lower() == str(st.session_state["secao_form"]).strip().lower()
@@ -517,7 +526,7 @@ with st.container(border=True):
 
 
 # ==========================================================
-# PASSO 6: RESUMO E FECHAMENTO (CORRIGIDO E BLINDADO)
+# PASSO 6: RESUMO E FECHAMENTO
 # ==========================================================
 with st.container(border=True):
     renderizar_passo("6", "Pagamento e Resumo")
