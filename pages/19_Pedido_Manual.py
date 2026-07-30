@@ -50,15 +50,15 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
     text-transform: uppercase; letter-spacing: 0.5px;
 }
 
-/* TICKET LATERAL DE FECHAMENTO (FIXO E ELEGANTE) */
-.dash-ticket {
-    background: #faf7f3; border: 2px solid #137333; border-radius: 16px; padding: 22px;
-    box-shadow: 0 8px 25px rgba(19, 115, 51, 0.06); position: sticky; top: 20px;
+/* CAIXA VERDE DE RESUMO E FECHAMENTO (TICKET INTEGRADO) */
+.dash-ticket-verde {
+    background: #f0fdf4; border: 2px solid #137333; border-radius: 16px; padding: 22px;
+    box-shadow: 0 8px 25px rgba(19, 115, 51, 0.08); margin-bottom: 20px;
 }
 .ticket-title { font-size: 16px; font-weight: 800; color: #137333; margin-bottom: 15px; text-align: center; border-bottom: 2px solid #ceead6; padding-bottom: 8px;}
 .ticket-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #5a3b28; }
 .ticket-line strong { font-weight: 700; color: #2c1e14; text-align: right;}
-.ticket-total { display: flex; justify-content: space-between; font-size: 20px; font-weight: 800; color: #137333; margin-top: 15px; padding-top: 12px; border-top: 2px dashed #137333; }
+.ticket-total { display: flex; justify-content: space-between; font-size: 22px; font-weight: 800; color: #137333; margin-top: 15px; padding-top: 12px; border-top: 2px dashed #137333; }
 
 /* CHECKBOXES E POLAROID */
 div[data-testid="stCheckbox"] { background: #faf7f3; border: 1px solid #e8ddd3; padding: 6px 10px; border-radius: 8px; margin-bottom: 6px; }
@@ -134,12 +134,12 @@ if "man_extras_avulsos" not in st.session_state: st.session_state.man_extras_avu
 if "man_cesta_sel_id" not in st.session_state: st.session_state.man_cesta_sel_id = None
 
 # =====================================================
-# ESTRUTURA EM BLOCOS DE DASHBOARD (2 COLUNAS DE BLOCOS + TICKET LATERAL)
+# ESTRUTURA EM BLOCOS DE DASHBOARD (2 COLUNAS LARGAS)
 # =====================================================
-col_bloco1, col_bloco2, col_ticket = st.columns([1.8, 1.8, 1.3], gap="medium")
+col_bloco1, col_bloco2 = st.columns([1, 1], gap="medium")
 
 # -----------------------------------------------------
-# COLUNA 1 DE BLOCOS (CLIENTE E PRODUTO)
+# COLUNA 1: DADOS DO CLIENTE, PRODUTO E DESTINATÁRIO
 # -----------------------------------------------------
 with col_bloco1:
     # BLOCO 1: CLIENTE
@@ -236,7 +236,7 @@ with col_bloco1:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------------------------------
-# COLUNA 2 DE BLOCOS (ADICIONAIS E ENDEREÇO)
+# COLUNA 2: ADICIONAIS, ENDEREÇO E TICKET VERDE INTEGRADO
 # -----------------------------------------------------
 with col_bloco2:
     # BLOCO 4: ADICIONAIS E EXTRAS
@@ -320,19 +320,20 @@ with col_bloco2:
     with ce2: per_ent = st.text_input("Horário", placeholder="Ex: 08h-10h", key="man_per")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# -----------------------------------------------------
-# COLUNA 3: TICKET VIVO DE RESUMO & FECHAMENTO
-# -----------------------------------------------------
-with col_ticket:
-    st.markdown('<div class="dash-ticket">', unsafe_allow_html=True)
-    st.markdown('<div class="ticket-title">📋 TICKET DE RESUMO</div>', unsafe_allow_html=True)
+    # =====================================================
+    # BLOCO 6: TICKET DE RESUMO DENTRO DA CAIXA VERDE (ABAIXO DA COLUNA 2)
+    # =====================================================
+    st.markdown('<div class="dash-ticket-verde">', unsafe_allow_html=True)
+    st.markdown('<div class="ticket-title">📋 TICKET DE RESUMO & FECHAMENTO</div>', unsafe_allow_html=True)
     
-    pag = st.selectbox("Forma de Pagamento", ["Pix", "Cartão de Crédito"], key="man_pag")
-    status = st.selectbox("Status Inicial", ["Recebido", "Pago"], key="man_status")
+    t_cf1, t_cf2 = st.columns(2)
+    with t_cf1: pag = st.selectbox("Pagamento", ["Pix", "Cartão de Crédito"], key="man_pag")
+    with t_cf2: status = st.selectbox("Status", ["Recebido", "Pago"], key="man_status")
     
     st.write("")
-    frete = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=0.0, key="man_frete")
-    desc_perc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0, key="man_desc")
+    t_f1, t_f2 = st.columns(2)
+    with t_f1: frete = st.number_input("Frete (R$)", min_value=0.0, step=5.0, value=0.0, key="man_frete")
+    with t_f2: desc_perc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0, key="man_desc")
     
     # CÁLCULOS TOTAIS
     valor_c = float(cesta_sel.get("preco", 0)) if cesta_sel and cesta_sel.get("id") else 0.0
@@ -343,14 +344,14 @@ with col_ticket:
 
     st.markdown("<hr style='border: none; border-top: 1px dashed #ceead6; margin: 12px 0;'>", unsafe_allow_html=True)
     
-    # EXIBIÇÃO NO TICKET
+    # EXIBIÇÃO NO TICKET VERDE
     nome_c_print = cesta_sel['nome'] if cesta_sel and cesta_sel.get('id') else "Nenhum produto selecionado"
     st.markdown(f'<div class="ticket-line"><span>📦 <b>{nome_c_print}</b></span> <strong>R$ {formatar_moeda(valor_c)}</strong></div>', unsafe_allow_html=True)
     
     if selecoes_admin:
         for cat, itens in selecoes_admin.items():
             for it in itens:
-                st.markdown(f'<div class="ticket-line" style="font-size:11px; color:#775a46; padding-left:10px;"><span>&bull; {cat}: {it["nome"]}</span></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="ticket-line" style="font-size:11px; color:#5a3b28; padding-left:10px;"><span>&bull; {cat}: {it["nome"]}</span></div>', unsafe_allow_html=True)
 
     if adicionais_selecionados_finais:
         for ad in adicionais_selecionados_finais:
