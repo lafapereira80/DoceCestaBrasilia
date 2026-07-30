@@ -50,11 +50,14 @@ h4 { font-size: 18px !important; font-weight: 800 !important; color: #c5721f !im
 div[data-testid="stCheckbox"] { background: #faf7f3; border: 1px solid #e8ddd3; padding: 10px 15px; border-radius: 12px; margin-bottom: 8px; transition: all 0.2s ease;}
 div[data-testid="stCheckbox"]:hover { background: #fdfcfb; border-color: #c5721f; transform: translateY(-1px); }
 
-/* Resumo Financeiro */
-.resumo-financeiro { background: #fdfbf8; border: 2px solid #137333; border-radius: 16px; padding: 25px; text-align: center; margin-top: 15px; box-shadow: 0 4px 15px rgba(19, 115, 51, 0.05);}
-.resumo-label { font-size: 13px; font-weight: 800; color: #137333; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
-.resumo-valor { font-size: 42px; font-weight: 800; color: #137333; line-height: 1.1;}
-.resumo-detalhes { font-size: 14px; color: #5a3b28; margin-top: 10px; font-weight: 600;}
+/* Caixa de Resumo / Ticket Limpo */
+.receipt-box {
+    background: #ffffff; border: 2px solid #137333; border-radius: 16px; padding: 25px; text-align: left;
+    box-shadow: 0 4px 15px rgba(19, 115, 51, 0.05); margin-top: 20px;
+}
+.receipt-line { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #5a3b28; }
+.receipt-line strong { font-weight: 700; color: #2c1e14; }
+.receipt-total { display: flex; justify-content: space-between; font-size: 22px; font-weight: 800; color: #137333; margin-top: 15px; padding-top: 15px; border-top: 2px dashed #137333; }
 
 .polaroid-box { background: #fffcf8; border: 2px dashed #ffb6c1; border-radius: 12px; padding: 20px; margin-top: 15px;}
 
@@ -101,10 +104,12 @@ def obter_secoes_e_cestas():
 @st.cache_data(ttl=60, show_spinner=False)
 def obter_adicionais_catalogo():
     try:
-        res = supabase.table("produtos").select("*").execute()
-        # Busca produtos com "Adicionais" ou "Adicional" na categoria
-        ativos = [p for p in (res.data or []) if p.get("ativo", True) and ("adicional" in p.get("categoria", "").strip().lower() or "adicionais" in p.get("categoria", "").strip().lower())]
-        return sorted(ativos, key=lambda x: x.get("nome", ""))
+        categorias = supabase.table("categorias").select("*").execute().data or []
+        cat_add = next((c for c in categorias if c.get("nome", "").strip().lower() == "adicionais"), None)
+        if cat_add:
+            produtos_add = listar_produtos_por_categoria_id(cat_add["id"])
+            return sorted([p for p in produtos_add if p.get("ativo", True)], key=lambda x: x.get("nome", ""))
+        return []
     except: return []
 
 secoes_disponiveis, cestas_ativas = obter_secoes_e_cestas()
@@ -118,7 +123,6 @@ for key in ["man_nome", "man_cpf", "man_tel", "man_rua", "man_num", "man_comp", 
 if "modo_busca_cli" not in st.session_state: st.session_state.modo_busca_cli = False
 if "man_extras_avulsos" not in st.session_state: st.session_state.man_extras_avulsos = [] 
 
-
 # =====================================================
 # 1. DADOS DO COMPRADOR
 # =====================================================
@@ -129,7 +133,7 @@ with st.container(border=True):
     with cc1: nome_comp = st.text_input("Nome Completo *", value=st.session_state.man_nome, key="in_nome")
     with cc_btn:
         st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
-        if st.button("🔍 Buscar Antigo", use_container_width=True):
+        if st.button("🔍 Buscar Cliente", help="Buscar cliente antigo na base"):
             st.session_state.modo_busca_cli = not st.session_state.modo_busca_cli
             st.rerun()
     with cc2: cpf_comp = st.text_input("CPF", value=st.session_state.man_cpf, key="in_cpf")
@@ -156,9 +160,8 @@ with st.container(border=True):
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
-
 # =====================================================
-# 2. PRODUTO PRINCIPAL E SUAS OPÇÕES (COMO NO 02_PEDIDOS)
+# 2. PRODUTO PRINCIPAL (TRATAMENTO MULTI-CATÁLOGO)
 # =====================================================
 selecoes_admin = {}
 
@@ -211,16 +214,15 @@ with st.container(border=True):
                         escs = st.multiselect(f"Opções de {cat}", prods, format_func=lambda p: p["nome"], max_selections=maximo, key=f"adm_mul_{cat}")
                         selecoes_admin[cat] = escs
 
-
 # =====================================================
-# 3. EXTRAS GLOBAIS E MANUAIS (CHECKBOXES)
+# 3. EXTRAS GLOBAIS E MANUAIS
 # =====================================================
 adicionais_selecionados_finais = []
 
 with st.container(border=True):
     st.markdown("#### 🎀 3. Adicionais e Extras Globais")
     
-    # LISTA EM CHECKBOXES
+    # LISTA EM CHECKBOXES (IDÊNTICO AO 01_INICIO)
     if adicionais_catalogo:
         st.markdown("<div style='font-size: 14px; font-weight: 700; color: #5a3b28; margin-bottom: 10px;'>✨ Itens Oficiais do Catálogo</div>", unsafe_allow_html=True)
         cols_ad = st.columns(3)
@@ -250,7 +252,7 @@ with st.container(border=True):
     # MOSTRA OS EXTRAS MANUAIS ADICIONADOS
     if st.session_state.man_extras_avulsos:
         for i, extra in enumerate(st.session_state.man_extras_avulsos):
-            adicionais_selecionados_finais.append(extra) # Junta na lista final matemática
+            adicionais_selecionados_finais.append(extra)
             c_l1, c_l2 = st.columns([5, 1])
             with c_l1: st.markdown(f"<div style='margin-top: 8px; font-weight:600; color: #4a2e1b;'>✅ {extra['nome']} (R$ {formatar_moeda(extra['preco'])})</div>", unsafe_allow_html=True)
             with c_l2:
@@ -258,18 +260,17 @@ with st.container(border=True):
                     st.session_state.man_extras_avulsos.pop(i)
                     st.rerun()
 
-    # POLAROID UPLOAD
+    # POLAROID UPLOAD NO BUCKET PEDIDO_FOTOS
     polaroid = any("polaroid" in extra["nome"].lower() or "foto" in extra["nome"].lower() for extra in adicionais_selecionados_finais)
     fotos_upload = []
     if polaroid:
         st.markdown("""
         <div class="polaroid-box">
             <h4 style="color: #d1476a; margin-top: 0; margin-bottom: 5px;">📸 Upload de Fotos Polaroid</h4>
-            <p style="font-size: 13px; color: #5a3b28; margin-bottom: 15px;">O sistema detectou que você inseriu fotos no pedido! Faça o upload das imagens enviadas pelo cliente. Elas serão salvas no Supabase (bucket <b>pedido_fotos</b>) e os links irão direto para a ficha de produção.</p>
+            <p style="font-size: 13px; color: #5a3b28; margin-bottom: 15px;">O sistema detectou que você inseriu fotos no pedido! Faça o upload das imagens enviadas pelo cliente. Elas serão salvas na nuvem e os links irão direto para a ficha de produção.</p>
         </div>
         """, unsafe_allow_html=True)
         fotos_upload = st.file_uploader("Anexar fotos (PNG, JPG, JPEG)", accept_multiple_files=True, type=['png', 'jpg', 'jpeg'], key="man_upload_fotos")
-
 
 # =====================================================
 # 4. DESTINATÁRIO E MENSAGEM
@@ -281,7 +282,6 @@ with st.container(border=True):
     with cd2: dest_tel = st.text_input("Telefone do Homenageado (Opcional)", key="man_dest_tel")
     motivo = st.text_input("Qual a Ocasião? (Ex: Aniversário de Casamento)", key="man_motivo")
     mensagem = st.text_area("Mensagem do Cartão", height=80, key="man_msg", placeholder="Texto que irá impresso no cartão.")
-
 
 # =====================================================
 # 5. ENDEREÇO E LOGÍSTICA
@@ -321,7 +321,6 @@ with st.container(border=True):
     with ce1: dt_ent = st.date_input("Data da Entrega", value=date.today(), format="DD/MM/YYYY", key="man_dt")
     with ce2: per_ent = st.text_input("Horário Combinado", placeholder="Ex: Entre 08h e 10h", key="man_per")
 
-
 # =====================================================
 # 6. FECHAMENTO E RESUMO FINANCEIRO
 # =====================================================
@@ -344,15 +343,19 @@ with st.container(border=True):
     valor_desconto = subtotal * (desc_perc / 100)
     total_liquido = subtotal - valor_desconto + frete
 
-    # PAINEL DE RESUMO GIGANTE
+    # TICKET DE RESUMO LIMPO E DISCRETO
     st.markdown(f"""
-    <div class="resumo-financeiro">
-        <div class="resumo-label">VALOR TOTAL A COBRAR DO CLIENTE</div>
-        <div class="resumo-valor">R$ {formatar_moeda(total_liquido)}</div>
-        <div class="resumo-detalhes">
-            Subtotal Produtos: R$ {formatar_moeda(subtotal)} &nbsp;|&nbsp; 
-            Desconto: - R$ {formatar_moeda(valor_desconto)} &nbsp;|&nbsp; 
-            Frete: R$ {formatar_moeda(frete)}
+    <div class="receipt-box">
+        <div style="font-size: 16px; font-weight: 800; color: #5a3b28; margin-bottom: 15px; text-align: center;">RESUMO DO PEDIDO</div>
+        
+        <div class="receipt-line"><span>🎁 <b>Produto Base</b></span> <strong>R$ {formatar_moeda(valor_c)}</strong></div>
+        <div class="receipt-line"><span>🎀 <b>Adicionais</b></span> <strong>R$ {formatar_moeda(valor_a)}</strong></div>
+        <div class="receipt-line"><span>🚚 <b>Frete</b></span> <strong>R$ {formatar_moeda(frete)}</strong></div>
+        <div class="receipt-line" style="color: #c5221f;"><span>🔻 <b>Desconto</b></span> <strong>- R$ {formatar_moeda(valor_desconto)}</strong></div>
+        
+        <div class="receipt-total">
+            <span>TOTAL GERAL:</span> 
+            <span>R$ {formatar_moeda(total_liquido)}</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -379,7 +382,7 @@ with st.container(border=True):
                     except Exception as e:
                         pass
 
-        # MONTAGEM DA STRING DA FICHA DE PRODUÇÃO
+        # MONTAGEM DA STRING DA FICHA DE PRODUÇÃO E WHATSAPP
         prod_text = f"1x {cesta_sel['nome']} (R$ {formatar_moeda(valor_c)})"
         if selecoes_admin:
             prod_text += "\nOpções: " + " | ".join([f"{i['nome']}" for c, itens in selecoes_admin.items() for i in itens])
@@ -418,17 +421,24 @@ with st.container(border=True):
             "cesta_montada": False
         }
         
-        with st.spinner("Registrando pedido..."):
+        with st.spinner("Registrando pedido e gerando envio..."):
             suc, p_id = salvar_pedido(dados_ped)
             if suc:
-                # Salva a tabela relacional de adicionais para relatórios
                 adicionais_para_banco = [{"produto_id": e.get("produto_id"), "nome": e["nome"], "preco": e.get("preco", 0.0)} for e in adicionais_selecionados_finais]
                 if adicionais_para_banco: salvar_adicionais_pedido(p_id, adicionais_para_banco)
                 
                 st.success(f"✅ Pedido criado com sucesso para {nome_comp}!")
                 st.session_state.man_extras_avulsos = []
                 for k in ["pf_cep", "pf_rua", "pf_num", "pf_comp", "pf_bairro", "pf_cidade", "pf_ult_cep"]: st.session_state[k] = ""
-                time.sleep(1.5)
-                st.switch_page("pages/02_Pedidos.py")
+                
+                # GERADOR DE MENSAGEM WHATSAPP (Como você pediu!)
+                linhas_wpp = f"📦 {cesta_sel['nome']} (R$ {formatar_moeda(valor_c)})\n"
+                for a in adicionais_selecionados_finais: linhas_wpp += f"🎀 {a['nome']} (R$ {formatar_moeda(a.get('preco', 0.0))})\n"
+                
+                texto_wpp = f"""*NOVO PEDIDO - DOCE CESTA BRASÍLIA* 🎁\n\n👤 *De:* {nome_comp}\n💝 *Para:* {dest_nome}\n📅 *Entrega:* {dt_ent.strftime("%d/%m/%Y")} ({per_ent})\n📍 *Local:* {bairro} - {cidade}\n\n*ITENS:*\n{linhas_wpp}\n*VALORES:*\n💰 Subtotal: R$ {formatar_moeda(subtotal)}\n🚚 Frete: R$ {formatar_moeda(frete)}\n🔻 Desconto: - R$ {formatar_moeda(valor_desconto)}\n━━━━━━━━━━━━━━━━━━━━\n*TOTAL:* R$ {formatar_moeda(total_liquido)}\n\n💳 *Pagamento:* {pag}"""
+                
+                st.info("📱 Copie a mensagem abaixo para enviar ao cliente no WhatsApp:")
+                st.code(texto_wpp, language="markdown")
+                
             else: 
                 st.error("Erro ao registrar no banco de dados.")
