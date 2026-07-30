@@ -16,7 +16,7 @@ from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA E DESIGN DASHBOARD RESPONSIVO
+# CONFIGURAÇÃO DA PÁGINA E DESIGN DASHBOARD PROFISSIONAL
 # =====================================================
 st.set_page_config(page_title="Painel PDV | Pedido Varejo", page_icon="🛍️", layout="wide")
 configurar_pagina()
@@ -62,12 +62,6 @@ div[data-testid="stButton"] button[kind="primary"] {
     box-shadow: 0 6px 20px rgba(19, 115, 51, 0.25) !important; font-size: 15px !important; padding: 16px !important; width: 100% !important; 
 }
 div[data-testid="stButton"] button[kind="primary"]:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 25px rgba(19, 115, 51, 0.35) !important;}
-
-/* CONTROLE DE ORDEM PARA MOBILE (FLEXBOX REVERSE / ORDER) */
-@media (max-width: 991px) {
-    /* Força o ticket a ir para o final da fila em telas menores (celulares) */
-    .mobile-ticket-wrapper { order: 99 !important; }
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -136,7 +130,7 @@ if "man_cesta_sel_id" not in st.session_state: st.session_state.man_cesta_sel_id
 col_bloco1, col_bloco2 = st.columns([1, 1], gap="medium")
 
 # -----------------------------------------------------
-# COLUNA 1: DADOS DO CLIENTE, PRODUTO E TICKET DE RESUMO ABAIXO DO DESTINATÁRIO
+# COLUNA 1: DADOS DO CLIENTE, PRODUTO E DESTINATÁRIO
 # -----------------------------------------------------
 with col_bloco1:
     # CAIXA 1: CLIENTE
@@ -233,11 +227,10 @@ with col_bloco1:
         mensagem = st.text_area("Mensagem do Cartão", height=70, key="man_msg", placeholder="Texto impresso no cartão.")
 
     # -----------------------------------------------------
-    # CAIXA 6: TICKET DE RESUMO & FECHAMENTO (POSICIONADO AQUI NO DESKTOP, IRÁ PARA O FINAL NO MOBILE)
+    # CAIXA 6: RESUMO DO PEDIDO & BOTÃO DE GRAVAR
     # -----------------------------------------------------
-    st.markdown('<div class="mobile-ticket-wrapper">', unsafe_allow_html=True)
     with st.container(border=True):
-        st.markdown("<div style='font-size: 15px; font-weight: 800; color: #137333; margin-bottom: 12px; border-bottom: 2px solid #ceead6; padding-bottom: 6px; text-align: center; text-transform: uppercase;'>📋 TICKET DE RESUMO & FECHAMENTO</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size: 15px; font-weight: 800; color: #137333; margin-bottom: 12px; border-bottom: 2px solid #ceead6; padding-bottom: 6px; text-align: center; text-transform: uppercase;'>📋 Resumo do Pedido</div>", unsafe_allow_html=True)
         
         t_cf1, t_cf2 = st.columns(2)
         with t_cf1: pag = st.selectbox("Pagamento", ["Pix", "Cartão de Crédito"], key="man_pag")
@@ -248,14 +241,8 @@ with col_bloco1:
         with t_f1: frete = st.number_input("Frete (R$)", min_value=0.0, step=5.0, value=0.0, key="man_frete")
         with t_f2: desc_perc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0, key="man_desc")
         
-        # CÁLCULOS TOTAIS
-        valor_c = float(cesta_sel.get("preco", 0)) if cesta_sel and cesta_sel.get("id") else 0.0
-        valor_a = sum(extra.get("preco", 0.0) for extra in st.session_state.get("adicionais_selecionados_temp", [])) # Atualizado dinamicamente abaixo
-        
-        # O cálculo final usa a lista de adicionais recolhida na coluna 2
-        # (Definido após a renderização da coluna 2 para sincronia perfeita)
-        
-    st.markdown('</div>', unsafe_allow_html=True)
+        # Cálculos calculados abaixo usando a variável de adicionais da coluna 2
+        # (Executado logo após calcular a coluna 2 para sincronia)
 
 # -----------------------------------------------------
 # COLUNA 2: ADICIONAIS E ENDEREÇO
@@ -347,120 +334,122 @@ with col_bloco2:
         with ce1: dt_ent = st.date_input("Data Entrega", value=date.today(), format="DD/MM/YYYY", key="man_dt")
         with ce2: per_ent = st.text_input("Horário", placeholder="Ex: 08h-10h", key="man_per")
 
-    # Sincroniza os adicionais para o cálculo financeiro geral
+    # =====================================================
+    # RENDERIZAÇÃO DOS CÁLCULOS E BOTÃO "GRAVAR PEDIDO" NA CAIXA DA ESQUERDA (COLUNA 1)
+    # =====================================================
     valor_a = sum(extra.get("preco", 0.0) for extra in adicionais_selecionados_finais)
     subtotal = valor_c + valor_a
     valor_desconto = subtotal * (desc_perc / 100)
     total_liquido = subtotal - valor_desconto + frete
 
-    # Renderiza o conteúdo final do ticket dentro da caixa verde (agora posicionada na coluna 1 abaixo do destinatário, mas vai para o fim no mobile)
-    with st.container(border=True):
-        st.markdown("<div style='font-size: 15px; font-weight: 800; color: #137333; margin-bottom: 12px; border-bottom: 2px solid #ceead6; padding-bottom: 6px; text-align: center; text-transform: uppercase;'>📋 TICKET DE RESUMO & FECHAMENTO</div>", unsafe_allow_html=True)
-        
-        # Exibição no Ticket
-        st.markdown(f'<div class="ticket-line"><span>📦 <b>{cesta_sel["nome"] if cesta_sel and cesta_sel.get("id") else "Nenhum produto selecionado"}</b></span> <strong>R$ {formatar_moeda(valor_c)}</strong></div>', unsafe_allow_html=True)
-        
-        if selecoes_admin:
-            for cat, itens in selecoes_admin.items():
-                for it in itens:
-                    st.markdown(f'<div class="ticket-line" style="font-size:11px; color:#5a3b28; padding-left:10px;"><span>&bull; {cat}: {it["nome"]}</span></div>', unsafe_allow_html=True)
-
-        if adicionais_selecionados_finais:
-            for ad in adicionais_selecionados_finais:
-                st.markdown(f'<div class="ticket-line" style="font-size:11.5px;"><span>🎀 {ad["nome"]}</span> <strong>R$ {formatar_moeda(ad["preco"])}</strong></div>', unsafe_allow_html=True)
-
-        if frete > 0:
-            st.markdown(f'<div class="ticket-line"><span>🚚 Frete</span> <strong>R$ {formatar_moeda(frete)}</strong></div>', unsafe_allow_html=True)
-        if valor_desconto > 0:
-            st.markdown(f'<div class="ticket-line" style="color: #c5221f;"><span>🔻 Desconto ({desc_perc}%)</span> <strong>- R$ {formatar_moeda(valor_desconto)}</strong></div>', unsafe_allow_html=True)
-
-        st.markdown(f"""
-        <div class="ticket-total">
-            <span>TOTAL:</span> 
-            <span>R$ {formatar_moeda(total_liquido)}</span>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.write("")
-        if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary"):
-            if not nome_comp: st.error("Informe o nome do comprador."); st.stop()
-            if not tel_comp: st.error("Informe o WhatsApp do comprador."); st.stop()
-            if not cesta_sel or not cesta_sel.get("id"): st.error("Selecione um Produto Base."); st.stop()
-            if not dest_nome: st.error("Informe o Nome do Destinatário."); st.stop()
-            if not rua or not num or not bairro: st.error("Complete Rua, Número e Bairro."); st.stop()
-
-            # Upload fotos polaroid
-            links_polaroid = []
-            if polaroid and fotos_upload:
-                with st.spinner("📦 Salvando fotos no bucket 'pedido_fotos'..."):
-                    for foto in fotos_upload:
-                        ext = foto.name.split('.')[-1]
-                        file_name = f"polaroid_{uuid.uuid4().hex}.{ext}"
-                        try:
-                            supabase.storage.from_("pedido_fotos").upload(file_name, foto.read(), {"content-type": foto.type})
-                            url = supabase.storage.from_("pedido_fotos").get_public_url(file_name)
-                            links_polaroid.append(url)
-                        except: pass
-
-            prod_text = f"1x {cesta_sel['nome']} (R$ {formatar_moeda(valor_c)})"
+    with col_bloco1:
+        with st.container(border=True):
+            st.markdown("<div style='font-size: 15px; font-weight: 800; color: #137333; margin-bottom: 12px; border-bottom: 2px solid #ceead6; padding-bottom: 6px; text-align: center; text-transform: uppercase;'>📋 Resumo do Pedido</div>", unsafe_allow_html=True)
+            
+            nome_c_print = cesta_sel['nome'] if cesta_sel and cesta_sel.get('id') else "Nenhum produto selecionado"
+            st.markdown(f'<div class="ticket-line"><span>📦 <b>{nome_c_print}</b></span> <strong>R$ {formatar_moeda(valor_c)}</strong></div>', unsafe_allow_html=True)
+            
             if selecoes_admin:
-                prod_text += "\nOpções: " + " | ".join([f"{i['nome']}" for c, itens in selecoes_admin.items() for i in itens])
-            
-            adicionais_str_list = [f"1x {a['nome']} (R$ {formatar_moeda(a.get('preco', 0.0))})" for a in adicionais_selecionados_finais]
-            add_text = f"Desconto de {desc_perc}% aplicado." if desc_perc > 0 else ""
-            if adicionais_str_list:
-                add_text += ("\n\n" if add_text else "") + "ADICIONAIS E EXTRAS:\n" + "\n".join(adicionais_str_list)
+                for cat, itens in selecoes_admin.items():
+                    for it in itens:
+                        st.markdown(f'<div class="ticket-line" style="font-size:11px; color:#5a3b28; padding-left:10px;"><span>&bull; {cat}: {it["nome"]}</span></div>', unsafe_allow_html=True)
 
-            if links_polaroid:
-                add_text += "\n\n📸 LINKS FOTOS POLAROID (Acesso p/ Impressão):\n" + "\n".join(links_polaroid)
+            if adicionais_selecionados_finais:
+                for ad in adicionais_selecionados_finais:
+                    st.markdown(f'<div class="ticket-line" style="font-size:11.5px;"><span>🎀 {ad["nome"]}</span> <strong>R$ {formatar_moeda(ad["preco"])}</strong></div>', unsafe_allow_html=True)
 
-            cep_str = f" (CEP: {cep_in})" if cep_in.strip() else ""
-            end_comp = f"{rua}, {num} - {comp} - {bairro}, {cidade}{cep_str}"
-            
-            dados_ped = {
-                "cliente_nome": nome_comp.strip(),
-                "cliente_cpf": re.sub(r'\D', '', cpf_comp),
-                "cliente_telefone": re.sub(r'\D', '', tel_comp),
-                "destinatario_nome": dest_nome.strip(),
-                "destinatario_telefone": dest_tel.strip(),
-                "motivo_homenagem": motivo.strip() or "Varejo/Manual",
-                "cesta_id": cesta_sel["id"],
-                "cesta_nome": cesta_sel["nome"],
-                "produtos": prod_text,
-                "adicionais": add_text,
-                "pagamento": pag,
-                "mensagem": mensagem,
-                "pedido_especial": "",
-                "endereco": end_comp,
-                "data_entrega": dt_ent.strftime("%Y-%m-%d"),
-                "periodo_entrega": per_ent.strip() or "A combinar",
-                "status": status,
-                "valor_frete": frete,
-                "valor_total": total_liquido,
-                "cesta_montada": False
-            }
-            
-            with st.spinner("Registrando pedido..."):
-                suc, p_id = salvar_pedido(dados_ped)
-                if suc:
-                    adicionais_para_banco = [{"produto_id": e.get("produto_id"), "nome": e["nome"], "preco": e.get("preco", 0.0)} for e in adicionais_selecionados_finais]
-                    if adicionais_para_banco: salvar_adicionais_pedido(p_id, adicionais_para_banco)
-                    
-                    st.success(f"✅ Pedido criado com sucesso!")
-                    st.session_state.man_extras_avulsos = []
-                    st.session_state.man_cesta_sel_id = None
-                    
-                    linhas_wpp = f"📦 {cesta_sel['nome']} (R$ {formatar_moeda(valor_c)})\n"
-                    if selecoes_admin:
-                        for cat, itens in selecoes_admin.items():
-                            for it in itens: linhas_wpp += f"  • {cat}: {it['nome']}\n"
-                    for a in adicionais_selecionados_finais: linhas_wpp += f"🎀 {a['nome']} (R$ {formatar_moeda(a.get('preco', 0.0))})\n"
-                    
-                    texto_wpp = f"""*NOVO PEDIDO - DOCE CESTA BRASÍLIA* 🎁\n\n👤 *De:* {nome_comp}\n💝 *Para:* {dest_nome}\n📅 *Entrega:* {dt_ent.strftime("%d/%m/%Y")} ({per_ent})\n📍 *Local:* {bairro} - {cidade}\n\n*ITENS:*\n{linhas_wpp}\n*VALORES:*\n💰 Subtotal: R$ {formatar_moeda(subtotal)}\n🚚 Frete: R$ {formatar_moeda(frete)}\n🔻 Desconto: - R$ {formatar_moeda(valor_desconto)}\n━━━━━━━━━━━━━━━━━━━━\n*TOTAL:* R$ {formatar_moeda(total_liquido)}\n\n💳 *Pagamento:* {pag}"""
-                    
-                    st.info("📱 Copie a mensagem para o WhatsApp:")
-                    st.code(texto_wpp, language="markdown")
-                    time.sleep(3)
-                    st.switch_page("pages/02_Pedidos.py")
-                else: 
-                    st.error("Erro ao registrar no banco de dados.")
+            if frete > 0:
+                st.markdown(f'<div class="ticket-line"><span>🚚 Frete</span> <strong>R$ {formatar_moeda(frete)}</strong></div>', unsafe_allow_html=True)
+            if valor_desconto > 0:
+                st.markdown(f'<div class="ticket-line" style="color: #c5221f;"><span>🔻 Desconto ({desc_perc}%)</span> <strong>- R$ {formatar_moeda(valor_desconto)}</strong></div>', unsafe_allow_html=True)
+
+            st.markdown(f"""
+            <div class="ticket-total">
+                <span>TOTAL:</span> 
+                <span>R$ {formatar_moeda(total_liquido)}</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.write("")
+            if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary"):
+                if not nome_comp: st.error("Informe o nome do comprador."); st.stop()
+                if not tel_comp: st.error("Informe o WhatsApp do comprador."); st.stop()
+                if not cesta_sel or not cesta_sel.get("id"): st.error("Selecione um Produto Base."); st.stop()
+                if not dest_nome: st.error("Informe o Nome do Destinatário."); st.stop()
+                if not rua or not num or not bairro: st.error("Complete Rua, Número e Bairro."); st.stop()
+
+                # Upload fotos polaroid
+                links_polaroid = []
+                if polaroid and fotos_upload:
+                    with st.spinner("📦 Salvando fotos no bucket 'pedido_fotos'..."):
+                        for foto in fotos_upload:
+                            ext = foto.name.split('.')[-1]
+                            file_name = f"polaroid_{uuid.uuid4().hex}.{ext}"
+                            try:
+                                supabase.storage.from_("pedido_fotos").upload(file_name, foto.read(), {"content-type": foto.type})
+                                url = supabase.storage.from_("pedido_fotos").get_public_url(file_name)
+                                links_polaroid.append(url)
+                            except: pass
+
+                prod_text = f"1x {cesta_sel['nome']} (R$ {formatar_moeda(valor_c)})"
+                if selecoes_admin:
+                    prod_text += "\nOpções: " + " | ".join([f"{i['nome']}" for c, itens in selecoes_admin.items() for i in itens])
+                
+                adicionais_str_list = [f"1x {a['nome']} (R$ {formatar_moeda(a.get('preco', 0.0))})" for a in adicionais_selecionados_finais]
+                add_text = f"Desconto de {desc_perc}% aplicado." if desc_perc > 0 else ""
+                if adicionais_str_list:
+                    add_text += ("\n\n" if add_text else "") + "ADICIONAIS E EXTRAS:\n" + "\n".join(adicionais_str_list)
+
+                if links_polaroid:
+                    add_text += "\n\n📸 LINKS FOTOS POLAROID (Acesso p/ Impressão):\n" + "\n".join(links_polaroid)
+
+                cep_str = f" (CEP: {cep_in})" if cep_in.strip() else ""
+                end_comp = f"{rua}, {num} - {comp} - {bairro}, {cidade}{cep_str}"
+                
+                dados_ped = {
+                    "cliente_nome": nome_comp.strip(),
+                    "cliente_cpf": re.sub(r'\D', '', cpf_comp),
+                    "cliente_telefone": re.sub(r'\D', '', tel_comp),
+                    "destinatario_nome": dest_nome.strip(),
+                    "destinatario_telefone": dest_tel.strip(),
+                    "motivo_homenagem": motivo.strip() or "Varejo/Manual",
+                    "cesta_id": cesta_sel["id"],
+                    "cesta_nome": cesta_sel["nome"],
+                    "produtos": prod_text,
+                    "adicionais": add_text,
+                    "pagamento": pag,
+                    "mensagem": mensagem,
+                    "pedido_especial": "",
+                    "endereco": end_comp,
+                    "data_entrega": dt_ent.strftime("%Y-%m-%d"),
+                    "periodo_entrega": per_ent.strip() or "A combinar",
+                    "status": status,
+                    "valor_frete": frete,
+                    "valor_total": total_liquido,
+                    "cesta_montada": False
+                }
+                
+                with st.spinner("Registrando pedido..."):
+                    suc, p_id = salvar_pedido(dados_ped)
+                    if suc:
+                        adicionais_para_banco = [{"produto_id": e.get("produto_id"), "nome": e["nome"], "preco": e.get("preco", 0.0)} for e in adicionais_selecionados_finais]
+                        if adicionais_para_banco: salvar_adicionais_pedido(p_id, adicionais_para_banco)
+                        
+                        st.success(f"✅ Pedido criado com sucesso!")
+                        st.session_state.man_extras_avulsos = []
+                        st.session_state.man_cesta_sel_id = None
+                        
+                        linhas_wpp = f"📦 {cesta_sel['nome']} (R$ {formatar_moeda(valor_c)})\n"
+                        if selecoes_admin:
+                            for cat, itens in selecoes_admin.items():
+                                for it in itens: linhas_wpp += f"  • {cat}: {it['nome']}\n"
+                        for a in adicionais_selecionados_finais: linhas_wpp += f"🎀 {a['nome']} (R$ {formatar_moeda(a.get('preco', 0.0))})\n"
+                        
+                        texto_wpp = f"""*NOVO PEDIDO - DOCE CESTA BRASÍLIA* 🎁\n\n👤 *De:* {nome_comp}\n💝 *Para:* {dest_nome}\n📅 *Entrega:* {dt_ent.strftime("%d/%m/%Y")} ({per_ent})\n📍 *Local:* {bairro} - {cidade}\n\n*ITENS:*\n{linhas_wpp}\n*VALORES:*\n💰 Subtotal: R$ {formatar_moeda(subtotal)}\n🚚 Frete: R$ {formatar_moeda(frete)}\n🔻 Desconto: - R$ {formatar_moeda(valor_desconto)}\n━━━━━━━━━━━━━━━━━━━━\n*TOTAL:* R$ {formatar_moeda(total_liquido)}\n\n💳 *Pagamento:* {pag}"""
+                        
+                        st.info("📱 Copie a mensagem para o WhatsApp:")
+                        st.code(texto_wpp, language="markdown")
+                        time.sleep(3)
+                        st.switch_page("pages/02_Pedidos.py")
+                    else: 
+                        st.error("Erro ao registrar no banco de dados.")
