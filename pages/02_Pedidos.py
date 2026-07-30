@@ -97,11 +97,11 @@ def get_pedidos():
 
 pedidos = get_pedidos()
 
-# FILTRO DE VISUALIZAÇÃO GERAL
+# FILTRO DE VISUALIZAÇÃO GERAL (Opções corrigidas para mapear corretamente o Varejo e o Corporativo)
 tipo_filtro = st.radio("Filtrar por Canal:", ["Todos os Canais", "Varejo (B2C)", "Corporativo (B2B)"], horizontal=True)
 st.write("")
 
-# SEPARAÇÃO POR ABAS EXATAS (Recebidos, Pago, Desistência)
+# SEPARAÇÃO POR ABAS EXATAS
 aba_rec, aba_pag, aba_des = st.tabs(["📥 Recebidos", "💳 Pago", "❌ Desistência"])
 
 def renderizar_lista_pedidos(lista_pedidos_etapa):
@@ -113,18 +113,17 @@ def renderizar_lista_pedidos(lista_pedidos_etapa):
         renderizar_card_linha(p)
 
 def renderizar_card_linha(p):
-    is_b2b = "[B2B]" in p['cliente_nome']
-    nome_exibicao = p['cliente_nome'].replace("[B2B]", "").strip()
+    is_b2b = "[B2B]" in p.get('cliente_nome', '')
+    nome_exibicao = p.get('cliente_nome', '').replace("[B2B]", "").strip()
     badge = "<div class='badge-b2b'>CORP</div>" if is_b2b else "<div class='badge-b2c'>VAREJO</div>"
     
     dt_entrega = "A confirmar"
     if p.get('data_entrega'):
-        try: dt_entrega = datetime.strptime(p['data_entrega'], "%Y-%m-%d").strftime("%d/%m/%Y")
+        try: dt_entrega = datetime.strptime(str(p['data_entrega'])[:10], "%Y-%m-%d").strftime("%d/%m/%Y")
         except: dt_entrega = p['data_entrega']
     
     status_atual = p.get('status', 'Recebido')
     
-    # Badge visual do substatus dentro da aba Pago
     badge_substatus = ""
     if status_atual == "Pago": badge_substatus = "<span class='badge-status status-pago'>PAGO</span>"
     elif status_atual == "Em Produção": badge_substatus = "<span class='badge-status status-producao'>PRODUÇÃO</span>"
@@ -167,7 +166,6 @@ def renderizar_card_linha(p):
             st.switch_page("pages/09_Detalhes_Pedido.py")
 
     with col_c5:
-        # Ações dinâmicas de fluxo baseadas no status exato
         if status_atual in ["Recebido", "Pendente"]:
             b_pg, b_des = st.columns(2)
             with b_pg:
@@ -202,15 +200,15 @@ def renderizar_card_linha(p):
         elif status_atual == "Desistência":
             if st.button("🔄 Restaurar", key=f"ret_{p['id']}", help="Restaurar para Recebidos", use_container_width=True): mudar_status(p['id'], "Recebido")
 
-# FILTRA OS PEDIDOS POR CANAL
+# FILTRA OS PEDIDOS POR CANAL (Corrigido para mapear perfeitamente a tag [B2B])
 pedidos_filtrados = []
 for p in pedidos:
-    is_b2b = "[B2B]" in p['cliente_nome']
+    is_b2b = "[B2B]" in p.get('cliente_nome', '')
     if tipo_filtro == "Varejo (B2C)" and is_b2b: continue
     if tipo_filtro == "Corporativo (B2B)" and not is_b2b: continue
     pedidos_filtrados.append(p)
 
-# SEPARAÇÃO EXATA POR ABAS (Aba Pago agora engloba Pago, Em Produção, Em Rota e Entregue)
+# SEPARAÇÃO EXATA POR ABAS
 rec_list = [p for p in pedidos_filtrados if p.get("status", "Recebido") in ["Recebido", "Pendente"]]
 pag_list = [p for p in pedidos_filtrados if p.get("status") in ["Pago", "Em Produção", "Em Rota de Entrega", "Entregue"]]
 des_list = [p for p in pedidos_filtrados if p.get("status") == "Desistência"]
