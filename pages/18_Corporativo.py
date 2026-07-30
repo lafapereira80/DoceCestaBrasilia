@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import requests
+import re
 from datetime import datetime, timedelta, date
 
 from config.supabase import supabase
@@ -64,23 +66,13 @@ div[data-testid="stDataFrame"] { border-radius: 10px !important; border: 1px sol
    REGRAS DE IMPRESSÃO (CTRL+P PARA PDF)
 ========================================== */
 @media print {
-    /* Esconde botões, menus laterais, banners e abas na hora de gerar o PDF */
     header, footer, section[data-testid="stSidebar"], .stAppDeployMenu, 
     div[data-testid="stButton"], .header-banner, .stTabs > div[role="tablist"],
     div[data-testid="stCheckbox"], div[data-baseweb="select"], input, .corp-card {
         display: none !important;
     }
-    
-    /* Remove padding do container para ocupar a folha toda */
     .block-container { padding: 0 !important; max-width: 100% !important; margin: 0 !important;}
-    
-    /* Tira sombra e borda redonda da proposta na hora da impressão */
-    .proposta-preview {
-        box-shadow: none !important;
-        border: none !important;
-        padding: 0 !important;
-    }
-    
+    .proposta-preview { box-shadow: none !important; border: none !important; padding: 0 !important; }
     body { background-color: white !important; }
 }
 </style>
@@ -94,7 +86,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================
-# CACHE DE DADOS
+# FUNÇÕES E CACHES
 # =====================================================
 @st.cache_data(ttl=60, show_spinner=False)
 def obter_cestas_admin():
@@ -109,7 +101,27 @@ def carregar_pedidos_b2b():
     except:
         return []
 
+def buscar_cnpj_api(cnpj_str):
+    cnpj_limpo = re.sub(r'\D', '', cnpj_str)
+    if len(cnpj_limpo) != 14:
+        return False, "CNPJ inválido. Digite 14 números."
+    try:
+        url = f"https://brasilapi.com.br/api/cnpj/v1/{cnpj_limpo}"
+        r = requests.get(url, timeout=5)
+        if r.status_code == 200:
+            return True, r.json()
+        else:
+            return False, "CNPJ não encontrado na Receita Federal."
+    except Exception as e:
+        return False, "Erro de conexão ao buscar o CNPJ."
+
 cestas_disponiveis = obter_cestas_admin()
+
+# Sessões para preenchimento automático do CNPJ
+if "corp_cnpj" not in st.session_state: st.session_state.corp_cnpj = ""
+if "corp_nome" not in st.session_state: st.session_state.corp_nome = ""
+if "corp_tel" not in st.session_state: st.session_state.corp_tel = ""
+if "corp_end" not in st.session_state: st.session_state.corp_end = ""
 
 # =====================================================
 # ABAS DO MÓDULO
@@ -123,10 +135,41 @@ with aba_proposta:
     st.markdown('<div class="corp-card">', unsafe_allow_html=True)
     st.markdown('<div class="corp-title">⚙️ 1. Dados da Negociação</div>', unsafe_allow_html=True)
     
+    # --- Busca por CNPJ ---
+    col_c1, col_c2, col_c3 = st.columns([2, 1, 3])
+    with col_c1:
+        cnpj_input = st.text_input("Consulta Rápida por CNPJ", value=st.session_state.corp_cnpj, placeholder="Somente números", key="cnpj_in")
+    with col_c2:
+        st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
+        if st.button("🔍 Buscar Dados", use_container_width=True):
+            if cnpj_input:
+                sucesso, dados = buscar_cnpj_api(cnpj_input)
+                if sucesso:
+                    st.session_state.corp_cnpj = cnpj_input
+                    # Tenta Nome Fantasia, se não houver, usa Razão Social
+                    st.session_state.corp_nome = dados.get("nome_fantasia") or dados.get("razao_social", "")
+                    st.session_state.corp_tel = dados.get("ddd_telefone_1", "")
+                    
+                    log = dados.get('logradouro', '')
+                    num = dados.get('numero', '')
+                    bairro = dados.get('bairro', '')
+                    cidade = dados.get('municipio', '')
+                    uf = dados.get('uf', '')
+                    st.session_state.corp_end = f"{log}, {num} - {bairro}, {cidade}-{uf}"
+                    
+                    st.toast("✅ Dados importados da Receita Federal com sucesso!")
+                    st.rerun()
+                else:
+                    st.error(dados)
+            else:
+                st.warning("Digite um CNPJ para buscar.")
+
+    st.write("")
+    
     col_e1, col_e2 = st.columns(2)
     with col_e1:
-        empresa_nome = st.text_input("Nome da Empresa Cliente *", placeholder="Ex: Sicoob, Tribunal de Justiça, etc.")
-        telefone_empresa = st.text_input("WhatsApp / Telefone do Contato", placeholder="Ex: (61) 99999-9999")
+        empresa_nome = st.text_input("Nome da Empresa Cliente *", value=st.session_state.corp_nome, placeholder="Ex: Sicoob, Tribunal de Justiça, etc.")
+        telefone_empresa = st.text_input("WhatsApp / Telefone da Empresa", value=st.session_state.corp_tel, placeholder="Ex: (61) 99999-9999")
         contato_nome = st.text_input("A/C (Nome do Contato do RH/Compras)", placeholder="Ex: Ana Clara - Coord. de RH")
     with col_e2:
         validade = st.date_input("Validade da Proposta", value=datetime.now() + timedelta(days=7))
@@ -184,7 +227,7 @@ with aba_proposta:
     with col_d3:
         prazo_pagamento = st.selectbox("Condição de Pagamento", ["Pix", "Cartão de Crédito", "Faturamento (Boleto)", "Transferência Bancária"])
 
-    endereco_empresa = st.text_input("📍 Endereço de Entrega da Empresa", placeholder="Ex: SQS 101, Bloco A, Ed. Comercial")
+    endereco_empresa = st.text_input("📍 Endereço de Entrega da Empresa", value=st.session_state.corp_end, placeholder="Ex: SQS 101, Bloco A, Ed. Comercial")
 
     total_bruto = sum(item["preco_unitario"] * item["quantidade"] for item in st.session_state["itens_orcamento"])
     valor_desconto = total_bruto * (desconto_perc / 100)
@@ -210,10 +253,12 @@ with aba_proposta:
             if len(st.session_state["itens_orcamento"]) == 1:
                 nome_da_cesta_principal = st.session_state["itens_orcamento"][0]["nome"]
 
+            cnpj_formatado = re.sub(r'\D', '', cnpj_input) if cnpj_input else "00000000000"
+
             dados_b2b = {
                 "cliente_nome": f"[B2B] {empresa_nome.strip()}",
                 "cliente_telefone": telefone_empresa.strip() or "00000000000",
-                "cliente_cpf": "00000000000",
+                "cliente_cpf": cnpj_formatado,
                 "destinatario_nome": contato_nome.strip() or "Colaboradores",
                 "destinatario_telefone": telefone_empresa.strip(),
                 "motivo_homenagem": f"B2B: {motivo.strip()}",
@@ -235,7 +280,12 @@ with aba_proposta:
             sucesso, p_id = salvar_pedido(dados_b2b)
             if sucesso:
                 st.success(f"🎉 Pedido corporativo {empresa_nome} salvo com sucesso! Já foi enviado para a fila de Produção.")
+                # Limpa os dados em cache para não atrapalhar o próximo pedido
                 st.session_state["itens_orcamento"] = []
+                st.session_state.corp_cnpj = ""
+                st.session_state.corp_nome = ""
+                st.session_state.corp_tel = ""
+                st.session_state.corp_end = ""
             else:
                 st.error("Erro ao registrar o pedido no banco de dados.")
 
