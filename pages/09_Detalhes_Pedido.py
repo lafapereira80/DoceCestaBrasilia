@@ -34,7 +34,7 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
     box-shadow: 0 8px 24px rgba(90, 59, 40, 0.04); margin-bottom: 24px;
     display: flex; justify-content: space-between; align-items: center;
 }
-.order-id { font-size: 32px; font-weight: 800; color: #4a2e1b; margin: 0; line-height: 1.2; letter-spacing: -0.5px; }
+.order-id { font-size: 20px; font-weight: 800; color: #775a46; margin: 0; line-height: 1.2; letter-spacing: -0.5px; }
 .order-type-badge { background: #fef7e0; color: #b06000; padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid #fce8b2; display: inline-block; margin-top: 6px; }
 .order-type-badge.corp { background: #e6f4ea; color: #137333; border-color: #ceead6; }
 .status-label { font-size: 12px; color: #775a46; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; text-align: right; }
@@ -98,6 +98,9 @@ cliente_limpo = pedido.get('cliente_nome', '').replace("[B2B]", "").strip()
 tipo_classe = "corp" if is_b2b else ""
 tipo_texto = "🏢 CORPORATIVO (B2B)" if is_b2b else "🛍️ VAREJO (B2C)"
 
+# ID Curto para visualização limpa (apenas primeira parte)
+id_curto = str(pedido['id']).split('-')[0].upper()
+
 def formata_data(d_str):
     if not d_str: return "-"
     try: return datetime.strptime(str(d_str)[:10], "%Y-%m-%d").strftime("%d/%m/%Y")
@@ -120,7 +123,7 @@ if st.button("⬅️ Voltar para o Mural", key="btn_voltar_topo"):
 st.markdown(f"""
 <div class="order-header">
     <div>
-        <h1 class="order-id">Pedido #{pedido['id']}</h1>
+        <h1 class="order-id">Pedido #{id_curto}</h1>
         <span class="order-type-badge {tipo_classe}">{tipo_texto}</span>
     </div>
     <div>
@@ -201,27 +204,31 @@ with col_fin:
     st.markdown('<div class="info-card">', unsafe_allow_html=True)
     st.markdown('<div class="card-title finance">💰 Fechamento & Pagamento</div>', unsafe_allow_html=True)
     
-    frete_atual = tratar_preco(pedido.get('valor_frete', 0))
-    total_atual = tratar_preco(pedido.get('valor_total', 0))
+    frete_atual_db = tratar_preco(pedido.get('valor_frete', 0))
+    total_atual_db = tratar_preco(pedido.get('valor_total', 0))
+    sub_estimado = total_atual_db - frete_atual_db
+    
     forma_pagamento = pedido.get('pagamento', 'Pix')
     
-    # 1. Inputs de Fechamento
+    # 1. Inputs de Fechamento (Iniciando zerados conforme solicitado)
     c_f1, c_f2 = st.columns(2)
     with c_f1:
-        novo_frete = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=frete_atual)
+        novo_frete = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=0.0)
     with c_f2:
         desconto_perc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0)
 
-    lista_status = ["Recebido", "Pendente", "Pago", "Em Produção", "Em Rota de Entrega", "Entregue", "Desistência"]
-    novo_status = st.selectbox("Status do Pedido", lista_status, index=lista_status.index(pedido.get('status', 'Recebido')) if pedido.get('status') in lista_status else 0)
+    # Status restritos
+    lista_status = ["Recebido", "Pago", "Em Produção", "Em Rota de Entrega"]
+    status_db = pedido.get('status', 'Recebido')
+    idx_status = lista_status.index(status_db) if status_db in lista_status else 0
+    novo_status = st.selectbox("Status do Pedido", lista_status, index=idx_status)
 
     st.markdown("<div class='data-label' style='margin-top: 8px;'>Inserir Extra Não Cadastrado</div>", unsafe_allow_html=True)
     c_ex1, c_ex2 = st.columns([2.5, 1])
     with c_ex1: nome_extra_novo = st.text_input("Nome", placeholder="Ex: Vinho", label_visibility="collapsed")
     with c_ex2: valor_extra_novo = st.number_input("Valor", min_value=0.0, step=5.0, value=0.0, label_visibility="collapsed")
 
-    # Cálculos
-    sub_estimado = total_atual - frete_atual
+    # Cálculos dinâmicos a partir do subtotal
     v_desconto = sub_estimado * (desconto_perc / 100)
     v_extra = valor_extra_novo if nome_extra_novo.strip() else 0.0
     total_calculado = sub_estimado - v_desconto + novo_frete + v_extra
@@ -276,10 +283,10 @@ with col_fin:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# BOTÕES DE AÇÃO INFERIORES (EDIÇÃO COMPLETA E EXCLUSÃO)
+# BOTÕES DE AÇÃO INFERIORES (EDIÇÃO COMPLETA E MOVIMENTAÇÃO)
 # ==========================================
 st.markdown("<hr style='border-top: 1px dashed #e8ddd3; margin: 10px 0 20px 0;'>", unsafe_allow_html=True)
-col_a1, col_a2, col_a3, col_a4 = st.columns(4)
+col_a1, col_a2, col_a3 = st.columns(3)
 
 with col_a1:
     if st.button("✏️ Editar Pedido Inteiro", use_container_width=True):
@@ -288,17 +295,11 @@ with col_a1:
         else: st.switch_page("pages/19_Pedido_Manual.py")
 
 with col_a2:
-    if st.button("⏩ Produção", use_container_width=True):
+    if st.button("⏩ Avançar p/ Produção", use_container_width=True):
         supabase.table("pedidos").update({"status": "Em Produção"}).eq("id", pedido_id).execute()
         st.rerun()
 
 with col_a3:
-    if st.button("⏩ Rota", use_container_width=True):
+    if st.button("🚚 Enviar p/ Rota", use_container_width=True):
         supabase.table("pedidos").update({"status": "Em Rota de Entrega"}).eq("id", pedido_id).execute()
         st.rerun()
-
-with col_a4:
-    if st.button("🗑️ Excluir", type="primary", use_container_width=True):
-        supabase.table("pedidos").delete().eq("id", pedido_id).execute()
-        st.session_state['pedido_detalhe_id'] = None
-        st.switch_page("pages/02_Pedidos.py")
