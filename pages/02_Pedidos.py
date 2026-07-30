@@ -52,8 +52,8 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .badge-b2b { background: #e6f4ea; color: #137333; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 8px; margin-bottom: 3px; display: inline-block;}
 .badge-b2c { background: #fef7e0; color: #b06000; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 8px; margin-bottom: 3px; display: inline-block;}
 
-.col- info { flex: 1; min-width: 150px; font-size: 12.5px; color: #5a3b28; }
-.col- info b { color: #2c1e14; }
+.col-info { flex: 1; min-width: 150px; font-size: 12.5px; color: #5a3b28; }
+.col-info b { color: #2c1e14; }
 
 div[data-testid="stButton"] button { border-radius: 10px !important; font-weight: 700 !important; font-size: 12px !important; padding: 6px 10px !important;}
 </style>
@@ -95,8 +95,8 @@ pedidos = get_pedidos()
 tipo_filtro = st.radio("Filtrar por Canal:", ["Todos os Canais", "Varejo (B2C)", "Corporativo (B2B)"], horizontal=True)
 st.write("")
 
-# SEPARAÇÃO POR ABAS (TABS)
-aba_rec, aba_pag, aba_prod, aba_des = st.tabs(["📥 Recebidos", "💳 Pagos", "🍳 Em Produção", "❌ Desistência"])
+# SEPARAÇÃO POR ABAS (TABS) - Removida a aba antiga de Produção e unificada na Previsão
+aba_rec, aba_prod, aba_des = st.tabs(["📥 Recebidos", "🍳 Previsão de Produção", "❌ Desistência"])
 
 def renderizar_lista_pedidos(lista_pedidos_etapa):
     if not lista_pedidos_etapa:
@@ -120,7 +120,6 @@ def renderizar_card_linha(p):
     status_atual = p.get('status', 'Recebido')
     valor_f = f"R$ {float(p.get('valor_total', 0) or 0):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     
-    # DISTRIBUIÇÃO EM LINHA ÚNICA UTILIZANDO COLUNAS DO STREAMLIT DENTRO DO HTML/CONTAINER
     col_c1, col_c2, col_c3, col_c4, col_c5 = st.columns([2.2, 2.2, 2.8, 1.4, 1.6])
     
     with col_c1:
@@ -157,10 +156,9 @@ def renderizar_card_linha(p):
         b_acao, b_canc = st.columns(2)
         with b_acao:
             if status_atual in ["Recebido", "Pendente"]:
-                if st.button("💳", key=f"pg_{p['id']}", help="Marcar como Pago", use_container_width=True): mudar_status(p['id'], "Pago")
-            elif status_atual == "Pago":
-                if st.button("🍳", key=f"pr_{p['id']}", help="Mandar para Produção", use_container_width=True): mudar_status(p['id'], "Em Produção")
-            elif status_atual == "Em Produção":
+                # Ao clicar em pagar, o pedido vai direto para Previsão de Produção (status 'Pago')
+                if st.button("💳", key=f"pg_{p['id']}", help="Confirmar Pagamento e Enviar para Produção", use_container_width=True): mudar_status(p['id'], "Pago")
+            elif status_atual in ["Pago", "Em Produção"]:
                 if st.button("🛵", key=f"et_{p['id']}", help="Concluir Entrega", use_container_width=True): mudar_status(p['id'], "Entregue")
             else:
                 st.markdown("<div style='font-size:10px; color:#137333; font-weight:800; text-align:center; padding-top:6px;'>FIM</div>", unsafe_allow_html=True)
@@ -176,14 +174,12 @@ for p in pedidos:
     if tipo_filtro == "Empresas (B2B)" and not is_b2b: continue
     pedidos_filtrados.append(p)
 
-# SEPARAÇÃO POR ETAPAS PARA AS ABAS
+# SEPARAÇÃO POR ETAPAS PARA AS ABAS (Unificando Pago e Em Produção na Previsão)
 rec_list = [p for p in pedidos_filtrados if p.get("status", "Recebido") in ["Recebido", "Pendente"]]
-pag_list = [p for p in pedidos_filtrados if p.get("status") == "Pago"]
-prod_list = [p for p in pedidos_filtrados if p.get("status") in ["Em Produção", "Em Rota de Entrega", "Entregue"]]
+prod_list = [p for p in pedidos_filtrados if p.get("status") in ["Pago", "Em Produção", "Em Rota de Entrega", "Entregue"]]
 des_list = [p for p in pedidos_filtrados if p.get("status") == "Desistência"]
 
 with aba_rec: renderizar_lista_pedidos(rec_list)
-with aba_pag: renderizar_lista_pedidos(pag_list)
 with aba_prod: renderizar_lista_pedidos(prod_list)
 with aba_des: renderizar_lista_pedidos(des_list)
 
