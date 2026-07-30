@@ -54,6 +54,7 @@ def obter_secoes_e_cestas_ativas():
         
         return secoes_ativas, cestas_ativas
     except Exception as e:
+        print(f"Erro ao carregar catálogo: {e}")
         try:
             cestas = [c for c in listar_cestas() if c.get("ativa", True)]
             return ["Cestas de Café"], sorted(cestas, key=lambda x: x.get("ordem", 999))
@@ -216,11 +217,11 @@ div[data-testid="stCheckbox"]:hover { background: #fdfcfb; border-color: #c5721f
 # ==========================================================
 def renderizar_passo(numero, titulo):
     st.markdown(f"""
-    <div class="step-container">
-        <div class="step-number">{numero}</div>
-        <h3 class="step-title">{titulo}</h3>
-    </div>
-    """, unsafe_allow_html=True)
+<div class="step-container">
+<div class="step-number">{numero}</div>
+<h3 class="step-title">{titulo}</h3>
+</div>
+""", unsafe_allow_html=True)
 
 # ==========================================================
 # CONTROLE DE ESTADO E INICIALIZAÇÃO
@@ -240,24 +241,23 @@ if st.session_state["pedido_enviado_com_sucesso"]:
     st.markdown(f'<div class="header-banner">{carregar_logo_base64()}<div class="header-text"><h1 class="header-title">Doce Cesta Brasília</h1></div></div>', unsafe_allow_html=True)
     
     st.markdown(f"""
-    <div class="sucesso-container">
-        <div class="sucesso-icone">🎉</div>
-        <div class="sucesso-titulo">Pedido Confirmado!</div>
-        <div class="sucesso-texto">
-            Que alegria, <b>{dados.get('cliente_nome')}</b>! Seu pedido foi reservado com muito carinho pela nossa equipe. <br><br>
-            ⏳ <b>Próximo Passo:</b> Nossa equipe entrará em contato via WhatsApp em instantes para confirmar a taxa de entrega e enviar o link/chave de pagamento.
-        </div>
-        
-        <div class="receipt-box" style="margin-top: 0; background-image: none; background: #ffffff;">
-            <div style="font-size: 16px; font-weight: 800; color: #5a3b28; margin-bottom: 15px; border-bottom: 1px solid #e8ddd3; padding-bottom: 10px;">📋 Seu Ticket de Encomenda</div>
-            <div class="receipt-line"><span>💝 <b>Para:</b></span> <span>{dados.get('destinatario_nome', '-')}</span></div>
-            <div class="receipt-line"><span>🎁 <b>Presente:</b></span> <span style="text-align: right;">{dados.get('cesta_nome')}</span></div>
-            <div class="receipt-line"><span>🎀 <b>Extras:</b></span> <span style="text-align: right;">{dados.get('adicionais_str') if dados.get('adicionais_str') else 'Nenhum'}</span></div>
-            <div class="receipt-line"><span>📅 <b>Data:</b></span> <span>{dados.get('data_entrega')} ({dados.get('periodo_entrega')})</span></div>
-            <div class="receipt-total"><span>TOTAL (sem frete)</span> <span>{dados.get('valor_total')}</span></div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+<div class="sucesso-container">
+<div class="sucesso-icone">🎉</div>
+<div class="sucesso-titulo">Pedido Confirmado!</div>
+<div class="sucesso-texto">
+Que alegria, <b>{dados.get('cliente_nome')}</b>! Seu pedido foi reservado com muito carinho pela nossa equipe. <br><br>
+⏳ <b>Próximo Passo:</b> Nossa equipe entrará em contato via WhatsApp em instantes para confirmar a taxa de entrega e enviar o link/chave de pagamento.
+</div>
+<div class="receipt-box" style="margin-top: 0; background-image: none; background: #ffffff;">
+<div style="font-size: 16px; font-weight: 800; color: #5a3b28; margin-bottom: 15px; border-bottom: 1px solid #e8ddd3; padding-bottom: 10px;">📋 Seu Ticket de Encomenda</div>
+<div class="receipt-line"><span>💝 <b>Para:</b></span> <span>{dados.get('destinatario_nome', '-')}</span></div>
+<div class="receipt-line"><span>🎁 <b>Presente:</b></span> <span style="text-align: right;">{dados.get('cesta_nome')}</span></div>
+<div class="receipt-line"><span>🎀 <b>Extras:</b></span> <span style="text-align: right;">{dados.get('adicionais_str') if dados.get('adicionais_str') else 'Nenhum'}</span></div>
+<div class="receipt-line"><span>📅 <b>Data:</b></span> <span>{dados.get('data_entrega')} ({dados.get('periodo_entrega')})</span></div>
+<div class="receipt-total"><span>TOTAL (sem frete)</span> <span>{dados.get('valor_total')}</span></div>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
     st.write("")
     if st.button("🎁 Fazer Novo Pedido", use_container_width=True):
@@ -394,11 +394,11 @@ if cestas_ativas and secoes_disponiveis:
                 valor_base_txt = f"R$ {valor_base_num:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                 
                 st.markdown(f"""
-                <div style="margin-top: 15px; background: linear-gradient(145deg, #ffffff 0%, #fdfbf8 100%); border: 2px solid #e8ddd3; border-radius: 16px; padding: 15px 10px; text-align: center; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.05);">
-                    <div style="font-size: 11px; font-weight: 800; color: #a65d14; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;">Valor</div>
-                    <div style="font-size: 28px; color: #137333; font-weight: 800; line-height: 1;">{valor_base_txt}</div>
-                </div>
-                """, unsafe_allow_html=True)
+<div style="margin-top: 15px; background: linear-gradient(145deg, #ffffff 0%, #fdfbf8 100%); border: 2px solid #e8ddd3; border-radius: 16px; padding: 15px 10px; text-align: center; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.05);">
+<div style="font-size: 11px; font-weight: 800; color: #a65d14; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;">Valor</div>
+<div style="font-size: 28px; color: #137333; font-weight: 800; line-height: 1;">{valor_base_txt}</div>
+</div>
+""", unsafe_allow_html=True)
                     
             with col_txt:
                 sec_txt = cesta_obj.get("secao_vitrine") or "Cestas de Café"
@@ -407,15 +407,15 @@ if cestas_ativas and secoes_disponiveis:
                 
                 if cesta_obj.get("descricao"):
                     st.markdown(f"""
-                    <div style="background: #ffffff; padding: 20px; border-radius: 16px; font-size: 14.5px; color: #4a2e1b; line-height: 1.6; border: 1px solid #f5eee6; box-shadow: inset 0 2px 8px rgba(0,0,0,0.01);">
-                        <div style="color: #c5721f; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 16px;">✨</span> O que compõe esta cesta?
-                        </div>
-                        <div style="text-align: justify; text-justify: inter-word; color: #6b5343;">
-                            {cesta_obj.get('descricao')}
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+<div style="background: #ffffff; padding: 20px; border-radius: 16px; font-size: 14.5px; color: #4a2e1b; line-height: 1.6; border: 1px solid #f5eee6; box-shadow: inset 0 2px 8px rgba(0,0,0,0.01);">
+<div style="color: #c5721f; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+<span style="font-size: 16px;">✨</span> O que compõe esta cesta?
+</div>
+<div style="text-align: justify; text-justify: inter-word; color: #6b5343;">
+{cesta_obj.get('descricao')}
+</div>
+</div>
+""", unsafe_allow_html=True)
             
             # PERSONALIZAÇÃO DA CESTA
             configuracao = obter_configuracao_cesta_cacheada(cesta_obj["id"])
@@ -551,7 +551,6 @@ valor_base_fmt = f"R$ {valor_base:,.2f}".replace(",", "X").replace(".", ",").rep
 valor_adc_fmt = f"R$ {valor_adicionais:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 total_fmt = f"R$ {total_estimado:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
-# Ocultar linha se o valor dos Mimos Extras for zero
 linha_extras_html = ""
 if valor_adicionais > 0:
     linha_extras_html = f'<div class="receipt-line"><span>🎀 Mimos Extras</span> <strong>{valor_adc_fmt}</strong></div>'
@@ -559,19 +558,17 @@ if valor_adicionais > 0:
 if cesta_obj:
     with st.container(border=True):
         st.markdown(f"""
-        <div class="receipt-box">
-            <div style="font-size: 16px; font-weight: 800; color: #5a3b28; margin-bottom: 15px; text-align: center;">RESUMO DO PEDIDO</div>
-            
-            <div class="receipt-line"><span>🎁 <b>{cesta_obj['nome']}</b></span> <strong>{valor_base_fmt}</strong></div>
-            {linha_extras_html}
-            <div class="receipt-line"><span>🚚 Taxa de Entrega</span> <strong>A calcular pelo WhatsApp</strong></div>
-            
-            <div class="receipt-total">
-                <span>SUBTOTAL:</span> 
-                <span>{total_fmt}</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+<div class="receipt-box">
+<div style="font-size: 16px; font-weight: 800; color: #5a3b28; margin-bottom: 15px; text-align: center;">RESUMO DO PEDIDO</div>
+<div class="receipt-line"><span>🎁 <b>{cesta_obj['nome']}</b></span> <strong>{valor_base_fmt}</strong></div>
+{linha_extras_html}
+<div class="receipt-line"><span>🚚 Taxa de Entrega</span> <strong>A calcular pelo WhatsApp</strong></div>
+<div class="receipt-total">
+<span>SUBTOTAL:</span> 
+<span>{total_fmt}</span>
+</div>
+</div>
+""", unsafe_allow_html=True)
         
         if tem_consulta:
             st.warning("⚠️ **Nota:** Você incluiu itens '*Sob Consulta*'. O valor exato será confirmado por nossa equipe.")
@@ -629,11 +626,11 @@ if enviar:
     produtos_txt = [f"{c}: {i['nome']}" for c, itens in selecoes_cliente.items() for i in itens]
     adicionais_lista = [f"{i['nome']}" for i in adicionais_selecionados]
     
-    texto_adicionais_final = ", ".join(adicionais_lista) if adicionais_lista else "Nenhum"
+    texto_adicionais_bd = ", ".join(adicionais_lista) if adicionais_lista else "Nenhum"
     
     if links_polaroid:
-        texto_adicionais_final += "\n\n📸 LINKS FOTOS POLAROID:\n" + "\n".join(links_polaroid)
-
+        texto_adicionais_bd += "\n\n📸 LINKS FOTOS POLAROID:\n" + "\n".join(links_polaroid)
+    
     dados = {
         "cliente_nome": nome.strip(),
         "cliente_cpf": cpf_limpo,
@@ -644,7 +641,7 @@ if enviar:
         "cesta_id": cesta_obj["id"],
         "cesta_nome": cesta_obj["nome"],
         "produtos": "\n".join(produtos_txt),
-        "adicionais": texto_adicionais_final,
+        "adicionais": texto_adicionais_bd,
         "pagamento": pagamento,
         "mensagem": st.session_state.get("input_mensagem", "").strip(),
         "pedido_especial": st.session_state.get("input_pedido_especial", "").strip(),
