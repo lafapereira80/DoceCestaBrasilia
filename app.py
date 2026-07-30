@@ -95,21 +95,26 @@ div[data-testid="stTabs"] button {
 div[data-testid="stTabs"] button[aria-selected="true"] { color: #c5721f !important; border-bottom-color: #c5721f !important; }
 
 /* =========================================
-   CARDS DE PRODUTOS (CESTAS)
+   CARDS DE PRODUTOS (CESTAS) NATIVOS E BLINDADOS
 ========================================== */
-.produto-card {
-    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 20px; padding: 16px;
-    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03); transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    height: 100%; display: flex; flex-direction: column;
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #ffffff !important; border: 1px solid #e8ddd3 !important; border-radius: 20px !important;
+    padding: 16px !important; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03) !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important; height: 100%;
 }
-.produto-card:hover {
-    border-color: #d2bfae; box-shadow: 0 10px 25px rgba(90, 59, 40, 0.08); transform: translateY(-4px);
+div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+    border-color: #d2bfae !important; box-shadow: 0 10px 25px rgba(90, 59, 40, 0.08) !important; transform: translateY(-4px);
 }
-.produto-img-container { width: 100%; border-radius: 14px; overflow: hidden; margin-bottom: 14px; background: #faf7f3; display: flex; align-items: center; justify-content: center; }
-.produto-img-container img { width: 100%; height: auto; object-fit: cover; aspect-ratio: 1 / 1; }
+div[data-testid="stVerticalBlockBorderWrapper"] > div {
+    height: 100%; display: flex; flex-direction: column; justify-content: space-between;
+}
+
+.card-content { display: flex; flex-direction: column; flex-grow: 1; }
+.produto-img-container { width: 100%; border-radius: 14px; overflow: hidden; margin-bottom: 14px; background: #faf7f3; display: flex; align-items: center; justify-content: center; aspect-ratio: 1 / 1; }
+.produto-img-container img { width: 100%; height: 100%; object-fit: cover; }
 .produto-titulo { font-family: 'Dancing Script', cursive !important; font-size: 28px !important; font-weight: 700; color: #c5721f; margin-bottom: 8px; line-height: 1.1; }
-.produto-desc { font-size: 13.5px; color: #775a46; line-height: 1.5; flex-grow: 1; margin-bottom: 15px; text-align: justify; }
-.produto-preco { font-size: 20px; font-weight: 800; color: #137333; margin-bottom: 14px; }
+.produto-desc { font-size: 13.5px; color: #775a46; line-height: 1.5; margin-bottom: 15px; text-align: justify; flex-grow: 1; }
+.produto-preco { font-size: 20px; font-weight: 800; color: #137333; margin-bottom: 8px; }
 
 /* Botões Nativos Streamlit dentro do Card Principal */
 div[data-testid="stButton"] button {
@@ -184,7 +189,7 @@ if not cestas:
     st.stop()
 
 # ==========================================================
-# 1. VITRINE DE CESTAS (COM DESCRIÇÃO COMPLETA)
+# 1. VITRINE DE CESTAS (COM DESCRIÇÃO COMPLETA E BOTÃO NATIVO)
 # ==========================================================
 nomes_secoes = [sec["nome"] for sec in secoes]
 
@@ -210,36 +215,32 @@ for i, aba in enumerate(abas):
         
         for idx, cesta in enumerate(cestas_da_aba):
             with colunas[idx % 2]:
-                imagem_html = f'<img src="{cesta["imagem"]}" alt="{cesta["nome"]}">' if cesta.get("imagem") else '<div style="height:250px; display:flex; align-items:center; justify-content:center; color:#ccc; border-radius:14px; background:#f5eee6;">Sem Imagem</div>'
-                
-                # Exibe a DESCRIÇÃO COMPLETA, formatando quebras de linha para HTML
-                descricao_txt = str(cesta.get("descricao", "")).replace("\n", "<br>")
+                with st.container(border=True): # Card delimitador oficial do Streamlit
                     
-                valor = float(cesta.get("preco", 0))
-                preco_fmt = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-                
-                # Construção visual fluida do Card
-                st.markdown(f"""
-                <div class="produto-card">
-                    <div>
+                    imagem_html = f'<img src="{cesta["imagem"]}" alt="{cesta["nome"]}">' if cesta.get("imagem") else '<div style="height:100%; width:100%; display:flex; align-items:center; justify-content:center; color:#ccc; background:#f5eee6;">Sem Imagem</div>'
+                    
+                    # Exibe a DESCRIÇÃO COMPLETA, formatando quebras de linha para HTML
+                    descricao_txt = str(cesta.get("descricao", "")).replace("\n", "<br>")
+                        
+                    valor = float(cesta.get("preco", 0))
+                    preco_fmt = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                    
+                    # Informações do produto injetadas diretamente na caixa
+                    st.markdown(f"""
+                    <div class="card-content">
                         <div class="produto-img-container">
                             {imagem_html}
                         </div>
                         <div class="produto-titulo">{cesta['nome']}</div>
                         <div class="produto-desc">{descricao_txt}</div>
-                    </div>
-                    <div>
                         <div class="produto-preco">{preco_fmt}</div>
                     </div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Botão de ação (Hack de alinhamento com margem negativa)
-                st.markdown("<div style='margin-top: -55px; position: relative; z-index: 10; padding: 0 16px 16px 16px;'>", unsafe_allow_html=True)
-                if st.button("🎁 Montar e Comprar", key=f"comprar_{cesta['id']}", use_container_width=True):
-                    st.session_state["cesta_selecionada_home"] = cesta["id"]
-                    st.switch_page("pages/01_Inicio.py")
-                st.markdown("</div>", unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
+                    
+                    # O botão "Monte sua cesta" renderizado logo abaixo do conteúdo, ancorado perfeitamente na caixa
+                    if st.button("🎁 Monte sua cesta", key=f"comprar_{cesta['id']}", use_container_width=True):
+                        st.session_state["cesta_selecionada_home"] = cesta["id"]
+                        st.switch_page("pages/01_Inicio.py")
 
 # ==========================================================
 # 2. SEÇÃO DE MIMOS EXTRAS E ADICIONAIS (AGORA COM FOTOS)
