@@ -91,7 +91,7 @@ div[data-testid="stDataFrame"] { border-radius: 10px !important; border: 1px sol
 st.markdown("""
 <div class="header-banner">
     <h1 class="header-title">Vendas Corporativas (B2B)</h1>
-    <p class="header-subtitle">Gere orçamentos em lote, adicione extras, gere PDFs e registre pedidos 🏢</p>
+    <p class="header-subtitle">Gere orçamentos em lote, adicione extras precisos, gere PDFs e registre pedidos 🏢</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -207,29 +207,60 @@ with aba_proposta:
 
     st.markdown("#### 🎁 2. Adicionar Itens e Extras ao Lote")
 
-    # Mapeamento de adicionais seguro usando a função tratar_preco
-    mapa_adicionais = {f"{a['nome']} (+ R$ {tratar_preco(a.get('preco')):.2f})": a for a in adicionais_disponiveis}
-
     col_i1, col_i2 = st.columns([3, 1])
     with col_i1:
         cesta_selecionada = st.selectbox("Selecione o Pacote Principal", [{"id": None, "nome": "Escolha uma cesta...", "preco": 0}] + cestas_disponiveis, format_func=lambda x: x["nome"])
     with col_i2:
         quantidade = st.number_input("Quantidade do Lote", min_value=1, step=1)
         
-    col_a1, col_a2 = st.columns([3, 1])
-    with col_a1:
-        selecionados_adc = st.multiselect("Adicionais / Extras (Aplicados a cada unidade do lote)", list(mapa_adicionais.keys()), placeholder="Ex: Caneca, Trufas, Espumante...")
-    with col_a2:
-        st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
-        if st.button("➕ Inserir no Contrato", use_container_width=True):
+    st.markdown("<div style='font-size: 14px; font-weight: 700; color: #5a3b28; margin-top: 10px;'>➕ Personalizar (Adicionais Extras)</div>", unsafe_allow_html=True)
+    
+    adicionais_selecionados = []
+    
+    # Área Inteligente de Adicionais
+    with st.container(border=True):
+        st.markdown("<div style='font-size: 12px; color: #666; margin-bottom: 15px;'>Marque os itens extras que irão compor <b>cada unidade</b> deste lote. Defina a quantidade e ajuste o valor para itens sob consulta.</div>", unsafe_allow_html=True)
+        
+        for adc in adicionais_disponiveis:
+            adc_id = adc['id']
+            adc_nome = adc['nome']
+            adc_preco = tratar_preco(adc.get('preco'))
+            
+            c_chk, c_qtd, c_val = st.columns([2.5, 1, 1.5])
+            
+            with c_chk:
+                texto_label = f"{adc_nome} (R$ {adc_preco:.2f})" if adc_preco > 0 else f"{adc_nome} (Sob Consulta)"
+                chk = st.checkbox(texto_label, key=f"chk_adc_{adc_id}")
+            
+            if chk:
+                with c_qtd:
+                    qtd_adc = st.number_input("Qtd", min_value=1, value=1, step=1, key=f"qtd_adc_{adc_id}", help="Quantidade por Cesta")
+                with c_val:
+                    if adc_preco == 0:
+                        # Libera para o usuário digitar o valor se for sob consulta
+                        preco_final_adc = st.number_input("Valor Unitário (R$)", min_value=0.0, value=0.0, step=1.0, key=f"val_adc_{adc_id}")
+                    else:
+                        preco_final_adc = adc_preco
+                        st.markdown(f"<div style='margin-top: 35px; color: #137333; font-weight: 800;'>R$ {preco_final_adc:.2f} /un</div>", unsafe_allow_html=True)
+                
+                adicionais_selecionados.append({
+                    "nome": adc_nome,
+                    "qtd_por_cesta": qtd_adc,
+                    "preco_unit": preco_final_adc,
+                    "subtotal": qtd_adc * preco_final_adc
+                })
+
+    st.write("")
+    col_add1, col_add2, col_add3 = st.columns([1, 2, 1])
+    with col_add2:
+        if st.button("➕ INSERIR CONJUNTO NO CONTRATO", use_container_width=True):
             if cesta_selecionada.get("id"):
-                # Calcula seguro
                 preco_base = tratar_preco(cesta_selecionada.get("preco"))
-                valor_extras = sum(tratar_preco(mapa_adicionais[k].get("preco")) for k in selecionados_adc)
+                valor_extras = sum([item["subtotal"] for item in adicionais_selecionados])
                 preco_unitario_final = preco_base + valor_extras
                 
-                nomes_extras = [mapa_adicionais[k]["nome"] for k in selecionados_adc]
-                desc_extras = f" | Extras inclusos: {', '.join(nomes_extras)}" if nomes_extras else ""
+                nomes_extras = [f"{item['qtd_por_cesta']}x {item['nome']}" for item in adicionais_selecionados]
+                desc_extras = f" | Extras Inclusos: {', '.join(nomes_extras)}" if nomes_extras else ""
                 
                 st.session_state["itens_orcamento"].append({
                     "cesta_id": cesta_selecionada["id"],
@@ -239,7 +270,15 @@ with aba_proposta:
                     "descricao": cesta_selecionada.get("descricao", "") + desc_extras,
                     "extras_raw": ", ".join(nomes_extras)
                 })
+                
+                # Limpa os checkboxes após inserir
+                for k in list(st.session_state.keys()):
+                    if k.startswith("chk_adc_"):
+                        st.session_state[k] = False
+                        
                 st.rerun()
+            else:
+                st.warning("⚠️ Selecione um Pacote Principal primeiro.")
 
     # Tabela de Itens Adicionados
     total_bruto = 0
@@ -249,7 +288,7 @@ with aba_proposta:
         df_itens["Subtotal"] = df_itens["preco_unitario"] * df_itens["quantidade"]
         total_bruto = df_itens["Subtotal"].sum()
         
-        st.write("📋 **Itens do Contrato:**")
+        st.write("📋 **Itens já Adicionados no Contrato:**")
         st.dataframe(
             df_itens[["nome", "quantidade", "preco_unitario", "Subtotal"]].style.format({"preco_unitario": "R$ {:.2f}", "Subtotal": "R$ {:.2f}"}),
             use_container_width=True, hide_index=True
@@ -264,7 +303,7 @@ with aba_proposta:
     with col_d1:
         desconto_perc = st.number_input("Desconto de Lote (%)", min_value=0.0, max_value=100.0, step=1.0)
     with col_d2:
-        frete_lote = st.number_input("Frete Único (R$)", min_value=0.0, step=10.0)
+        frete_lote = st.number_input("Frete Único Logístico (R$)", min_value=0.0, step=10.0)
     with col_d3:
         prazo_pagamento = st.selectbox("Condição de Pagamento", ["Pix", "Cartão de Crédito", "Faturamento (Boleto)", "Transferência Bancária"])
 
@@ -314,7 +353,7 @@ with aba_proposta:
             for item in st.session_state["itens_orcamento"]:
                 lista_str_produtos.append(f"{item['quantidade']}x {item['nome']} (R$ {item['preco_unitario']:.2f})")
                 if item.get("extras_raw"):
-                    lista_str_extras_totais.append(f"{item['quantidade']}x lote de: {item['extras_raw']}")
+                    lista_str_extras_totais.append(f"{item['quantidade']}x lote com: {item['extras_raw']}")
             
             nome_da_cesta_principal = "Lote Corporativo Misto"
             if len(st.session_state["itens_orcamento"]) == 1:
@@ -324,7 +363,7 @@ with aba_proposta:
             
             msg_adicionais = f"Desconto de {desconto_perc}% aplicado."
             if lista_str_extras_totais:
-                msg_adicionais += "\nEXTRAS INCLUSOS:\n" + "\n".join(lista_str_extras_totais)
+                msg_adicionais += "\nEXTRAS INCLUSOS NAS CESTAS:\n" + "\n".join(lista_str_extras_totais)
 
             dados_b2b = {
                 "cliente_nome": f"[B2B] {empresa_nome.strip()}",
@@ -375,7 +414,7 @@ with aba_proposta:
             
             linhas_html = ""
             for item in st.session_state["itens_orcamento"]:
-                desc_curta = (item['descricao'][:120] + '...') if item['descricao'] and len(item['descricao']) > 120 else (item['descricao'] or '')
+                desc_curta = (item['descricao'][:150] + '...') if item['descricao'] and len(item['descricao']) > 150 else (item['descricao'] or '')
                 linhas_html += f"""
                 <tr>
                     <td style="padding: 10px; border-bottom: 1px solid #f5eee6;"><b>{item['nome']}</b><br><span style="font-size:11px; color:#666;">{desc_curta}</span></td>
