@@ -12,7 +12,6 @@ from utils.permissao import (
     administrador_operador
 )
 
-
 # =====================================================
 # CONFIGURAÇÃO DA PÁGINA
 # =====================================================
@@ -29,7 +28,6 @@ administrador_operador()
 
 usuario = st.session_state.usuario
 
-
 # =====================================================
 # CSS PREMIUM E ANIMAÇÕES
 # =====================================================
@@ -37,9 +35,13 @@ usuario = st.session_state.usuario
 st.markdown(
 """
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+
 /* =========================================
    CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
 ========================================== */
+html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; }
+
 .block-container {
     padding-top: 1.5rem !important;
     padding-bottom: 3rem !important;
@@ -47,7 +49,7 @@ st.markdown(
 }
 
 div[data-testid="stVerticalBlock"] {
-    gap: 0.6rem !important;
+    gap: 0.8rem !important;
 }
 
 h1 {
@@ -68,8 +70,8 @@ h2, h3, h4 {
 
 .block-container p, 
 .block-container label {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
     font-size: 13px !important;
+    color: #4a2e1b !important;
 }
 
 /* =========================================
@@ -81,13 +83,13 @@ h2, h3, h4 {
     border-radius: 16px;
     padding: 22px 16px;
     text-align: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03);
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     margin-bottom: 10px;
 }
 .metric-card:hover {
-    border-color: #d2bfae;
-    box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
+    border-color: #c5721f;
+    box-shadow: 0 8px 25px rgba(197, 114, 31, 0.08);
     transform: translateY(-3px);
 }
 .kpi-title {
@@ -115,15 +117,15 @@ h2, h3, h4 {
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff;
     border: 1px solid #e8ddd3 !important;
-    border-radius: 14px !important;
-    padding: 16px 20px !important;
-    margin-bottom: 10px !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    border-radius: 16px !important;
+    padding: 20px 24px !important;
+    margin-bottom: 12px !important;
+    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.02);
     transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     border-color: #d2bfae !important;
-    box-shadow: 0 8px 20px rgba(90, 59, 40, 0.08);
+    box-shadow: 0 8px 20px rgba(90, 59, 40, 0.06);
 }
 
 /* =========================================
@@ -145,52 +147,28 @@ div[data-testid="stDataFrame"] {
 unsafe_allow_html=True
 )
 
-
 # =====================================================
 # TÍTULO E CABEÇALHO
 # =====================================================
-
 st.title("💰 Painel Financeiro")
 st.caption("Acompanhe o faturamento, volume de vendas e desempenho do negócio de forma analítica.")
-
 
 # =====================================================
 # CARREGAR PEDIDOS E ADICIONAIS
 # =====================================================
-
 @st.cache_data(ttl=60)
 def carregar_pedidos():
-    resposta = (
-        supabase
-        .table("pedidos")
-        .select("*")
-        .execute()
-    )
+    resposta = supabase.table("pedidos").select("*").execute()
     return resposta.data or []
-
 
 @st.cache_data(ttl=60)
 def carregar_adicionais():
-    resposta = (
-        supabase
-        .table("pedido_adicionais")
-        .select(
-            """
-            pedido_id,
-            nome_produto,
-            quantidade,
-            valor_unitario
-            """
-        )
-        .execute()
-    )
+    resposta = supabase.table("pedido_adicionais").select("pedido_id, nome_produto, quantidade, valor_unitario").execute()
     return resposta.data or []
-
 
 # =====================================================
 # BUSCA DOS DADOS
 # =====================================================
-
 try:
     pedidos = carregar_pedidos()
     adicionais = carregar_adicionais()
@@ -199,17 +177,15 @@ except Exception as erro:
     st.stop()
 
 if not pedidos:
-    st.warning("Nenhum pedido encontrado no banco de dados.")
+    st.warning("Ainda não há dados financeiros suficientes para gerar o relatório.")
     st.stop()
 
 df = pd.DataFrame(pedidos)
 df_adicionais = pd.DataFrame(adicionais)
 
-
 # =====================================================
 # TRATAMENTO DOS DADOS E FILTRAGEM DE STATUS
 # =====================================================
-
 if "created_at" in df.columns:
     df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce")
 else:
@@ -229,6 +205,11 @@ else:
 status_excluir = ["Recebido", "Desistência", "Desistencia"]
 df = df[~df["status"].isin(status_excluir)]
 
+# BLINDAGEM: Se após remover desistências o DF ficar vazio, paramos o painel amigavelmente
+if df.empty:
+    st.info("📊 Não há faturamento confirmado no momento. Todos os pedidos atuais estão aguardando pagamento ou foram cancelados.")
+    st.stop()
+
 df["ano"] = df["created_at"].dt.year
 df["mes"] = df["created_at"].dt.month
 
@@ -239,24 +220,15 @@ meses_dict = {
     9:"Setembro", 10:"Outubro", 11:"Novembro", 12:"Dezembro"
 }
 
-
 # =====================================================
 # FORMATAÇÃO DE MOEDA
 # =====================================================
-
 def moeda(valor):
-    return (
-        f"R$ {valor:,.2f}"
-        .replace(",", "X")
-        .replace(".", ",")
-        .replace("X",".")
-    )
-
+    return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X",".")
 
 # =====================================================
 # FILTROS DINÂMICOS (ANO E MÊS CRUZADOS)
 # =====================================================
-
 with st.container(border=True):
     st.markdown("<div style='font-size: 14px; font-weight: 800; color: #5a3b28; margin-bottom: 8px;'>🔍 Filtros de Período</div>", unsafe_allow_html=True)
     col_f1, col_f2 = st.columns(2)
@@ -266,7 +238,7 @@ with st.container(border=True):
         ano_selecionado = st.selectbox("Ano de Apuração", ["Todos"] + list(anos))
 
     with col_f2:
-        # Filtra os meses disponíveis com base estricta no ano selecionado
+        # Filtra os meses disponíveis com base estrita no ano selecionado
         if ano_selecionado != "Todos":
             meses_disponiveis_nums = sorted(df[df["ano"] == ano_selecionado]["mes"].dropna().unique())
         else:
@@ -275,11 +247,9 @@ with st.container(border=True):
         meses_disponiveis_nomes = [meses_dict[m] for m in meses_disponiveis_nums if m in meses_dict]
         mes_selecionado = st.selectbox("Mês Específico", ["Todos"] + meses_disponiveis_nomes)
 
-
 # =====================================================
 # APLICA FILTROS
 # =====================================================
-
 df_filtrado = df.copy()
 
 if ano_selecionado != "Todos":
@@ -289,11 +259,9 @@ if mes_selecionado != "Todos":
     numero_mes = [chave for chave, valor in meses_dict.items() if valor == mes_selecionado][0]
     df_filtrado = df_filtrado[df_filtrado["mes"] == numero_mes]
 
-
 # =====================================================
 # RESUMO FINANCEIRO (KPIs PREMIUM)
 # =====================================================
-
 st.write("")
 col1, col2, col3, col4 = st.columns(4)
 
@@ -314,13 +282,11 @@ with col3:
 with col4:
     st.markdown(f'<div class="metric-card"><div class="kpi-title">🎯 Ticket Médio</div><div class="kpi-value-neutral">{moeda(ticket_medio)}</div></div>', unsafe_allow_html=True)
 
-
 st.write("")
 
 # =====================================================
 # BLOCO DE VISÃO GERAL (SIDES BY SIDE)
 # =====================================================
-
 col_left, col_right = st.columns(2)
 
 # Coluna Esquerda: Faturamento Mensal + Resumo por Status
@@ -353,11 +319,10 @@ with col_left:
             resumo_status["Valor Arrecadado"] = resumo_status["Valor Arrecadado"].apply(moeda)
             st.dataframe(resumo_status, use_container_width=True, hide_index=True, height=160)
 
-
 # Coluna Direita: Cestas Vendidas + Adicionais Vendidos
 with col_right:
     with st.container(border=True):
-        st.markdown("#### 🧺 Ranking de Cestas")
+        st.markdown("#### 🧺 Ranking de Opções")
         if "cesta_nome" in df_filtrado.columns and not df_filtrado.empty:
             cestas = (
                 df_filtrado
@@ -369,7 +334,7 @@ with col_right:
             cestas.columns = ["Nome do Pacote / Cesta", "Volume de Vendas"]
             st.dataframe(cestas, use_container_width=True, hide_index=True, height=180)
         else:
-            st.info("Nenhuma cesta encontrada no período.")
+            st.info("Nenhuma venda encontrada no período.")
 
     with st.container(border=True):
         st.markdown("#### 🎀 Extras e Adicionais")
@@ -398,11 +363,9 @@ with col_right:
         else:
             st.info("Nenhum item extra faturado neste período.")
 
-
 # =====================================================
 # DETALHAMENTO FINANCEIRO COMPACTO
 # =====================================================
-
 st.write("")
 with st.container(border=True):
     st.markdown("#### 📋 Detalhamento de Transações")
@@ -442,16 +405,15 @@ with st.container(border=True):
 
     st.dataframe(detalhamento, use_container_width=True, hide_index=True, height=300)
 
-
 # =====================================================
 # AVISOS E ALERTAS (RODAPÉ INTEGRADO)
 # =====================================================
-
 st.write("")
 st.divider()
 
-pedidos_sem_valor = df_filtrado[df_filtrado["valor_total"] <= 0]
-if not pedidos_sem_valor.empty:
-    st.warning(f"⚠️ Atenção para auditoria: Existem **{len(pedidos_sem_valor)} pedido(s)** contabilizados sem valor total definido (R$ 0,00).")
+if not df_filtrado.empty:
+    pedidos_sem_valor = df_filtrado[df_filtrado["valor_total"] <= 0]
+    if not pedidos_sem_valor.empty:
+        st.warning(f"⚠️ Atenção para auditoria: Existem **{len(pedidos_sem_valor)} pedido(s)** contabilizados sem valor total definido (R$ 0,00).")
 
 st.caption("📊 Relatórios Financeiros Oficiais - Doce Cesta Brasília")
