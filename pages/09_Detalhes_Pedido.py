@@ -102,11 +102,12 @@ st.markdown(f"""
 col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown(f"<div class='section-title {cor_classe}'>👤 DADOS DO CLIENTE</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='section-title {cor_classe}'>👤 DADOS DO CLIENTE / DESTINATÁRIO</div>", unsafe_allow_html=True)
     st.markdown(f"""
     <div class="info-row"><span class="info-label">Nome / Empresa:</span><span class="info-value">{cliente_limpo}</span></div>
     <div class="info-row"><span class="info-label">Contato/Telefone:</span><span class="info-value">{pedido.get('cliente_telefone', '')}</span></div>
     <div class="info-row"><span class="info-label">CPF / CNPJ:</span><span class="info-value">{pedido.get('cliente_cpf', '')}</span></div>
+    <div class="info-row"><span class="info-label">Homenagem/Motivo:</span><span class="info-value">{pedido.get('motivo_homenagem', 'Não informado')}</span></div>
     """, unsafe_allow_html=True)
 
     st.markdown(f"<div class='section-title {cor_classe}'>📍 LOGÍSTICA E ENTREGA</div>", unsafe_allow_html=True)
@@ -119,6 +120,14 @@ with col1:
         {pedido.get('endereco', 'Não informado')}
     </div>
     """, unsafe_allow_html=True)
+
+    if pedido.get('mensagem'):
+        st.markdown(f"<div class='section-title {cor_classe}'>💌 MENSAGEM DO CARTÃO</div>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div style="background:#f9f9f9; padding:12px; border-radius:8px; font-size:14px; font-style:italic; color:#4a2e1b; border-left: 3px solid #c5721f;">
+            "{pedido.get('mensagem')}"
+        </div>
+        """, unsafe_allow_html=True)
 
 with col2:
     st.markdown(f"<div class='section-title {cor_classe}'>🎁 DETALHAMENTO DOS PRODUTOS</div>", unsafe_allow_html=True)
@@ -159,7 +168,6 @@ with col_a1:
         st.info("Pressione Ctrl + P (ou Cmd + P) no seu teclado. O sistema já está configurado para esconder os menus e imprimir a ficha de produção perfeitamente!")
 with col_a2:
     if st.button("🗑️ Excluir Pedido", type="primary", use_container_width=True):
-        # Ação de excluir real
         supabase.table("pedidos").delete().eq("id", pedido_id).execute()
         st.session_state['pedido_detalhe_id'] = None
         st.switch_page("pages/02_Pedidos.py")
