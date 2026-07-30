@@ -1,446 +1,137 @@
 import streamlit as st
-import time
-
-from config.supabase import supabase  # Importação direta para driblar o cache e apagar o arquivo
-
-from services.cesta_service import (
-    buscar_cesta,
-    atualizar_cesta,
-    upload_imagem_cesta,
-    remover_imagem_cesta,
-    listar_cestas
-)
-
-from utils.menu import (
-    configurar_pagina,
-    menu_lateral
-)
-
-from utils.permissao import (
-    administrador_operador
-)
-
+from config.supabase import supabase
+from services.cesta_service import buscar_cesta_por_id, atualizar_cesta, upload_imagem_cesta
+from utils.menu import configurar_pagina, menu_lateral
+from utils.permissao import administrador_operador
 
 # =====================================================
 # CONFIGURAÇÃO DA PÁGINA
 # =====================================================
-
-st.set_page_config(
-    page_title="Editar Opção",
-    page_icon="✏️",
-    layout="wide"
-)
-
+st.set_page_config(page_title="Editar Cesta", page_icon="✏️", layout="wide")
 configurar_pagina()
 menu_lateral()
 administrador_operador()
 
-
 # =====================================================
-# CSS PREMIUM E RESPONSIVIDADE
+# CSS PREMIUM E ANIMAÇÕES
 # =====================================================
-
 st.markdown(
 """
 <style>
-/* =========================================
-   CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
-========================================== */
-.block-container {
-    padding-top: 1.5rem !important;
-    padding-bottom: 3rem !important;
-    max-width: 1050px;
-}
-
-div[data-testid="stVerticalBlock"] {
-    gap: 0.5rem !important;
-}
-
-h1 {
-    font-size: 28px !important;
-    font-weight: 800 !important;
-    color: #4a2e1b;
-    margin-bottom: 2px !important;
-    letter-spacing: -0.5px;
-}
-
-.block-container p, 
-.block-container label {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-    font-size: 13px !important;
-}
-
-/* =========================================
-   CONTAINER CARD DO FORMULÁRIO (FOCUS CARD)
-========================================== */
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #ffffff;
-    border: 1px solid #e8ddd3 !important;
-    border-radius: 16px !important;
-    padding: 24px 28px !important;
-    margin-bottom: 10px !important;
-    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.04);
-    transition: all 0.3s ease;
-}
-
-div[data-testid="stVerticalBlockBorderWrapper"]:hover {
-    border-color: #d2bfae !important;
-    box-shadow: 0 8px 25px rgba(90, 59, 40, 0.08);
-}
-
-/* =========================================
-   CUSTOMIZAÇÃO DO UPLOADER MODERNO (DROPZONE)
-========================================== */
-div[data-testid="stFileUploader"] {
-    width: 100% !important;
-}
-
-div[data-testid="stFileUploader"] section {
-    background-color: #faf7f3 !important;
-    border: 2px dashed #dfcdbb !important;
-    border-radius: 12px !important;
-    padding: 12px !important;
-    text-align: center !important;
-    transition: all 0.3s ease !important;
-}
-
-div[data-testid="stFileUploader"] section:hover {
-    border-color: #a87b57 !important;
-    background-color: #f5eee6 !important;
-}
-
-div[data-testid="stFileUploader"] section button {
-    background-color: #ffffff !important;
-    border: 1px solid #dfcdbb !important;
-    color: #5a3b28 !important;
-    font-weight: 800 !important;
-    border-radius: 10px !important;
-    padding: 6px 16px !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.03) !important;
-    transition: all 0.2s ease !important;
-}
-
-div[data-testid="stFileUploader"] section button span {
-    display: none !important;
-}
-
-div[data-testid="stFileUploader"] section button::after {
-    content: "📁 Selecionar Nova Foto" !important;
-    font-size: 13px !important;
-    font-weight: 800 !important;
-}
-
-/* =========================================
-   ESTILIZAÇÃO DE BOTÕES E IMAGENS
-========================================== */
-div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button {
-    font-size: 14px !important;
-    font-weight: 800 !important;
-    border-radius: 10px !important;
-    min-height: 40px !important;
-    transition: all 0.2s ease;
-}
-div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > button:hover {
-    transform: scale(1.02);
-}
-
-.stImage img {
-    border-radius: 10px;
-    object-fit: cover;
-    border: 1px solid #e8ddd3;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-/* =========================================
-   RESPONSIVIDADE MOBILE E BOTÕES (LADO A LADO)
-========================================== */
-@media (max-width: 768px) {
-    h1 { font-size: 26px !important; }
-    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 16px 14px !important; }
-    
-    /* Força os botões de ação a ficarem na horizontal no mobile */
-    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        gap: 10px !important;
-        margin-top: 15px !important;
-        justify-content: space-between;
-    }
-
-    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) > div[data-testid="stColumn"] {
-        flex: 1 1 0% !important; 
-        min-width: 0 !important;
-        padding: 0 !important;
-    }
-
-    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) button {
-        width: 100% !important;
-        padding: 8px 0px !important;
-    }
-}
+.block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; max-width: 900px; }
+h1 { font-size: 28px !important; font-weight: 800 !important; color: #4a2e1b; margin-bottom: 2px !important; }
+div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1px solid #e8ddd3 !important; border-radius: 16px !important; padding: 24px !important; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.05); }
+.stButton button { font-size: 15px !important; font-weight: 800 !important; border-radius: 12px !important; height: 48px !important; }
+.stButton button[kind="primary"] { background: linear-gradient(135deg, #137333 0%, #0d4e22 100%) !important; color: white !important; border: none !important; }
+.stButton button[kind="secondary"] { background: #faf7f3 !important; border: 1px solid #dfcdbb !important; color: #5a3b28 !important; }
 </style>
-""",
-unsafe_allow_html=True
-)
-
+""", unsafe_allow_html=True)
 
 # =====================================================
-# VERIFICA CESTA
+# VALIDAÇÃO DE ESTADO
 # =====================================================
+cesta_id = st.session_state.get("cesta_editar")
 
-if "cesta_editar" not in st.session_state or not st.session_state["cesta_editar"]:
-    st.warning("⚠️ Nenhuma opção selecionada para edição.")
-    if st.button("⬅ Voltar para o Catálogo"):
+if not cesta_id:
+    st.warning("⚠️ Nenhuma cesta selecionada para edição.")
+    if st.button("⬅️ Voltar para Cestas", use_container_width=True):
         st.switch_page("pages/04_Cestas.py")
     st.stop()
 
-cesta_id = st.session_state["cesta_editar"]
-
+# =====================================================
+# CACHE DINÂMICO PARA SEÇÕES DA VITRINE
+# =====================================================
+@st.cache_data(ttl=5, show_spinner=False)
+def obter_secoes_oficiais():
+    try:
+        res = supabase.table("vitrine_secoes").select("nome").order("ordem").execute()
+        secoes = [s["nome"] for s in (res.data or [])]
+        return secoes if secoes else ["Cestas de Café"]
+    except:
+        return ["Cestas de Café"]
 
 # =====================================================
-# BUSCA CESTA & TODAS AS SEÇÕES DA VITRINE
+# CARREGAR DADOS DA CESTA
 # =====================================================
+cesta_atual = buscar_cesta_por_id(cesta_id)
 
-try:
-    cesta = buscar_cesta(cesta_id)
-    if not cesta:
-        st.error("Item não encontrado no banco de dados.")
-        st.stop()
-        
-    # Busca todas as seções já cadastradas no banco para criar o dropdown inteligente
-    resposta = supabase.table("cestas").select("secao_vitrine").execute()
-    secoes_unicas = set()
-    
-    if resposta.data:
-        for item in resposta.data:
-            sec = item.get("secao_vitrine")
-            if sec and str(sec).strip() != "":
-                secoes_unicas.add(str(sec).strip())
-
-    if not secoes_unicas:
-        secoes_unicas.add("Cestas Tradicionais")
-
-    lista_secoes = sorted(list(secoes_unicas))
-    lista_secoes.append("➕ Criar nova seção...")
-    
-except Exception as erro:
-    st.error(f"Erro ao carregar os dados: {erro}")
+if not cesta_atual:
+    st.error("Cesta não encontrada no banco de dados.")
+    if st.button("⬅️ Voltar", use_container_width=True):
+        st.switch_page("pages/04_Cestas.py")
     st.stop()
 
+st.title("✏️ Editar Opção")
+st.caption(f"Atualizando os dados do item: **{cesta_atual['nome']}**")
+st.write("")
 
 # =====================================================
-# TÍTULO E CABEÇALHO
+# FORMULÁRIO DE EDIÇÃO (BLINDADO COM SEÇÕES DINÂMICAS)
 # =====================================================
+lista_secoes = obter_secoes_oficiais()
 
-col_t1, col_t2 = st.columns([3, 1])
-with col_t1:
-    st.title("✏️ Edição de Produto")
-    st.caption("Atualize as informações, ajuste a ordem de exibição, a seção e altere a foto principal.")
-
-
-# =====================================================
-# FORMULÁRIO DE EDIÇÃO (FOCUS CARD COMPACTO)
-# =====================================================
+secao_atual = cesta_atual.get("secao_vitrine", "Cestas de Café")
+if secao_atual not in lista_secoes:
+    lista_secoes.insert(0, secao_atual) # Garante que a seção atual apareça, mesmo se foi desativada
 
 with st.container(border=True):
-    col_dados, col_imagem = st.columns([1.4, 1])
+    col1, col2 = st.columns([1.5, 1], gap="large")
 
-    # Coluna 1: Informações da Cesta
-    with col_dados:
-        st.markdown("<div style='font-size: 16px; font-weight: 800; color: #5a3b28; margin-bottom: 10px;'>📝 Dados Principais</div>", unsafe_allow_html=True)
-        nome = st.text_input("🏷️ Nome do Produto", value=cesta.get("nome", ""), placeholder="Ex: Cesta Café Especial")
+    with col1:
+        novo_nome = st.text_input("Nome da Opção", value=cesta_atual.get("nome", ""))
         
-        col_p1, col_p2 = st.columns(2)
-        with col_p1:
-            preco = st.number_input("💰 Preço de Venda (R$)", min_value=0.0, value=float(cesta.get("preco", 0)), step=1.0, format="%.2f")
-        with col_p2:
-            ordem_banco = cesta.get("ordem")
-            ordem_atual = int(ordem_banco) if ordem_banco is not None and int(ordem_banco) >= 1 else 1
-            nova_ordem = st.number_input("🔢 Posição (Ordem Geral)", min_value=1, value=ordem_atual, step=1)
-
-        # SEÇÃO VITRINE (DROPDOWN)
-        secao_atual_bd = cesta.get("secao_vitrine")
-        if not secao_atual_bd or str(secao_atual_bd).strip() == "":
-            secao_atual_bd = "Cestas Tradicionais"
-            
-        # Pega o índice da seção atual na lista para ela já vir selecionada
-        index_secao = lista_secoes.index(secao_atual_bd) if secao_atual_bd in lista_secoes else 0
+        # Selectbox blindado
+        nova_secao = st.selectbox("Seção na Vitrine", lista_secoes, index=lista_secoes.index(secao_atual))
         
-        secao_selecionada = st.selectbox(
-            "🗂️ Seção na Vitrine", 
-            lista_secoes,
-            index=index_secao,
-            help="Altere o bloco do site onde este produto vai aparecer."
-        )
+        nova_descricao = st.text_area("Descrição (Itens principais)", value=cesta_atual.get("descricao", ""), height=130)
+        nova_ordem = st.number_input("Ordem de Exibição", value=cesta_atual.get("ordem", 1), min_value=1, step=1)
+
+    with col2:
+        nova_ativa = st.toggle("Item Ativo na Vitrine?", value=cesta_atual.get("ativa", True))
+        novo_preco = st.number_input("Preço (R$)", value=float(cesta_atual.get("preco", 0)), min_value=0.0, step=1.0, format="%.2f")
         
-        nova_secao = ""
-        if secao_selecionada == "➕ Criar nova seção...":
-            nova_secao = st.text_input("Nome da Nova Seção", placeholder="Ex: Tábuas Especiais")
-
-        descricao = st.text_area("📋 Descrição Detalhada", value=cesta.get("descricao", "") or "", height=95, placeholder="Descreva os itens principais da cesta...")
-        ativa = st.checkbox("🟢 Item Ativo e Visível no Site", value=cesta.get("ativa", True))
-
-    # Coluna 2: Gestão de Imagem
-    with col_imagem:
-        st.markdown("<div style='font-size: 16px; font-weight: 800; color: #5a3b28; margin-bottom: 10px;'>📷 Imagem de Vitrine</div>", unsafe_allow_html=True)
-        imagem_atual = cesta.get("imagem", "")
-
-        col_img1, col_img2 = st.columns(2)
-
-        # Bloco da Imagem Atual + Botão de Excluir
-        with col_img1:
-            if imagem_atual:
-                st.image(imagem_atual, width=120)
-                if st.button("❌ Remover Foto", key="rm_foto_editar", use_container_width=True):
-                    with st.spinner("Removendo foto..."):
-                        try:
-                            # 1. TENTA APAGAR O ARQUIVO FÍSICO DO SUPABASE BUCKET
-                            if "/public/" in str(imagem_atual):
-                                try:
-                                    caminho_pos_public = str(imagem_atual).split("/public/")[1]
-                                    partes = caminho_pos_public.split("/")
-                                    
-                                    nome_bucket = partes[0]
-                                    caminho_arquivo = "/".join(partes[1:])
-                                    
-                                    supabase.storage.from_(nome_bucket).remove([caminho_arquivo])
-                                except Exception as erro_storage:
-                                    print(f"Aviso: O arquivo físico já não existia ou houve erro: {erro_storage}")
-
-                            # 2. REMOVE A REFERÊNCIA NO BANCO DE DADOS
-                            remover_imagem_cesta(cesta_id)
-                            st.toast("✅ Imagem removida com sucesso!")
-                            time.sleep(1)
-                            st.rerun()
-                        except Exception as erro:
-                            st.error(f"Erro ao remover: {erro}")
-            else:
-                st.caption("Nenhuma imagem cadastrada no momento.")
-
-        # Bloco de Nova Imagem
-        nova_imagem = st.file_uploader("Upload de Nova Foto", type=["png", "jpg", "jpeg", "webp"], label_visibility="collapsed")
-
-        if nova_imagem:
-            with col_img2:
-                st.image(nova_imagem, width=120, caption="Nova Imagem")
-
-    st.write("")
-    st.divider()
-
-    # Botões de Ação
-    col_b1, col_b2, col_b3 = st.columns([1.5, 1.5, 1])
-
-    with col_b1:
-        salvar = st.button("💾 Salvar Alterações", use_container_width=True, type="primary")
-
-    with col_b2:
-        cancelar = st.button("❌ Cancelar", use_container_width=True)
-
-
-# =====================================================
-# CANCELAR
-# =====================================================
-
-if cancelar:
-    st.session_state.pop("cesta_editar", None)
-    st.switch_page("pages/04_Cestas.py")
-
-
-# =====================================================
-# SALVAR (COM DRIBLE DE CACHE E ATUALIZAÇÃO DA SEÇÃO)
-# =====================================================
-
-if salvar:
-    secao_final = nova_secao.strip() if secao_selecionada == "➕ Criar nova seção..." else secao_selecionada
-
-    if not nome.strip():
-        st.error("Informe o nome do produto.")
-        st.stop()
-    elif not secao_final:
-        st.error("Informe o nome da seção para a vitrine.")
-        st.stop()
-
-    imagem = imagem_atual
-
-    with st.spinner("Atualizando configurações do pacote..."):
-        if nova_imagem:
-            try:
-                # Apaga a imagem velha do bucket caso o usuário esteja enviando uma foto nova por cima
-                if imagem_atual and "/public/" in str(imagem_atual):
-                    try:
-                        caminho_pos_public = str(imagem_atual).split("/public/")[1]
-                        partes = caminho_pos_public.split("/")
-                        supabase.storage.from_(partes[0]).remove(["/".join(partes[1:])])
-                    except:
-                        pass
-                        
-                imagem = upload_imagem_cesta(nova_imagem)
-            except Exception as erro:
-                st.error(f"Erro no upload da foto: {erro}")
-                st.stop()
-
-        try:
-            # TENTA A FUNÇÃO NOVA DA CESTA (SE EXISTIR)
-            atualizar_cesta(
-                cesta_id=cesta_id,
-                nome=nome.strip(),
-                descricao=descricao.strip(),
-                preco=preco,
-                imagem=imagem,
-                ativa=ativa,
-                ordem=int(nova_ordem)
-            )
+        st.write("")
+        if cesta_atual.get("imagem"):
+            st.markdown("<div style='font-size: 13px; font-weight: 800; color: #5a3b28; margin-bottom: 8px;'>📷 Foto Atual</div>", unsafe_allow_html=True)
+            st.image(cesta_atual["imagem"], width=150)
             
-            # Força a atualização do campo secao_vitrine diretamente pelo Supabase para blindar a API
-            supabase.table("cestas").update({"secao_vitrine": secao_final}).eq("id", cesta_id).execute()
-            
-            st.success("✅ Opção atualizada e reordenada com sucesso!")
-            st.session_state.pop("cesta_editar", None)
-            time.sleep(1)
-            st.switch_page("pages/04_Cestas.py")
+        nova_imagem = st.file_uploader("Substituir Foto (Opcional)", type=["jpg", "jpeg", "png", "webp"])
 
-        except TypeError as erro_tipo:
-            # SE O CACHE ESTIVER TRAVADO COM A FUNÇÃO VELHA DO SERVICES, NÓS DRIBLAMOS ELE AQUI!
-            if "ordem" in str(erro_tipo):
-                try:
-                    # 1. Salva os dados básicos com a função antiga que está na memória
-                    atualizar_cesta(
-                        cesta_id=cesta_id,
-                        nome=nome.strip(),
-                        descricao=descricao.strip(),
-                        preco=preco,
-                        imagem=imagem,
-                        ativa=ativa
-                    )
-                    
-                    # 2. Atualiza a Ordem e a Seção de forma cirúrgica no banco
-                    supabase.table("cestas").update({"ordem": int(nova_ordem), "secao_vitrine": secao_final}).eq("id", cesta_id).execute()
-                    
-                    # 3. Faz a reordenação em cascata das outras cestas caso necessário
-                    cestas_existentes = supabase.table("cestas").select("*").execute().data or []
-                    for c in cestas_existentes:
-                        if c["id"] != cesta_id and c.get("ordem", 0) >= int(nova_ordem):
-                            nova_ordem_cascata = c.get("ordem", 0) + 1
-                            supabase.table("cestas").update({"ordem": nova_ordem_cascata}).eq("id", c["id"]).execute()
-                    
-                    st.success("✅ Opção atualizada com sucesso! (Drible de cache ativado)")
-                    st.session_state.pop("cesta_editar", None)
+# =====================================================
+# AÇÕES: SALVAR OU CANCELAR
+# =====================================================
+st.write("")
+col_b1, col_b2 = st.columns(2)
+
+with col_b1:
+    if st.button("❌ Cancelar", use_container_width=True):
+        st.switch_page("pages/04_Cestas.py")
+
+with col_b2:
+    if st.button("💾 Salvar Alterações", use_container_width=True, type="primary"):
+        if not novo_nome.strip():
+            st.error("O nome é obrigatório.")
+        else:
+            with st.spinner("Atualizando dados..."):
+                imagem_url = cesta_atual.get("imagem")
+                if nova_imagem:
+                    imagem_url = upload_imagem_cesta(nova_imagem)
+
+                dados_atualizados = {
+                    "nome": novo_nome.strip(),
+                    "descricao": nova_descricao.strip(),
+                    "preco": novo_preco,
+                    "ativa": nova_ativa,
+                    "ordem": int(nova_ordem),
+                    "secao_vitrine": nova_secao,
+                    "imagem": imagem_url
+                }
+
+                sucesso = atualizar_cesta(cesta_id, dados_atualizados)
+
+                if sucesso:
+                    st.success("✅ Cesta atualizada com sucesso!")
                     time.sleep(1)
                     st.switch_page("pages/04_Cestas.py")
-
-                except Exception as erro_drible:
-                    st.error(f"Erro durante o drible de cache: {erro_drible}")
-            else:
-                st.error(f"Erro ao atualizar: {erro_tipo}")
-                
-        except Exception as erro:
-            st.error(f"Erro ao atualizar: {erro}")
-
-
-# =====================================================
-# RODAPÉ
-# =====================================================
-
-st.write("")
-st.caption("🎁 Configurações de Catálogo - Doce Cesta Brasília")
+                else:
+                    st.error("Erro ao atualizar a cesta no banco de dados.")
