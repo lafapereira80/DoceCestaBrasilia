@@ -3,8 +3,8 @@ import pandas as pd
 import requests
 import re
 import uuid
-import datetime
 from datetime import datetime, date
+import streamlit.components.v1 as components
 
 from config.supabase import supabase
 from services.cesta_service import listar_cestas
@@ -62,6 +62,10 @@ div[data-testid="stButton"] button[kind="primary"] {
     box-shadow: 0 6px 20px rgba(19, 115, 51, 0.25) !important; font-size: 15px !important; padding: 16px !important; width: 100% !important; 
 }
 div[data-testid="stButton"] button[kind="primary"]:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 25px rgba(19, 115, 51, 0.35) !important;}
+
+@media print {
+    header, footer, section[data-testid="stSidebar"], div[data-testid="stButton"] { display: none !important; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -137,7 +141,6 @@ if "edit_inicializado" not in st.session_state or st.session_state.get("edit_ped
     st.session_state.edit_pagamento = pedido.get('pagamento', 'Pix')
     st.session_state.edit_frete = float(pedido.get('valor_frete', 0) or 0)
     
-    # Extrai o desconto percentual se estiver gravado nos adicionais
     add_texto_banco = pedido.get('adicionais', '')
     desc_extraido = 0.0
     if "Desconto de" in add_texto_banco:
@@ -151,7 +154,6 @@ if "edit_inicializado" not in st.session_state or st.session_state.get("edit_ped
     except: st.session_state.edit_data = date.today()
     st.session_state.edit_periodo = pedido.get('periodo_entrega', '')
 
-    # Converte os produtos salvos no banco para a lista interativa de orçamento do carrinho
     lista_itens_carregados = []
     cesta_id_banco = pedido.get('cesta_id')
     cesta_banco_obj = next((c for c in cestas_disponiveis if c["id"] == cesta_id_banco), None)
@@ -162,20 +164,18 @@ if "edit_inicializado" not in st.session_state or st.session_state.get("edit_ped
             "preco_unitario": tratar_preco(cesta_banco_obj.get("preco")), "quantidade": 1, "descricao": pedido.get("produtos", "")
         })
     else:
-        # Fallback se a cesta não for encontrada pelo ID exato
         lista_itens_carregados.append({
             "id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": None, "nome": pedido.get("cesta_nome", "Produto Base"),
             "preco_unitario": float(pedido.get("valor_total", 0) or 0), "quantidade": 1, "descricao": pedido.get("produtos", "")
         })
     
-    # Adiciona itens extras gravados se houver
     if add_texto_banco:
         for linha in add_texto_banco.split("\n"):
             if "x " in linha and "(R$" in linha:
                 try:
                     partes = linha.split(" (R$")
-                    nome_ extra = partes[0].replace("🎀", "").replace("▪️", "").strip()
-                    if "x " in nome_extra: nome_ extra = nome_extra.split("x ", 1)[1]
+                    nome_extra = partes[0].replace("🎀", "").replace("▪️", "").strip()
+                    if "x " in nome_extra: nome_extra = nome_extra.split("x ", 1)[1]
                     preco_extra = float(partes[1].replace(")", "").replace(",", ".").strip())
                     lista_itens_carregados.append({
                         "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None, "nome": nome_extra,
@@ -184,7 +184,6 @@ if "edit_inicializado" not in st.session_state or st.session_state.get("edit_ped
                 except: pass
 
     st.session_state.edit_itens = lista_itens_carregados
-    st.session_state.edit_extras_avulsos = []
 
 if "edit_extras_avulsos" not in st.session_state: st.session_state.edit_extras_avulsos = []
 
@@ -280,7 +279,6 @@ with col_bloco2:
                 col_alvo = col_ad1 if idx % 2 == 0 else col_ad2
                 with col_alvo:
                     if st.checkbox(f"{p_ad['nome']} {txt_preco}", key=f"edit_chk_ad_{p_ad['id']}"):
-                        # Evita duplicar se já estiver na lista
                         if not any(it.get("nome") == p_ad["nome"] for it in st.session_state.edit_itens):
                             st.session_state.edit_itens.append({
                                 "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": p_ad["id"], "nome": p_ad["nome"],
@@ -310,7 +308,7 @@ with col_bloco2:
         with ce2: st.session_state.edit_periodo = st.text_input("Horário / Período", value=st.session_state.edit_periodo)
 
 # =====================================================
-# CARRINHO / ITENS ATUAIS DO PEDIDO (COM EDIÇÃO DE VALORES E QTD)
+# CARRINHO / ITENS ATUAIS DO PEDIDO
 # =====================================================
 st.write("")
 with st.container(border=True):
@@ -348,7 +346,7 @@ with st.container(border=True):
         st.info("Nenhum item inserido no pedido.")
 
 # =====================================================
-# TICKET DE RESUMO & FECHAMENTO (STATUS, FRETE, DESCONTO)
+# TICKET DE RESUMO & FECHAMENTO
 # =====================================================
 with st.container(border=True):
     st.markdown("<div class='ticket-title'>📋 TICKET DE RESUMO & FECHAMENTO</div>", unsafe_allow_html=True)
@@ -422,14 +420,13 @@ with st.container(border=True):
                 st.error(f"❌ Erro ao atualizar pedido: {e}")
 
 # =====================================================
-# BOTÕES DE AÇÃO INFERIORES (IMPRIMIR / EXCLUIR)
+# BOTÕES DE AÇÃO INFERIORES
 # =====================================================
 st.write("")
 c_imp, c_exc = st.columns(2)
 with c_imp:
     if st.button("🖨️ Imprimir Ficha", use_container_width=True):
-        components_html = """<script>window.print();</script>"""
-        st.components.v1.html(components_html, height=0)
+        components.html("<script>window.print();</script>", height=0)
 with c_exc:
     if st.button("🗑️ Excluir Pedido", use_container_width=True):
         try:
