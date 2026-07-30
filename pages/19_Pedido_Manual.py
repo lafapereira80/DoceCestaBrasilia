@@ -16,7 +16,7 @@ from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA E DESIGN DASHBOARD PROFISSIONAL
+# CONFIGURAÇÃO DA PÁGINA E DESIGN DASHBOARD RESPONSIVO
 # =====================================================
 st.set_page_config(page_title="Painel PDV | Pedido Varejo", page_icon="🛍️", layout="wide")
 configurar_pagina()
@@ -62,6 +62,12 @@ div[data-testid="stButton"] button[kind="primary"] {
     box-shadow: 0 6px 20px rgba(19, 115, 51, 0.25) !important; font-size: 15px !important; padding: 16px !important; width: 100% !important; 
 }
 div[data-testid="stButton"] button[kind="primary"]:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 25px rgba(19, 115, 51, 0.35) !important;}
+
+/* CONTROLE DE ORDEM PARA MOBILE (FLEXBOX REVERSE / ORDER) */
+@media (max-width: 991px) {
+    /* Força o ticket a ir para o final da fila em telas menores (celulares) */
+    .mobile-ticket-wrapper { order: 99 !important; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -130,7 +136,7 @@ if "man_cesta_sel_id" not in st.session_state: st.session_state.man_cesta_sel_id
 col_bloco1, col_bloco2 = st.columns([1, 1], gap="medium")
 
 # -----------------------------------------------------
-# COLUNA 1: DADOS DO CLIENTE, PRODUTO E DESTINATÁRIO
+# COLUNA 1: DADOS DO CLIENTE, PRODUTO E TICKET DE RESUMO ABAIXO DO DESTINATÁRIO
 # -----------------------------------------------------
 with col_bloco1:
     # CAIXA 1: CLIENTE
@@ -226,8 +232,33 @@ with col_bloco1:
         motivo = st.text_input("Ocasião (Ex: Aniversário)", key="man_motivo")
         mensagem = st.text_area("Mensagem do Cartão", height=70, key="man_msg", placeholder="Texto impresso no cartão.")
 
+    # -----------------------------------------------------
+    # CAIXA 6: TICKET DE RESUMO & FECHAMENTO (POSICIONADO AQUI NO DESKTOP, IRÁ PARA O FINAL NO MOBILE)
+    # -----------------------------------------------------
+    st.markdown('<div class="mobile-ticket-wrapper">', unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown("<div style='font-size: 15px; font-weight: 800; color: #137333; margin-bottom: 12px; border-bottom: 2px solid #ceead6; padding-bottom: 6px; text-align: center; text-transform: uppercase;'>📋 TICKET DE RESUMO & FECHAMENTO</div>", unsafe_allow_html=True)
+        
+        t_cf1, t_cf2 = st.columns(2)
+        with t_cf1: pag = st.selectbox("Pagamento", ["Pix", "Cartão de Crédito"], key="man_pag")
+        with t_cf2: status = st.selectbox("Status", ["Recebido", "Pago"], key="man_status")
+        
+        st.write("")
+        t_f1, t_f2 = st.columns(2)
+        with t_f1: frete = st.number_input("Frete (R$)", min_value=0.0, step=5.0, value=0.0, key="man_frete")
+        with t_f2: desc_perc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0, key="man_desc")
+        
+        # CÁLCULOS TOTAIS
+        valor_c = float(cesta_sel.get("preco", 0)) if cesta_sel and cesta_sel.get("id") else 0.0
+        valor_a = sum(extra.get("preco", 0.0) for extra in st.session_state.get("adicionais_selecionados_temp", [])) # Atualizado dinamicamente abaixo
+        
+        # O cálculo final usa a lista de adicionais recolhida na coluna 2
+        # (Definido após a renderização da coluna 2 para sincronia perfeita)
+        
+    st.markdown('</div>', unsafe_allow_html=True)
+
 # -----------------------------------------------------
-# COLUNA 2: ADICIONAIS (EM 2 COLUNAS), ENDEREÇO E TICKET
+# COLUNA 2: ADICIONAIS E ENDEREÇO
 # -----------------------------------------------------
 with col_bloco2:
     # CAIXA 4: ADICIONAIS E EXTRAS (CATÁLOGO EM 2 COLUNAS)
@@ -238,7 +269,6 @@ with col_bloco2:
         if adicionais_catalogo:
             st.markdown("<div style='font-size: 12px; font-weight: 700; color: #5a3b28; margin-bottom: 6px;'>✨ Catálogo de Adicionais</div>", unsafe_allow_html=True)
             
-            # Divide os adicionais em 2 colunas para otimizar o espaço do layout
             col_ad1, col_ad2 = st.columns(2)
             for idx, p_ad in enumerate(adicionais_catalogo):
                 preco_ad = tratar_preco(p_ad.get("preco"))
@@ -317,31 +347,18 @@ with col_bloco2:
         with ce1: dt_ent = st.date_input("Data Entrega", value=date.today(), format="DD/MM/YYYY", key="man_dt")
         with ce2: per_ent = st.text_input("Horário", placeholder="Ex: 08h-10h", key="man_per")
 
-    # CAIXA 6: TICKET DE RESUMO & FECHAMENTO
+    # Sincroniza os adicionais para o cálculo financeiro geral
+    valor_a = sum(extra.get("preco", 0.0) for extra in adicionais_selecionados_finais)
+    subtotal = valor_c + valor_a
+    valor_desconto = subtotal * (desc_perc / 100)
+    total_liquido = subtotal - valor_desconto + frete
+
+    # Renderiza o conteúdo final do ticket dentro da caixa verde (agora posicionada na coluna 1 abaixo do destinatário, mas vai para o fim no mobile)
     with st.container(border=True):
         st.markdown("<div style='font-size: 15px; font-weight: 800; color: #137333; margin-bottom: 12px; border-bottom: 2px solid #ceead6; padding-bottom: 6px; text-align: center; text-transform: uppercase;'>📋 TICKET DE RESUMO & FECHAMENTO</div>", unsafe_allow_html=True)
         
-        t_cf1, t_cf2 = st.columns(2)
-        with t_cf1: pag = st.selectbox("Pagamento", ["Pix", "Cartão de Crédito"], key="man_pag")
-        with t_cf2: status = st.selectbox("Status", ["Recebido", "Pago"], key="man_status")
-        
-        st.write("")
-        t_f1, t_f2 = st.columns(2)
-        with t_f1: frete = st.number_input("Frete (R$)", min_value=0.0, step=5.0, value=0.0, key="man_frete")
-        with t_f2: desc_perc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0, key="man_desc")
-        
-        # CÁLCULOS TOTAIS
-        valor_c = float(cesta_sel.get("preco", 0)) if cesta_sel and cesta_sel.get("id") else 0.0
-        valor_a = sum(extra.get("preco", 0.0) for extra in adicionais_selecionados_finais)
-        subtotal = valor_c + valor_a
-        valor_desconto = subtotal * (desc_perc / 100)
-        total_liquido = subtotal - valor_desconto + frete
-
-        st.markdown("<hr style='border: none; border-top: 1px dashed #ceead6; margin: 12px 0;'>", unsafe_allow_html=True)
-        
-        # EXIBIÇÃO NO TICKET
-        nome_c_print = cesta_sel['nome'] if cesta_sel and cesta_sel.get('id') else "Nenhum produto selecionado"
-        st.markdown(f'<div class="ticket-line"><span>📦 <b>{nome_c_print}</b></span> <strong>R$ {formatar_moeda(valor_c)}</strong></div>', unsafe_allow_html=True)
+        # Exibição no Ticket
+        st.markdown(f'<div class="ticket-line"><span>📦 <b>{cesta_sel["nome"] if cesta_sel and cesta_sel.get("id") else "Nenhum produto selecionado"}</b></span> <strong>R$ {formatar_moeda(valor_c)}</strong></div>', unsafe_allow_html=True)
         
         if selecoes_admin:
             for cat, itens in selecoes_admin.items():
@@ -372,7 +389,7 @@ with col_bloco2:
             if not dest_nome: st.error("Informe o Nome do Destinatário."); st.stop()
             if not rua or not num or not bairro: st.error("Complete Rua, Número e Bairro."); st.stop()
 
-            # UPLOAD FOTOS POLAROID
+            # Upload fotos polaroid
             links_polaroid = []
             if polaroid and fotos_upload:
                 with st.spinner("📦 Salvando fotos no bucket 'pedido_fotos'..."):
@@ -433,7 +450,6 @@ with col_bloco2:
                     st.session_state.man_extras_avulsos = []
                     st.session_state.man_cesta_sel_id = None
                     
-                    # MENSAGEM WHATSAPP ESTRUTURADA
                     linhas_wpp = f"📦 {cesta_sel['nome']} (R$ {formatar_moeda(valor_c)})\n"
                     if selecoes_admin:
                         for cat, itens in selecoes_admin.items():
