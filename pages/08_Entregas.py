@@ -77,19 +77,17 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
 div[data-testid="stButton"] button { border-radius: 12px !important; font-weight: 800 !important; font-size: 14px !important; min-height: 44px !important; transition: all 0.2s ease !important; }
 div[data-testid="stButton"] button:hover { transform: translateY(-2px) !important; box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important; }
 
-/* Botões Primários (Confirmar Entrega / Iniciar Navegação) */
+/* Botões Primários */
 div[data-testid="stButton"] button[kind="primary"] { background: linear-gradient(135deg, #137333 0%, #0d4e22) !important; color: white !important; border: none !important; box-shadow: 0 4px 15px rgba(19, 115, 51, 0.2) !important; }
 div[data-testid="stButton"] button[kind="primary"]:hover { background: linear-gradient(135deg, #0f5c28 0%, #093818) !important; box-shadow: 0 6px 20px rgba(19, 115, 51, 0.3) !important; }
 
-
 /* =========================================
-   FICHA DE ENTREGA E BOTÕES GPS (VISÃO MOTOBOY)
+   FICHA DE ENTREGA E BOTÕES GPS
 ========================================== */
 .ficha-entrega { font-size: 15px; color: #4a2e1b; }
 .ficha-entrega strong { color: #5a3b28; font-weight: 800; }
 .ficha-secao { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #dfcdbb; }
 
-/* Estilo para links disfarçados de Botões */
 div[data-testid="stLinkButton"] a { font-weight: 800 !important; font-size: 14px !important; border-radius: 12px !important; padding: 12px !important; display: flex; justify-content: center; transition: all 0.2s ease !important; text-decoration: none !important;}
 div[data-testid="stLinkButton"] a:hover { transform: translateY(-2px) !important; box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;}
 .btn-waze > a { background-color: #e8f0fe !important; color: #1a73e8 !important; border: 1px solid #d2e3fc !important; }
@@ -101,9 +99,6 @@ div[data-testid="stLinkButton"] a:hover { transform: translateY(-2px) !important
 .entregue-box { opacity: 0.85; background-color: #f0f7f4 !important; border: 1px solid #c8e6c9 !important; border-left: 6px solid #137333 !important; }
 .admin-card-header { text-align: center; background: linear-gradient(135deg, #fdfbf8 0%, #ffffff 100%); color: #5a3b28; font-weight: 800; padding: 15px; border-radius: 14px; margin-bottom: 15px; font-size: 16px; border: 1px solid #e8ddd3; }
 
-/* =========================================
-   RESPONSIVIDADE MOBILE E BOTÕES LADO A LADO
-========================================== */
 @media (max-width: 768px) {
     .block-container { padding-left: 0.6rem !important; padding-right: 0.6rem !important; }
     .header-title { font-size: 34px !important; }
@@ -143,7 +138,8 @@ def obter_horario_brasilia():
 def buscar_entregas_dia(driver_login=None):
     data_hoje = obter_horario_brasilia().strftime("%d/%m/%Y")
     
-    query_env = supabase.table("pedidos").select("*").eq("status", "Enviado")
+    # Busca tanto pedidos com status "Enviado" quanto "Em Rota de Entrega"
+    query_env = supabase.table("pedidos").select("*").in_("status", ["Enviado", "Em Rota de Entrega"])
     if perfil_usuario == "Entregador" or driver_login:
         alvo = login_atual if perfil_usuario == "Entregador" else driver_login
         query_env = query_env.eq("entregador_login", alvo)
@@ -206,7 +202,7 @@ def marcar_como_entregue(pedido, login_autor):
 
 def voltar_para_enviado(pedido_id):
     try:
-        supabase.table("pedidos").update({"status": "Enviado", "ordem_entrega": 0, "hora_entrega_realizada": None}).eq("id", pedido_id).execute()
+        supabase.table("pedidos").update({"status": "Em Rota de Entrega", "ordem_entrega": 0, "hora_entrega_realizada": None}).eq("id", pedido_id).execute()
         st.toast("↩️ Cesta retornada para a rota com sucesso!")
     except Exception as e:
         st.error(f"Erro ao reverter status: {e}")
