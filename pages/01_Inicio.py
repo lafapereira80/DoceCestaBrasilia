@@ -8,6 +8,7 @@ from PIL import Image
 from datetime import date
 import requests
 import time
+import uuid
 
 from services.pedido_service import salvar_pedido
 from services.cesta_service import listar_cestas
@@ -41,22 +42,18 @@ def obter_categorias_cacheadas():
 @st.cache_data(ttl=5, show_spinner=False)
 def obter_secoes_e_cestas_ativas():
     try:
-        # Busca ordenando diretamente no banco (mais seguro e à prova de falhas)
         res_secoes = supabase.table("vitrine_secoes").select("nome", "ativa").eq("ativa", True).order("ordem").execute()
         secoes_ativas = [s["nome"] for s in (res_secoes.data or [])]
         
-        # Garante fallback se a tabela de seções estiver vazia
         if not secoes_ativas:
             secoes_ativas = ["Cestas de Café"]
             
-        # Busca todas as cestas
         cestas_todas = listar_cestas()
         cestas_ativas = [c for c in cestas_todas if c.get("ativa", True)]
         cestas_ativas = sorted(cestas_ativas, key=lambda x: x.get("ordem", 999))
         
         return secoes_ativas, cestas_ativas
     except Exception as e:
-        # Fallback de emergência caso haja instabilidade
         print(f"Erro ao carregar catálogo: {e}")
         try:
             cestas = [c for c in listar_cestas() if c.get("ativa", True)]
@@ -327,9 +324,6 @@ if cestas_ativas and secoes_disponiveis:
         def ao_mudar_secao():
             st.session_state["cesta_selecionada_id"] = None
 
-        # =========================================================
-        # Tratamento: Tem mais de 1 seção ou apenas 1?
-        # =========================================================
         if len(secoes_disponiveis) > 1:
             col_categoria, col_modelo = st.columns(2)
             
@@ -342,7 +336,6 @@ if cestas_ativas and secoes_disponiveis:
                     on_change=ao_mudar_secao
                 )
 
-            # Filtra os produtos da seção selecionada garantindo fallback e comparando texto minúsculo
             cestas_da_secao = [
                 c for c in cestas_ativas 
                 if (c.get("secao_vitrine") or "Cestas de Café").strip().lower() == str(st.session_state["secao_form"]).strip().lower()
@@ -363,7 +356,6 @@ if cestas_ativas and secoes_disponiveis:
                     index=cesta_idx
                 )
         else:
-            # Apenas 1 Seção Cadastrada (Ex: Só Cestas de Café)
             st.session_state["secao_form"] = secoes_disponiveis[0]
             
             cestas_da_secao = [
@@ -385,7 +377,6 @@ if cestas_ativas and secoes_disponiveis:
                 index=cesta_idx
             )
 
-        # SE UMA CESTA FOR ESCOLHIDA (ID != None), EXIBE OS DETALHES
         if cesta_selecionada and cesta_selecionada.get("id"):
             cesta_obj = cesta_selecionada
             st.session_state["cesta_selecionada_id"] = cesta_selecionada.get("id")
@@ -401,13 +392,20 @@ if cestas_ativas and secoes_disponiveis:
                 st.markdown(f'<div class="destaque-cesta-nome-local">{cesta_obj.get("nome", "")}</div>', unsafe_allow_html=True)
                 st.markdown(f"**Categoria:** <span style='color: #775a46; font-size:13.5px;'>{sec_txt}</span>", unsafe_allow_html=True)
                 
-                # Formatando Valor Seguro para o HTML
                 valor_base_num = float(cesta_obj.get("preco", 0))
                 valor_base_txt = f"R$ {valor_base_num:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                 
                 st.markdown(f"**Investimento Base:** <br><span style='font-size:24px; color:#137333; font-weight:800;'>{valor_base_txt}</span>", unsafe_allow_html=True)
+                
+                # ADIÇÃO DA DESCRIÇÃO DA CESTA AQUI!
+                if cesta_obj.get("descricao"):
+                    st.markdown(f"""
+                    <div style="background: #fffcf8; border-left: 4px solid #c5721f; padding: 15px; margin-top: 10px; border-radius: 0 8px 8px 0; font-size: 14px; color: #5a3b28;">
+                        <b>O que vem nesta cesta?</b><br>
+                        {cesta_obj.get('descricao')}
+                    </div>
+                    """, unsafe_allow_html=True)
             
-            # PERSONALIZAÇÃO DA CESTA (APARECE SÓ SE TIVER ITENS)
             configuracao = obter_configuracao_cesta_cacheada(cesta_obj["id"])
             if configuracao and any(grp.get("produtos") for grp in configuracao):
                 st.markdown("<hr style='border: none; border-top: 1px dashed #dfcdbb; margin: 20px 0;'>", unsafe_allow_html=True)
@@ -458,11 +456,11 @@ if cat_adicionais:
                             "produto_id": prod["id"], "nome": prod["nome"], 
                             "preco": float(preco_add) if preco_add is not None else None, "categoria": "Adicionais"
                         })
-                        if prod["nome"].lower().strip() == "polaroid": polaroid = True
+                        if prod["nome"].lower().strip() == "polaroid" or "foto" in prod["nome"].lower().strip(): polaroid = True
 
 if polaroid:
     with st.container(border=True):
-        st.markdown('<div class="secao-titulo">📷 Envie suas Fotos (Polaroid)</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size: 18px; font-weight: 800; color: #d1476a; margin-bottom: 5px;">📷 Envie suas Fotos (Polaroid)</div>', unsafe_allow_html=True)
         st.caption("Você selecionou as fotos Polaroid. Envie até 2 imagens para revelarmos.")
         fotos_upload = st.file_uploader("Toque para anexar do seu celular/PC", type=["jpg", "jpeg", "png", "webp", "heic"], accept_multiple_files=True, key="fotos_polaroid_cliente", label_visibility="collapsed")
         
@@ -493,7 +491,6 @@ with st.container(border=True):
 with st.container(border=True):
     renderizar_passo("5", "Local e Agendamento")
     
-    # --- AUTOCOMPLETAR CEP ---
     cep_input = st.text_input("CEP da Entrega", max_chars=8, placeholder="Somente números (Preenche automático)", key="input_cep")
     cep_limpo = re.sub(r'\D', '', cep_input)
     
@@ -538,7 +535,6 @@ valor_adicionais = sum([float(item["preco"]) for item in adicionais_selecionados
 tem_consulta = any(item["preco"] is None for item in adicionais_selecionados)
 total_estimado = valor_base + valor_adicionais
 
-# FORMATAÇÃO PRÉVIA DAS MOEDAS (Isso impede que o HTML quebre)
 valor_base_fmt = f"R$ {valor_base:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 valor_adc_fmt = f"R$ {valor_adicionais:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 total_fmt = f"R$ {total_estimado:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
@@ -570,7 +566,6 @@ st.write("")
 enviar = st.button("🎁 FINALIZAR MEU PEDIDO AGORA", use_container_width=True, type="primary")
 
 if enviar:
-    # 1. Validações do Comprador
     nome = st.session_state.get("input_nome_comprador", "")
     cpf_bruto = st.session_state.get("input_cpf_comprador", "")
     tel_bruto = st.session_state.get("input_tel_comprador", "")
@@ -583,7 +578,6 @@ if enviar:
     cpf_limpo = re.sub(r'\D', '', cpf_bruto)
     telefone_oficial = f"{ddi}{re.sub(r'\D', '', tel_bruto)}"
 
-    # 2. Validações da Cesta e Endereço
     if not cesta_obj: st.error("❌ Selecione uma opção de Cesta."); st.stop()
     
     dest_nome = st.session_state.get("input_dest_nome", "")
@@ -596,7 +590,20 @@ if enviar:
     fotos_upload = st.session_state.get("fotos_polaroid_cliente", [])
     if polaroid and len(fotos_upload) > 2: st.error("❌ O limite para Polaroid é de 2 fotos."); st.stop()
 
-    # 3. Montagem dos Dados Finais
+    # UPLOAD DAS POLAROIDS NO SUPABASE BUCKET pedido_fotos
+    links_polaroid = []
+    if polaroid and fotos_upload:
+        with st.spinner("📦 Salvando fotos no banco de dados..."):
+            for foto in fotos_upload[:2]:
+                ext = foto.name.split('.')[-1]
+                file_name = f"polaroid_{uuid.uuid4().hex}.{ext}"
+                try:
+                    supabase.storage.from_("pedido_fotos").upload(file_name, foto.read(), {"content-type": foto.type})
+                    url = supabase.storage.from_("pedido_fotos").get_public_url(file_name)
+                    links_polaroid.append(url)
+                except Exception as e:
+                    pass
+
     cep = st.session_state.get("input_cep", "")
     bairro = st.session_state.get("input_bairro", "")
     cidade = st.session_state.get("input_cidade", "")
@@ -605,6 +612,11 @@ if enviar:
     dt_ent = st.session_state.get("input_data_entrega")
     produtos_txt = [f"{c}: {i['nome']}" for c, itens in selecoes_cliente.items() for i in itens]
     adicionais_txt = [f"{i['nome']}" for i in adicionais_selecionados]
+    
+    texto_adicionais_bd = ", ".join(adicionais_txt) if adicionais_txt else "Nenhum"
+    
+    if links_polaroid:
+        texto_adicionais_bd += "\n\n📸 LINKS FOTOS POLAROID:\n" + "\n".join(links_polaroid)
     
     dados = {
         "cliente_nome": nome.strip(),
@@ -616,7 +628,7 @@ if enviar:
         "cesta_id": cesta_obj["id"],
         "cesta_nome": cesta_obj["nome"],
         "produtos": "\n".join(produtos_txt),
-        "adicionais": ", ".join(adicionais_txt),
+        "adicionais": texto_adicionais_bd,
         "pagamento": pagamento,
         "mensagem": st.session_state.get("input_mensagem", "").strip(),
         "pedido_especial": st.session_state.get("input_pedido_especial", "").strip(),
@@ -628,17 +640,13 @@ if enviar:
         "valor_total": total_estimado
     }
 
-    # 4. Salvar Banco de Dados e Notificar
     with st.spinner("Reservando seu presente e finalizando pedido..."):
         try: sucesso, pedido_id = salvar_pedido(dados)
         except Exception as e: st.error("❌ Erro de conexão ao salvar pedido. Tente novamente."); st.stop()
         
         if sucesso:
             if adicionais_selecionados: salvar_adicionais_pedido(pedido_id, adicionais_selecionados)
-            if polaroid and fotos_upload:
-                try: salvar_fotos(pedido_id, fotos_upload[:2])
-                except: pass
-                
+            
             try:
                 texto_aviso = (
                     f"🚨 *NOVO PEDIDO RECEBIDO (SITE)!* 🚨\n\n"
@@ -653,7 +661,6 @@ if enviar:
                 enviar_notificacao_telegram(texto_aviso)
             except: pass 
 
-            # Configura Dados do Sucesso e Rerun para exibir
             st.session_state["resumo_pedido_sucesso"] = {
                 "cliente_nome": nome.strip(),
                 "destinatario_nome": dest_nome.strip(),
