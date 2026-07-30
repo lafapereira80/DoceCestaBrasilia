@@ -86,15 +86,12 @@ def obter_cestas_admin():
 def obter_adicionais_admin():
     try:
         res = supabase.table("produtos").select("*").execute()
-        # Traz APENAS itens que são da categoria Adicionais globais
-        ativos = [p for p in (res.data or []) if p.get("ativo", True) and "adicional" in p.get("categoria", "").strip().lower()]
+        ativos = [p for p in (res.data or []) if p.get("ativo", True) and p.get("categoria", "").strip().lower() in ["adicionais", "adicional"]]
         return sorted(ativos, key=lambda x: x.get("nome", ""))
     except: return []
 
 def obter_itens_da_cesta(cesta_id):
-    """Busca no Supabase os itens configurados como selecionáveis para a cesta específica"""
     try:
-        # Busca produtos que estejam vinculados a essa cesta_id
         res = supabase.table("produtos").select("*").eq("cesta_id", cesta_id).eq("ativo", True).execute()
         if res.data: return res.data
     except: pass
@@ -131,7 +128,6 @@ with col_e2:
 st.markdown("<hr style='border-top: 1px dashed #e8ddd3; margin: 20px 0;'>", unsafe_allow_html=True)
 st.markdown('<div class="corp-title">🎁 2. Montagem do Pedido</div>', unsafe_allow_html=True)
 
-# SEÇÃO DE CESTA E ITENS ESPECÍFICOS DA CESTA
 st.markdown("<div style='font-size: 14px; font-weight: 700; color: #775a46; margin-bottom: 5px;'>📦 Escolha a Cesta Base</div>", unsafe_allow_html=True)
 cesta_sel = st.selectbox("Cestas", [None] + cestas_disponiveis, format_func=lambda x: f"{x['nome']} (R$ {tratar_preco(x.get('preco')):.2f})" if x else "Selecione uma Cesta...", label_visibility="collapsed")
 
@@ -139,7 +135,6 @@ opcoes_selecionadas_cesta = []
 if cesta_sel:
     st.info(f"📝 **Descrição da Cesta:** {cesta_sel.get('descricao', 'Sem descrição cadastrada.')}")
     
-    # Busca dinamicamente os itens vinculados a esta cesta
     itens_vinculados = obter_itens_da_cesta(cesta_sel["id"])
     if itens_vinculados:
         st.markdown("<div style='font-size: 13px; font-weight: 700; color: #c5721f; margin-top: 10px;'>Selecione as opções da cesta (Sabores, Bebidas, etc):</div>", unsafe_allow_html=True)
@@ -222,7 +217,7 @@ if tem_polaroid:
     st.markdown("""
     <div class="polaroid-box">
         <h4 style="color: #d1476a; margin-top: 0; margin-bottom: 5px;">📸 Upload de Fotos Polaroid</h4>
-        <p style="font-size: 13px; color: #5a3b28; margin-bottom: 15px;">O sistema detectou fotos no pedido! Faça o upload das imagens. Elas serão salvas no <b>Supabase Storage (Bucket 'polaroids')</b> e os links irão automaticamente para a ficha técnica da cozinha.</p>
+        <p style="font-size: 13px; color: #5a3b28; margin-bottom: 15px;">O sistema detectou fotos no pedido! Faça o upload das imagens. Elas serão salvas no <b>Supabase Storage (Bucket 'pedido_fotos')</b> e os links irão automaticamente para a ficha técnica da cozinha.</p>
     </div>
     """, unsafe_allow_html=True)
     fotos_enviadas = st.file_uploader("Selecione as fotos (PNG, JPG, JPEG)", accept_multiple_files=True, type=['png', 'jpg', 'jpeg'])
@@ -290,14 +285,12 @@ with col_d3:
 st.write("")
 col_f1, col_f2 = st.columns(2)
 with col_f1:
-    # Mostrando a Label claramente
     st.markdown("<div style='font-size: 14px; font-weight: 700; color: #4a2e1b;'>🚚 Valor do Frete / Entrega (R$)</div>", unsafe_allow_html=True)
     frete_lote = st.number_input("Frete", min_value=0.0, step=5.0, value=0.0, label_visibility="collapsed")
 with col_f2:
     st.markdown("<div style='font-size: 14px; font-weight: 700; color: #c5221f;'>🔻 Desconto Concedido (%)</div>", unsafe_allow_html=True)
     desconto_perc = st.number_input("Desconto", min_value=0.0, max_value=100.0, step=1.0, value=0.0, label_visibility="collapsed")
 
-# Cálculos Financeiros Dinâmicos
 valor_desconto = total_bruto * (desconto_perc / 100)
 total_liquido = total_bruto - valor_desconto + frete_lote
 
@@ -328,22 +321,20 @@ if st.button("✅ REGISTRAR PEDIDO DE VAREJO", type="primary", use_container_wid
     if not st.session_state["itens_varejo"]: st.error("Adicione itens ao carrinho."); st.stop()
     if not endereco_completo: st.error("Faça a busca do CEP e complete o Endereço."); st.stop()
     
-    # 1. FAZ O UPLOAD DAS POLAROIDS SE HOUVER PARA O SUPABASE
     links_polaroid = []
     if tem_polaroid and fotos_enviadas:
-        with st.spinner("📦 Salvando fotos polaroid no banco de dados (Supabase)..."):
+        with st.spinner("📦 Salvando fotos no banco de dados (Supabase)..."):
             for foto in fotos_enviadas:
                 ext = foto.name.split('.')[-1]
                 file_name = f"polaroid_{uuid.uuid4().hex}.{ext}"
                 try:
-                    # Upload real via API do Supabase Storage
-                    supabase.storage.from_("polaroids").upload(file_name, foto.read(), {"content-type": foto.type})
-                    url = supabase.storage.from_("polaroids").get_public_url(file_name)
+                    # Upload para o bucket pedido_fotos
+                    supabase.storage.from_("pedido_fotos").upload(file_name, foto.read(), {"content-type": foto.type})
+                    url = supabase.storage.from_("pedido_fotos").get_public_url(file_name)
                     links_polaroid.append(url)
                 except Exception as e:
-                    st.warning(f"Erro ao subir foto: O bucket 'polaroids' existe e é público no Supabase? Erro técnico: {e}")
+                    st.warning(f"Erro ao subir foto: O bucket 'pedido_fotos' existe e é público no Supabase? Erro técnico: {e}")
 
-    # 2. MONTA OS ITENS
     lista_cestas = [it for it in st.session_state["itens_varejo"] if it["tipo"] == "Cesta"]
     lista_extras = [it for it in st.session_state["itens_varejo"] if it["tipo"] == "Extra"]
     
@@ -362,7 +353,6 @@ if st.button("✅ REGISTRAR PEDIDO DE VAREJO", type="primary", use_container_wid
     if lista_str_extras:
         msg_adicionais += "\n\nADICIONAIS:\n" + "\n".join(lista_str_extras)
 
-    # 3. ANEXA OS LINKS DAS FOTOS NA FICHA TÉCNICA
     if links_polaroid:
         msg_adicionais += "\n\n📸 LINKS DAS FOTOS POLAROID (Baixar para Produção):\n" + "\n".join(links_polaroid)
 
@@ -382,7 +372,7 @@ if st.button("✅ REGISTRAR PEDIDO DE VAREJO", type="primary", use_container_wid
         "endereco": endereco_completo,
         "data_entrega": data_entrega.strftime("%Y-%m-%d"),
         "periodo_entrega": horario.strip() or "A combinar",
-        "status": "Recebido", # Nasce como recebido para confirmação de pagamento no painel!
+        "status": "Recebido",
         "valor_frete": frete_lote,
         "valor_total": total_liquido,
         "cesta_montada": False
