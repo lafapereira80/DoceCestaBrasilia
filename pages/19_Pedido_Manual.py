@@ -39,18 +39,13 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .dash-title { font-family: 'Dancing Script', cursive !important; font-size: 36px !important; font-weight: 700 !important; color: #c5721f !important; margin: 0 !important; line-height: 1; }
 .dash-subtitle { font-size: 13px !important; color: #775a46 !important; font-weight: 600 !important; margin-top: 3px !important; }
 
-/* BLOCOS DE DASHBOARD (GRID MODERNO) */
-.dash-box {
-    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 20px;
-    box-shadow: 0 4px 12px rgba(90, 59, 40, 0.02); margin-bottom: 20px; height: 100%;
-}
-.dash-box-title {
-    font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 15px;
-    border-bottom: 2px dashed #f5eee6; padding-bottom: 8px; display: flex; align-items: center; gap: 8px;
-    text-transform: uppercase; letter-spacing: 0.5px;
+/* ESTILIZAÇÃO DOS CONTAINERS (CAIXAS NATIVAS) */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #ffffff !important; border: 1px solid #e8ddd3 !important; border-radius: 16px !important;
+    padding: 20px !important; margin-bottom: 18px !important; box-shadow: 0 4px 12px rgba(90, 59, 40, 0.02) !important;
 }
 
-/* CAIXA VERDE DE RESUMO E FECHAMENTO (TICKET INTEGRADO) */
+/* CAIXA VERDE DE RESUMO E FECHAMENTO */
 .dash-ticket-verde {
     background: #f0fdf4; border: 2px solid #137333; border-radius: 16px; padding: 22px;
     box-shadow: 0 8px 25px rgba(19, 115, 51, 0.08); margin-bottom: 20px;
@@ -139,189 +134,189 @@ if "man_cesta_sel_id" not in st.session_state: st.session_state.man_cesta_sel_id
 col_bloco1, col_bloco2 = st.columns([1, 1], gap="medium")
 
 # -----------------------------------------------------
-# COLUNA 1: DADOS DO CLIENTE, PRODUTO E DESTINATÁRIO
+# COLUNA 1: DADOS DO CLIENTE, PRODUTO E DESTINATÁRIO (DENTRO DE CAIXAS)
 # -----------------------------------------------------
 with col_bloco1:
-    # BLOCO 1: CLIENTE
-    st.markdown('<div class="dash-box"><div class="dash-box-title">👤 1. Dados do Comprador</div>', unsafe_allow_html=True)
-    cc1, cc_btn = st.columns([3, 1])
-    with cc1: nome_comp = st.text_input("Nome Completo *", value=st.session_state.man_nome, key="in_nome")
-    with cc_btn:
-        st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
-        if st.button("🔍 Buscar", help="Buscar cliente antigo", use_container_width=True):
-            st.session_state.modo_busca_cli = not st.session_state.modo_busca_cli
-            st.rerun()
+    # CAIXA 1: CLIENTE
+    with st.container(border=True):
+        st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 2px dashed #f5eee6; padding-bottom: 6px; text-transform: uppercase;'>👤 1. Dados do Comprador</div>", unsafe_allow_html=True)
+        cc1, cc_btn = st.columns([3, 1])
+        with cc1: nome_comp = st.text_input("Nome Completo *", value=st.session_state.man_nome, key="in_nome")
+        with cc_btn:
+            st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
+            if st.button("🔍 Buscar", help="Buscar cliente antigo", use_container_width=True):
+                st.session_state.modo_busca_cli = not st.session_state.modo_busca_cli
+                st.rerun()
 
-    c_cpf, c_tel = st.columns(2)
-    with c_cpf: cpf_comp = st.text_input("CPF", value=st.session_state.man_cpf, key="in_cpf")
-    with c_tel: tel_comp = st.text_input("WhatsApp *", value=st.session_state.man_tel, key="in_tel")
+        c_cpf, c_tel = st.columns(2)
+        with c_cpf: cpf_comp = st.text_input("CPF", value=st.session_state.man_cpf, key="in_cpf")
+        with c_tel: tel_comp = st.text_input("WhatsApp *", value=st.session_state.man_tel, key="in_tel")
 
-    if st.session_state.modo_busca_cli:
-        st.markdown("<div style='background: #faf7f3; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #e8ddd3;'>", unsafe_allow_html=True)
-        termo_busca = st.text_input("🔍 Digite Nome ou CPF:", key="man_termo_busca")
-        try:
-            res_cli = supabase.table("pedidos").select("cliente_nome, cliente_cpf, cliente_telefone").not_.ilike("cliente_nome", "%[B2B]%").execute()
-            cli_dict = {c.get("cliente_telefone", "").strip(): c for c in (res_cli.data or []) if c.get("cliente_telefone", "").strip()}
-            lista_clientes = sorted(list(cli_dict.values()), key=lambda x: x.get("cliente_nome", ""))
-        except: lista_clientes = []
+        if st.session_state.modo_busca_cli:
+            st.markdown("<div style='background: #faf7f3; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #e8ddd3;'>", unsafe_allow_html=True)
+            termo_busca = st.text_input("🔍 Digite Nome ou CPF:", key="man_termo_busca")
+            try:
+                res_cli = supabase.table("pedidos").select("cliente_nome, cliente_cpf, cliente_telefone").not_.ilike("cliente_nome", "%[B2B]%").execute()
+                cli_dict = {c.get("cliente_telefone", "").strip(): c for c in (res_cli.data or []) if c.get("cliente_telefone", "").strip()}
+                lista_clientes = sorted(list(cli_dict.values()), key=lambda x: x.get("cliente_nome", ""))
+            except: lista_clientes = []
+            
+            if termo_busca: lista_clientes = [c for c in lista_clientes if termo_busca.lower() in str(c.get("cliente_nome", "")).lower() or termo_busca in str(c.get("cliente_cpf", ""))]
+            opcoes_cli = [{"cliente_nome": "--- Selecione o cliente ---", "cliente_cpf": "", "cliente_telefone": ""}] + lista_clientes
+            cli_sel = st.selectbox("Resultados:", opcoes_cli, format_func=lambda x: f"{x['cliente_nome']} ({x['cliente_telefone']})", key="man_busca_dropdown")
+            
+            if cli_sel and cli_sel["cliente_nome"] != "--- Selecione o cliente ---":
+                st.session_state.man_nome = cli_sel["cliente_nome"]
+                st.session_state.man_cpf = cli_sel["cliente_cpf"]
+                st.session_state.man_tel = cli_sel["cliente_telefone"]
+                st.session_state.modo_busca_cli = False
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    # CAIXA 2: PRODUTO PRINCIPAL (SEMPRE VAZIO NO INÍCIO)
+    with st.container(border=True):
+        st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 2px dashed #f5eee6; padding-bottom: 6px; text-transform: uppercase;'>🎁 2. Seleção de Produto</div>", unsafe_allow_html=True)
+        selecoes_admin = {}
+
+        if "man_secao_form" not in st.session_state or st.session_state["man_secao_form"] not in secoes_disponiveis:
+            st.session_state["man_secao_form"] = secoes_disponiveis[0]
+
+        def reset_cesta(): 
+            st.session_state["man_cesta_sel_id"] = None
+
+        if len(secoes_disponiveis) > 1:
+            secao_escolhida = st.selectbox("Catálogo / Seção", secoes_disponiveis, index=secoes_disponiveis.index(st.session_state["man_secao_form"]), key="man_secao_form", on_change=reset_cesta)
+        else:
+            secao_escolhida = secoes_disponiveis[0]
+            st.session_state["man_secao_form"] = secao_escolhida
+
+        cestas_da_secao = [c for c in cestas_ativas if (c.get("secao_vitrine") or "Cestas de Café").strip().lower() == secao_escolhida.strip().lower()]
+        opcoes_cestas = [{"id": None, "nome": "Selecione o Produto...", "preco": 0}] + cestas_da_secao
         
-        if termo_busca: lista_clientes = [c for c in lista_clientes if termo_busca.lower() in str(c.get("cliente_nome", "")).lower() or termo_busca in str(c.get("cliente_cpf", ""))]
-        opcoes_cli = [{"cliente_nome": "--- Selecione o cliente ---", "cliente_cpf": "", "cliente_telefone": ""}] + lista_clientes
-        cli_sel = st.selectbox("Resultados:", opcoes_cli, format_func=lambda x: f"{x['cliente_nome']} ({x['cliente_telefone']})", key="man_busca_dropdown")
-        
-        if cli_sel and cli_sel["cliente_nome"] != "--- Selecione o cliente ---":
-            st.session_state.man_nome = cli_sel["cliente_nome"]
-            st.session_state.man_cpf = cli_sel["cliente_cpf"]
-            st.session_state.man_tel = cli_sel["cliente_telefone"]
-            st.session_state.modo_busca_cli = False
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+        idx_cesta = 0
+        if st.session_state.get("man_cesta_sel_id"):
+            for i, c in enumerate(opcoes_cestas):
+                if c["id"] == st.session_state["man_cesta_sel_id"]: idx_cesta = i; break
 
-    # BLOCO 2: PRODUTO PRINCIPAL (SEMPRE VAZIO NO INÍCIO)
-    st.markdown('<div class="dash-box"><div class="dash-box-title">🎁 2. Seleção de Produto</div>', unsafe_allow_html=True)
-    selecoes_admin = {}
+        cesta_sel = st.selectbox("Produto Base", opcoes_cestas, format_func=lambda c: f"{c['nome']} (R$ {tratar_preco(c.get('preco')):.2f})" if c.get("id") else c["nome"], index=idx_cesta, key="selectbox_produto_base")
 
-    if "man_secao_form" not in st.session_state or st.session_state["man_secao_form"] not in secoes_disponiveis:
-        st.session_state["man_secao_form"] = secoes_disponiveis[0]
+        if cesta_sel and cesta_sel.get("id"):
+            st.session_state["man_cesta_sel_id"] = cesta_sel["id"]
+            cfg = carregar_configuracao_cesta(cesta_sel["id"])
+            if cfg and any(grp.get("produtos") for grp in cfg):
+                st.markdown("<hr style='border: none; border-top: 1px dashed #dfcdbb; margin: 12px 0;'>", unsafe_allow_html=True)
+                st.markdown("<div style='font-size: 12px; font-weight: 800; color: #137333; margin-bottom: 6px;'>🍓 Personalização da Cesta</div>", unsafe_allow_html=True)
+                for grp in cfg:
+                    cat = grp.get("categoria", "Geral")
+                    prods = grp.get("produtos", [])
+                    maximo = grp.get("max_escolhas", 1)
+                    if not prods: continue
+                    with st.container(border=True):
+                        if maximo == 1:
+                            esc = st.radio(f"Opções de {cat}", prods, format_func=lambda p: p["nome"], key=f"adm_rad_{cat}")
+                            if esc: selecoes_admin[cat] = [esc]
+                        else:
+                            escs = st.multiselect(f"Opções de {cat}", prods, format_func=lambda p: p["nome"], max_selections=maximo, key=f"adm_mul_{cat}")
+                            selecoes_admin[cat] = escs
+        else:
+            st.session_state["man_cesta_sel_id"] = None
 
-    def reset_cesta(): 
-        st.session_state["man_cesta_sel_id"] = None
-
-    if len(secoes_disponiveis) > 1:
-        secao_escolhida = st.selectbox("Catálogo / Seção", secoes_disponiveis, index=secoes_disponiveis.index(st.session_state["man_secao_form"]), key="man_secao_form", on_change=reset_cesta)
-    else:
-        secao_escolhida = secoes_disponiveis[0]
-        st.session_state["man_secao_form"] = secao_escolhida
-
-    cestas_da_secao = [c for c in cestas_ativas if (c.get("secao_vitrine") or "Cestas de Café").strip().lower() == secao_escolhida.strip().lower()]
-    opcoes_cestas = [{"id": None, "nome": "Selecione o Produto...", "preco": 0}] + cestas_da_secao
-    
-    idx_cesta = 0
-    if st.session_state.get("man_cesta_sel_id"):
-        for i, c in enumerate(opcoes_cestas):
-            if c["id"] == st.session_state["man_cesta_sel_id"]: idx_cesta = i; break
-
-    cesta_sel = st.selectbox("Produto Base", opcoes_cestas, format_func=lambda c: f"{c['nome']} (R$ {tratar_preco(c.get('preco')):.2f})" if c.get("id") else c["nome"], index=idx_cesta, key="selectbox_produto_base")
-
-    if cesta_sel and cesta_sel.get("id"):
-        st.session_state["man_cesta_sel_id"] = cesta_sel["id"]
-        cfg = carregar_configuracao_cesta(cesta_sel["id"])
-        if cfg and any(grp.get("produtos") for grp in cfg):
-            st.markdown("<hr style='border: none; border-top: 1px dashed #dfcdbb; margin: 12px 0;'>", unsafe_allow_html=True)
-            st.markdown("<div style='font-size: 12px; font-weight: 800; color: #137333; margin-bottom: 6px;'>🍓 Personalização da Cesta</div>", unsafe_allow_html=True)
-            for grp in cfg:
-                cat = grp.get("categoria", "Geral")
-                prods = grp.get("produtos", [])
-                maximo = grp.get("max_escolhas", 1)
-                if not prods: continue
-                with st.container(border=True):
-                    if maximo == 1:
-                        esc = st.radio(f"Opções de {cat}", prods, format_func=lambda p: p["nome"], key=f"adm_rad_{cat}")
-                        if esc: selecoes_admin[cat] = [esc]
-                    else:
-                        escs = st.multiselect(f"Opções de {cat}", prods, format_func=lambda p: p["nome"], max_selections=maximo, key=f"adm_mul_{cat}")
-                        selecoes_admin[cat] = escs
-    else:
-        st.session_state["man_cesta_sel_id"] = None
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # BLOCO 3: DESTINATÁRIO
-    st.markdown('<div class="dash-box"><div class="dash-box-title">💌 3. Destinatário e Cartão</div>', unsafe_allow_html=True)
-    cd1, cd2 = st.columns(2)
-    with cd1: dest_nome = st.text_input("Nome do Homenageado *", key="man_dest_nome")
-    with cd2: dest_tel = st.text_input("Tel. Destinatário", key="man_dest_tel")
-    motivo = st.text_input("Ocasião (Ex: Aniversário)", key="man_motivo")
-    mensagem = st.text_area("Mensagem do Cartão", height=70, key="man_msg", placeholder="Texto impresso no cartão.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    # CAIXA 3: DESTINATÁRIO
+    with st.container(border=True):
+        st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 2px dashed #f5eee6; padding-bottom: 6px; text-transform: uppercase;'>💌 3. Destinatário e Cartão</div>", unsafe_allow_html=True)
+        cd1, cd2 = st.columns(2)
+        with cd1: dest_nome = st.text_input("Nome do Homenageado *", key="man_dest_nome")
+        with cd2: dest_tel = st.text_input("Tel. Destinatário", key="man_dest_tel")
+        motivo = st.text_input("Ocasião (Ex: Aniversário)", key="man_motivo")
+        mensagem = st.text_area("Mensagem do Cartão", height=70, key="man_msg", placeholder="Texto impresso no cartão.")
 
 # -----------------------------------------------------
-# COLUNA 2: ADICIONAIS, ENDEREÇO E TICKET VERDE INTEGRADO
+# COLUNA 2: ADICIONAIS, ENDEREÇO E TICKET VERDE INTEGRADO (DENTRO DE CAIXAS)
 # -----------------------------------------------------
 with col_bloco2:
-    # BLOCO 4: ADICIONAIS E EXTRAS
+    # CAIXA 4: ADICIONAIS E EXTRAS
     adicionais_selecionados_finais = []
-    st.markdown('<div class="dash-box"><div class="dash-box-title">🎀 4. Adicionais e Extras</div>', unsafe_allow_html=True)
-    
-    if adicionais_catalogo:
-        st.markdown("<div style='font-size: 12px; font-weight: 700; color: #5a3b28; margin-bottom: 6px;'>✨ Catálogo de Adicionais</div>", unsafe_allow_html=True)
-        for p_ad in adicionais_catalogo:
-            preco_ad = tratar_preco(p_ad.get("preco"))
-            txt_preco = f"(+ R$ {preco_ad:.2f})" if preco_ad > 0 else "(Sob Consulta)"
-            if st.checkbox(f"{p_ad['nome']} {txt_preco}", key=f"man_chk_ad_{p_ad['id']}"):
-                adicionais_selecionados_finais.append({"produto_id": p_ad["id"], "nome": p_ad["nome"], "preco": preco_ad})
+    with st.container(border=True):
+        st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 2px dashed #f5eee6; padding-bottom: 6px; text-transform: uppercase;'>🎀 4. Adicionais e Extras</div>", unsafe_allow_html=True)
+        
+        if adicionais_catalogo:
+            st.markdown("<div style='font-size: 12px; font-weight: 700; color: #5a3b28; margin-bottom: 6px;'>✨ Catálogo de Adicionais</div>", unsafe_allow_html=True)
+            for p_ad in adicionais_catalogo:
+                preco_ad = tratar_preco(p_ad.get("preco"))
+                txt_preco = f"(+ R$ {preco_ad:.2f})" if preco_ad > 0 else "(Sob Consulta)"
+                if st.checkbox(f"{p_ad['nome']} {txt_preco}", key=f"man_chk_ad_{p_ad['id']}"):
+                    adicionais_selecionados_finais.append({"produto_id": p_ad["id"], "nome": p_ad["nome"], "preco": preco_ad})
 
-    st.markdown("<hr style='border: none; border-top: 1px dashed #dfcdbb; margin: 12px 0;'>", unsafe_allow_html=True)
-    st.markdown("<div style='font-size: 12px; font-weight: 700; color: #5a3b28; margin-bottom: 4px;'>✍️ Extra Manual</div>", unsafe_allow_html=True)
-    cm1, cm2, cm3 = st.columns([2, 1, 1])
-    with cm1: nome_extra_man = st.text_input("Nome", placeholder="Ex: Balão", key="man_extra_nome", label_visibility="collapsed")
-    with cm2: preco_extra_man = st.number_input("Valor", min_value=0.0, step=5.0, value=0.0, key="man_extra_preco", label_visibility="collapsed")
-    with cm3:
-        if st.button("➕ Add", use_container_width=True):
-            if nome_extra_man.strip():
-                st.session_state.man_extras_avulsos.append({"id": str(uuid.uuid4()), "produto_id": None, "nome": nome_extra_man.strip(), "preco": preco_extra_man})
-                st.rerun()
-            else: st.warning("Nome?")
-            
-    if st.session_state.man_extras_avulsos:
-        for i, extra in enumerate(st.session_state.man_extras_avulsos):
-            adicionais_selecionados_finais.append(extra)
-            c_l1, c_l2 = st.columns([5, 1])
-            with c_l1: st.markdown(f"<div style='margin-top: 5px; font-size:12px; font-weight:600; color: #4a2e1b;'>✅ {extra['nome']} (R$ {formatar_moeda(extra['preco'])})</div>", unsafe_allow_html=True)
-            with c_l2:
-                if st.button("🗑️", key=f"del_ext_{extra['id']}"):
-                    st.session_state.man_extras_avulsos.pop(i)
+        st.markdown("<hr style='border: none; border-top: 1px dashed #dfcdbb; margin: 12px 0;'>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size: 12px; font-weight: 700; color: #5a3b28; margin-bottom: 4px;'>✍️ Extra Manual</div>", unsafe_allow_html=True)
+        cm1, cm2, cm3 = st.columns([2, 1, 1])
+        with cm1: nome_extra_man = st.text_input("Nome", placeholder="Ex: Balão", key="man_extra_nome", label_visibility="collapsed")
+        with cm2: preco_extra_man = st.number_input("Valor", min_value=0.0, step=5.0, value=0.0, key="man_extra_preco", label_visibility="collapsed")
+        with cm3:
+            if st.button("➕ Add", use_container_width=True):
+                if nome_extra_man.strip():
+                    st.session_state.man_extras_avulsos.append({"id": str(uuid.uuid4()), "produto_id": None, "nome": nome_extra_man.strip(), "preco": preco_extra_man})
                     st.rerun()
+                else: st.warning("Nome?")
+                
+        if st.session_state.man_extras_avulsos:
+            for i, extra in enumerate(st.session_state.man_extras_avulsos):
+                adicionais_selecionados_finais.append(extra)
+                c_l1, c_l2 = st.columns([5, 1])
+                with c_l1: st.markdown(f"<div style='margin-top: 5px; font-size:12px; font-weight:600; color: #4a2e1b;'>✅ {extra['nome']} (R$ {formatar_moeda(extra['preco'])})</div>", unsafe_allow_html=True)
+                with c_l2:
+                    if st.button("🗑️", key=f"del_ext_{extra['id']}"):
+                        st.session_state.man_extras_avulsos.pop(i)
+                        st.rerun()
 
-    polaroid = any("polaroid" in extra["nome"].lower() or "foto" in extra["nome"].lower() for extra in adicionais_selecionados_finais)
-    fotos_upload = []
-    if polaroid:
-        st.markdown("""
-        <div class="polaroid-box">
-            <h4 style="color: #d1476a; margin-top: 0; margin-bottom: 4px; font-size:13px;">📸 Upload de Fotos Polaroid</h4>
-            <p style="font-size: 11px; color: #5a3b28; margin-bottom: 8px;">Salvas no bucket <b>pedido_fotos</b>.</p>
-        </div>
-        """, unsafe_allow_html=True)
-        fotos_upload = st.file_uploader("Anexar fotos", accept_multiple_files=True, type=['png', 'jpg', 'jpeg'], key="man_upload_fotos")
-    st.markdown('</div>', unsafe_allow_html=True)
+        polaroid = any("polaroid" in extra["nome"].lower() or "foto" in extra["nome"].lower() for extra in adicionais_selecionados_finais)
+        fotos_upload = []
+        if polaroid:
+            st.markdown("""
+            <div class="polaroid-box">
+                <h4 style="color: #d1476a; margin-top: 0; margin-bottom: 4px; font-size:13px;">📸 Upload de Fotos Polaroid</h4>
+                <p style="font-size: 11px; color: #5a3b28; margin-bottom: 8px;">Salvas no bucket <b>pedido_fotos</b>.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            fotos_upload = st.file_uploader("Anexar fotos", accept_multiple_files=True, type=['png', 'jpg', 'jpeg'], key="man_upload_fotos")
 
-    # BLOCO 5: ENDEREÇO E ENTREGA
-    st.markdown('<div class="dash-box"><div class="dash-box-title">📍 5. Endereço e Entrega</div>', unsafe_allow_html=True)
-    cx1, cx2 = st.columns([1.5, 2.5])
-    with cx1:
-        cep_in = st.text_input("CEP", max_chars=8, placeholder="Somente números", key="in_cep")
-        cep_limpo = re.sub(r'\D', '', cep_in)
-        if len(cep_limpo) == 8 and st.session_state.ultimo_cep_man != cep_limpo:
-            try:
-                r = requests.get(f"https://viacep.com.br/ws/{cep_limpo}/json/", timeout=3)
-                if r.status_code == 200 and "erro" not in r.json():
-                    d = r.json()
-                    st.session_state.man_rua = d.get("logradouro", "")
-                    st.session_state.man_bairro = d.get("bairro", "")
-                    st.session_state.man_cidade = f"{d.get('localidade', '')} - {d.get('uf', '')}"
-            except: pass
-            st.session_state.ultimo_cep_man = cep_limpo
-            st.rerun()
-    with cx2:
-        st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
-        st.button("🔍 Buscar CEP", use_container_width=True)
+    # CAIXA 5: ENDEREÇO E ENTREGA
+    with st.container(border=True):
+        st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 2px dashed #f5eee6; padding-bottom: 6px; text-transform: uppercase;'>📍 5. Endereço e Entrega</div>", unsafe_allow_html=True)
+        cx1, cx2 = st.columns([1.5, 2.5])
+        with cx1:
+            cep_in = st.text_input("CEP", max_chars=8, placeholder="Somente números", key="in_cep")
+            cep_limpo = re.sub(r'\D', '', cep_in)
+            if len(cep_limpo) == 8 and st.session_state.ultimo_cep_man != cep_limpo:
+                try:
+                    r = requests.get(f"https://viacep.com.br/ws/{cep_limpo}/json/", timeout=3)
+                    if r.status_code == 200 and "erro" not in r.json():
+                        d = r.json()
+                        st.session_state.man_rua = d.get("logradouro", "")
+                        st.session_state.man_bairro = d.get("bairro", "")
+                        st.session_state.man_cidade = f"{d.get('localidade', '')} - {d.get('uf', '')}"
+                except: pass
+                st.session_state.ultimo_cep_man = cep_limpo
+                st.rerun()
+        with cx2:
+            st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
+            st.button("🔍 Buscar CEP", use_container_width=True)
 
-    c_r1, c_r2 = st.columns([3, 1])
-    with c_r1: rua = st.text_input("Rua/Logradouro *", value=st.session_state.man_rua, key="in_rua")
-    with c_r2: num = st.text_input("Nº *", key="in_num")
+        c_r1, c_r2 = st.columns([3, 1])
+        with c_r1: rua = st.text_input("Rua/Logradouro *", value=st.session_state.man_rua, key="in_rua")
+        with c_r2: num = st.text_input("Nº *", key="in_num")
 
-    c_b1, c_b2 = st.columns(2)
-    with c_b1: bairro = st.text_input("Bairro *", value=st.session_state.man_bairro, key="in_bairro")
-    with c_b2: cidade = st.text_input("Cidade-UF *", value=st.session_state.man_cidade, key="in_cidade")
+        c_b1, c_b2 = st.columns(2)
+        with c_b1: bairro = st.text_input("Bairro *", value=st.session_state.man_bairro, key="in_bairro")
+        with c_b2: cidade = st.text_input("Cidade-UF *", value=st.session_state.man_cidade, key="in_cidade")
 
-    st.markdown("<hr style='border: none; border-top: 1px dashed #dfcdbb; margin: 12px 0;'>", unsafe_allow_html=True)
-    ce1, ce2 = st.columns(2)
-    with ce1: dt_ent = st.date_input("Data Entrega", value=date.today(), format="DD/MM/YYYY", key="man_dt")
-    with ce2: per_ent = st.text_input("Horário", placeholder="Ex: 08h-10h", key="man_per")
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("<hr style='border: none; border-top: 1px dashed #dfcdbb; margin: 12px 0;'>", unsafe_allow_html=True)
+        ce1, ce2 = st.columns(2)
+        with ce1: dt_ent = st.date_input("Data Entrega", value=date.today(), format="DD/MM/YYYY", key="man_dt")
+        with ce2: per_ent = st.text_input("Horário", placeholder="Ex: 08h-10h", key="man_per")
 
     # =====================================================
-    # BLOCO 6: TICKET DE RESUMO DENTRO DA CAIXA VERDE (ABAIXO DA COLUNA 2)
+    # CAIXA 6: TICKET DE RESUMO DENTRO DA CAIXA VERDE (ABAIXO DA COLUNA 2)
     # =====================================================
     st.markdown('<div class="dash-ticket-verde">', unsafe_allow_html=True)
     st.markdown('<div class="ticket-title">📋 TICKET DE RESUMO & FECHAMENTO</div>', unsafe_allow_html=True)
