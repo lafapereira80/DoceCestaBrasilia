@@ -1,7 +1,7 @@
 import streamlit as st
 
 def configurar_pagina():
-    """Oculta elementos padrão do Streamlit e aplica estilos globais, mantendo o botão do Menu"""
+    """Oculta elementos padrão do Streamlit (incluindo a lista feia de páginas) e aplica estilos globais"""
     st.markdown(
         """
         <style>
@@ -9,9 +9,11 @@ def configurar_pagina():
         html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; }
         
         #MainMenu {visibility: hidden;}
-        /* O 'header' NÃO pode ser ocultado aqui, pois ele contém o botão de abrir o menu lateral */
         footer {visibility: hidden;}
         .stAppDeployMenu {display: none;}
+        
+        /* ESCONDE A LISTA DE ARQUIVOS PADRÃO DO STREAMLIT NO MENU LATERAL */
+        [data-testid="stSidebarNav"] {display: none !important;}
         </style>
         """,
         unsafe_allow_html=True
