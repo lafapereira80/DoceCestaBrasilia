@@ -11,7 +11,7 @@ menu_lateral()
 administrador_operador()
 
 # ==========================================
-# CSS PREMIUM (UI/UX MODERNO E MINIMALISTA)
+# CSS PREMIUM (ABAS COM LINHA INFERIOR E CARDS AMPLOS EM LINHA ÚNICA)
 # ==========================================
 st.markdown("""
 <style>
@@ -26,42 +26,36 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .header-title { font-family: 'Dancing Script', cursive !important; font-size: 42px; font-weight: 700; color: #c5721f; margin: 0; line-height: 1.1; }
 .header-sub { font-size: 14px; font-weight: 600; color: #775a46; margin-top: 5px;}
 
-/* NOVO DESIGN DAS ABAS (SEM FUNDO MARCADO, ESTILO PÍLULA) */
+/* ABAS: SEM FUNDO, APENAS LINHA INDICADORA NA SELECIONADA */
 .stTabs [data-baseweb="tab-list"] { 
-    gap: 8px; justify-content: center; background-color: transparent; padding: 0; border: none; margin-bottom: 25px; 
+    gap: 30px; justify-content: center; background-color: transparent; border-bottom: 2px solid #e8ddd3; padding: 0; margin-bottom: 25px; 
 }
 .stTabs [data-baseweb="tab"] { 
-    height: 42px; background-color: #ffffff; border-radius: 20px; font-weight: 700; font-size: 13px; color: #775a46; 
-    border: 1px solid #e8ddd3; padding: 0 22px; box-shadow: 0 2px 6px rgba(90,59,40,0.02); transition: all 0.2s ease; 
+    height: 45px; background-color: transparent !important; border-radius: 0 !important; font-weight: 700; font-size: 14px; color: #775a46; 
+    border: none !important; box-shadow: none !important; padding: 0 10px; transition: color 0.2s ease; 
 }
-.stTabs [data-baseweb="tab"]:hover { border-color: #c5721f; color: #c5721f; transform: translateY(-1px); }
+.stTabs [data-baseweb="tab"]:hover { color: #c5721f; }
 .stTabs [aria-selected="true"] { 
-    background: #5a3b28 !important; color: white !important; border: 1px solid #5a3b28 !important; 
-    box-shadow: 0 4px 12px rgba(90,59,40,0.15); 
+    color: #c5721f !important; border-bottom: 3px solid #c5721f !important; background: transparent !important; box-shadow: none !important; 
 }
 
-/* CARDS DE PEDIDOS (ESTILO RECIBO / PDV) */
-.pedido-card {
-    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px;
-    padding: 20px; margin-bottom: 20px; box-shadow: 0 6px 20px rgba(90, 59, 40, 0.04);
-    transition: all 0.25s ease; border-left: 6px solid #c5721f; position: relative; overflow: hidden;
+/* CARD EM LINHA ÚNICA (UTILIZANDO TODA A LARGURA DA TELA) */
+.pedido-card-linha {
+    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 12px;
+    padding: 14px 20px; margin-bottom: 12px; box-shadow: 0 3px 10px rgba(90, 59, 40, 0.02);
+    display: flex; align-items: center; justify-content: space-between; gap: 15px;
+    border-left: 5px solid #c5721f; transition: all 0.2s ease;
 }
-.pedido-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(90, 59, 40, 0.08); }
-.pedido-card.b2b { border-left-color: #137333; }
+.pedido-card-linha:hover { box-shadow: 0 6px 18px rgba(90, 59, 40, 0.06); transform: translateY(-1px); }
+.pedido-card-linha.b2b { border-left-color: #137333; }
 
-.badge-b2b { background: #e6f4ea; color: #137333; font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 12px; display: inline-block; margin-bottom: 10px; letter-spacing: 0.5px;}
-.badge-b2c { background: #fef7e0; color: #b06000; font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 12px; display: inline-block; margin-bottom: 10px; letter-spacing: 0.5px;}
+.badge-b2b { background: #e6f4ea; color: #137333; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 8px; margin-bottom: 3px; display: inline-block;}
+.badge-b2c { background: #fef7e0; color: #b06000; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 8px; margin-bottom: 3px; display: inline-block;}
 
-.p-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; border-bottom: 1px dashed #f0e6dc; padding-bottom: 8px;}
-.p-title { font-size: 15px; font-weight: 800; color: #2c1e14; }
-.p-valor { font-size: 16px; font-weight: 800; color: #137333; }
+.col- info { flex: 1; min-width: 150px; font-size: 12.5px; color: #5a3b28; }
+.col- info b { color: #2c1e14; }
 
-.p-body { font-size: 13px; color: #6b5343; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;}
-.p-body b { color: #4a2e1b; }
-
-/* BOTÕES DISCRETOS NO TOPO */
-div[data-testid="stButton"] button { border-radius: 12px !important; font-weight: 700 !important; transition: all 0.2s ease;}
-div[data-testid="stButton"] button:hover { transform: translateY(-1px); }
+div[data-testid="stButton"] button { border-radius: 10px !important; font-weight: 700 !important; font-size: 12px !important; padding: 6px 10px !important;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -109,20 +103,14 @@ def renderizar_lista_pedidos(lista_pedidos_etapa):
         st.info("Nenhum pedido encontrado nesta etapa.")
         return
 
-    for i in range(0, len(lista_pedidos_etapa), 2):
-        col1, col2 = st.columns(2)
-        with col1:
-            if i < len(lista_pedidos_etapa):
-                renderizar_card_individual(lista_pedidos_etapa[i])
-        with col2:
-            if i + 1 < len(lista_pedidos_etapa):
-                renderizar_card_individual(lista_pedidos_etapa[i + 1])
+    for p in lista_pedidos_etapa:
+        renderizar_card_linha(p)
 
-def renderizar_card_individual(p):
+def renderizar_card_linha(p):
     is_b2b = "[B2B]" in p['cliente_nome']
     nome_exibicao = p['cliente_nome'].replace("[B2B]", "").strip()
-    badge = "<div class='badge-b2b'>🏢 CORPORATIVO</div>" if is_b2b else "<div class='badge-b2c'>👤 VAREJO</div>"
-    css_class = "pedido-card b2b" if is_b2b else "pedido-card"
+    badge = "<div class='badge-b2b'>CORP</div>" if is_b2b else "<div class='badge-b2c'>VAREJO</div>"
+    css_class = "pedido-card-linha b2b" if is_b2b else "pedido-card-linha"
     
     dt_entrega = "A confirmar"
     if p.get('data_entrega'):
@@ -132,40 +120,51 @@ def renderizar_card_individual(p):
     status_atual = p.get('status', 'Recebido')
     valor_f = f"R$ {float(p.get('valor_total', 0) or 0):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     
-    with st.container(border=False):
+    # DISTRIBUIÇÃO EM LINHA ÚNICA UTILIZANDO COLUNAS DO STREAMLIT DENTRO DO HTML/CONTAINER
+    col_c1, col_c2, col_c3, col_c4, col_c5 = st.columns([2.2, 2.2, 2.8, 1.4, 1.6])
+    
+    with col_c1:
         st.markdown(f"""
-        <div class="{css_class}">
+        <div>
             {badge}
-            <div class="p-header">
-                <div>
-                    <div class="p-title">👤 {nome_exibicao}</div>
-                    <div style="font-size: 11px; color: #8c7362; margin-top: 1px;">📞 {p.get('cliente_telefone', 'Não informado')}</div>
-                </div>
-                <div class="p-valor">{valor_f}</div>
-            </div>
-            <div class="p-body">🎁 <b>Produto:</b> {p.get('cesta_nome', 'Misto')}</div>
-            <div class="p-body">📅 <b>Entrega:</b> {dt_entrega} ({p.get('periodo_entrega', 'A combinar')})</div>
-            <div class="p-body">📍 <b>Local:</b> {p.get('endereco', 'Não informado')[:40]}...</div>
-            <div class="p-body" style="font-size: 11.5px; color: #a65d14; margin-top: 4px;">💳 <b>Pagamento:</b> {p.get('pagamento', 'Pix')}</div>
+            <div style="font-weight: 800; font-size: 14px; color: #2c1e14;">👤 {nome_exibicao}</div>
+            <div style="font-size: 11.5px; color: #775a46;">📞 {p.get('cliente_telefone', '-')}</div>
         </div>
         """, unsafe_allow_html=True)
         
-        # BOTÕES DE CONTROLE DO CARD
-        b_det, b_av, b_des = st.columns([2, 2, 1.2])
-        with b_det:
-            if st.button("🔍 Ficha", key=f"det_{p['id']}", use_container_width=True):
-                st.session_state['pedido_detalhe_id'] = p['id']
-                st.switch_page("pages/09_Detalhes_Pedido.py")
-        with b_av:
+    with col_c2:
+        st.markdown(f"""
+        <div>
+            <div style="font-weight: 700; font-size: 13px; color: #5a3b28;">🎁 {p.get('cesta_nome', 'Misto')}</div>
+            <div style="font-size: 11.5px; color: #8c7362;">💳 {p.get('pagamento', 'Pix')} &bull; <b style="color:#137333;">{valor_f}</b></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_c3:
+        st.markdown(f"""
+        <div>
+            <div style="font-size: 12px; color: #4a2e1b;">📅 <b>{dt_entrega}</b> ({p.get('periodo_entrega', 'A combinar')})</div>
+            <div style="font-size: 11px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{p.get('endereco', 'Não informado')}">📍 {p.get('endereco', 'Não informado')}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_c4:
+        if st.button("🔍 Ficha", key=f"det_{p['id']}", use_container_width=True):
+            st.session_state['pedido_detalhe_id'] = p['id']
+            st.switch_page("pages/09_Detalhes_Pedido.py")
+
+    with col_c5:
+        b_acao, b_canc = st.columns(2)
+        with b_acao:
             if status_atual in ["Recebido", "Pendente"]:
-                if st.button("💳 Pagar", key=f"pg_{p['id']}", use_container_width=True): mudar_status(p['id'], "Pago")
+                if st.button("💳", key=f"pg_{p['id']}", help="Marcar como Pago", use_container_width=True): mudar_status(p['id'], "Pago")
             elif status_atual == "Pago":
-                if st.button("🍳 Produzir", key=f"pr_{p['id']}", use_container_width=True): mudar_status(p['id'], "Em Produção")
+                if st.button("🍳", key=f"pr_{p['id']}", help="Mandar para Produção", use_container_width=True): mudar_status(p['id'], "Em Produção")
             elif status_atual == "Em Produção":
-                if st.button("🛵 Concluir", key=f"et_{p['id']}", use_container_width=True): mudar_status(p['id'], "Entregue")
+                if st.button("🛵", key=f"et_{p['id']}", help="Concluir Entrega", use_container_width=True): mudar_status(p['id'], "Entregue")
             else:
-                st.markdown("<div style='text-align:center; font-size:11px; color:#137333; font-weight:800; padding-top:8px;'>CONCLUÍDO</div>", unsafe_allow_html=True)
-        with b_des:
+                st.markdown("<div style='font-size:10px; color:#137333; font-weight:800; text-align:center; padding-top:6px;'>FIM</div>", unsafe_allow_html=True)
+        with b_canc:
             if status_atual != "Desistência":
                 if st.button("❌", key=f"des_{p['id']}", help="Marcar como Desistência", use_container_width=True): mudar_status(p['id'], "Desistência")
 
