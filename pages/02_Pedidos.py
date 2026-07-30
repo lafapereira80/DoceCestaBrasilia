@@ -3,6 +3,7 @@ import pandas as pd
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
+from datetime import datetime
 
 st.set_page_config(page_title="Gestão de Pedidos", page_icon="📋", layout="wide")
 configurar_pagina()
@@ -98,7 +99,8 @@ def renderizar_card(p, coluna):
         with c_btn1:
             if st.button("Ver Detalhes", key=f"det_{p['id']}", use_container_width=True):
                 st.session_state['pedido_detalhe_id'] = p['id']
-                st.switch_page("pages/09_Detalhes_Pedidos.py")
+                # Link padronizado no singular para evitar erros de arquivo não encontrado
+                st.switch_page("pages/09_Detalhes_Pedido.py")
         with c_btn2:
             if p['status'] in ["Pendente", "Pago"]:
                 if st.button("⏩ Produção", key=f"av_{p['id']}", type="primary", use_container_width=True): mudar_status(p['id'], "Em Produção")
