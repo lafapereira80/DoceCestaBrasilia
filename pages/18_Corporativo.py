@@ -96,7 +96,7 @@ with c_btn:
 st.write("")
 
 # =====================================================
-# FUNÇÕES, CACHES E BLINDAGENS
+# FUNÇÕES E CACHES OTIMIZADOS (ZERO PISCADAS)
 # =====================================================
 def tratar_preco(valor):
     if valor is None or str(valor).strip() == "": return 0.0
@@ -106,34 +106,40 @@ def tratar_preco(valor):
 def formatar_moeda(valor):
     return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def obter_cestas_admin():
-    cestas = listar_cestas()
-    return sorted([c for c in cestas if c.get("ativa", True)], key=lambda x: x.get("nome", ""))
+    try:
+        cestas = listar_cestas()
+        return sorted([c for c in cestas if c.get("ativa", True)], key=lambda x: x.get("nome", ""))
+    except: return []
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def obter_adicionais_admin():
     try:
         res = supabase.table("produtos").select("*").execute()
         ativos = [p for p in (res.data or []) if p.get("ativo", True)]
         return sorted(ativos, key=lambda x: x.get("nome", ""))
-    except:
-        return []
+    except: return []
+
+@st.cache_data(ttl=300, show_spinner=False)
+def carregar_config_cesta_cached(cesta_id):
+    try:
+        return carregar_configuracao_cesta(cesta_id)
+    except: return []
 
 @st.cache_data(ttl=15, show_spinner=False)
 def carregar_pedidos_b2b():
     try:
         res = supabase.table("pedidos").select("*").ilike("cliente_nome", "%[B2B]%").execute()
         return res.data or []
-    except:
-        return []
+    except: return []
 
 def buscar_cnpj_api(cnpj_str):
     cnpj_limpo = re.sub(r'\D', '', cnpj_str)
     if len(cnpj_limpo) != 14: return False, "CNPJ inválido. Digite 14 números."
     try:
         url = f"https://brasilapi.com.br/api/cnpj/v1/{cnpj_limpo}"
-        r = requests.get(url, timeout=5)
+        r = requests.get(url, timeout=3)
         if r.status_code == 200: return True, r.json()
         else: return False, "CNPJ não encontrado."
     except Exception as e: return False, "Erro de conexão."
@@ -156,11 +162,10 @@ with aba_proposta:
     st.markdown('<div class="corp-card">', unsafe_allow_html=True)
     st.markdown('<div class="corp-title">⚙️ 1. Dados da Empresa e Negociação</div>', unsafe_allow_html=True)
     
-    col_c1, col_c2, col_c3 = st.columns([2, 1, 3])
+    col_c1, col_c2, col_c3 = st.columns([2, 1, 3], vertical_alignment="bottom")
     with col_c1:
         cnpj_input = st.text_input("Consulta Rápida por CNPJ", value=st.session_state.corp_cnpj, placeholder="Somente números")
     with col_c2:
-        st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
         if st.button("🔍 Buscar Dados", use_container_width=True):
             if cnpj_input:
                 sucesso, dados = buscar_cnpj_api(cnpj_input)
@@ -176,12 +181,10 @@ with aba_proposta:
                     uf = dados.get('uf', '')
                     st.session_state.corp_end = f"{log}, {num} - {bairro}, {cidade}-{uf}"
                     
-                    st.toast("✅ Dados importados da Receita Federal com sucesso!")
+                    st.toast("✅ Dados importados com sucesso!")
                     st.rerun()
-                else:
-                    st.error(dados)
-            else:
-                st.warning("Digite um CNPJ para buscar.")
+                else: st.error(dados)
+            else: st.warning("Digite um CNPJ.")
 
     st.write("")
     col_e1, col_e2 = st.columns(2)
@@ -202,10 +205,9 @@ with aba_proposta:
         st.markdown("<div style='font-size: 13px; font-weight: 700; color: #775a46;'>📦 Pacotes (Cestas Base)</div>", unsafe_allow_html=True)
         cesta_sel = st.selectbox("Cestas", [None] + cestas_disponiveis, format_func=lambda x: x["nome"] if x else "Selecione uma Cesta...", label_visibility="collapsed")
         
-        # ITENS SELECIONÁVEIS DA CESTA CORPORATIVA
         selecoes_cesta_corp = {}
         if cesta_sel:
-            cfg = carregar_configuracao_cesta(cesta_sel["id"])
+            cfg = carregar_config_cesta_cached(cesta_sel["id"])
             if cfg and any(grp.get("produtos") for grp in cfg):
                 st.markdown("<div style='font-size: 11.5px; font-weight: 700; color: #137333; margin-top: 5px;'>🍓 Opções da Cesta:</div>", unsafe_allow_html=True)
                 for grp in cfg:
@@ -222,12 +224,10 @@ with aba_proposta:
 
         if st.button("➕ Inserir Cesta", use_container_width=True):
             if cesta_sel:
-                # Monta a string apenas com os itens selecionados para a cesta (sem a descrição longa da cesta)
                 itens_sel_str = ""
                 if selecoes_cesta_corp:
                     opcoes_str = " | ".join([f"{cat}: {', '.join([i['nome'] for i in itens])}" for cat, itens in selecoes_cesta_corp.items() if itens])
-                    if opcoes_str:
-                        itens_sel_str = f"Itens: {opcoes_str}"
+                    if opcoes_str: itens_sel_str = f"Itens: {opcoes_str}"
 
                 st.session_state["itens_orcamento"].append({
                     "id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": cesta_sel["id"], "nome": cesta_sel["nome"], 
@@ -258,11 +258,9 @@ with aba_proposta:
                 st.rerun()
 
     total_bruto = 0
-    
     if st.session_state["itens_orcamento"]:
         st.markdown("<hr style='border-top: 1px dashed #e8ddd3; margin: 25px 0;'>", unsafe_allow_html=True)
-        st.markdown("### 🛒 Resumo do Contrato (Edite Preços e Quantidades)")
-        st.info("💡 Você pode alterar o **Valor Unitário** (especialmente para itens sob consulta) e a **Quantidade** diretamente na lista abaixo. O sistema calculará o Subtotal e o Total automaticamente.")
+        st.markdown("### 🛒 Resumo do Contrato")
         
         h1, h2, h3, h4, h5 = st.columns([3.5, 1.5, 1.5, 1.5, 0.5])
         h1.markdown("<div style='color:#775a46; font-size:12px; font-weight:700; text-transform:uppercase;'>Descrição do Item</div>", unsafe_allow_html=True)
@@ -272,29 +270,22 @@ with aba_proposta:
         
         for i, item in enumerate(st.session_state["itens_orcamento"]):
             c1, c2, c3, c4, c5 = st.columns([3.5, 1.5, 1.5, 1.5, 0.5])
-            
             with c1:
                 icone = "📦" if item["tipo"] == "Cesta" else "✨"
                 st.markdown(f"<div style='margin-top:8px; font-weight:700; font-size:14px; color:#4a2e1b;'>{icone} {item['nome']}</div>", unsafe_allow_html=True)
-                if item.get("descricao"):
-                    st.caption(item["descricao"])
-                
+                if item.get("descricao"): st.caption(item["descricao"])
             with c2:
                 novo_preco = st.number_input("Valor", value=float(item["preco_unitario"]), min_value=0.0, step=1.0, format="%.2f", key=f"p_{item['id']}", label_visibility="collapsed")
                 st.session_state["itens_orcamento"][i]["preco_unitario"] = novo_preco
-                
             with c3:
                 nova_qtd = st.number_input("Qtd", value=int(item["quantidade"]), min_value=1, step=1, key=f"q_{item['id']}", label_visibility="collapsed")
                 st.session_state["itens_orcamento"][i]["quantidade"] = nova_qtd
-                
             with c4:
                 subtotal_linha = novo_preco * nova_qtd
                 total_bruto += subtotal_linha
                 st.markdown(f"<div style='margin-top:10px; font-weight:800; font-size:16px; color:#137333;'>R$ {formatar_moeda(subtotal_linha)}</div>", unsafe_allow_html=True)
-                
             with c5:
-                st.markdown("<div style='margin-top:2px;'></div>", unsafe_allow_html=True)
-                if st.button("🗑️", key=f"d_{item['id']}", help="Remover do Contrato"):
+                if st.button("🗑️", key=f"d_{item['id']}"):
                     st.session_state["itens_orcamento"].pop(i)
                     st.rerun()
 
@@ -307,28 +298,23 @@ with aba_proposta:
     st.markdown("#### 💰 3. Logística, Desconto e Fechamento")
     
     col_d1, col_d2, col_d3 = st.columns(3)
-    with col_d1:
-        frete_lote = st.number_input("Valor Único do Frete/Logística (R$)", min_value=0.0, step=10.0, value=0.0)
-    with col_d2:
-        desconto_perc = st.number_input("Desconto Concedido no Pedido (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0)
-    with col_d3:
-        prazo_pagamento = st.selectbox("Condição de Pagamento", ["Pix", "Cartão de Crédito", "Faturamento (Boleto)", "Transferência Bancária"])
+    with col_d1: frete_lote = st.number_input("Frete/Logística (R$)", min_value=0.0, step=10.0, value=0.0)
+    with col_d2: desconto_perc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0)
+    with col_d3: prazo_pagamento = st.selectbox("Condição de Pagamento", ["Pix", "Cartão de Crédito", "Faturamento (Boleto)", "Transferência Bancária"])
 
     endereco_empresa = st.text_input("📍 Endereço de Entrega da Empresa", value=st.session_state.corp_end, placeholder="Ex: SQS 101, Bloco A, Ed. Comercial")
 
-    # Cálculos Financeiros Dinâmicos
     valor_desconto = total_bruto * (desconto_perc / 100)
     total_liquido = total_bruto - valor_desconto + frete_lote
 
-    # Exibição do Valor Total Dinâmico na Tela
     st.markdown(f"""
     <div class="resumo-financeiro">
         <div class="resumo-item">
-            <div class="resumo-label">Subtotal (Cestas + Extras)</div>
+            <div class="resumo-label">Subtotal</div>
             <div class="resumo-valor">R$ {formatar_moeda(total_bruto)}</div>
         </div>
         <div class="resumo-item">
-            <div class="resumo-label">Desconto Aplicado</div>
+            <div class="resumo-label">Desconto</div>
             <div class="resumo-valor" style="color: #c5221f;">- R$ {formatar_moeda(valor_desconto)}</div>
         </div>
         <div class="resumo-item">
@@ -344,15 +330,12 @@ with aba_proposta:
 
     st.write("")
     col_btn1, col_btn2 = st.columns(2)
-    
-    with col_btn1:
-        ver_preview = st.checkbox("👁️ Montar Documento de Orçamento (PDF / WhatsApp)", value=False)
-        
+    with col_btn1: ver_preview = st.checkbox("👁️ Montar Documento de Orçamento (PDF / WhatsApp)", value=False)
     with col_btn2:
         if st.button("✅ REGISTRAR PEDIDO B2B", type="primary", use_container_width=True):
             if not empresa_nome: st.error("Informe o Nome da Empresa."); st.stop()
             if not st.session_state["itens_orcamento"]: st.error("Adicione itens ao contrato."); st.stop()
-            if not endereco_empresa: st.error("Informe o Endereço de Entrega para a logística."); st.stop()
+            if not endereco_empresa: st.error("Informe o Endereço de Entrega."); st.stop()
                 
             lista_cestas = [it for it in st.session_state["itens_orcamento"] if it["tipo"] == "Cesta"]
             lista_extras = [it for it in st.session_state["itens_orcamento"] if it["tipo"] == "Extra"]
@@ -360,21 +343,12 @@ with aba_proposta:
             lista_str_produtos = [f"{it['quantidade']}x {it['nome']} (R$ {formatar_moeda(it['preco_unitario'])})\n{it.get('descricao','')}".strip() for it in lista_cestas]
             lista_str_extras = [f"{it['quantidade']}x {it['nome']} (R$ {formatar_moeda(it['preco_unitario'])})" for it in lista_extras]
             
-            nome_da_cesta_principal = "Lote Corporativo"
-            cesta_id_principal = None
-            if lista_cestas:
-                nome_da_cesta_principal = lista_cestas[0]["nome"]
-                cesta_id_principal = lista_cestas[0]["cesta_id"]
-            elif lista_extras:
-                nome_da_cesta_principal = "Itens Corporativos Extras"
+            nome_da_cesta_principal = lista_cestas[0]["nome"] if lista_cestas else "Lote Corporativo"
+            cesta_id_principal = lista_cestas[0]["cesta_id"] if lista_cestas else None
                 
-            if not lista_cestas and lista_extras:
-                lista_str_produtos = lista_str_extras
-                msg_adicionais = f"Desconto de {desconto_perc}% aplicado."
-            else:
-                msg_adicionais = f"Desconto de {desconto_perc}% aplicado."
-                if lista_str_extras:
-                    msg_adicionais += "\n\nEXTRAS E ADICIONAIS INCLUSOS:\n" + "\n".join(lista_str_extras)
+            msg_adicionais = f"Desconto de {desconto_perc}% aplicado."
+            if lista_str_extras:
+                msg_adicionais += "\n\nEXTRAS E ADICIONAIS:\n" + "\n".join(lista_str_extras)
 
             cnpj_formatado = re.sub(r'\D', '', st.session_state.corp_cnpj) if st.session_state.corp_cnpj else "00000000000"
 
@@ -400,85 +374,45 @@ with aba_proposta:
                 "cesta_montada": False
             }
             
-            sucesso, p_id = salvar_pedido(dados_b2b)
-            if sucesso:
-                st.success(f"🎉 Pedido corporativo {empresa_nome} registrado! Ele está aguardando confirmação de pagamento no Mural.")
-                st.session_state["itens_orcamento"] = []
-                st.session_state.corp_cnpj = ""
-                st.session_state.corp_nome = ""
-                st.session_state.corp_tel = ""
-                st.session_state.corp_end = ""
-            else:
-                st.error("Erro ao registrar o pedido no banco de dados.")
+            with st.spinner("Registrando pedido..."):
+                sucesso, p_id = salvar_pedido(dados_b2b)
+                if sucesso:
+                    st.success(f"🎉 Pedido corporativo registrado com sucesso!")
+                    st.session_state["itens_orcamento"] = []
+                    st.session_state.corp_cnpj = ""
+                    st.session_state.corp_nome = ""
+                    st.session_state.corp_tel = ""
+                    st.session_state.corp_end = ""
+                    time.sleep(2)
+                    st.switch_page("pages/02_Pedidos.py")
+                else: st.error("Erro ao registrar no banco de dados.")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
     if st.session_state["itens_orcamento"] and empresa_nome and ver_preview:
         st.markdown("### 👁️ Enviar Proposta para o Cliente")
-        
         aba_pdf, aba_whats = st.tabs(["📄 Documento Formal (Salvar em PDF)", "📱 Copiar para o WhatsApp"])
 
         with aba_pdf:
-            st.info("🖨️ **Dica de Ouro:** Pressione `Ctrl + P` para Salvar como PDF.")
-            
+            st.info("🖨️ Pressione `Ctrl + P` para Salvar como PDF.")
             linhas_html = ""
             for item in st.session_state["itens_orcamento"]:
                 desc_curta = (item['descricao'][:150] + '...') if item['descricao'] and len(item['descricao']) > 150 else (item['descricao'] or '')
                 preco_f = formatar_moeda(item['preco_unitario'])
                 subtotal_f = formatar_moeda(item['preco_unitario'] * item['quantidade'])
-                
-                linhas_html += f"""<tr>
-<td style="padding: 10px; border-bottom: 1px solid #f5eee6;"><b>{item['nome']}</b><br><span style="font-size:11px; color:#666;">{desc_curta}</span></td>
-<td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: center;">{item['quantidade']}</td>
-<td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: right;">R$ {preco_f}</td>
-<td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: right;">R$ {subtotal_f}</td>
-</tr>"""
+                linhas_html += f"""<tr><td style="padding: 10px; border-bottom: 1px solid #f5eee6;"><b>{item['nome']}</b><br><span style="font-size:11px; color:#666;">{desc_curta}</span></td><td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: center;">{item['quantidade']}</td><td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: right;">R$ {preco_f}</td><td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: right;">R$ {subtotal_f}</td></tr>"""
 
-            html_documento = f"""<div class="proposta-preview">
-<div class="proposta-header">
-<h2 style="color: #137333; margin-bottom: 5px; font-weight: 800;">PROPOSTA COMERCIAL</h2>
-<p style="margin: 0; color: #555; font-size: 14px;">Doce Cesta Brasília - Gestão de Encantamento B2B</p>
-</div>
-<table style="width: 100%; border: none; margin-bottom: 25px;"><tr><td style="width: 60%; vertical-align: top;"><p style="margin:2px 0;"><b>Para:</b> {empresa_nome}</p><p style="margin:2px 0;"><b>A/C:</b> {contato_nome}</p><p style="margin:2px 0;"><b>Ref:</b> {motivo or 'Orçamento de Produtos'}</p></td><td style="width: 40%; vertical-align: top; text-align: right;"><p style="margin:2px 0;"><b>Data Emissão:</b> {datetime.now().strftime("%d/%m/%Y")}</p><p style="margin:2px 0;"><b>Validade:</b> {validade.strftime("%d/%m/%Y")}</p></td></tr></table>
-<table style="width: 100%; border-collapse: collapse; margin-top: 10px;"><tr style="background-color: #faf7f3;"><th style="padding: 12px; text-align: left; border-bottom: 2px solid #e8ddd3;">Descrição dos Itens do Contrato</th><th style="padding: 12px; text-align: center; border-bottom: 2px solid #e8ddd3;">Qtd</th><th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">V. Unitário</th><th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">Subtotal</th></tr>{linhas_html}</table>
-<div style="margin-top: 25px; text-align: right; font-size: 15px;"><p style="margin: 4px 0;">Subtotal: R$ {formatar_moeda(total_bruto)}</p><p style="margin: 4px 0; color: #c5221f;">Desconto ({desconto_perc}%): - R$ {formatar_moeda(valor_desconto)}</p><p style="margin: 4px 0;">Logística/Frete: R$ {formatar_moeda(frete_lote)}</p></div>
-<div class="proposta-total">TOTAL GERAL: R$ {formatar_moeda(total_liquido)}</div>
-<div style="margin-top: 40px; font-size: 13px; color: #666; background: #faf7f3; padding: 15px; border-radius: 8px;"><b style="color: #4a2e1b;">Condições Comerciais:</b><br>• Forma de Pagamento: {prazo_pagamento}<br>• O pedido só será agendado para produção após o aceite formal deste documento.<br>• Produtos sujeitos a alteração conforme disponibilidade, mantendo a mesma qualidade.</div>
-</div>"""
+            html_documento = f"""<div class="proposta-preview"><div class="proposta-header"><h2 style="color: #137333; margin-bottom: 5px; font-weight: 800;">PROPOSTA COMERCIAL</h2><p style="margin: 0; color: #555; font-size: 14px;">Doce Cesta Brasília - Gestão de Encantamento B2B</p></div><table style="width: 100%; border: none; margin-bottom: 25px;"><tr><td style="width: 60%; vertical-align: top;"><p style="margin:2px 0;"><b>Para:</b> {empresa_nome}</p><p style="margin:2px 0;"><b>A/C:</b> {contato_nome}</p><p style="margin:2px 0;"><b>Ref:</b> {motivo or 'Orçamento'}</p></td><td style="width: 40%; vertical-align: top; text-align: right;"><p style="margin:2px 0;"><b>Data Emissão:</b> {datetime.now().strftime("%d/%m/%Y")}</p><p style="margin:2px 0;"><b>Validade:</b> {validade.strftime("%d/%m/%Y")}</p></td></tr></table><table style="width: 100%; border-collapse: collapse; margin-top: 10px;"><tr style="background-color: #faf7f3;"><th style="padding: 12px; text-align: left; border-bottom: 2px solid #e8ddd3;">Descrição</th><th style="padding: 12px; text-align: center; border-bottom: 2px solid #e8ddd3;">Qtd</th><th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">V. Unitário</th><th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">Subtotal</th></tr>{linhas_html}</table><div style="margin-top: 25px; text-align: right; font-size: 15px;"><p style="margin: 4px 0;">Subtotal: R$ {formatar_moeda(total_bruto)}</p><p style="margin: 4px 0; color: #c5221f;">Desconto ({desconto_perc}%): - R$ {formatar_moeda(valor_desconto)}</p><p style="margin: 4px 0;">Logística: R$ {formatar_moeda(frete_lote)}</p></div><div class="proposta-total">TOTAL GERAL: R$ {formatar_moeda(total_liquido)}</div></div>"""
             st.markdown(html_documento, unsafe_allow_html=True)
 
         with aba_whats:
-            linhas_whatsapp = ""
-            for item in st.session_state["itens_orcamento"]:
-                linhas_whatsapp += f"▪️ {item['quantidade']}x *{item['nome']}* (R$ {formatar_moeda(item['preco_unitario'])})\n"
-                
-            texto_wpp = f"""*PROPOSTA COMERCIAL - DOCE CESTA BRASÍLIA* 🎁
-            
-🏢 *Para:* {empresa_nome}
-👤 *A/C:* {contato_nome}
-📅 *Validade da Proposta:* {validade.strftime("%d/%m/%Y")}
-
-*ITENS DO ORÇAMENTO:*
-{linhas_whatsapp}
-*RESUMO FINANCEIRO:*
-💰 Subtotal: R$ {formatar_moeda(total_bruto)}
-🔻 Desconto ({desconto_perc}%): - R$ {formatar_moeda(valor_desconto)}
-🚚 Logística (Frete): R$ {formatar_moeda(frete_lote)}
-━━━━━━━━━━━━━━━━━━━━
-*TOTAL GERAL: R$ {formatar_moeda(total_liquido)}*
-
-💳 *Condição de Pagamento:* {prazo_pagamento}
-📍 *Endereço Cadastrado:* {endereco_empresa or 'A confirmar'}
-
-Qualquer dúvida, nossa equipe está à disposição para ajudar a melhor experiência para vocês! 🌻"""
-            
+            linhas_whatsapp = "".join([f"▪️ {item['quantidade']}x *{item['nome']}* (R$ {formatar_moeda(item['preco_unitario'])})\n" for item in st.session_state["itens_orcamento"]])
+            texto_wpp = f"""*PROPOSTA COMERCIAL - DOCE CESTA BRASÍLIA* 🎁\n\n🏢 *Para:* {empresa_nome}\n👤 *A/C:* {contato_nome}\n\n*ITENS:*\n{linhas_whatsapp}\n*VALORES:*\n💰 Subtotal: R$ {formatar_moeda(total_bruto)}\n🔻 Desconto: - R$ {formatar_moeda(valor_desconto)}\n🚚 Logística: R$ {formatar_moeda(frete_lote)}\n━━━━━━━━━━━━━━━━━━━━\n*TOTAL: R$ {formatar_moeda(total_liquido)}*"""
             st.code(texto_wpp, language="markdown")
 
 with aba_empresas:
     st.markdown('<div class="corp-card"><div class="corp-title">🏢 Histórico de Contratos B2B</div>', unsafe_allow_html=True)
-    
     pedidos_b2b = carregar_pedidos_b2b()
-    
     if not pedidos_b2b:
         st.info("Nenhuma venda corporativa registrada ainda.")
     else:
@@ -486,17 +420,6 @@ with aba_empresas:
         df_b2b["Empresa"] = df_b2b["cliente_nome"].str.replace("[B2B]", "", regex=False).str.strip()
         df_b2b["Data"] = pd.to_datetime(df_b2b["created_at"]).dt.strftime("%d/%m/%Y")
         df_b2b["Valor"] = pd.to_numeric(df_b2b["valor_total"]).apply(lambda x: f"R$ {formatar_moeda(x)}")
-        
-        colunas_exibir = ["Data", "Empresa", "cesta_nome", "Valor", "status", "pagamento"]
-        df_display = df_b2b[colunas_exibir].rename(columns={"cesta_nome": "Pacote Vendido", "status": "Status", "pagamento": "Condição"})
-        
-        total_faturado_b2b = df_b2b["valor_total"].sum()
-        total_empresas = df_b2b["Empresa"].nunique()
-        
-        c1, c2 = st.columns(2)
-        c1.metric("💰 Faturamento Total B2B", f"R$ {formatar_moeda(total_faturado_b2b)}")
-        c2.metric("🏢 Empresas Atendidas", total_empresas)
-        
-        st.write("")
+        df_display = df_b2b[["Data", "Empresa", "cesta_nome", "Valor", "status", "pagamento"]].rename(columns={"cesta_nome": "Pacote", "status": "Status", "pagamento": "Condição"})
         st.dataframe(df_display, use_container_width=True, hide_index=True)
     st.markdown('</div>', unsafe_allow_html=True)
