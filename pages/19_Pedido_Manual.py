@@ -16,7 +16,7 @@ from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA E CSS (FORMATO DASHBOARD / PAINEL)
+# CONFIGURAÇÃO DA PÁGINA E CSS PREMIUM
 # =====================================================
 st.set_page_config(page_title="Painel de Pedido Varejo", page_icon="🛍️", layout="wide")
 configurar_pagina()
@@ -39,14 +39,14 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .dash-title { font-family: 'Dancing Script', cursive !important; font-size: 38px !important; font-weight: 700 !important; color: #c5721f !important; margin: 0 !important; line-height: 1; }
 .dash-subtitle { font-size: 13px !important; color: #775a46 !important; font-weight: 600 !important; margin-top: 4px !important; }
 
-/* CARTÕES DO DASHBOARD (WIDGETS) */
+/* CARTÕES DE SEPARAÇÃO (CAIXAS) */
 .dash-card {
-    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 22px;
+    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 24px;
     box-shadow: 0 4px 15px rgba(90, 59, 40, 0.02); margin-bottom: 20px;
 }
 .dash-card-title {
-    font-size: 15px; font-weight: 800; color: #c5721f; margin-bottom: 15px;
-    border-bottom: 2px dashed #f5eee6; padding-bottom: 8px; display: flex; align-items: center; gap: 8px;
+    font-size: 16px; font-weight: 800; color: #c5721f; margin-bottom: 18px;
+    border-bottom: 2px dashed #f5eee6; padding-bottom: 10px; display: flex; align-items: center; gap: 8px;
 }
 
 /* TICKET LATERAL DE RESUMO */
@@ -56,7 +56,7 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 }
 .ticket-title { font-size: 16px; font-weight: 800; color: #137333; margin-bottom: 15px; text-align: center; border-bottom: 2px solid #ceead6; padding-bottom: 8px;}
 .ticket-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #5a3b28; }
-.ticket-line strong { font-weight: 700; color: #2c1e14; }
+.ticket-line strong { font-weight: 700; color: #2c1e14; text-align: right;}
 .ticket-total { display: flex; justify-content: space-between; font-size: 20px; font-weight: 800; color: #137333; margin-top: 15px; padding-top: 12px; border-top: 2px dashed #137333; }
 
 /* CHECKBOXES E POLAROID */
@@ -124,21 +124,22 @@ secoes_disponiveis, cestas_ativas = obter_secoes_e_cestas()
 adicionais_catalogo = obter_adicionais_catalogo()
 
 # =====================================================
-# ESTADOS DA SESSÃO
+# ESTADOS DA SESSÃO (COM RESET SEGURO PARA NOVO PEDIDO)
 # =====================================================
 for key in ["man_nome", "man_cpf", "man_tel", "man_rua", "man_num", "man_comp", "man_bairro", "man_cidade", "man_cep", "ultimo_cep_man"]:
     if key not in st.session_state: st.session_state[key] = ""
 if "modo_busca_cli" not in st.session_state: st.session_state.modo_busca_cli = False
 if "man_extras_avulsos" not in st.session_state: st.session_state.man_extras_avulsos = [] 
+if "man_cesta_sel_id" not in st.session_state: st.session_state.man_cesta_sel_id = None
 
 # =====================================================
-# LAYOUT EM DUAS COLUNAS (DASHBOARD: ESQUERDA FORMULÁRIO | DIREITA TICKET)
+# LAYOUT EM DUAS COLUNAS (DASHBOARD)
 # =====================================================
 col_form, col_ticket = st.columns([2.2, 1.2], gap="large")
 
 with col_form:
     # -----------------------------------------------------
-    # WIDGET 1: CLIENTE
+    # CAIXA 1: CLIENTE
     # -----------------------------------------------------
     st.markdown('<div class="dash-card"><div class="dash-card-title">👤 1. Dados do Comprador</div>', unsafe_allow_html=True)
     cc1, cc_btn = st.columns([3.5, 1])
@@ -176,7 +177,7 @@ with col_form:
     st.markdown('</div>', unsafe_allow_html=True)
 
     # -----------------------------------------------------
-    # WIDGET 2: PRODUTO PRINCIPAL (MULTI-CATÁLOGO)
+    # CAIXA 2: PRODUTO PRINCIPAL (SEMPRE ZERADO/LIMPO)
     # -----------------------------------------------------
     st.markdown('<div class="dash-card"><div class="dash-card-title">🎁 2. Seleção de Catálogo e Produto</div>', unsafe_allow_html=True)
     selecoes_admin = {}
@@ -227,7 +228,7 @@ with col_form:
     st.markdown('</div>', unsafe_allow_html=True)
 
     # -----------------------------------------------------
-    # WIDGET 3: ADICIONAIS E EXTRAS
+    # CAIXA 3: ADICIONAIS E EXTRAS (TOTALMENTE VAZIOS PARA ESCOLHA)
     # -----------------------------------------------------
     adicionais_selecionados_finais = []
     st.markdown('<div class="dash-card"><div class="dash-card-title">🎀 3. Adicionais e Extras Globais</div>', unsafe_allow_html=True)
@@ -243,10 +244,10 @@ with col_form:
                     adicionais_selecionados_finais.append({"produto_id": p_ad["id"], "nome": p_ad["nome"], "preco": preco_ad})
 
     st.markdown("<hr style='border: none; border-top: 1px dashed #dfcdbb; margin: 15px 0;'>", unsafe_allow_html=True)
-    st.markdown("<div style='font-size: 13px; font-weight: 700; color: #5a3b28; margin-bottom: 5px;'>✍️ Inserir Extra Manual</div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size: 13px; font-weight: 700; color: #5a3b28; margin-bottom: 5px;'>✍️ Inserir Extra Manual (Vazio)</div>", unsafe_allow_html=True)
     cm1, cm2, cm3 = st.columns([2.5, 1, 1])
-    with cm1: nome_extra_man = st.text_input("Nome do Extra", placeholder="Ex: Pelúcia", key="man_extra_nome", label_visibility="collapsed")
-    with cm2: preco_extra_man = st.number_input("Valor", min_value=0.0, step=5.0, key="man_extra_preco", label_visibility="collapsed")
+    with cm1: nome_extra_man = st.text_input("Nome do Extra", placeholder="Ex: Balão Metalizado", key="man_extra_nome", label_visibility="collapsed")
+    with cm2: preco_extra_man = st.number_input("Valor", min_value=0.0, step=5.0, value=0.0, key="man_extra_preco", label_visibility="collapsed")
     with cm3:
         if st.button("➕ Inserir", use_container_width=True):
             if nome_extra_man.strip():
@@ -277,7 +278,7 @@ with col_form:
     st.markdown('</div>', unsafe_allow_html=True)
 
     # -----------------------------------------------------
-    # WIDGET 4: DESTINATÁRIO
+    # CAIXA 4: DESTINATÁRIO
     # -----------------------------------------------------
     st.markdown('<div class="dash-card"><div class="dash-card-title">💌 4. Destinatário e Cartão</div>', unsafe_allow_html=True)
     cd1, cd2 = st.columns(2)
@@ -288,7 +289,7 @@ with col_form:
     st.markdown('</div>', unsafe_allow_html=True)
 
     # -----------------------------------------------------
-    # WIDGET 5: ENDEREÇO
+    # CAIXA 5: ENDEREÇO
     # -----------------------------------------------------
     st.markdown('<div class="dash-card"><div class="dash-card-title">📍 5. Endereço e Entrega</div>', unsafe_allow_html=True)
     cx1, cx2 = st.columns([1.5, 2.5])
@@ -326,7 +327,7 @@ with col_form:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
-# COLUNA DIREITA (DASHBOARD: TICKET DE RESUMO & FECHAMENTO)
+# COLUNA DIREITA (TICKET VIVO DE RESUMO & FECHAMENTO)
 # =====================================================
 with col_ticket:
     st.markdown('<div class="dash-ticket">', unsafe_allow_html=True)
@@ -339,7 +340,7 @@ with col_ticket:
     frete = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=0.0, key="man_frete")
     desc_perc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0, key="man_desc")
     
-    # CÁLCULOS
+    # CÁLCULOS TOTAIS EM TEMPO REAL
     valor_c = float(cesta_sel.get("preco", 0)) if cesta_sel and cesta_sel.get("id") else 0.0
     valor_a = sum(extra.get("preco", 0.0) for extra in adicionais_selecionados_finais)
     subtotal = valor_c + valor_a
@@ -348,12 +349,25 @@ with col_ticket:
 
     st.markdown("<hr style='border: none; border-top: 1px dashed #ceead6; margin: 15px 0;'>", unsafe_allow_html=True)
     
-    nome_c_print = cesta_sel['nome'] if cesta_sel and cesta_sel.get('id') else "Nenhum produto"
-    st.markdown(f'<div class="ticket-line"><span>📦 {nome_c_print[:18]}...</span> <strong>R$ {formatar_moeda(valor_c)}</strong></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="ticket-line"><span>🎀 Adicionais</span> <strong>R$ {formatar_moeda(valor_a)}</strong></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="ticket-line"><span>🚚 Frete</span> <strong>R$ {formatar_moeda(frete)}</strong></div>', unsafe_allow_html=True)
+    # EXIBIÇÃO DETALHADA NO TICKET
+    nome_c_print = cesta_sel['nome'] if cesta_sel and cesta_sel.get('id') else "Nenhum produto selecionado"
+    st.markdown(f'<div class="ticket-line"><span>📦 <b>{nome_c_print}</b></span> <strong>R$ {formatar_moeda(valor_c)}</strong></div>', unsafe_allow_html=True)
+    
+    # Renderiza escolhas obrigatórias da cesta no ticket se houver
+    if selecoes_admin:
+        for cat, itens in selecoes_admin.items():
+            for it in itens:
+                st.markdown(f'<div class="ticket-line" style="font-size:11.5px; color:#775a46; padding-left:10px;"><span>&bull; {cat}: {it["nome"]}</span></div>', unsafe_allow_html=True)
+
+    # Renderiza cada adicional/extra marcado no ticket
+    if adicionais_selecionados_finais:
+        for ad in adicionais_selecionados_finais:
+            st.markdown(f'<div class="ticket-line" style="font-size:12px;"><span>🎀 {ad["nome"]}</span> <strong>R$ {formatar_moeda(ad["preco"])}</strong></div>', unsafe_allow_html=True)
+
+    if frete > 0:
+        st.markdown(f'<div class="ticket-line"><span>🚚 Frete</span> <strong>R$ {formatar_moeda(frete)}</strong></div>', unsafe_allow_html=True)
     if valor_desconto > 0:
-        st.markdown(f'<div class="ticket-line" style="color: #c5221f;"><span>🔻 Desconto</span> <strong>- R$ {formatar_moeda(valor_desconto)}</strong></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="ticket-line" style="color: #c5221f;"><span>🔻 Desconto ({desc_perc}%)</span> <strong>- R$ {formatar_moeda(valor_desconto)}</strong></div>', unsafe_allow_html=True)
 
     st.markdown(f"""
     <div class="ticket-total">
@@ -429,6 +443,7 @@ with col_ticket:
                 
                 st.success(f"✅ Pedido criado com sucesso!")
                 st.session_state.man_extras_avulsos = []
+                st.session_state.man_cesta_sel_id = None
                 
                 # MENSAGEM WHATSAPP ESTRUTURADA
                 linhas_wpp = f"📦 {cesta_sel['nome']} (R$ {formatar_moeda(valor_c)})\n"
