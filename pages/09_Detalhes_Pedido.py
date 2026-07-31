@@ -79,6 +79,17 @@ div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff !important
 """, unsafe_allow_html=True)
 
 # =====================================================
+# CALLBACK PARA SALVAR ANOTAÇÃO INSTANTANEAMENTE
+# =====================================================
+def salvar_nota_interna(pid, key):
+    nova_nota = st.session_state[key]
+    try:
+        supabase.table("pedidos").update({"anotacoes_internas": nova_nota}).eq("id", pid).execute()
+        st.toast("✅ Anotação interna salva com sucesso!")
+    except Exception as e:
+        st.error("Erro ao salvar anotação.")
+
+# =====================================================
 # CARREGAMENTO E VALIDAÇÃO DO PEDIDO
 # =====================================================
 pedido_id = st.session_state.get('pedido_detalhe_id')
@@ -207,12 +218,14 @@ if not st.session_state.modo_edicao:
             <div class="data-label" style="margin-top:10px;">Data e Período</div><div class="data-value">{formata_data(pedido.get('data_entrega'))} - {pedido.get('periodo_entrega') or '-'}</div>
             <div class="data-label">Endereço de Entrega</div><div class="data-value">{pedido.get('endereco') or '-'}</div>
         """
-        anotacoes_internas = (pedido.get('anotacoes_internas') or '').strip()
-        if anotacoes_internas:
+            
+        pedido_especial = (pedido.get('pedido_especial') or '').strip()
+        if pedido_especial:
             html_info1 += f"""
-            <div class="data-label" style="margin-top:15px; color:#b06000;">⚠️ Anotações Internas</div>
-            <div style="background: #fef7e0; padding: 10px; border-radius: 8px; font-size: 13px; color: #b06000; border-left: 3px solid #b06000;">{anotacoes_internas}</div>
+            <div class="data-label" style="margin-top:15px; color:#5b21b6;">✨ Pedido Especial (Cliente)</div>
+            <div style="background: #ede9fe; padding: 10px; border-radius: 8px; font-size: 13px; color: #5b21b6; border-left: 3px solid #5b21b6;">{pedido_especial}</div>
             """
+            
         html_info1 += "</div>"
         st.markdown(html_info1, unsafe_allow_html=True)
 
@@ -239,6 +252,11 @@ if not st.session_state.modo_edicao:
             st.markdown(f"<div style='background: #fdfbf8; padding: 10px; border-radius: 8px; font-style: italic; font-size: 13px; color: #4a2e1b; border-left: 3px solid #c5721f;'>\"{msg_cartao}\"</div>", unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
+
+    # NOVO: ANOTAÇÕES INTERNAS COM SALVAMENTO AUTOMÁTICO (NO MODO DE VISUALIZAÇÃO)
+    with st.container(border=True):
+        st.markdown("<div style='font-size: 13px; font-weight: 800; color: #b06000; margin-bottom: 4px; text-transform: uppercase;'>⚠️ Anotações Internas (Para a Equipe)</div>", unsafe_allow_html=True)
+        st.text_area("Anotações Internas", value=pedido.get('anotacoes_internas') or '', height=80, key=f"nota_{pedido_id}", on_change=salvar_nota_interna, args=(pedido_id, f"nota_{pedido_id}"), label_visibility="collapsed", placeholder="Digite aqui anotações para a equipe e clique fora da caixa para salvar...")
 
     # RESUMO FINANCEIRO E AÇÕES
     total_db = tratar_preco(pedido.get('valor_total', 0))
@@ -323,7 +341,7 @@ else:
         
         c9, c10 = st.columns(2)
         with c9: e_msg = st.text_area("Mensagem do Cartão", value=pedido.get('mensagem') or '', height=70)
-        with c10: e_anotacoes = st.text_area("Anotações Internas (Não aparece p/ cliente)", value=pedido.get('anotacoes_internas') or '', height=70)
+        with c10: e_pedido_especial = st.text_area("Pedido Especial (Solicitação do Cliente)", value=pedido.get('pedido_especial') or '', height=70)
 
     with st.container(border=True):
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 1px dashed #e8ddd3; padding-bottom: 6px;'>🎁 3. PRODUTOS E CARRINHO (FECHAMENTO)</div>", unsafe_allow_html=True)
@@ -467,7 +485,7 @@ else:
                 "data_entrega": e_data.strftime("%Y-%m-%d"),
                 "periodo_entrega": e_per,
                 "mensagem": e_msg,
-                "anotacoes_internas": e_anotacoes.strip(),
+                "pedido_especial": e_pedido_especial.strip(),
                 "cesta_nome": n_cesta,
                 "cesta_id": id_cesta,
                 "produtos": "\n\n".join(str_prod),
