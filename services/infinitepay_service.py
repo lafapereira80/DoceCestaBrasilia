@@ -8,6 +8,13 @@ def gerar_link_checkout_infinitepay(pedido_id: str, valor_total: float, cliente_
     """
     Gera um link de pagamento oficial via Checkout Integrado da InfinitePay.
     """
+    # =======================================================
+    # TRAVA DE VALOR MÍNIMO (Regra Comercial da InfinitePay)
+    # =======================================================
+    if valor_total < 1.00:
+        st.warning("⚠️ A InfinitePay exige que o pedido tenha um valor mínimo de R$ 1,00 para gerar o link de pagamento.")
+        return None
+
     # Valor em centavos para a API
     valor_em_centavos = int(round(valor_total * 100))
     id_curto = str(pedido_id).split('-')[0].upper()
