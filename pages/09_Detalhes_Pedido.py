@@ -36,7 +36,7 @@ st.markdown("""
 html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; color: #4a2e1b !important; font-size: 14px !important; }
 .block-container { padding-top: 1.5rem !important; padding-bottom: 4rem !important; max-width: 1200px !important; }
 
-/* Header Banner */
+/* Header Banner - FONTE DO MESMO TAMANHO PADRÃO */
 .order-header {
     background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%);
     padding: 16px 20px; border-radius: 12px; border: 1px solid #e8ddd3;
@@ -62,7 +62,7 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .item-pill { background: #faf7f3; border: 1px solid #e8ddd3; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; font-size: 13.5px; font-weight: 600; color: #4a2e1b; }
 .item-pill.discount { background: #fef7e0; border-color: #fce8b2; color: #b06000; }
 
-/* Resumo Financeiro */
+/* Resumo Financeiro Seguro */
 .resumo-financeiro {
     background: #fdfbf8; border: 1px solid #e8ddd3; border-radius: 10px; padding: 16px;
     display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 15px;
@@ -79,7 +79,7 @@ div[data-testid="stButton"] button[kind="primary"] { background: linear-gradient
 .btn-wpp > a { background: #25d366 !important; color: white !important; font-weight: 800 !important; font-size: 13px !important; border-radius: 8px !important; padding: 12px !important; display: flex; justify-content: center; align-items: center; text-decoration: none !important; box-shadow: 0 4px 10px rgba(37,211,102,0.2) !important; transition: all 0.2s; }
 .btn-wpp > a:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(37,211,102,0.3) !important; }
 
-/* Containers Fechados */
+/* Containers Fechados do Streamlit */
 div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff !important; border-radius: 12px !important; border: 1px solid #e8ddd3 !important; padding: 18px !important; box-shadow: 0 4px 12px rgba(90, 59, 40, 0.02) !important; margin-bottom: 15px !important; }
 </style>
 """, unsafe_allow_html=True)
@@ -116,7 +116,7 @@ if not pedido:
     st.error("Pedido não encontrado.")
     st.stop()
 
-# Helpers
+# Helpers e Formatação (Tratamento Anti-NoneType/Null)
 cliente_nome_banco = pedido.get('cliente_nome') or ''
 is_b2b = "[B2B]" in cliente_nome_banco
 is_vitrine = "[VITRINE]" in cliente_nome_banco
@@ -224,38 +224,32 @@ with c_btn:
 
 
 # =====================================================
-# MODO DE VISUALIZAÇÃO E AÇÕES RÁPIDAS
+# MODO DE VISUALIZAÇÃO E AJUSTES RÁPIDOS
 # =====================================================
 if not st.session_state.modo_edicao:
     col1, col2 = st.columns(2)
 
     with col1:
-        html_info1 = f"""
-        <div class="info-card">
+        # APLICADO O .replace('\n', '') PARA BLINDAR CONTRA VAZAMENTO DE HTML
+        html_info1 = f"""<div class="info-card">
             <div class="card-title">👤 Informações do Pedido</div>
             <div class="data-label">Cliente / Empresa</div><div class="data-value">{cliente_limpo} ({pedido.get('cliente_telefone') or '-'})</div>
             <div class="data-label">CPF / CNPJ</div><div class="data-value">{pedido.get('cliente_cpf') or '-'}</div>
             <div class="data-label" style="margin-top:10px;">Recebedor (Destinatário)</div><div class="data-value">{pedido.get('destinatario_nome') or '-'}</div>
             <div class="data-label">Ocasião / Motivo</div><div class="data-value">{pedido.get('motivo_homenagem') or '-'}</div>
             <div class="data-label" style="margin-top:10px;">Data e Período</div><div class="data-value">{formata_data(pedido.get('data_entrega'))} - {pedido.get('periodo_entrega') or '-'}</div>
-            <div class="data-label">Endereço de Entrega</div><div class="data-value">{pedido.get('endereco') or '-'}</div>
-        """
+            <div class="data-label">Endereço de Entrega</div><div class="data-value">{pedido.get('endereco') or '-'}</div>"""
             
         pedido_especial = (pedido.get('pedido_especial') or '').strip()
         if pedido_especial:
-            html_info1 += f"""
-            <div class="data-label" style="margin-top:15px; color:#5b21b6;">✨ Pedido Especial (Cliente)</div>
-            <div style="background: #ede9fe; padding: 10px; border-radius: 8px; font-size: 13px; color: #5b21b6; border-left: 3px solid #5b21b6;">{pedido_especial}</div>
-            """
+            html_info1 += f"""<div class="data-label" style="margin-top:15px; color:#5b21b6;">✨ Pedido Especial (Cliente)</div>
+            <div style="background: #ede9fe; padding: 10px; border-radius: 8px; font-size: 13px; color: #5b21b6; border-left: 3px solid #5b21b6;">{pedido_especial}</div>"""
             
         html_info1 += "</div>"
-        st.markdown(html_info1, unsafe_allow_html=True)
+        st.markdown(html_info1.replace('\n', ''), unsafe_allow_html=True)
 
     with col2:
-        html_info2 = """
-        <div class="info-card">
-            <div class="card-title">🎁 Detalhamento</div>
-        """
+        html_info2 = """<div class="info-card"><div class="card-title">🎁 Detalhamento</div>"""
         
         produtos_str = (pedido.get('produtos') or '')
         adicionais_str = (pedido.get('adicionais') or '')
@@ -276,132 +270,178 @@ if not st.session_state.modo_edicao:
                         html_info2 += f"<div class='item-pill'>✨ {linha_limpa}</div>"
         
         if msg_cartao:
-            html_info2 += f"""
-            <div class='data-label' style='margin-top: 15px;'>💌 Mensagem do Cartão</div>
-            <div style='background: #fdfbf8; padding: 10px; border-radius: 8px; font-style: italic; font-size: 13px; color: #4a2e1b; border-left: 3px solid #c5721f;'>"{msg_cartao}"</div>
-            """
+            html_info2 += f"""<div class='data-label' style='margin-top: 15px;'>💌 Mensagem do Cartão</div>
+            <div style='background: #fdfbf8; padding: 10px; border-radius: 8px; font-style: italic; font-size: 13px; color: #4a2e1b; border-left: 3px solid #c5721f;'>"{msg_cartao}"</div>"""
 
         html_info2 += "</div>"
-        st.markdown(html_info2, unsafe_allow_html=True)
+        st.markdown(html_info2.replace('\n', ''), unsafe_allow_html=True)
 
     # ANOTAÇÕES INTERNAS
     with st.container(border=True):
         st.markdown("<div style='font-size: 13px; font-weight: 800; color: #b06000; margin-bottom: 4px; text-transform: uppercase;'>⚠️ Anotações Internas (Para a Equipe)</div>", unsafe_allow_html=True)
         st.text_area("Anotações Internas", value=pedido.get('anotacoes_internas') or '', height=80, key=f"nota_{pedido_id}", on_change=salvar_nota_interna, args=(pedido_id, f"nota_{pedido_id}"), label_visibility="collapsed", placeholder="Digite aqui anotações para a equipe e clique fora da caixa para salvar automaticamente...")
 
-    # RESUMO FINANCEIRO
+    # =========================================================
+    # NOVA SEÇÃO: AJUSTES RÁPIDOS & RESUMO FINANCEIRO
+    # =========================================================
+    st.markdown("<div style='font-size: 14px; font-weight: 800; color: #137333; margin-bottom: 8px; margin-top: 15px; text-transform: uppercase;'>⚡ Ajustes Rápidos & Valores</div>", unsafe_allow_html=True)
     with st.container(border=True):
-        st.markdown("<div style='font-size: 14px; font-weight: 800; color: #137333; margin-bottom: 8px; text-transform: uppercase;'>💰 Resumo Financeiro & Ações</div>", unsafe_allow_html=True)
         
-        linha_html_desconto = f'<div class="resumo-item"><div class="resumo-label">Desconto</div><div class="resumo-valor" style="color:#c5221f;">- R$ {formatar_moeda(vd_db)}</div></div>' if vd_db > 0 else ''
+        c_f1, c_f2, c_f3, c_f4 = st.columns(4)
+        with c_f1: e_frete_rapido = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=float(frete_db), key="frete_rap")
+        with c_f2: e_desc_rapido = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=float(desc_perc_inicial), key="desc_rap")
         
-        st.markdown(f"""
-        <div class="resumo-financeiro">
-            <div class="resumo-item"><div class="resumo-label">Subtotal</div><div class="resumo-valor">R$ {formatar_moeda(subtotal_db)}</div></div>
-            {linha_html_desconto}
-            <div class="resumo-item"><div class="resumo-label">Frete</div><div class="resumo-valor">R$ {formatar_moeda(frete_db)}</div></div>
-            <div class="resumo-item"><div class="resumo-label">Pagamento</div><div class="resumo-valor">{pedido.get("pagamento") or "Pix"}</div></div>
-            <div class="resumo-item"><div class="resumo-label">TOTAL FINAL</div><div class="resumo-destaque">R$ {formatar_moeda(total_db)}</div></div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # =========================================================
-        # BOTÃO GERAR LINK INFINITEPAY
-        # =========================================================
-        link_pagamento_atual = pedido.get('infinitepay_url')
+        pag_idx = ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"].index(pedido.get('pagamento') or 'Pix') if pedido.get('pagamento') in ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"] else 0
+        with c_f3: e_pag_rapido = st.selectbox("Pagamento", ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"], index=pag_idx, key="pag_rap")
         
-        if link_pagamento_atual:
-            st.success(f"🔗 **Link de Pagamento Gerado:** {link_pagamento_atual}")
-        else:
-            if st.button("💳 Gerar Link de Pagamento (InfinitePay)", use_container_width=True):
-                if gerar_link_checkout_infinitepay:
-                    with st.spinner("Gerando link seguro na InfinitePay..."):
-                        link_gerado = gerar_link_checkout_infinitepay(
-                            pedido_id=pedido_id,
-                            valor_total=total_db,
-                            cliente_nome=cliente_limpo,
-                            cliente_tel=pedido.get('cliente_telefone') or ''
-                        )
-                        if link_gerado:
-                            supabase.table("pedidos").update({"infinitepay_url": link_gerado}).eq("id", pedido_id).execute()
-                            st.success("✅ Link gerado com sucesso!")
-                            st.rerun()
-                else:
-                    st.error("Serviço InfinitePay não encontrado. Crie o arquivo infinitepay_service.py.")
+        status_atual = pedido.get('status') or 'Recebido'
+        st_idx = STATUS_PERMITIDOS.index(status_atual) if status_atual in STATUS_PERMITIDOS else 0
+        with c_f4: e_status_rapido = st.selectbox("Status", STATUS_PERMITIDOS, index=st_idx, key="status_rap")
         
-        st.write("")
-        c_btn1, c_btn2, c_btn3 = st.columns([1, 1, 1])
-        with c_btn1:
-            if st.button("✏️ Editar Pedido Completo", use_container_width=True):
-                st.session_state.modo_edicao = True
-                st.rerun()
-        with c_btn2:
-            status_atual = pedido.get('status') or 'Recebido'
-            idx_st = STATUS_PERMITIDOS.index(status_atual) if status_atual in STATUS_PERMITIDOS else 0
-            novo_status_rapido = st.selectbox("Avançar Status", STATUS_PERMITIDOS, index=idx_st, label_visibility="collapsed")
-            if novo_status_rapido != status_atual:
-                supabase.table("pedidos").update({"status": novo_status_rapido}).eq("id", pedido_id).execute()
-                st.rerun()
-        with c_btn3:
-            fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone') or '')
-            
-            linhas_wpp = ""
-            produtos_str_wpp = pedido.get('produtos') or ''
-            if produtos_str_wpp:
-                linhas_wpp += "\n".join([f"📦 {p.strip()}" for p in produtos_str_wpp.split('\n') if p.strip()])
-
-            adicionais_str_wpp = pedido.get('adicionais') or ''
-            linhas_extras_wpp = ""
-            if adicionais_str_wpp:
-                for linha in adicionais_str_wpp.split('\n'):
-                    linha_l = linha.strip()
-                    if not linha_l or "EXTRAS" in linha_l.upper() or "ADICIONAIS" in linha_l.upper(): 
-                        continue
-                    if "Desconto" in linha_l or "desconto" in linha_l.lower():
-                        continue
-                    else:
-                        linhas_extras_wpp += f"🎀 {linha_l}\n"
-                        
-            if linhas_extras_wpp:
-                if linhas_wpp: linhas_wpp += "\n"
-                linhas_wpp += linhas_extras_wpp.strip()
+        # Recálculo instantâneo para mostrar no resumo
+        novo_vd = subtotal_db * (e_desc_rapido / 100)
+        novo_total = subtotal_db - novo_vd + e_frete_rapido
+        
+        linha_html_desconto = f'<div class="resumo-item"><div class="resumo-label">Desconto</div><div class="resumo-valor" style="color:#c5221f;">- R$ {formatar_moeda(novo_vd)}</div></div>' if novo_vd > 0 else ''
+        
+        # HTML BLINDADO (Sem quebras de linha para evitar o erro do Streamlit)
+        html_resumo = f"""<div class="resumo-financeiro">
+        <div class="resumo-item"><div class="resumo-label">Subtotal</div><div class="resumo-valor">R$ {formatar_moeda(subtotal_db)}</div></div>
+        {linha_html_desconto}
+        <div class="resumo-item"><div class="resumo-label">Frete</div><div class="resumo-valor">R$ {formatar_moeda(e_frete_rapido)}</div></div>
+        <div class="resumo-item"><div class="resumo-label">Pagamento</div><div class="resumo-valor">{e_pag_rapido}</div></div>
+        <div class="resumo-item"><div class="resumo-label">TOTAL FINAL</div><div class="resumo-destaque">R$ {formatar_moeda(novo_total)}</div></div>
+        </div>"""
+        
+        st.markdown(html_resumo.replace('\n', ''), unsafe_allow_html=True)
+        
+        # Verifica se o usuário mexeu em algum campo rápido
+        mudou_valores = (round(e_frete_rapido, 2) != round(frete_db, 2)) or \
+                        (round(e_desc_rapido, 2) != round(desc_perc_inicial, 2)) or \
+                        (e_pag_rapido != pedido.get('pagamento')) or \
+                        (e_status_rapido != status_atual)
+        
+        if mudou_valores:
+            st.warning("⚠️ Você alterou os valores acima. Salve os ajustes para gerar os links e mensagens atualizados.")
+            if st.button("💾 SALVAR AJUSTES RÁPIDOS", type="primary", use_container_width=True):
+                # Remonta o texto de adicionais com o novo desconto
+                ads_list = [l.strip() for l in (pedido.get('adicionais') or '').split('\n') if l.strip()]
+                ads_list = [l for l in ads_list if not ("Desconto" in l or "desconto" in l.lower())]
                 
-            if not linhas_wpp:
-                linhas_wpp = f"📦 {pedido.get('cesta_nome') or 'Itens do Pedido'}"
-
-            texto_wpp = f"*RESUMO DO PEDIDO - DOCE CESTA BRASÍLIA* 🎁\n\n"
-            texto_wpp += f"👤 *De:* {cliente_limpo}\n"
-            texto_wpp += f"💝 *Para:* {pedido.get('destinatario_nome') or 'O mesmo'}\n"
-            texto_wpp += f"📅 *Entrega:* {formata_data(pedido.get('data_entrega'))} ({pedido.get('periodo_entrega') or 'A combinar'})\n"
-            texto_wpp += f"📍 *Local:* {pedido.get('endereco') or 'Não informado'}\n\n"
-            texto_wpp += f"*ITENS:*\n{linhas_wpp}\n\n"
-            texto_wpp += f"*VALORES:*\n"
-            texto_wpp += f"💰 Subtotal: R$ {formatar_moeda(subtotal_db)}\n"
-            if vd_db > 0:
-                texto_wpp += f"🔻 Desconto: - R$ {formatar_moeda(vd_db)}\n"
-            texto_wpp += f"🚚 Frete: R$ {formatar_moeda(frete_db)}\n"
-            texto_wpp += f"━━━━━━━━━━━━━━━━━━━━\n"
-            texto_wpp += f"*TOTAL:* R$ {formatar_moeda(total_db)}\n\n"
+                if novo_vd > 0:
+                    ads_list.insert(0, f"Desconto: - R$ {formatar_moeda(novo_vd)}")
+                
+                novo_adicionais_str = "\n".join(ads_list)
+                
+                update_data = {
+                    "valor_frete": e_frete_rapido,
+                    "valor_total": novo_total,
+                    "pagamento": e_pag_rapido,
+                    "status": e_status_rapido,
+                    "adicionais": novo_adicionais_str
+                }
+                
+                # Se o preço mudou, apaga o link antigo da InfinitePay
+                if round(e_frete_rapido, 2) != round(frete_db, 2) or round(e_desc_rapido, 2) != round(desc_perc_inicial, 2):
+                    update_data["infinitepay_url"] = None
+                    update_data["infinitepay_transaction_id"] = None
+                    
+                try:
+                    supabase.table("pedidos").update(update_data).eq("id", pedido_id).execute()
+                    st.success("✅ Ajustes salvos com sucesso!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Erro ao salvar: {e}")
+        else:
+            # =========================================================
+            # ÁREA DE BOTÕES FINAIS (Aparece quando não há edições pendentes)
+            # =========================================================
+            st.write("")
+            link_pagamento_atual = pedido.get('infinitepay_url')
             
             if link_pagamento_atual:
-                texto_wpp += f"💳 *LINK DE PAGAMENTO SEGURO:*\n{link_pagamento_atual}\n\n"
+                st.success(f"🔗 **Link de Pagamento Gerado:** {link_pagamento_atual}")
             else:
-                texto_wpp += f"💳 *Pagamento:* {pedido.get('pagamento') or 'Pix'}\n\n"
+                if st.button("💳 Gerar Link de Pagamento (InfinitePay)", use_container_width=True):
+                    if gerar_link_checkout_infinitepay:
+                        with st.spinner("Gerando link seguro na InfinitePay..."):
+                            link_gerado = gerar_link_checkout_infinitepay(
+                                pedido_id=pedido_id,
+                                valor_total=total_db,
+                                cliente_nome=cliente_limpo,
+                                cliente_tel=pedido.get('cliente_telefone') or ''
+                            )
+                            if link_gerado:
+                                supabase.table("pedidos").update({"infinitepay_url": link_gerado}).eq("id", pedido_id).execute()
+                                st.success("✅ Link gerado com sucesso!")
+                                st.rerun()
+                    else:
+                        st.error("Serviço InfinitePay não encontrado.")
             
-            texto_wpp += "Qualquer dúvida, estamos à disposição! 🌻"
+            c_btn1, c_btn3 = st.columns([1, 1])
+            with c_btn1:
+                if st.button("✏️ Editar Carrinho / Dados Completos", use_container_width=True):
+                    st.session_state.modo_edicao = True
+                    st.rerun()
+            with c_btn3:
+                fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone') or '')
+                linhas_wpp = ""
+                produtos_str_wpp = pedido.get('produtos') or ''
+                if produtos_str_wpp:
+                    linhas_wpp += "\n".join([f"📦 {p.strip()}" for p in produtos_str_wpp.split('\n') if p.strip()])
 
-            link_wpp = f"https://wa.me/55{fone_cliente}?text={urllib.parse.quote(texto_wpp)}" if fone_cliente else "#"
-            if fone_cliente:
-                st.markdown(f'<div class="btn-wpp"><a href="{link_wpp}" target="_blank">💬 WhatsApp Resumo</a></div>', unsafe_allow_html=True)
-            else:
-                st.warning("Sem telefone.")
+                adicionais_str_wpp = pedido.get('adicionais') or ''
+                linhas_extras_wpp = ""
+                if adicionais_str_wpp:
+                    for linha in adicionais_str_wpp.split('\n'):
+                        linha_l = linha.strip()
+                        if not linha_l or "EXTRAS" in linha_l.upper() or "ADICIONAIS" in linha_l.upper(): 
+                            continue
+                        if "Desconto" in linha_l or "desconto" in linha_l.lower():
+                            continue
+                        else:
+                            linhas_extras_wpp += f"🎀 {linha_l}\n"
+                            
+                if linhas_extras_wpp:
+                    if linhas_wpp: linhas_wpp += "\n"
+                    linhas_wpp += linhas_extras_wpp.strip()
+                    
+                if not linhas_wpp:
+                    linhas_wpp = f"📦 {pedido.get('cesta_nome') or 'Itens do Pedido'}"
+
+                texto_wpp = f"*RESUMO DO PEDIDO - DOCE CESTA BRASÍLIA* 🎁\n\n"
+                texto_wpp += f"👤 *De:* {cliente_limpo}\n"
+                texto_wpp += f"💝 *Para:* {pedido.get('destinatario_nome') or 'O mesmo'}\n"
+                texto_wpp += f"📅 *Entrega:* {formata_data(pedido.get('data_entrega'))} ({pedido.get('periodo_entrega') or 'A combinar'})\n"
+                texto_wpp += f"📍 *Local:* {pedido.get('endereco') or 'Não informado'}\n\n"
+                texto_wpp += f"*ITENS:*\n{linhas_wpp}\n\n"
+                texto_wpp += f"*VALORES:*\n"
+                texto_wpp += f"💰 Subtotal: R$ {formatar_moeda(subtotal_db)}\n"
+                if vd_db > 0:
+                    texto_wpp += f"🔻 Desconto: - R$ {formatar_moeda(vd_db)}\n"
+                texto_wpp += f"🚚 Frete: R$ {formatar_moeda(frete_db)}\n"
+                texto_wpp += f"━━━━━━━━━━━━━━━━━━━━\n"
+                texto_wpp += f"*TOTAL:* R$ {formatar_moeda(total_db)}\n\n"
+                
+                if link_pagamento_atual:
+                    texto_wpp += f"💳 *LINK DE PAGAMENTO SEGURO:*\n{link_pagamento_atual}\n\n"
+                else:
+                    texto_wpp += f"💳 *Pagamento:* {pedido.get('pagamento') or 'Pix'}\n\n"
+                
+                texto_wpp += "Qualquer dúvida, estamos à disposição! 🌻"
+
+                link_wpp = f"https://wa.me/55{fone_cliente}?text={urllib.parse.quote(texto_wpp)}" if fone_cliente else "#"
+                if fone_cliente:
+                    st.markdown(f'<div class="btn-wpp"><a href="{link_wpp}" target="_blank">💬 WhatsApp Resumo</a></div>', unsafe_allow_html=True)
+                else:
+                    st.warning("Sem telefone.")
 
 
 # =====================================================
-# MODO EDIÇÃO (TOTALMENTE NATIVO E SEGURO)
+# MODO EDIÇÃO (EDIÇÃO PROFUNDA - CARRINHO E COMPRADOR)
 # =====================================================
 else:
-    st.info("✏️ **Modo Edição Ativado.** Ao Salvar, o link de pagamento antigo (se existir) será apagado para você gerar um novo com os valores atualizados.")
+    st.info("✏️ **Modo de Edição Profunda Ativado.** Altere os dados abaixo e clique em Salvar no final da página.")
     
     with st.container(border=True):
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 1px dashed #e8ddd3; padding-bottom: 6px;'>👤 1. DADOS DO COMPRADOR</div>", unsafe_allow_html=True)
@@ -539,19 +579,19 @@ else:
 
         linha_html_desconto_edit = f'<div class="resumo-item"><div class="resumo-label">Desconto</div><div class="resumo-valor" style="color:#c5221f;">- R$ {formatar_moeda(valor_desconto)}</div></div>' if valor_desconto > 0 else ''
 
-        st.markdown(f"""
-        <div class="resumo-financeiro">
-            <div class="resumo-item"><div class="resumo-label">Subtotal</div><div class="resumo-valor">R$ {formatar_moeda(total_bruto)}</div></div>
-            {linha_html_desconto_edit}
-            <div class="resumo-item"><div class="resumo-label">Frete</div><div class="resumo-valor">R$ {formatar_moeda(e_frete)}</div></div>
-            <div class="resumo-item"><div class="resumo-label">TOTAL FINAL</div><div class="resumo-destaque">R$ {formatar_moeda(total_liquido)}</div></div>
-        </div>
-        """, unsafe_allow_html=True)
+        html_resumo_edit = f"""<div class="resumo-financeiro">
+        <div class="resumo-item"><div class="resumo-label">Subtotal</div><div class="resumo-valor">R$ {formatar_moeda(total_bruto)}</div></div>
+        {linha_html_desconto_edit}
+        <div class="resumo-item"><div class="resumo-label">Frete</div><div class="resumo-valor">R$ {formatar_moeda(e_frete)}</div></div>
+        <div class="resumo-item"><div class="resumo-label">TOTAL FINAL</div><div class="resumo-destaque">R$ {formatar_moeda(total_liquido)}</div></div>
+        </div>"""
+        
+        st.markdown(html_resumo_edit.replace('\n', ''), unsafe_allow_html=True)
     
     st.write("")
     c_save1, c_save2 = st.columns(2)
     with c_save1:
-        if st.button("💾 SALVAR ALTERAÇÕES", type="primary", use_container_width=True):
+        if st.button("💾 SALVAR ALTERAÇÕES COMPLETAS", type="primary", use_container_width=True):
             if not st.session_state["edit_cart"]: st.error("O carrinho não pode ficar vazio."); st.stop()
             
             lista_cestas = [it for it in st.session_state["edit_cart"] if it["tipo"] == "Cesta"]
@@ -589,7 +629,7 @@ else:
                 "status": e_status,
                 "valor_frete": e_frete,
                 "valor_total": total_liquido,
-                "infinitepay_url": None, # MÁGICA: Apaga o link velho para gerar o novo
+                "infinitepay_url": None, 
                 "infinitepay_transaction_id": None
             }
             try:
