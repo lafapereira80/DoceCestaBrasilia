@@ -1,5 +1,4 @@
 import streamlit as st
-from pathlib import Path
 
 try:
     from utils.formatacao import NOME_LOJA_CURTO
@@ -7,23 +6,19 @@ except ImportError:
     NOME_LOJA_CURTO = "Doce Cesta"
 
 def configurar_pagina():
-    css_path = Path("assets/style.css")
-    css_extra = ""
-    if css_path.exists():
-        with open(css_path, "r", encoding="utf-8") as f:
-            css_extra = f.read()
-            
+    """Aplica estilos globais para o painel administrativo e limpa bugs visuais antigos"""
     st.markdown(
-        f"""
+        """
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
         
-        html, body, [class*="css"] {{ font-family: 'Montserrat', sans-serif !important; }}
-        #MainMenu {{visibility: hidden;}}
-        footer {{visibility: hidden;}}
-        .stAppDeployMenu {{display: none;}}
-        [data-testid="stSidebarNav"] {{display: none !important;}}
-        {css_extra}
+        html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; }
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        .stAppDeployMenu {display: none;}
+        
+        /* ESCONDE APENAS A LISTA DE ARQUIVOS PADRÃO, MAS MANTÉM O MENU LATERAL APARECENDO! */
+        [data-testid="stSidebarNav"] {display: none !important;}
         </style>
         """,
         unsafe_allow_html=True
@@ -64,7 +59,7 @@ def menu_lateral():
             if perfil in ["Administrador", "Operador"]:
                 st.markdown("**📦 OPERAÇÃO & VENDAS**")
                 st.page_link("pages/02_Pedidos.py", label="Gestão de Pedidos", icon="📋")
-                st.page_link("pages/19_Pedido_Manual.py", label="Venda Varejo (PDV)", icon="🛍️") # Botão recuperado!
+                st.page_link("pages/19_Pedido_Manual.py", label="Venda Varejo (PDV)", icon="🛍️")
                 st.page_link("pages/08_Entregas.py", label="Rotas de Entrega", icon="🛵")
                 st.page_link("pages/03_Clientes.py", label="Base de Clientes", icon="👥")
                 
