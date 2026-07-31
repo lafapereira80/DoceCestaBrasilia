@@ -6,28 +6,13 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 
 from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer,
-    Table,
-    TableStyle,
-    PageBreak,
-    KeepTogether
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, KeepTogether
 )
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_LEFT, TA_CENTER
 
-from reportlab.lib.styles import (
-    getSampleStyleSheet,
-    ParagraphStyle
-)
-
-from reportlab.lib.enums import (
-    TA_LEFT,
-    TA_CENTER
-)
-
-from services.pedido_adicional_service import (
-    listar_adicionais_pedido
-)
+from services.pedido_adicional_service import listar_adicionais_pedido
+from utils.formatacao import NOME_LOJA  # <-- Trazendo o nome dinâmico!
 
 # =====================================================
 # CONFIGURAÇÃO DOS FORMATOS
@@ -35,15 +20,10 @@ from services.pedido_adicional_service import (
 LARGURA_ETIQUETA = 7 * cm
 ALTURA_ETIQUETA = 10 * cm
 
-
 # =====================================================
 # ESCUDO XML (O segredo para o PDF não ficar em branco)
 # =====================================================
 def texto_seguro(texto):
-    """
-    Substitui caracteres que quebram o gerador de PDF
-    (&, <, >) pelas suas entidades seguras.
-    """
     if not texto: return "-"
     texto = str(texto).replace("\n", " ")
     texto = texto.replace("&", "&amp;")
@@ -56,9 +36,7 @@ def limitar_texto(texto, tamanho=80):
     texto = str(texto).replace("\n", " ")
     if len(texto) > tamanho:
         texto = texto[:tamanho] + "..."
-    # Aplica o escudo de proteção final
     return texto_seguro(texto)
-
 
 # =====================================================
 # NORMALIZA JSON E DATAS
@@ -85,53 +63,21 @@ def formatar_horario(horario):
     if not horario: return ""
     return str(horario)[:5]
 
-
 # =====================================================
 # ESTILOS PDF
 # =====================================================
 styles = getSampleStyleSheet()
 
-estilo_destaque = ParagraphStyle(
-    "destaque",
-    parent=styles["Normal"],
-    fontName="Helvetica-Bold",
-    fontSize=9,
-    leading=11,
-    alignment=TA_LEFT
-)
-
-estilo_normal = ParagraphStyle(
-    "normal",
-    parent=styles["Normal"],
-    fontSize=8,
-    leading=10,
-    alignment=TA_LEFT
-)
-
-estilo_item = ParagraphStyle(
-    "item",
-    parent=styles["Normal"],
-    fontSize=7,
-    leading=8,
-    alignment=TA_LEFT
-)
-
-estilo_observacao = ParagraphStyle(
-    "observacao",
-    parent=styles["Normal"],
-    fontSize=7,
-    leading=8,
-    alignment=TA_LEFT
-)
-
+estilo_destaque = ParagraphStyle("destaque", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=9, leading=11, alignment=TA_LEFT)
+estilo_normal = ParagraphStyle("normal", parent=styles["Normal"], fontSize=8, leading=10, alignment=TA_LEFT)
+estilo_item = ParagraphStyle("item", parent=styles["Normal"], fontSize=7, leading=8, alignment=TA_LEFT)
+estilo_observacao = ParagraphStyle("observacao", parent=styles["Normal"], fontSize=7, leading=8, alignment=TA_LEFT)
 
 # =====================================================
 # BUSCA ITENS PARA MONTAGEM
 # =====================================================
 def buscar_itens_montagem(pedido):
     itens = []
-
-    # 1. Produtos da cesta
     produtos = pedido.get("produtos", "")
     if produtos:
         for item in str(produtos).split("\n"):
@@ -140,7 +86,6 @@ def buscar_itens_montagem(pedido):
                 item = item.replace('•', '').strip()
                 itens.append(item)
 
-    # 2. Adicionais
     try:
         adicionais = listar_adicionais_pedido(pedido["id"])
         for adicional in adicionais:
@@ -150,7 +95,6 @@ def buscar_itens_montagem(pedido):
     except Exception:
         pass
 
-    # 3. Itens sob consulta
     consulta = normalizar_itens_consulta(pedido.get("itens_consulta"))
     for nome in consulta.keys():
         nome_marcado = f"[Extra] {nome}"
@@ -159,19 +103,14 @@ def buscar_itens_montagem(pedido):
 
     return itens
 
-
 def montar_itens_pdf(itens):
     if not itens:
         return Paragraph("Sem itens na montagem", estilo_item)
-
     linhas = []
     for item in itens:
-        # Passa o item pelo escudo seguro
         item_seguro = texto_seguro(item)
         linhas.append(f"[  ] {item_seguro}")
-
     return Paragraph("<br/>".join(linhas), estilo_item)
-
 
 # =====================================================
 # MONTA CONTEÚDO DA ETIQUETA
@@ -179,10 +118,8 @@ def montar_itens_pdf(itens):
 def montar_conteudo_etiqueta(pedido):
     elementos = []
 
-    # Extração de dados (O limitar_texto já protege o XML)
     cliente_nome = limitar_texto(pedido.get("cliente_nome", "-"), 30)
     cliente_tel = texto_seguro(pedido.get("cliente_telefone", "-"))
-    
     dest_nome = limitar_texto(pedido.get("destinatario_nome", "-"), 30)
     dest_tel = texto_seguro(pedido.get("destinatario_telefone", "-"))
 
@@ -192,25 +129,17 @@ def montar_conteudo_etiqueta(pedido):
     horario = texto_seguro(formatar_horario(pedido.get("horario_combinado")))
     horario_str = f" ({horario})" if horario else ""
 
-    # 1. Cesta
     elementos.append(Paragraph(f"<b>CESTA: {cesta.upper()}</b>", estilo_destaque))
     elementos.append(Spacer(1, 4))
-
-    # 2. Envolvidos
     elementos.append(Paragraph(f"<b>COMPRADOR:</b> {cliente_nome} | Tel: {cliente_tel}", estilo_normal))
     elementos.append(Paragraph(f"<b>HOMENAGEADO:</b> {dest_nome} | Tel: {dest_tel}", estilo_normal))
-    
-    # 3. Logística
     elementos.append(Paragraph(f"<b>ENTREGA:</b> {data} - {periodo}{horario_str}", estilo_normal))
     elementos.append(Spacer(1, 4))
-
-    # 4. Itens
     elementos.append(Paragraph("<b>ITENS PARA MONTAGEM:</b>", estilo_normal))
     elementos.append(Spacer(1, 2))
     elementos.append(montar_itens_pdf(buscar_itens_montagem(pedido)))
     elementos.append(Spacer(1, 5))
 
-    # 5. Informações Extras
     endereco = limitar_texto(pedido.get("endereco", "-"), 90)
     elementos.append(Paragraph(f"<b>ENDERECO:</b> {endereco}", estilo_observacao))
     
@@ -228,32 +157,21 @@ def montar_conteudo_etiqueta(pedido):
 
     return elementos
 
-
 # =====================================================
 # CRIA CAIXA 7X10 PARA FOLHA A4
 # =====================================================
 def criar_caixa_7x10(pedido):
     conteudo = montar_conteudo_etiqueta(pedido)
-
-    tabela = Table(
-        [[conteudo]],
-        colWidths=[LARGURA_ETIQUETA - 0.3*cm],
-        rowHeights=[ALTURA_ETIQUETA - 0.3*cm]
-    )
-
-    tabela.setStyle(
-        TableStyle([
-            ("BOX", (0,0), (-1,-1), 0.8, None),
-            ("VALIGN", (0,0), (-1,-1), "TOP"),
-            ("LEFTPADDING", (0,0), (-1,-1), 5),
-            ("RIGHTPADDING", (0,0), (-1,-1), 5),
-            ("TOPPADDING", (0,0), (-1,-1), 5),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 5)
-        ])
-    )
-
+    tabela = Table([[conteudo]], colWidths=[LARGURA_ETIQUETA - 0.3*cm], rowHeights=[ALTURA_ETIQUETA - 0.3*cm])
+    tabela.setStyle(TableStyle([
+        ("BOX", (0,0), (-1,-1), 0.8, None),
+        ("VALIGN", (0,0), (-1,-1), "TOP"),
+        ("LEFTPADDING", (0,0), (-1,-1), 5),
+        ("RIGHTPADDING", (0,0), (-1,-1), 5),
+        ("TOPPADDING", (0,0), (-1,-1), 5),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 5)
+    ]))
     return tabela
-
 
 # =====================================================
 # PDF A4 E INDIVIDUAL
@@ -290,7 +208,6 @@ def gerar_pdf_a4(pedidos):
     doc.build(elementos)
     arquivo.seek(0)
     return arquivo.getvalue()
-
 
 def gerar_pdf_individual(pedidos):
     arquivo = io.BytesIO()
