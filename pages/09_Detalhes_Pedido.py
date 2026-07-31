@@ -7,6 +7,7 @@ from datetime import datetime, date
 
 from config.supabase import supabase
 from services.cesta_service import listar_cestas
+from services.configuracao_cesta_service import carregar_configuracao_cesta
 from services.produto_service import listar_produtos_por_categoria_id
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
@@ -145,6 +146,11 @@ def obter_adicionais():
         return []
     except: return []
 
+@st.cache_data(ttl=300, show_spinner=False)
+def carregar_config_cesta_cached(cesta_id):
+    try: return carregar_configuracao_cesta(cesta_id)
+    except: return []
+
 # CONTROLE DE ESTADO
 if "modo_edicao" not in st.session_state:
     st.session_state.modo_edicao = False
@@ -256,7 +262,7 @@ if not st.session_state.modo_edicao:
         """, unsafe_allow_html=True)
         
         st.write("")
-        c_btn1, c_btn2, c_btn3 = st.columns([1, 1, 1])
+        c_btn1, c_btn2, c_btn3 = st.columns([1, 1, 1.5])
         with c_btn1:
             if st.button("✏️ Editar Pedido Completo", use_container_width=True):
                 st.session_state.modo_edicao = True
@@ -273,9 +279,11 @@ if not st.session_state.modo_edicao:
             texto_resumo = f"""*RESUMO DO PEDIDO — DOCE CESTA BRASÍLIA* 🎁\n\n👤 *Olá {cliente_limpo}!* Segue o resumo atualizado do seu pedido:\n\n📦 *Produto:* {pedido.get('cesta_nome')}\n💳 *Forma de Pagamento:* {pedido.get('pagamento', 'Pix')}\n\n*VALORES:*\n━━━━━━━━━━━━━━━━━━━━\n💰 *TOTAL A PAGAR: R$ {formatar_moeda(total_db)}*\n\n📅 *Entrega:* {formata_data(pedido.get('data_entrega'))} ({pedido.get('periodo_entrega')})\n📍 *Local:* {pedido.get('endereco')}\n\nQualquer dúvida, estamos à disposição! 🌻"""
             link_wpp = f"https://wa.me/55{fone_cliente}?text={urllib.parse.quote(texto_resumo)}" if fone_cliente else "#"
             if fone_cliente:
-                st.markdown(f'<div class="btn-wpp"><a href="{link_wpp}" target="_blank">💬 WhatsApp Resumo</a></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="btn-wpp"><a href="{link_wpp}" target="_blank">💬 Enviar Resumo (WhatsApp)</a></div>', unsafe_allow_html=True)
             else:
-                st.warning("Sem telefone.")
+                st.warning("Sem telefone cadastrado.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # =====================================================
@@ -316,16 +324,42 @@ else:
         adicionais_disponiveis = obter_adicionais()
 
         with col_add1:
-            cesta_sel = st.selectbox("Nova Cesta", [None] + cestas_disponiveis, format_func=lambda x: x["nome"] if x else "Selecione...")
-            if st.button("➕ Inserir Cesta", use_container_width=True) and cesta_sel:
-                st.session_state["edit_cart"].append({
-                    "id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": cesta_sel["id"], "nome": cesta_sel["nome"], 
-                    "preco_unitario": tratar_preco(cesta_sel.get("preco")), "quantidade": 1, "descricao": ""
-                })
-                st.rerun()
+            st.markdown("<div style='font-size: 12px; font-weight: 700; color: #775a46; margin-bottom: 4px;'>📦 Nova Cesta / Pacote</div>", unsafe_allow_html=True)
+            cesta_sel = st.selectbox("Cestas", [None] + cestas_disponiveis, format_func=lambda x: x["nome"] if x else "Selecione uma Cesta...", label_visibility="collapsed")
+            
+            selecoes_cesta_edit = {}
+            if cesta_sel:
+                cfg = carregar_config_cesta_cached(cesta_sel["id"])
+                if cfg and any(grp.get("produtos") for grp in cfg):
+                    st.markdown("<div style='font-size: 11.5px; font-weight: 700; color: #137333; margin-top: 5px; margin-bottom: 5px;'>🍓 Opções de Cesta:</div>", unsafe_allow_html=True)
+                    for grp in cfg:
+                        cat = grp.get("categoria", "Geral")
+                        prods = grp.get("produtos", [])
+                        maximo = grp.get("max_escolhas", 1)
+                        if not prods: continue
+                        if maximo == 1:
+                            esc = st.selectbox(f"{cat}", prods, format_func=lambda p: p["nome"], key=f"edit_rad_{cesta_sel['id']}_{cat}")
+                            if esc: selecoes_cesta_edit[cat] = [esc]
+                        else:
+                            escs = st.multiselect(f"{cat} (Máx: {maximo})", prods, format_func=lambda p: p["nome"], max_selections=maximo, key=f"edit_mul_{cesta_sel['id']}_{cat}")
+                            selecoes_cesta_edit[cat] = escs
+
+            if st.button("➕ Inserir Cesta", use_container_width=True):
+                if cesta_sel:
+                    itens_sel_str = ""
+                    if selecoes_cesta_edit:
+                        opcoes_str = " | ".join([f"{cat}: {', '.join([i['nome'] for i in itens])}" for cat, itens in selecoes_cesta_edit.items() if itens])
+                        if opcoes_str: itens_sel_str = f"Itens: {opcoes_str}"
+
+                    st.session_state["edit_cart"].append({
+                        "id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": cesta_sel["id"], "nome": cesta_sel["nome"], 
+                        "preco_unitario": tratar_preco(cesta_sel.get("preco")), "quantidade": 1, "descricao": itens_sel_str
+                    })
+                    st.rerun()
 
         with col_add2:
-            adc_sel = st.selectbox("Extra do Catálogo", [None] + adicionais_disponiveis, format_func=lambda x: x["nome"] if x else "Selecione...")
+            st.markdown("<div style='font-size: 12px; font-weight: 700; color: #775a46; margin-bottom: 4px;'>✨ Extra do Catálogo</div>", unsafe_allow_html=True)
+            adc_sel = st.selectbox("Extras", [None] + adicionais_disponiveis, format_func=lambda x: x["nome"] if x else "Selecione...", label_visibility="collapsed")
             if st.button("➕ Inserir Extra", use_container_width=True) and adc_sel:
                 st.session_state["edit_cart"].append({
                     "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None, "nome": adc_sel["nome"], 
@@ -334,7 +368,8 @@ else:
                 st.rerun()
 
         with col_add3:
-            txt_man = st.text_input("Extra Manual", placeholder="Ex: Vinho")
+            st.markdown("<div style='font-size: 12px; font-weight: 700; color: #775a46; margin-bottom: 4px;'>✍️ Extra Personalizado</div>", unsafe_allow_html=True)
+            txt_man = st.text_input("Extra Manual", placeholder="Ex: Vinho Personalizado", label_visibility="collapsed")
             if st.button("➕ Inserir Manual", use_container_width=True) and txt_man.strip():
                 st.session_state["edit_cart"].append({
                     "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None, "nome": txt_man.strip(), 
@@ -353,7 +388,10 @@ else:
             
             for i, item in enumerate(st.session_state["edit_cart"]):
                 c1, c2, c3, c4, c5 = st.columns([3.5, 1.5, 1.5, 1.5, 0.5])
-                with c1: st.markdown(f"<div style='margin-top:6px; font-weight:600; font-size:13px;'>{item['nome']}</div>", unsafe_allow_html=True)
+                with c1:
+                    icone = "📦" if item["tipo"] == "Cesta" else "✨"
+                    st.markdown(f"<div style='margin-top:6px; font-weight:600; font-size:13px;'>{icone} {item['nome']}</div>", unsafe_allow_html=True)
+                    if item.get("descricao"): st.caption(item["descricao"])
                 with c2:
                     n_preco = st.number_input("V", value=float(item["preco_unitario"]), min_value=0.0, step=1.0, format="%.2f", key=f"e_p_{item['id']}", label_visibility="collapsed")
                     st.session_state["edit_cart"][i]["preco_unitario"] = n_preco
@@ -373,7 +411,7 @@ else:
         c_f1, c_f2, c_f3, c_f4 = st.columns(4)
         with c_f1: e_frete = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=tratar_preco(pedido.get('valor_frete', 0)))
         with c_f2: e_desc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0)
-        with c_f3: e_pag = st.selectbox("Pagamento", ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"], index=0)
+        with c_f3: e_pag = st.selectbox("Pagamento", ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"], index=["Pix", "Cartão de Crédito", "Faturamento", "Transferência"].index(pedido.get('pagamento', 'Pix')) if pedido.get('pagamento') in ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"] else 0)
         with c_f4: 
             idx_e_status = STATUS_PERMITIDOS.index(pedido.get('status', 'Recebido')) if pedido.get('status') in STATUS_PERMITIDOS else 0
             e_status = st.selectbox("Status", STATUS_PERMITIDOS, index=idx_e_status)
@@ -389,7 +427,8 @@ else:
             <div class="resumo-item"><div class="resumo-label">TOTAL FINAL</div><div class="resumo-destaque">R$ {formatar_moeda(total_liquido)}</div></div>
         </div>
         """, unsafe_allow_html=True)
-
+    
+    st.write("")
     c_save1, c_save2 = st.columns(2)
     with c_save1:
         if st.button("💾 SALVAR ALTERAÇÕES", type="primary", use_container_width=True):
@@ -398,17 +437,17 @@ else:
             lista_cestas = [it for it in st.session_state["edit_cart"] if it["tipo"] == "Cesta"]
             lista_extras = [it for it in st.session_state["edit_cart"] if it["tipo"] == "Extra"]
             
-            str_prod = [f"{it['quantidade']}x {it['nome']} (R$ {formatar_moeda(it['preco_unitario'])})" for it in lista_cestas]
+            str_prod = [f"{it['quantidade']}x {it['nome']} (R$ {formatar_moeda(it['preco_unitario'])})\n{it.get('descricao','')}".strip() for it in lista_cestas]
             str_ext = [f"{it['quantidade']}x {it['nome']} (R$ {formatar_moeda(it['preco_unitario'])})" for it in lista_extras]
             
             n_cesta = lista_cestas[0]["nome"] if lista_cestas else "Pedido Editado"
             id_cesta = lista_cestas[0]["cesta_id"] if lista_cestas else None
             
             msg_add = f"Desconto de {e_desc}% aplicado." if e_desc > 0 else ""
-            if str_ext: msg_add += "\n\nEXTRAS:\n" + "\n".join(str_ext)
+            if str_ext: msg_add += "\n\nEXTRAS E ADICIONAIS:\n" + "\n".join(str_ext)
 
             dados_update = {
-                "cliente_nome": e_nome.strip(),
+                "cliente_nome": e_nome.strip() + (" [B2B]" if is_b2b else (" [VITRINE]" if is_vitrine else "")),
                 "cliente_telefone": e_tel,
                 "cliente_cpf": e_cpf,
                 "destinatario_nome": e_dest.strip(),
@@ -420,7 +459,7 @@ else:
                 "mensagem": e_msg,
                 "cesta_nome": n_cesta,
                 "cesta_id": id_cesta,
-                "produtos": "\n".join(str_prod),
+                "produtos": "\n\n".join(str_prod),
                 "adicionais": msg_add.strip(),
                 "pagamento": e_pag,
                 "status": e_status,
