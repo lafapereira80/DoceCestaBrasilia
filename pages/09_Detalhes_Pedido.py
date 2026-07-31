@@ -99,10 +99,11 @@ if not pedido:
     st.error("Pedido não encontrado.")
     st.stop()
 
-# Helpers e Formatação
-is_b2b = "[B2B]" in pedido.get('cliente_nome', '')
-is_vitrine = "[VITRINE]" in pedido.get('cliente_nome', '')
-cliente_limpo = pedido.get('cliente_nome', '').replace("[B2B]", "").replace("[VITRINE]", "").strip()
+# Helpers e Formatação (Tratamento Anti-NoneType/Null)
+cliente_nome_banco = pedido.get('cliente_nome') or ''
+is_b2b = "[B2B]" in cliente_nome_banco
+is_vitrine = "[VITRINE]" in cliente_nome_banco
+cliente_limpo = cliente_nome_banco.replace("[B2B]", "").replace("[VITRINE]", "").strip()
 
 if is_b2b:
     tipo_classe = "corp"
@@ -161,8 +162,8 @@ if "edit_cart" not in st.session_state or st.session_state.get("edit_pedido_id")
     
     st.session_state["edit_cart"].append({
         "id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": pedido.get("cesta_id"), 
-        "nome": pedido.get("cesta_nome", "Cesta/Pacote Base"), "preco_unitario": tratar_preco(pedido.get('valor_total', 0)) - tratar_preco(pedido.get('valor_frete', 0)), 
-        "quantidade": 1, "descricao": pedido.get("produtos", "")
+        "nome": pedido.get("cesta_nome") or "Cesta/Pacote Base", "preco_unitario": tratar_preco(pedido.get('valor_total', 0)) - tratar_preco(pedido.get('valor_frete', 0)), 
+        "quantidade": 1, "descricao": pedido.get("produtos") or ""
     })
 
 # Lista exata de status permitidos
@@ -179,7 +180,7 @@ with c_head:
             Pedido #{id_curto} <span class="order-type-badge {tipo_classe}">{tipo_texto}</span>
         </div>
         <div class="status-text">
-            STATUS: {pedido.get('status', 'Recebido')}
+            STATUS: {pedido.get('status') or 'Recebido'}
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -199,14 +200,14 @@ if not st.session_state.modo_edicao:
         html_info1 = f"""
         <div class="info-card">
             <div class="card-title">👤 Informações do Pedido</div>
-            <div class="data-label">Cliente / Empresa</div><div class="data-value">{cliente_limpo} ({pedido.get('cliente_telefone', '-')})</div>
-            <div class="data-label">CPF / CNPJ</div><div class="data-value">{pedido.get('cliente_cpf', '-')}</div>
-            <div class="data-label" style="margin-top:10px;">Recebedor (Destinatário)</div><div class="data-value">{pedido.get('destinatario_nome', '-')}</div>
-            <div class="data-label">Ocasião / Motivo</div><div class="data-value">{pedido.get('motivo_homenagem', '-')}</div>
-            <div class="data-label" style="margin-top:10px;">Data e Período</div><div class="data-value">{formata_data(pedido.get('data_entrega'))} - {pedido.get('periodo_entrega', '-')}</div>
-            <div class="data-label">Endereço de Entrega</div><div class="data-value">{pedido.get('endereco', '-')}</div>
+            <div class="data-label">Cliente / Empresa</div><div class="data-value">{cliente_limpo} ({pedido.get('cliente_telefone') or '-'})</div>
+            <div class="data-label">CPF / CNPJ</div><div class="data-value">{pedido.get('cliente_cpf') or '-'}</div>
+            <div class="data-label" style="margin-top:10px;">Recebedor (Destinatário)</div><div class="data-value">{pedido.get('destinatario_nome') or '-'}</div>
+            <div class="data-label">Ocasião / Motivo</div><div class="data-value">{pedido.get('motivo_homenagem') or '-'}</div>
+            <div class="data-label" style="margin-top:10px;">Data e Período</div><div class="data-value">{formata_data(pedido.get('data_entrega'))} - {pedido.get('periodo_entrega') or '-'}</div>
+            <div class="data-label">Endereço de Entrega</div><div class="data-value">{pedido.get('endereco') or '-'}</div>
         """
-        anotacoes_internas = pedido.get('anotacoes_internas', '').strip()
+        anotacoes_internas = (pedido.get('anotacoes_internas') or '').strip()
         if anotacoes_internas:
             html_info1 += f"""
             <div class="data-label" style="margin-top:15px; color:#b06000;">⚠️ Anotações Internas</div>
@@ -219,9 +220,9 @@ if not st.session_state.modo_edicao:
         st.markdown('<div class="info-card">', unsafe_allow_html=True)
         st.markdown('<div class="card-title">🎁 Detalhamento</div>', unsafe_allow_html=True)
         
-        produtos_str = pedido.get('produtos', '')
-        adicionais_str = pedido.get('adicionais', '')
-        msg_cartao = pedido.get('mensagem', '')
+        produtos_str = (pedido.get('produtos') or '')
+        adicionais_str = (pedido.get('adicionais') or '')
+        msg_cartao = (pedido.get('mensagem') or '')
         
         if produtos_str:
             for linha in produtos_str.split("\n"):
@@ -259,7 +260,7 @@ if not st.session_state.modo_edicao:
             </div>
             <div class="resumo-item">
                 <div class="resumo-label">Pagamento</div>
-                <div class="resumo-valor">{pedido.get('pagamento', 'Pix')}</div>
+                <div class="resumo-valor">{pedido.get('pagamento') or 'Pix'}</div>
             </div>
             <div class="resumo-item">
                 <div class="resumo-label">VALOR TOTAL</div>
@@ -275,15 +276,15 @@ if not st.session_state.modo_edicao:
                 st.session_state.modo_edicao = True
                 st.rerun()
         with c_btn2:
-            status_atual = pedido.get('status', 'Recebido')
+            status_atual = pedido.get('status') or 'Recebido'
             idx_st = STATUS_PERMITIDOS.index(status_atual) if status_atual in STATUS_PERMITIDOS else 0
             novo_status_rapido = st.selectbox("Avançar Status", STATUS_PERMITIDOS, index=idx_st, label_visibility="collapsed")
             if novo_status_rapido != status_atual:
                 supabase.table("pedidos").update({"status": novo_status_rapido}).eq("id", pedido_id).execute()
                 st.rerun()
         with c_btn3:
-            fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone', ''))
-            texto_resumo = f"""*RESUMO DO PEDIDO — DOCE CESTA BRASÍLIA* 🎁\n\n👤 *Olá {cliente_limpo}!* Segue o resumo atualizado do seu pedido:\n\n📦 *Produto:* {pedido.get('cesta_nome')}\n💳 *Forma de Pagamento:* {pedido.get('pagamento', 'Pix')}\n\n*VALORES:*\n━━━━━━━━━━━━━━━━━━━━\n💰 *TOTAL A PAGAR: R$ {formatar_moeda(total_db)}*\n\n📅 *Entrega:* {formata_data(pedido.get('data_entrega'))} ({pedido.get('periodo_entrega')})\n📍 *Local:* {pedido.get('endereco')}\n\nQualquer dúvida, estamos à disposição! 🌻"""
+            fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone') or '')
+            texto_resumo = f"""*RESUMO DO PEDIDO — DOCE CESTA BRASÍLIA* 🎁\n\n👤 *Olá {cliente_limpo}!* Segue o resumo atualizado do seu pedido:\n\n📦 *Produto:* {pedido.get('cesta_nome') or 'Pedido Customizado'}\n💳 *Forma de Pagamento:* {pedido.get('pagamento') or 'Pix'}\n\n*VALORES:*\n━━━━━━━━━━━━━━━━━━━━\n💰 *TOTAL A PAGAR: R$ {formatar_moeda(total_db)}*\n\n📅 *Entrega:* {formata_data(pedido.get('data_entrega'))} ({pedido.get('periodo_entrega') or '-'})\n📍 *Local:* {pedido.get('endereco') or '-'}\n\nQualquer dúvida, estamos à disposição! 🌻"""
             link_wpp = f"https://wa.me/55{fone_cliente}?text={urllib.parse.quote(texto_resumo)}" if fone_cliente else "#"
             if fone_cliente:
                 st.markdown(f'<div class="btn-wpp"><a href="{link_wpp}" target="_blank">💬 WhatsApp Resumo</a></div>', unsafe_allow_html=True)
@@ -300,29 +301,29 @@ else:
     with st.container(border=True):
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 1px dashed #e8ddd3; padding-bottom: 6px;'>👤 1. DADOS DO COMPRADOR</div>", unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3)
-        with c1: e_nome = st.text_input("Nome Comprador", value=pedido.get('cliente_nome', ''))
-        with c2: e_tel = st.text_input("WhatsApp", value=pedido.get('cliente_telefone', ''))
-        with c3: e_cpf = st.text_input("CPF / CNPJ", value=pedido.get('cliente_cpf', ''))
+        with c1: e_nome = st.text_input("Nome Comprador", value=pedido.get('cliente_nome') or '')
+        with c2: e_tel = st.text_input("WhatsApp", value=pedido.get('cliente_telefone') or '')
+        with c3: e_cpf = st.text_input("CPF / CNPJ", value=pedido.get('cliente_cpf') or '')
 
     with st.container(border=True):
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 1px dashed #e8ddd3; padding-bottom: 6px;'>💌 2. DESTINATÁRIO, ENTREGA E CARTÃO</div>", unsafe_allow_html=True)
         c4, c5, c6 = st.columns(3)
-        with c4: e_dest = st.text_input("Nome Destinatário", value=pedido.get('destinatario_nome', ''))
-        with c5: e_dtel = st.text_input("Tel Destinatário", value=pedido.get('destinatario_telefone', ''))
-        with c6: e_motivo = st.text_input("Motivo/Ocasião", value=pedido.get('motivo_homenagem', ''))
+        with c4: e_dest = st.text_input("Nome Destinatário", value=pedido.get('destinatario_nome') or '')
+        with c5: e_dtel = st.text_input("Tel Destinatário", value=pedido.get('destinatario_telefone') or '')
+        with c6: e_motivo = st.text_input("Motivo/Ocasião", value=pedido.get('motivo_homenagem') or '')
         
-        e_end = st.text_area("Endereço Completo", value=pedido.get('endereco', ''), height=70)
+        e_end = st.text_area("Endereço Completo", value=pedido.get('endereco') or '', height=70)
         
         try: dt_obj = datetime.strptime(str(pedido.get('data_entrega'))[:10], "%Y-%m-%d").date()
         except: dt_obj = date.today()
         
         c7, c8 = st.columns(2)
         with c7: e_data = st.date_input("Data de Entrega", value=dt_obj, format="DD/MM/YYYY")
-        with c8: e_per = st.text_input("Período/Horário", value=pedido.get('periodo_entrega', ''))
+        with c8: e_per = st.text_input("Período/Horário", value=pedido.get('periodo_entrega') or '')
         
         c9, c10 = st.columns(2)
-        with c9: e_msg = st.text_area("Mensagem do Cartão", value=pedido.get('mensagem', ''), height=70)
-        with c10: e_anotacoes = st.text_area("Anotações Internas (Não aparece p/ cliente)", value=pedido.get('anotacoes_internas', ''), height=70)
+        with c9: e_msg = st.text_area("Mensagem do Cartão", value=pedido.get('mensagem') or '', height=70)
+        with c10: e_anotacoes = st.text_area("Anotações Internas (Não aparece p/ cliente)", value=pedido.get('anotacoes_internas') or '', height=70)
 
     with st.container(border=True):
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 1px dashed #e8ddd3; padding-bottom: 6px;'>🎁 3. PRODUTOS E CARRINHO (FECHAMENTO)</div>", unsafe_allow_html=True)
@@ -419,9 +420,12 @@ else:
         c_f1, c_f2, c_f3, c_f4 = st.columns(4)
         with c_f1: e_frete = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=tratar_preco(pedido.get('valor_frete', 0)))
         with c_f2: e_desc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0)
-        with c_f3: e_pag = st.selectbox("Pagamento", ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"], index=["Pix", "Cartão de Crédito", "Faturamento", "Transferência"].index(pedido.get('pagamento', 'Pix')) if pedido.get('pagamento') in ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"] else 0)
+        with c_f3: 
+            pag_atual = pedido.get('pagamento') or 'Pix'
+            e_pag = st.selectbox("Pagamento", ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"], index=["Pix", "Cartão de Crédito", "Faturamento", "Transferência"].index(pag_atual) if pag_atual in ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"] else 0)
         with c_f4: 
-            idx_e_status = STATUS_PERMITIDOS.index(pedido.get('status', 'Recebido')) if pedido.get('status') in STATUS_PERMITIDOS else 0
+            status_atual = pedido.get('status') or 'Recebido'
+            idx_e_status = STATUS_PERMITIDOS.index(status_atual) if status_atual in STATUS_PERMITIDOS else 0
             e_status = st.selectbox("Status", STATUS_PERMITIDOS, index=idx_e_status)
 
         valor_desconto = total_bruto * (e_desc / 100)
