@@ -362,7 +362,7 @@ if not st.session_state.modo_edicao:
             if link_pagamento_atual:
                 st.success(f"🔗 **Link de Pagamento Gerado:** {link_pagamento_atual}")
             else:
-                if st.button("💳 Gerar Link de Pagamento (InfinitePay)", use_container_width=True):
+                if st.button("💳 Gerar Link para Pagamento", use_container_width=True):
                     if gerar_link_checkout_infinitepay:
                         with st.spinner("Gerando link seguro na InfinitePay..."):
                             link_gerado = gerar_link_checkout_infinitepay(
@@ -424,7 +424,9 @@ if not st.session_state.modo_edicao:
                 texto_wpp += f"*TOTAL:* R$ {formatar_moeda(total_db)}\n\n"
                 
                 if link_pagamento_atual:
-                    texto_wpp += f"💳 *LINK DE PAGAMENTO SEGURO:*\n{link_pagamento_atual}\n\n"
+                    texto_wpp += f"💳 *PAGAMENTO SEGURO:*\n"
+                    texto_wpp += f"Acesse o link abaixo para pagar via Pix ou Cartão:\n"
+                    texto_wpp += f"{link_pagamento_atual}\n\n"
                 else:
                     texto_wpp += f"💳 *Pagamento:* {pedido.get('pagamento') or 'Pix'}\n\n"
                 
