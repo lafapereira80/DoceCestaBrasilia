@@ -36,7 +36,7 @@ st.markdown("""
 html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; color: #4a2e1b !important; font-size: 14px !important; }
 .block-container { padding-top: 1.5rem !important; padding-bottom: 4rem !important; max-width: 1200px !important; }
 
-/* Header Banner - FONTE DO MESMO TAMANHO PADRÃO */
+/* Header Banner */
 .order-header {
     background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%);
     padding: 16px 20px; border-radius: 12px; border: 1px solid #e8ddd3;
@@ -62,7 +62,7 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .item-pill { background: #faf7f3; border: 1px solid #e8ddd3; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; font-size: 13.5px; font-weight: 600; color: #4a2e1b; }
 .item-pill.discount { background: #fef7e0; border-color: #fce8b2; color: #b06000; }
 
-/* Resumo Financeiro Seguro */
+/* Resumo Financeiro */
 .resumo-financeiro {
     background: #fdfbf8; border: 1px solid #e8ddd3; border-radius: 10px; padding: 16px;
     display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 15px;
@@ -79,7 +79,7 @@ div[data-testid="stButton"] button[kind="primary"] { background: linear-gradient
 .btn-wpp > a { background: #25d366 !important; color: white !important; font-weight: 800 !important; font-size: 13px !important; border-radius: 8px !important; padding: 12px !important; display: flex; justify-content: center; align-items: center; text-decoration: none !important; box-shadow: 0 4px 10px rgba(37,211,102,0.2) !important; transition: all 0.2s; }
 .btn-wpp > a:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(37,211,102,0.3) !important; }
 
-/* Containers Fechados do Streamlit */
+/* Containers Fechados */
 div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff !important; border-radius: 12px !important; border: 1px solid #e8ddd3 !important; padding: 18px !important; box-shadow: 0 4px 12px rgba(90, 59, 40, 0.02) !important; margin-bottom: 15px !important; }
 </style>
 """, unsafe_allow_html=True)
@@ -116,7 +116,7 @@ if not pedido:
     st.error("Pedido não encontrado.")
     st.stop()
 
-# Helpers e Formatação (Tratamento Anti-NoneType/Null)
+# Helpers
 cliente_nome_banco = pedido.get('cliente_nome') or ''
 is_b2b = "[B2B]" in cliente_nome_banco
 is_vitrine = "[VITRINE]" in cliente_nome_banco
@@ -183,9 +183,8 @@ for l in ads_bruto.split('\n'):
 
 total_db = tratar_preco(pedido.get('valor_total', 0))
 frete_db = tratar_preco(pedido.get('valor_frete', 0))
-subtotal_db = total_db - frete_db + vd_db  # Restaurando o Subtotal Verdadeiro antes do desconto
+subtotal_db = total_db - frete_db + vd_db  
 desc_perc_inicial = float(round((vd_db / subtotal_db) * 100, 2)) if subtotal_db > 0 else 0.0
-
 
 # CONTROLE DE ESTADO
 if "modo_edicao" not in st.session_state:
@@ -201,7 +200,6 @@ if "edit_cart" not in st.session_state or st.session_state.get("edit_pedido_id")
         "quantidade": 1, "descricao": pedido.get("produtos") or ""
     })
 
-# Lista exata de status permitidos (Somente Recebido, Pago, Desistência)
 STATUS_PERMITIDOS = ["Recebido", "Pago", "Desistência"]
 
 # =====================================================
@@ -232,7 +230,6 @@ if not st.session_state.modo_edicao:
     col1, col2 = st.columns(2)
 
     with col1:
-        # CONSTRUÇÃO BLINDADA DO HTML (Para a caixa não vazar)
         html_info1 = f"""
         <div class="info-card">
             <div class="card-title">👤 Informações do Pedido</div>
@@ -255,7 +252,6 @@ if not st.session_state.modo_edicao:
         st.markdown(html_info1, unsafe_allow_html=True)
 
     with col2:
-        # CONSTRUÇÃO BLINDADA DO HTML DO DETALHAMENTO
         html_info2 = """
         <div class="info-card">
             <div class="card-title">🎁 Detalhamento</div>
@@ -288,12 +284,12 @@ if not st.session_state.modo_edicao:
         html_info2 += "</div>"
         st.markdown(html_info2, unsafe_allow_html=True)
 
-    # ANOTAÇÕES INTERNAS COM SALVAMENTO AUTOMÁTICO
+    # ANOTAÇÕES INTERNAS
     with st.container(border=True):
         st.markdown("<div style='font-size: 13px; font-weight: 800; color: #b06000; margin-bottom: 4px; text-transform: uppercase;'>⚠️ Anotações Internas (Para a Equipe)</div>", unsafe_allow_html=True)
         st.text_area("Anotações Internas", value=pedido.get('anotacoes_internas') or '', height=80, key=f"nota_{pedido_id}", on_change=salvar_nota_interna, args=(pedido_id, f"nota_{pedido_id}"), label_visibility="collapsed", placeholder="Digite aqui anotações para a equipe e clique fora da caixa para salvar automaticamente...")
 
-    # RESUMO FINANCEIRO SEGURO E TRANSPARENTE
+    # RESUMO FINANCEIRO
     with st.container(border=True):
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #137333; margin-bottom: 8px; text-transform: uppercase;'>💰 Resumo Financeiro & Ações</div>", unsafe_allow_html=True)
         
@@ -347,9 +343,6 @@ if not st.session_state.modo_edicao:
                 supabase.table("pedidos").update({"status": novo_status_rapido}).eq("id", pedido_id).execute()
                 st.rerun()
         with c_btn3:
-            # =========================================================
-            # CONSTRUÇÃO DO RESUMO WHATSAPP COM LINK DE PAGAMENTO
-            # =========================================================
             fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone') or '')
             
             linhas_wpp = ""
@@ -390,7 +383,6 @@ if not st.session_state.modo_edicao:
             texto_wpp += f"━━━━━━━━━━━━━━━━━━━━\n"
             texto_wpp += f"*TOTAL:* R$ {formatar_moeda(total_db)}\n\n"
             
-            # ADICIONANDO O LINK DE PAGAMENTO SE EXISTIR
             if link_pagamento_atual:
                 texto_wpp += f"💳 *LINK DE PAGAMENTO SEGURO:*\n{link_pagamento_atual}\n\n"
             else:
@@ -409,7 +401,7 @@ if not st.session_state.modo_edicao:
 # MODO EDIÇÃO (TOTALMENTE NATIVO E SEGURO)
 # =====================================================
 else:
-    st.info("✏️ **Modo Edição Ativado.** Altere os dados abaixo e clique em Salvar no final da página.")
+    st.info("✏️ **Modo Edição Ativado.** Ao Salvar, o link de pagamento antigo (se existir) será apagado para você gerar um novo com os valores atualizados.")
     
     with st.container(border=True):
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 1px dashed #e8ddd3; padding-bottom: 6px;'>👤 1. DADOS DO COMPRADOR</div>", unsafe_allow_html=True)
@@ -596,7 +588,9 @@ else:
                 "pagamento": e_pag,
                 "status": e_status,
                 "valor_frete": e_frete,
-                "valor_total": total_liquido
+                "valor_total": total_liquido,
+                "infinitepay_url": None, # MÁGICA: Apaga o link velho para gerar o novo
+                "infinitepay_transaction_id": None
             }
             try:
                 supabase.table("pedidos").update(dados_update).eq("id", pedido_id).execute()
