@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 import mimetypes
+import urllib.parse  # <--- ESSA É A LINHA QUE FALTAVA!
 from pathlib import Path
 from datetime import date
 
