@@ -177,7 +177,7 @@ if "edit_cart" not in st.session_state or st.session_state.get("edit_pedido_id")
         "quantidade": 1, "descricao": pedido.get("produtos") or ""
     })
 
-# Lista exata de status permitidos
+# Lista exata de status permitidos (Somente Recebido, Pago, Desistência)
 STATUS_PERMITIDOS = ["Recebido", "Pago", "Desistência"]
 
 # =====================================================
@@ -208,6 +208,7 @@ if not st.session_state.modo_edicao:
     col1, col2 = st.columns(2)
 
     with col1:
+        # CONSTRUÇÃO BLINDADA DO HTML (Para a caixa não vazar)
         html_info1 = f"""
         <div class="info-card">
             <div class="card-title">👤 Informações do Pedido</div>
@@ -230,6 +231,7 @@ if not st.session_state.modo_edicao:
         st.markdown(html_info1, unsafe_allow_html=True)
 
     with col2:
+        # CONSTRUÇÃO BLINDADA DO HTML DO DETALHAMENTO
         html_info2 = """
         <div class="info-card">
             <div class="card-title">🎁 Detalhamento</div>
@@ -262,7 +264,7 @@ if not st.session_state.modo_edicao:
         html_info2 += "</div>"
         st.markdown(html_info2, unsafe_allow_html=True)
 
-    # ANOTAÇÕES INTERNAS COM SALVAMENTO AUTOMÁTICO (NO MODO DE VISUALIZAÇÃO)
+    # ANOTAÇÕES INTERNAS COM SALVAMENTO AUTOMÁTICO
     with st.container(border=True):
         st.markdown("<div style='font-size: 13px; font-weight: 800; color: #b06000; margin-bottom: 4px; text-transform: uppercase;'>⚠️ Anotações Internas (Para a Equipe)</div>", unsafe_allow_html=True)
         st.text_area("Anotações Internas", value=pedido.get('anotacoes_internas') or '', height=80, key=f"nota_{pedido_id}", on_change=salvar_nota_interna, args=(pedido_id, f"nota_{pedido_id}"), label_visibility="collapsed", placeholder="Digite aqui anotações para a equipe e clique fora da caixa para salvar automaticamente...")
@@ -310,55 +312,52 @@ if not st.session_state.modo_edicao:
                 supabase.table("pedidos").update({"status": novo_status_rapido}).eq("id", pedido_id).execute()
                 st.rerun()
         with c_btn3:
+            # =========================================================
+            # CONSTRUÇÃO DO RESUMO WHATSAPP (EXATAMENTE COMO A PÁGINA 19)
+            # =========================================================
             fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone') or '')
             
-            # --- CONSTRUÇÃO DO RESUMO WHATSAPP FORMATADO ---
-            prods_resumo = [p.strip() for p in (pedido.get('produtos') or '').split('\n') if p.strip()]
-            adics_resumo = [a.strip() for a in (pedido.get('adicionais') or '').split('\n') if a.strip()]
+            linhas_wpp = ""
+            produtos_str_wpp = pedido.get('produtos') or ''
+            if produtos_str_wpp:
+                linhas_wpp += "\n".join([f"📦 {p.strip()}" for p in produtos_str_wpp.split('\n') if p.strip()])
+
+            adicionais_str_wpp = pedido.get('adicionais') or ''
+            linhas_extras_wpp = ""
+            desconto_wpp = ""
+            if adicionais_str_wpp:
+                for linha in adicionais_str_wpp.split('\n'):
+                    linha_l = linha.strip()
+                    if not linha_l or "EXTRAS" in linha_l.upper(): 
+                        continue
+                    if "Desconto" in linha_l or "desconto" in linha_l.lower():
+                        desconto_wpp += f"🔻 {linha_l}\n"
+                    else:
+                        linhas_extras_wpp += f"🎀 {linha_l}\n"
+                        
+            if linhas_extras_wpp:
+                if linhas_wpp: linhas_wpp += "\n"
+                linhas_wpp += linhas_extras_wpp.strip()
+                
+            if not linhas_wpp:
+                linhas_wpp = f"📦 {pedido.get('cesta_nome') or 'Itens do Pedido'}"
+
+            texto_wpp = f"*RESUMO DO PEDIDO - DOCE CESTA BRASÍLIA* 🎁\n\n"
+            texto_wpp += f"👤 *De:* {cliente_limpo}\n"
+            texto_wpp += f"💝 *Para:* {pedido.get('destinatario_nome') or 'O mesmo'}\n"
+            texto_wpp += f"📅 *Entrega:* {formata_data(pedido.get('data_entrega'))} ({pedido.get('periodo_entrega') or 'A combinar'})\n"
+            texto_wpp += f"📍 *Local:* {pedido.get('endereco') or 'Não informado'}\n\n"
+            texto_wpp += f"*ITENS:*\n{linhas_wpp}\n\n"
+            texto_wpp += f"*VALORES:*\n"
+            texto_wpp += f"💰 Subtotal: R$ {formatar_moeda(subtotal_db)}\n"
+            texto_wpp += f"🚚 Frete: R$ {formatar_moeda(frete_db)}\n"
+            if desconto_wpp:
+                texto_wpp += f"{desconto_wpp.strip()}\n"
+            texto_wpp += f"━━━━━━━━━━━━━━━━━━━━\n"
+            texto_wpp += f"*TOTAL:* R$ {formatar_moeda(total_db)}\n\n"
+            texto_wpp += f"💳 *Pagamento:* {pedido.get('pagamento') or 'Pix'}"
             
-            texto_itens = ""
-            texto_descontos = ""
-            
-            for p in prods_resumo:
-                texto_itens += f"📦 {p}\n"
-            for a in adics_resumo:
-                if "Desconto" in a or "desconto" in a.lower():
-                    texto_descontos += f"🔻 {a}\n"
-                else:
-                    texto_itens += f"✨ {a}\n"
-                    
-            if not texto_itens.strip():
-                texto_itens = f"📦 {pedido.get('cesta_nome') or 'Pedido Customizado'}\n"
-
-            texto_resumo = f"""✨ *RESUMO DO PEDIDO | DOCE CESTA BRASÍLIA* ✨
-━━━━━━━━━━━━━━━━━━━━━━━
-
-👤 Olá, *{cliente_limpo}*!
-Aqui está o detalhamento do seu pedido:
-
-🚚 *DADOS DA ENTREGA*
-📍 *Local:* {pedido.get('endereco') or 'Não informado'}
-📅 *Data:* {formata_data(pedido.get('data_entrega'))}
-🕒 *Horário:* {pedido.get('periodo_entrega') or 'A combinar'}
-💝 *Destinatário:* {pedido.get('destinatario_nome') or 'O mesmo'}
-
-🛍️ *ITENS DO PEDIDO*
-{texto_itens.strip()}
-
-💵 *RESUMO FINANCEIRO*
-▫️ Subtotal: R$ {formatar_moeda(subtotal_db)}
-▫️ Frete/Taxa: R$ {formatar_moeda(frete_db)}
-"""
-            if texto_descontos:
-                texto_resumo += f"{texto_descontos.strip()}\n"
-
-            texto_resumo += f"""━━━━━━━━━━━━━━━━━━━━━━━
-💰 *TOTAL A PAGAR:* R$ {formatar_moeda(total_db)}
-💳 *Pagamento:* {pedido.get('pagamento') or 'Pix'}
-
-Qualquer dúvida, estamos à disposição! 🌻"""
-            
-            link_wpp = f"https://wa.me/55{fone_cliente}?text={urllib.parse.quote(texto_resumo)}" if fone_cliente else "#"
+            link_wpp = f"https://wa.me/55{fone_cliente}?text={urllib.parse.quote(texto_wpp)}" if fone_cliente else "#"
             if fone_cliente:
                 st.markdown(f'<div class="btn-wpp"><a href="{link_wpp}" target="_blank">💬 WhatsApp Resumo</a></div>', unsafe_allow_html=True)
             else:
