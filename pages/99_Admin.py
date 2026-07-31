@@ -23,10 +23,29 @@ div[data-testid="stForm"] { background: #ffffff; border: 1px solid #e8ddd3; bord
 .welcome-title { font-size: 28px; font-weight: 800; color: #c5721f; margin-bottom: 5px; }
 .welcome-sub { font-size: 15px; color: #775a46; font-weight: 500; }
 
-.section-title { font-size: 18px; font-weight: 800; color: #5a3b28; margin-top: 20px; margin-bottom: 15px; border-bottom: 2px dashed #f5eee6; padding-bottom: 8px; }
+.section-title { font-size: 18px; font-weight: 800; color: #5a3b28; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px dashed #f5eee6; padding-bottom: 8px; }
 
-a[data-testid="stPageLink"] { background: #ffffff !important; border: 1px solid #e8ddd3 !important; border-radius: 14px !important; padding: 15px 20px !important; transition: all 0.2s ease !important; display: block !important; box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important; font-weight: 700 !important; color: #4a2e1b !important; margin-bottom: 10px !important; }
-a[data-testid="stPageLink"]:hover { border-color: #c5721f !important; transform: translateY(-3px) !important; box-shadow: 0 8px 15px rgba(197,114,31,0.1) !important; text-decoration: none !important; }
+/* Botões Estilizados com Sombra, Gradiente Suave e Efeito de Profundidade */
+a[data-testid="stPageLink"] { 
+    background: linear-gradient(135deg, #ffffff 0%, #fcfbf8 100%) !important; 
+    border: 1px solid #e8ddd3 !important; 
+    border-radius: 16px !important; 
+    padding: 18px 20px !important; 
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important; 
+    display: block !important; 
+    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.05) !important; 
+    font-weight: 700 !important; 
+    color: #4a2e1b !important; 
+    margin-bottom: 12px !important; 
+}
+a[data-testid="stPageLink"]:hover { 
+    border-color: #c5721f !important; 
+    background: linear-gradient(135deg, #ffffff 0%, #fff7f0 100%) !important;
+    transform: translateY(-4px) !important; 
+    box-shadow: 0 10px 25px rgba(197, 114, 31, 0.15) !important; 
+    text-decoration: none !important; 
+}
+
 div[data-testid="stFormSubmitButton"] button { border-radius: 12px !important; font-weight: 800 !important; height: 45px !important; background: linear-gradient(135deg, #137333 0%, #0d4e22) !important; color: white !important; border: none !important;}
 div[data-testid="stFormSubmitButton"] button:hover { transform: translateY(-2px) !important; box-shadow: 0 6px 15px rgba(19, 115, 51, 0.2) !important; }
 </style>
@@ -76,7 +95,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- OPERAÇÃO & VENDAS (5 itens -> Divididos em 4 e 1) ---
+# --- OPERAÇÃO & VENDAS ---
 st.markdown('<div class="section-title">📦 Operação & Vendas</div>', unsafe_allow_html=True)
 row1_cols = st.columns(4)
 with row1_cols[0]: st.page_link("pages/02_Pedidos.py", label="Gestão de Pedidos", icon="📋")
@@ -87,13 +106,13 @@ with row1_cols[3]: st.page_link("pages/16_Previsao.py", label="Previsão de Prod
 row2_cols = st.columns(4)
 with row2_cols[0]: st.page_link("pages/08_Entregas.py", label="Rotas de Entrega", icon="🛵")
 
-# --- GESTÃO & FINANCEIRO (2 itens) ---
+# --- GESTÃO & FINANCEIRO ---
 st.markdown('<div class="section-title">📊 Gestão & Financeiro</div>', unsafe_allow_html=True)
 fin_cols = st.columns(4)
 with fin_cols[0]: st.page_link("pages/03_Clientes.py", label="Base de Clientes", icon="👥")
 with fin_cols[1]: st.page_link("pages/06_Financeiro.py", label="Painel Financeiro", icon="💰")
 
-# --- CATÁLOGO DA LOJA (4 itens) ---
+# --- CATÁLOGO DA LOJA ---
 st.markdown('<div class="section-title">🍓 Catálogo da Loja</div>', unsafe_allow_html=True)
 cat_cols = st.columns(4)
 with cat_cols[0]: st.page_link("pages/04_Cestas.py", label="Cestas e Kits", icon="🧺")
@@ -101,7 +120,7 @@ with cat_cols[1]: st.page_link("pages/05_Produtos.py", label="Produtos e Insumos
 with cat_cols[2]: st.page_link("pages/15_Categorias.py", label="Categorias", icon="🏷️")
 with cat_cols[3]: st.page_link("pages/17_Secoes_Vitrine.py", label="Seções da Vitrine", icon="🖥️")
 
-# --- CONFIGURAÇÕES (2 itens) ---
+# --- CONFIGURAÇÕES ---
 st.markdown('<div class="section-title">⚙️ Configurações</div>', unsafe_allow_html=True)
 cfg_cols = st.columns(4)
 with cfg_cols[0]: st.page_link("pages/07_Usuarios.py", label="Gerenciar Usuários", icon="🔑")
