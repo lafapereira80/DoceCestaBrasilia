@@ -1,7 +1,7 @@
 import streamlit as st
 
 def configurar_pagina():
-    """Oculta elementos padrão do Streamlit, aplica estilos globais e remove o espaço superior da barra lateral"""
+    """Oculta elementos padrão do Streamlit, aplica estilos globais, fontes premium e remove o espaço superior da barra lateral"""
     st.markdown(
         """
         <style>
@@ -74,14 +74,14 @@ def menu_lateral():
                 st.markdown("**📦 OPERAÇÃO & VENDAS**")
                 st.page_link("pages/02_Pedidos.py", label="Gestão de Pedidos", icon="📋")
                 st.page_link("pages/19_Pedido_Manual.py", label="Venda Varejo (PDV)", icon="🛍️")
+                st.page_link("pages/18_Corporativo.py", label="Vendas B2B", icon="🏢")
+                st.page_link("pages/16_Previsao.py", label="Previsão de Produção", icon="📈")
                 st.page_link("pages/08_Entregas.py", label="Rotas de Entrega", icon="🛵")
-                st.page_link("pages/03_Clientes.py", label="Base de Clientes", icon="👥")
                 
                 st.write("")
                 st.markdown("**📊 GESTÃO & FINANCEIRO**")
+                st.page_link("pages/03_Clientes.py", label="Base de Clientes", icon="👥")
                 st.page_link("pages/06_Financeiro.py", label="Painel Financeiro", icon="💰")
-                st.page_link("pages/18_Corporativo.py", label="Vendas B2B", icon="🏢")
-                st.page_link("pages/16_Previsao.py", label="Previsão de Produção", icon="📈")
                 
                 st.write("")
                 st.markdown("**🍓 CATÁLOGO DA LOJA**")
@@ -90,10 +90,10 @@ def menu_lateral():
                 st.page_link("pages/15_Categorias.py", label="Categorias", icon="🏷️")
                 st.page_link("pages/17_Secoes_Vitrine.py", label="Seções da Vitrine", icon="🖥️")
 
-                if perfil == "Administrador":
-                    st.write("")
-                    st.markdown("**⚙️ CONFIGURAÇÕES**")
-                    st.page_link("pages/07_Usuarios.py", label="Gerenciar Usuários", icon="🔑")
+                st.write("")
+                st.markdown("**⚙️ CONFIGURAÇÕES**")
+                st.page_link("pages/07_Usuarios.py", label="Gerenciar Usuarios", icon="🔑")
+                st.page_link("app.py", label="Ver Vitrine da Loja", icon="🌐")
 
             elif perfil == "Entregador":
                 st.markdown("**🛵 ÁREA DO ENTREGADOR**")
@@ -101,8 +101,6 @@ def menu_lateral():
 
             st.write("")
             st.divider()
-            
-            st.page_link("app.py", label="Ver Vitrine da Loja", icon="🌐")
             
             if st.button("🚪 Sair (Logout)", use_container_width=True):
                 st.session_state.clear()
