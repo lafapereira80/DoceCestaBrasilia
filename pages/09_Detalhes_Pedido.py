@@ -169,6 +169,24 @@ def carregar_config_cesta_cached(cesta_id):
     try: return carregar_configuracao_cesta(cesta_id)
     except: return []
 
+# =====================================================
+# MATEMÁTICA SEGURA DE RECUPERAÇÃO DO DESCONTO
+# =====================================================
+vd_db = 0.0
+ads_bruto = pedido.get('adicionais') or ''
+for l in ads_bruto.split('\n'):
+    if "Desconto" in l or "desconto" in l.lower():
+        m = re.search(r'R\$\s*([\d\.,]+)', l)
+        if m:
+            try: vd_db += float(m.group(1).replace('.', '').replace(',', '.'))
+            except: pass
+
+total_db = tratar_preco(pedido.get('valor_total', 0))
+frete_db = tratar_preco(pedido.get('valor_frete', 0))
+subtotal_db = total_db - frete_db + vd_db  # Restaurando o Subtotal Verdadeiro antes do desconto
+desc_perc_inicial = float(round((vd_db / subtotal_db) * 100, 2)) if subtotal_db > 0 else 0.0
+
+
 # CONTROLE DE ESTADO
 if "modo_edicao" not in st.session_state:
     st.session_state.modo_edicao = False
@@ -179,7 +197,7 @@ if "edit_cart" not in st.session_state or st.session_state.get("edit_pedido_id")
     
     st.session_state["edit_cart"].append({
         "id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": pedido.get("cesta_id"), 
-        "nome": pedido.get("cesta_nome") or "Cesta/Pacote Base", "preco_unitario": tratar_preco(pedido.get('valor_total', 0)) - tratar_preco(pedido.get('valor_frete', 0)), 
+        "nome": pedido.get("cesta_nome") or "Cesta/Pacote Base", "preco_unitario": subtotal_db, 
         "quantidade": 1, "descricao": pedido.get("produtos") or ""
     })
 
@@ -255,8 +273,8 @@ if not st.session_state.modo_edicao:
         if adicionais_str:
             for linha in adicionais_str.split("\n"):
                 linha_limpa = linha.strip()
-                if linha_limpa:
-                    if "Desconto" in linha_limpa: 
+                if linha_limpa and not "EXTRAS E ADICIONAIS" in linha_limpa:
+                    if "Desconto" in linha_limpa or "desconto" in linha_limpa.lower(): 
                         html_info2 += f"<div class='item-pill discount'>🔻 {linha_limpa}</div>"
                     else: 
                         html_info2 += f"<div class='item-pill'>✨ {linha_limpa}</div>"
@@ -275,32 +293,19 @@ if not st.session_state.modo_edicao:
         st.markdown("<div style='font-size: 13px; font-weight: 800; color: #b06000; margin-bottom: 4px; text-transform: uppercase;'>⚠️ Anotações Internas (Para a Equipe)</div>", unsafe_allow_html=True)
         st.text_area("Anotações Internas", value=pedido.get('anotacoes_internas') or '', height=80, key=f"nota_{pedido_id}", on_change=salvar_nota_interna, args=(pedido_id, f"nota_{pedido_id}"), label_visibility="collapsed", placeholder="Digite aqui anotações para a equipe e clique fora da caixa para salvar automaticamente...")
 
-    # RESUMO FINANCEIRO E AÇÕES
-    total_db = tratar_preco(pedido.get('valor_total', 0))
-    frete_db = tratar_preco(pedido.get('valor_frete', 0))
-    subtotal_db = total_db - frete_db
-
+    # RESUMO FINANCEIRO SEGURO E TRANSPARENTE
     with st.container(border=True):
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #137333; margin-bottom: 8px; text-transform: uppercase;'>💰 Resumo Financeiro & Ações</div>", unsafe_allow_html=True)
         
+        linha_html_desconto = f'<div class="resumo-item"><div class="resumo-label">Desconto</div><div class="resumo-valor" style="color:#c5221f;">- R$ {formatar_moeda(vd_db)}</div></div>' if vd_db > 0 else ''
+        
         st.markdown(f"""
         <div class="resumo-financeiro">
-            <div class="resumo-item">
-                <div class="resumo-label">Subtotal / Itens</div>
-                <div class="resumo-valor">R$ {formatar_moeda(subtotal_db)}</div>
-            </div>
-            <div class="resumo-item">
-                <div class="resumo-label">Frete</div>
-                <div class="resumo-valor">R$ {formatar_moeda(frete_db)}</div>
-            </div>
-            <div class="resumo-item">
-                <div class="resumo-label">Pagamento</div>
-                <div class="resumo-valor">{pedido.get('pagamento') or 'Pix'}</div>
-            </div>
-            <div class="resumo-item">
-                <div class="resumo-label">VALOR TOTAL</div>
-                <div class="resumo-destaque">R$ {formatar_moeda(total_db)}</div>
-            </div>
+            <div class="resumo-item"><div class="resumo-label">Subtotal</div><div class="resumo-valor">R$ {formatar_moeda(subtotal_db)}</div></div>
+            {linha_html_desconto}
+            <div class="resumo-item"><div class="resumo-label">Frete</div><div class="resumo-valor">R$ {formatar_moeda(frete_db)}</div></div>
+            <div class="resumo-item"><div class="resumo-label">Pagamento</div><div class="resumo-valor">{pedido.get("pagamento") or "Pix"}</div></div>
+            <div class="resumo-item"><div class="resumo-label">TOTAL FINAL</div><div class="resumo-destaque">R$ {formatar_moeda(total_db)}</div></div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -354,14 +359,13 @@ if not st.session_state.modo_edicao:
 
             adicionais_str_wpp = pedido.get('adicionais') or ''
             linhas_extras_wpp = ""
-            desconto_wpp = ""
             if adicionais_str_wpp:
                 for linha in adicionais_str_wpp.split('\n'):
                     linha_l = linha.strip()
-                    if not linha_l or "EXTRAS" in linha_l.upper(): 
+                    if not linha_l or "EXTRAS" in linha_l.upper() or "ADICIONAIS" in linha_l.upper(): 
                         continue
                     if "Desconto" in linha_l or "desconto" in linha_l.lower():
-                        desconto_wpp += f"🔻 {linha_l}\n"
+                        continue
                     else:
                         linhas_extras_wpp += f"🎀 {linha_l}\n"
                         
@@ -380,9 +384,9 @@ if not st.session_state.modo_edicao:
             texto_wpp += f"*ITENS:*\n{linhas_wpp}\n\n"
             texto_wpp += f"*VALORES:*\n"
             texto_wpp += f"💰 Subtotal: R$ {formatar_moeda(subtotal_db)}\n"
+            if vd_db > 0:
+                texto_wpp += f"🔻 Desconto: - R$ {formatar_moeda(vd_db)}\n"
             texto_wpp += f"🚚 Frete: R$ {formatar_moeda(frete_db)}\n"
-            if desconto_wpp:
-                texto_wpp += f"{desconto_wpp.strip()}\n"
             texto_wpp += f"━━━━━━━━━━━━━━━━━━━━\n"
             texto_wpp += f"*TOTAL:* R$ {formatar_moeda(total_db)}\n\n"
             
@@ -531,7 +535,7 @@ else:
         st.markdown("<hr style='border-top: 1px dashed #e8ddd3; margin: 15px 0;'>", unsafe_allow_html=True)
         c_f1, c_f2, c_f3, c_f4 = st.columns(4)
         with c_f1: e_frete = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=tratar_preco(pedido.get('valor_frete', 0)))
-        with c_f2: e_desc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0)
+        with c_f2: e_desc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=desc_perc_inicial)
         with c_f3: e_pag = st.selectbox("Pagamento", ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"], index=["Pix", "Cartão de Crédito", "Faturamento", "Transferência"].index(pedido.get('pagamento') or 'Pix') if pedido.get('pagamento') in ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"] else 0)
         with c_f4: 
             status_atual = pedido.get('status') or 'Recebido'
@@ -541,10 +545,12 @@ else:
         valor_desconto = total_bruto * (e_desc / 100)
         total_liquido = total_bruto - valor_desconto + e_frete
 
+        linha_html_desconto_edit = f'<div class="resumo-item"><div class="resumo-label">Desconto</div><div class="resumo-valor" style="color:#c5221f;">- R$ {formatar_moeda(valor_desconto)}</div></div>' if valor_desconto > 0 else ''
+
         st.markdown(f"""
         <div class="resumo-financeiro">
             <div class="resumo-item"><div class="resumo-label">Subtotal</div><div class="resumo-valor">R$ {formatar_moeda(total_bruto)}</div></div>
-            <div class="resumo-item"><div class="resumo-label">Desconto</div><div class="resumo-valor" style="color:#c5221f;">- R$ {formatar_moeda(valor_desconto)}</div></div>
+            {linha_html_desconto_edit}
             <div class="resumo-item"><div class="resumo-label">Frete</div><div class="resumo-valor">R$ {formatar_moeda(e_frete)}</div></div>
             <div class="resumo-item"><div class="resumo-label">TOTAL FINAL</div><div class="resumo-destaque">R$ {formatar_moeda(total_liquido)}</div></div>
         </div>
@@ -565,8 +571,10 @@ else:
             n_cesta = lista_cestas[0]["nome"] if lista_cestas else "Pedido Editado"
             id_cesta = lista_cestas[0]["cesta_id"] if lista_cestas else None
             
-            msg_add = f"Desconto de {e_desc}% aplicado." if e_desc > 0 else ""
-            if str_ext: msg_add += "\n\nEXTRAS E ADICIONAIS:\n" + "\n".join(str_ext)
+            msg_add = f"Desconto: - R$ {formatar_moeda(valor_desconto)}" if valor_desconto > 0 else ""
+            if str_ext: 
+                if msg_add: msg_add += "\n\n"
+                msg_add += "EXTRAS E ADICIONAIS:\n" + "\n".join(str_ext)
 
             dados_update = {
                 "cliente_nome": e_nome.strip() + (" [B2B]" if is_b2b else (" [VITRINE]" if is_vitrine else "")),
