@@ -2,7 +2,7 @@ import requests
 import streamlit as st
 
 # Sua InfiniteTag real
-INFINITEPAY_HANDLE = "lafayette-improise" 
+INFINITEPAY_HANDLE = "$lafayette-improise" 
 
 def gerar_link_checkout_infinitepay(pedido_id: str, valor_total: float, cliente_nome: str, cliente_tel: str):
     """
