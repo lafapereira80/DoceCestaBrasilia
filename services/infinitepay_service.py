@@ -2,7 +2,7 @@ import requests
 import streamlit as st
 
 # Substitua pela sua InfiniteTag real (aquela que aparece no app, mas SEM o símbolo $)
-INFINITEPAY_HANDLE = "sua_ininitetag_aqui" 
+INFINITEPAY_HANDLE = "lafayette-improise" 
 
 def gerar_link_checkout_infinitepay(pedido_id: str, valor_total: float, cliente_nome: str, cliente_tel: str):
     """
