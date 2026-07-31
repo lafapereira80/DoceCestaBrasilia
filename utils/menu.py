@@ -1,7 +1,7 @@
 import streamlit as st
 
 def configurar_pagina():
-    """Oculta elementos padrão do Streamlit e aplica estilos globais e fontes premium"""
+    """Oculta elementos padrão do Streamlit, aplica estilos globais e remove o espaço superior da barra lateral"""
     st.markdown(
         """
         <style>
@@ -15,6 +15,14 @@ def configurar_pagina():
         
         /* ESCONDE A LISTA DE ARQUIVOS PADRÃO DO STREAMLIT NO MENU LATERAL */
         [data-testid="stSidebarNav"] {display: none !important;}
+        
+        /* REMOVE O ESPAÇO EM BRANCO GRANDE NO TOPO DA BARRA LATERAL (SIDEBAR) */
+        section[data-testid="stSidebar"] > div:first-child {
+            padding-top: 0rem !important;
+        }
+        [data-testid="stSidebar"] .block-container {
+            padding-top: 0.8rem !important;
+        }
         </style>
         """,
         unsafe_allow_html=True
@@ -29,8 +37,8 @@ def menu_lateral():
         # BRANDING MINIMALISTA PREMIUM (BOUTIQUE)
         # ==========================================
         html_branding = """
-<div style="text-align: center;">
-    <div style="position: relative;">
+<div style="text-align: center; margin-top: 0px; margin-bottom: 25px;">
+    <div style="position: relative; z-index: 2; margin-bottom: -22px;">
         <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: linear-gradient(135deg, #c5721f 0%, #a65d14 100%); border-radius: 50%; border: 4px solid #f6f7f8; color: white; font-size: 20px; box-shadow: 0 4px 10px rgba(197, 114, 31, 0.25);">🧺</div>
     </div>
     <div style="background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 32px 15px 15px 15px; position: relative; z-index: 1; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03);">
