@@ -166,9 +166,9 @@ def buscar_pedidos_producao():
     
     lista_total = (res_pago.data or []) + (res_prod.data or [])
     
-    # Remove duplicados caso haja sobreposição de IDs
+    # Remove duplicados caso haja sobreposição de IDs e ordena pela data
     unicos = {p["id"]: p for p in lista_total}.values()
-    return list(unicos)
+    return sorted(list(unicos), key=lambda x: x.get('data_entrega') or '')
 
 pedidos = buscar_pedidos_producao()
 
@@ -221,7 +221,7 @@ if st.session_state.pedido_em_montagem:
         with st.container(border=True):
             col_tit, col_fechar = st.columns([4, 1])
             with col_tit:
-                st.markdown(f"### 🛠️ Montagem da Cesta / Lote (Pedido #{p_ativo['id']})")
+                st.markdown(f"### 🛠️ Montagem da Cesta / Lote (Pedido #{str(p_ativo['id']).split('-')[0].upper()})")
             with col_fechar:
                 if st.button("❌ Fechar Painel", use_container_width=True):
                     st.session_state.pedido_em_montagem = None
@@ -241,8 +241,8 @@ if st.session_state.pedido_em_montagem:
                 """, unsafe_allow_html=True
             )
             
-            if p_ativo.get('pedido_especial'):
-                st.warning(f"✨ **Atenção - Solicitação Especial:** {p_ativo.get('pedido_especial')}")
+            if p_ativo.get('anotacoes_internas'):
+                st.warning(f"✨ **Atenções Internas:** {p_ativo.get('anotacoes_internas')}")
             
             st.markdown("#### 📋 Checklist de Verificação Oficial")
             
@@ -468,7 +468,7 @@ if dados_previsao:
             col_esq, col_dir = st.columns(2)
             
             for idx, p in enumerate(pedidos_lista):
-                pid = p["id"]
+                pid = str(p["id"]).split('-')[0].upper()
                 montada = p.get("cesta_montada", False)
                 status_badge = '<span class="badge-status-pronta">✅ PRONTA</span>' if montada else '<span class="badge-status-pendente">⏳ PENDENTE</span>'
                 
@@ -509,8 +509,8 @@ if dados_previsao:
                 
                 with col_alvo:
                     st.markdown(card_html, unsafe_allow_html=True)
-                    if st.button("🔍 Abrir Gaveta de Montagem", key=f"abrir_montagem_{pid}", use_container_width=True):
-                        st.session_state.pedido_em_montagem = pid
+                    if st.button("🔍 Abrir Gaveta de Montagem", key=f"abrir_montagem_{p['id']}", use_container_width=True):
+                        st.session_state.pedido_em_montagem = p['id']
                         st.rerun()
 
 st.write("")
