@@ -166,8 +166,8 @@ if "edit_cart" not in st.session_state or st.session_state.get("edit_pedido_id")
         "quantidade": 1, "descricao": pedido.get("produtos") or ""
     })
 
-# Lista exata de status permitidos
-STATUS_PERMITIDOS = ["Recebido", "Pago", "Em Rota de Entrega", "Desistência"]
+# Lista exata de status permitidos (Somente Recebido, Pago, Desistência)
+STATUS_PERMITIDOS = ["Recebido", "Pago", "Desistência"]
 
 # =====================================================
 # CABEÇALHO COM BOTÃO VOLTAR
@@ -420,9 +420,7 @@ else:
         c_f1, c_f2, c_f3, c_f4 = st.columns(4)
         with c_f1: e_frete = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=tratar_preco(pedido.get('valor_frete', 0)))
         with c_f2: e_desc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0)
-        with c_f3: 
-            pag_atual = pedido.get('pagamento') or 'Pix'
-            e_pag = st.selectbox("Pagamento", ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"], index=["Pix", "Cartão de Crédito", "Faturamento", "Transferência"].index(pag_atual) if pag_atual in ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"] else 0)
+        with c_f3: e_pag = st.selectbox("Pagamento", ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"], index=["Pix", "Cartão de Crédito", "Faturamento", "Transferência"].index(pedido.get('pagamento') or 'Pix') if pedido.get('pagamento') in ["Pix", "Cartão de Crédito", "Faturamento", "Transferência"] else 0)
         with c_f4: 
             status_atual = pedido.get('status') or 'Recebido'
             idx_e_status = STATUS_PERMITIDOS.index(status_atual) if status_atual in STATUS_PERMITIDOS else 0
