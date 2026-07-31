@@ -1,226 +1,140 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import urllib.parse
+
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 
-st.set_page_config(page_title="Gestão de Pedidos", page_icon="📋", layout="wide")
+# =====================================================
+# CONFIGURAÇÃO DA PÁGINA
+# =====================================================
+st.set_page_config(page_title="Mural de Pedidos", page_icon="📋", layout="wide")
 configurar_pagina()
 menu_lateral()
 administrador_operador()
 
-# ==========================================
-# CSS PREMIUM (ABAS COM LINHA INFERIOR E CARDS AMPLOS EM LINHA ÚNICA)
-# ==========================================
+# =====================================================
+# CSS PREMIUM & PERFORMANCE
+# =====================================================
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
-html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; color: #4a2e1b; }
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; color: #4a2e1b !important; }
+.block-container { padding-top: 1.5rem !important; padding-bottom: 4rem !important; max-width: 1300px !important; }
 
-.header-banner {
-    background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%); padding: 25px 20px;
-    border-radius: 20px; border: 1px solid #e8ddd3; box-shadow: 0 8px 24px rgba(90, 59, 40, 0.04);
-    margin-bottom: 20px; text-align: center;
+.header-title { font-size: 28px !important; font-weight: 800 !important; color: #c5721f !important; margin-bottom: 5px;}
+.header-subtitle { font-size: 13px !important; color: #775a46 !important; font-weight: 600 !important; margin-bottom: 20px;}
+
+/* Estilo dos Cartões de Pedido */
+.pedido-card {
+    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 12px; padding: 18px;
+    box-shadow: 0 4px 12px rgba(90, 59, 40, 0.02); margin-bottom: 15px;
+    transition: all 0.2s ease;
 }
-.header-title { font-family: 'Dancing Script', cursive !important; font-size: 42px; font-weight: 700; color: #c5721f; margin: 0; line-height: 1.1; }
-.header-sub { font-size: 14px; font-weight: 600; color: #775a46; margin-top: 5px;}
+.pedido-card:hover { border-color: #c5721f; box-shadow: 0 6px 15px rgba(197, 114, 31, 0.1); transform: translateY(-2px); }
+.pedido-id { font-size: 16px; font-weight: 800; color: #137333; margin-bottom: 8px; border-bottom: 1px dashed #e8ddd3; padding-bottom: 6px;}
+.pedido-info { font-size: 13px; color: #5a3b28; margin-bottom: 4px; font-weight: 500; }
+.pedido-info b { color: #2c1e14; font-weight: 700; }
+.pedido-total { font-size: 18px; font-weight: 800; color: #137333; margin-top: 10px; }
 
-/* ABAS: SEM FUNDO, APENAS LINHA INDICADORA NA SELECIONADA */
-.stTabs [data-baseweb="tab-list"] { 
-    gap: 30px; justify-content: center; background-color: transparent; border-bottom: 2px solid #e8ddd3; padding: 0; margin-bottom: 25px; 
-}
-.stTabs [data-baseweb="tab"] { 
-    height: 45px; background-color: transparent !important; border-radius: 0 !important; font-weight: 700; font-size: 14px; color: #775a46; 
-    border: none !important; box-shadow: none !important; padding: 0 10px; transition: color 0.2s ease; 
-}
-.stTabs [data-baseweb="tab"]:hover { color: #c5721f; }
-.stTabs [aria-selected="true"] { 
-    color: #c5721f !important; border-bottom: 3px solid #c5721f !important; background: transparent !important; box-shadow: none !important; 
-}
-
-/* CARD EM LINHA ÚNICA (UTILIZANDO TODA A LARGURA DA TELA) */
-.pedido-card-linha {
-    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 12px;
-    padding: 14px 20px; margin-bottom: 12px; box-shadow: 0 3px 10px rgba(90, 59, 40, 0.02);
-    display: flex; align-items: center; justify-content: space-between; gap: 15px;
-    border-left: 5px solid #c5721f; transition: all 0.2s ease;
-}
-.pedido-card-linha:hover { box-shadow: 0 6px 18px rgba(90, 59, 40, 0.06); transform: translateY(-1px); }
-.pedido-card-linha.b2b { border-left-color: #137333; }
-
-.badge-b2b { background: #e6f4ea; color: #137333; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 8px; margin-bottom: 3px; display: inline-block;}
-.badge-b2c { background: #fef7e0; color: #b06000; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 8px; margin-bottom: 3px; display: inline-block;}
-
-.badge-status { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 6px; display: inline-block; margin-top: 4px; }
-.status-pago { background: #e6f4ea; color: #137333; }
-.status-producao { background: #fef7e0; color: #b06000; }
-.status-rota { background: #e8f0fe; color: #1967d2; }
-.status-entregue { background: #f1f3f4; color: #5f6368; }
-
-.col-info { flex: 1; min-width: 150px; font-size: 12.5px; color: #5a3b28; }
-.col-info b { color: #2c1e14; }
-
-div[data-testid="stButton"] button { border-radius: 10px !important; font-weight: 700 !important; font-size: 12px !important; padding: 6px 10px !important;}
+/* Ajustes de Selectbox e Botões nativos para ficar compacto */
+div[data-testid="stSelectbox"] label { display: none !important; }
+div[data-testid="stButton"] button { border-radius: 8px !important; font-weight: 800 !important; transition: all 0.2s; }
 </style>
 """, unsafe_allow_html=True)
 
-# CABEÇALHO
-st.markdown("""
-<div class="header-banner">
-    <h1 class="header-title">Gestão de Pedidos</h1>
-    <p class="header-sub">Acompanhe e mova os pedidos entre as etapas de atendimento 📋</p>
-</div>
-""", unsafe_allow_html=True)
+# =====================================================
+# CALLBACKS (A MÁGICA PARA NÃO PRECISAR CLICAR DUAS VEZES)
+# =====================================================
+# Esta função atualiza o banco no exato milissegundo em que você altera o SelectBox
+def alterar_status_callback(pedido_id, widget_key):
+    novo_status = st.session_state[widget_key]
+    try:
+        supabase.table("pedidos").update({"status": novo_status}).eq("id", pedido_id).execute()
+        st.toast(f"✅ Pedido atualizado para: {novo_status}!")
+    except Exception as e:
+        st.error("Erro ao atualizar o status.")
 
-# AÇÕES RÁPIDAS DISCRETAS
-col_esp1, col_b1, col_b2, col_esp2 = st.columns([2, 2, 2, 2])
-with col_b1:
-    if st.button("🛍️ + Varejo (PF)", use_container_width=True):
-        st.switch_page("pages/19_Pedido_Manual.py")
-with col_b2:
-    if st.button("🏢 + Corporativo (B2B)", use_container_width=True):
-        st.switch_page("pages/18_Corporativo.py")
+def ir_para_detalhes(pedido_id):
+    st.session_state['pedido_detalhe_id'] = pedido_id
+    st.switch_page("pages/09_Detalhes_Pedido.py")
 
-st.write("")
+# =====================================================
+# BUSCA OTIMIZADA NO BANCO DE DADOS
+# =====================================================
+st.markdown("<div class='header-title'>📋 Mural Central de Pedidos</div>", unsafe_allow_html=True)
+st.markdown("<div class='header-subtitle'>Gerencie os status e acesse os detalhes rapidamente.</div>", unsafe_allow_html=True)
 
-# FUNÇÕES E CARREGAMENTO
-def mudar_status(p_id, novo_status):
-    supabase.table("pedidos").update({"status": novo_status}).eq("id", p_id).execute()
-    st.toast(f"✅ Pedido atualizado para: {novo_status}")
-    st.rerun()
+# Filtro rápido superior
+filtro_status = st.radio("Filtrar por Status:", ["Ativos (Recebido/Pago/Rota)", "Todos", "Entregues", "Desistências"], horizontal=True)
 
-@st.cache_data(ttl=3, show_spinner=False)
-def get_pedidos():
-    res = supabase.table("pedidos").select("*").order("created_at", desc=True).execute()
-    return res.data or []
+with st.spinner("Carregando pedidos..."):
+    # Selecionamos apenas as colunas necessárias para não sobrecarregar a memória e deixar rápido!
+    query = supabase.table("pedidos").select("id, cliente_nome, cesta_nome, valor_total, data_entrega, periodo_entrega, status, pagamento").order("data_entrega", desc=False)
+    res = query.execute()
+    todos_pedidos = res.data or []
 
-pedidos = get_pedidos()
-
-# FILTRO DE VISUALIZAÇÃO GERAL
-tipo_filtro = st.radio("Filtrar por Canal:", ["Todos os Canais", "Varejo (B2C)", "Corporativo (B2B)"], horizontal=True)
-st.write("")
-
-# FILTRA OS PEDIDOS POR CANAL
+# Aplicação do Filtro na memória (muito mais rápido que buscar do banco várias vezes)
 pedidos_filtrados = []
-for p in pedidos:
-    is_b2b = "[B2B]" in p.get('cliente_nome', '')
-    if tipo_filtro == "Varejo (B2C)" and is_b2b: continue
-    if tipo_filtro == "Corporativo (B2B)" and not is_b2b: continue
-    pedidos_filtrados.append(p)
+for p in todos_pedidos:
+    st_atual = p.get('status', '')
+    if filtro_status == "Ativos (Recebido/Pago/Rota)" and st_atual in ["Recebido", "Pago", "Em Rota de Entrega"]:
+        pedidos_filtrados.append(p)
+    elif filtro_status == "Entregues" and st_atual == "Entregue":
+        pedidos_filtrados.append(p)
+    elif filtro_status == "Desistências" and st_atual == "Desistência":
+        pedidos_filtrados.append(p)
+    elif filtro_status == "Todos":
+        pedidos_filtrados.append(p)
 
-# SEPARAÇÃO EXATA POR LISTAS PARA CONTAGEM NAS ABAS
-rec_list = [p for p in pedidos_filtrados if p.get("status", "Recebido") in ["Recebido", "Pendente"]]
-pag_list = [p for p in pedidos_filtrados if p.get("status") in ["Pago", "Em Produção", "Em Rota de Entrega", "Entregue"]]
-des_list = [p for p in pedidos_filtrados if p.get("status") == "Desistência"]
+if not pedidos_filtrados:
+    st.info("Nenhum pedido encontrado para o filtro atual.")
+    st.stop()
 
-# CRIAÇÃO DAS ABAS COM AS QUANTIDADES DINÂMICAS
-aba_rec, aba_pag, aba_des = st.tabs([
-    f"📥 Recebidos ({len(rec_list)})", 
-    f"💳 Pago ({len(pag_list)})", 
-    f"❌ Desistência ({len(des_list)})"
-])
+# =====================================================
+# RENDERIZAÇÃO DOS CARTÕES EM GRID (3 COLUNAS)
+# =====================================================
+STATUS_PERMITIDOS = ["Recebido", "Pago", "Em Rota de Entrega", "Entregue", "Desistência"]
 
-def renderizar_lista_pedidos(lista_pedidos_etapa):
-    if not lista_pedidos_etapa:
-        st.info("Nenhum pedido encontrado nesta etapa.")
-        return
-
-    for p in lista_pedidos_etapa:
-        renderizar_card_linha(p)
-
-def renderizar_card_linha(p):
-    is_b2b = "[B2B]" in p.get('cliente_nome', '')
-    nome_exibicao = p.get('cliente_nome', '').replace("[B2B]", "").strip()
-    badge = "<div class='badge-b2b'>CORP</div>" if is_b2b else "<div class='badge-b2c'>VAREJO</div>"
+cols = st.columns(3)
+for idx, p in enumerate(pedidos_filtrados):
+    col = cols[idx % 3] # Distribui os cards harmoniosamente
     
-    dt_entrega = "A confirmar"
-    if p.get('data_entrega'):
-        try: dt_entrega = datetime.strptime(str(p['data_entrega'])[:10], "%Y-%m-%d").strftime("%d/%m/%Y")
-        except: dt_entrega = p['data_entrega']
+    pid = p['id']
+    id_curto = str(pid).split('-')[0].upper()
+    cliente = str(p.get('cliente_nome', '')).replace('[B2B]', '').replace('[VITRINE]', '').strip()
     
-    status_atual = p.get('status', 'Recebido')
+    try: data_f = datetime.strptime(str(p.get('data_entrega'))[:10], "%Y-%m-%d").strftime("%d/%m/%Y")
+    except: data_f = "Não definida"
     
-    badge_substatus = ""
-    if status_atual == "Pago": badge_substatus = "<span class='badge-status status-pago'>PAGO</span>"
-    elif status_atual == "Em Produção": badge_substatus = "<span class='badge-status status-producao'>PRODUÇÃO</span>"
-    elif status_atual == "Em Rota de Entrega": badge_substatus = "<span class='badge-status status-rota'>ROTA</span>"
-    elif status_atual == "Entregue": badge_substatus = "<span class='badge-status status-entregue'>ENTREGUE</span>"
+    try: valor_f = f"{float(p.get('valor_total', 0)):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except: valor_f = "0,00"
 
-    valor_f = f"R$ {float(p.get('valor_total', 0) or 0):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    
-    col_c1, col_c2, col_c3, col_c4, col_c5 = st.columns([2.2, 2.2, 2.6, 1.3, 1.7])
-    
-    with col_c1:
-        st.markdown(f"""
-        <div>
-            {badge}
-            <div style="font-weight: 800; font-size: 14px; color: #2c1e14;">👤 {nome_exibicao}</div>
-            <div style="font-size: 11.5px; color: #775a46;">📞 {p.get('cliente_telefone', '-')}</div>
-            {badge_substatus}
-        </div>
-        """, unsafe_allow_html=True)
-        
-    with col_c2:
-        st.markdown(f"""
-        <div>
-            <div style="font-weight: 700; font-size: 13px; color: #5a3b28;">🎁 {p.get('cesta_nome', 'Misto')}</div>
-            <div style="font-size: 11.5px; color: #8c7362;">💳 {p.get('pagamento', 'Pix')} &bull; <b style="color:#137333;">{valor_f}</b></div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col_c3:
-        st.markdown(f"""
-        <div>
-            <div style="font-size: 12px; color: #4a2e1b;">📅 <b>{dt_entrega}</b> ({p.get('periodo_entrega', 'A combinar')})</div>
-            <div style="font-size: 11px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{p.get('endereco', 'Não informado')}">📍 {p.get('endereco', 'Não informado')}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col_c4:
-        if st.button("🔍 Ficha", key=f"det_{p['id']}", use_container_width=True):
-            st.session_state['pedido_detalhe_id'] = p['id']
-            st.switch_page("pages/09_Detalhes_Pedido.py")
-
-    with col_c5:
-        if status_atual in ["Recebido", "Pendente"]:
-            b_pg, b_des = st.columns(2)
-            with b_pg:
-                if st.button("💳", key=f"pg_{p['id']}", help="Marcar como Pago", use_container_width=True): mudar_status(p['id'], "Pago")
-            with b_des:
-                if st.button("❌", key=f"des_{p['id']}", help="Desistência", use_container_width=True): mudar_status(p['id'], "Desistência")
-        
-        elif status_atual == "Pago":
-            b_vol, b_av = st.columns(2)
-            with b_vol:
-                if st.button("↩️", key=f"rec_{p['id']}", help="Retornar para Recebidos", use_container_width=True): mudar_status(p['id'], "Recebido")
-            with b_av:
-                if st.button("🏭", key=f"prod_{p['id']}", help="Avançar para Produção", use_container_width=True): mudar_status(p['id'], "Em Produção")
-                
-        elif status_atual == "Em Produção":
-            b_vol, b_av = st.columns(2)
-            with b_vol:
-                if st.button("↩️", key=f"vol_pag_{p['id']}", help="Retornar para Pago", use_container_width=True): mudar_status(p['id'], "Pago")
-            with b_av:
-                if st.button("🚚", key=f"rota_{p['id']}", help="Avançar para Rota de Entrega", use_container_width=True): mudar_status(p['id'], "Em Rota de Entrega")
-                
-        elif status_atual == "Em Rota de Entrega":
-            b_vol, b_av = st.columns(2)
-            with b_vol:
-                if st.button("↩️", key=f"vol_prod_{p['id']}", help="Retornar para Produção", use_container_width=True): mudar_status(p['id'], "Em Produção")
-            with b_av:
-                if st.button("✅", key=f"ent_{p['id']}", help="Concluir como Entregue", use_container_width=True): mudar_status(p['id'], "Entregue")
-                
-        elif status_atual == "Entregue":
-            st.markdown("<div style='font-size:10px; color:#137333; font-weight:800; text-align:center; padding-top:6px;'>CONCLUÍDO</div>", unsafe_allow_html=True)
+    with col:
+        with st.container(border=False):
+            st.markdown(f"""
+            <div class="pedido-card">
+                <div class="pedido-id">Pedido #{id_curto}</div>
+                <div class="pedido-info"><b>👤 Cliente:</b> {cliente}</div>
+                <div class="pedido-info"><b>🎁 Cesta:</b> {p.get('cesta_nome', '-')}</div>
+                <div class="pedido-info"><b>📅 Entrega:</b> {data_f} ({p.get('periodo_entrega', '-')})</div>
+                <div class="pedido-info"><b>💳 Pagto:</b> {p.get('pagamento', '-')}</div>
+                <div class="pedido-total">R$ {valor_f}</div>
+            </div>
+            """, unsafe_allow_html=True)
             
-        elif status_atual == "Desistência":
-            if st.button("🔄 Restaurar", key=f"ret_{p['id']}", help="Restaurar para Recebidos", use_container_width=True): mudar_status(p['id'], "Recebido")
-
-with aba_rec: renderizar_lista_pedidos(rec_list)
-with aba_pag: renderizar_lista_pedidos(pag_list)
-with aba_des: renderizar_lista_pedidos(des_list)
-
-st.write("")
-st.divider()
-st.caption("📦 Gerenciamento de Pedidos - Doce Cesta Brasília")
+            c_status, c_btn = st.columns([1.5, 1])
+            with c_status:
+                status_atual = p.get('status', 'Recebido')
+                idx_st = STATUS_PERMITIDOS.index(status_atual) if status_atual in STATUS_PERMITIDOS else 0
+                widget_key = f"st_{pid}"
+                
+                # A MÁGICA: O on_change aciona a função de callback no exato momento do clique!
+                st.selectbox("Status", STATUS_PERMITIDOS, index=idx_st, key=widget_key, 
+                             on_change=alterar_status_callback, args=(pid, widget_key), label_visibility="collapsed")
+            with c_btn:
+                # O on_click altera a página sem precisar rodar a tela duas vezes
+                st.button("Ver Detalhes", key=f"btn_{pid}", use_container_width=True, type="primary", 
+                          on_click=ir_para_detalhes, args=(pid,))
