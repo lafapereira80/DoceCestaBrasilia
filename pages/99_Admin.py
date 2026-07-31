@@ -25,24 +25,29 @@ div[data-testid="stForm"] { background: #ffffff; border: 1px solid #e8ddd3; bord
 
 .section-title { font-size: 18px; font-weight: 800; color: #5a3b28; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px dashed #f5eee6; padding-bottom: 8px; }
 
-/* Botões Estilizados com Sombra, Gradiente Suave e Efeito de Profundidade */
+/* Força o design refinado com sombra profunda e borda marcante nos links de página */
+div[data-testid="stPageLink"] {
+    background: #ffffff !important;
+    border: 1px solid #dfcdbb !important;
+    border-radius: 14px !important;
+    box-shadow: 0 6px 16px rgba(90, 59, 40, 0.06) !important;
+    transition: all 0.25s ease !important;
+    margin-bottom: 12px !important;
+}
+div[data-testid="stPageLink"]:hover {
+    border-color: #c5721f !important;
+    background: #fffdfa !important;
+    transform: translateY(-3px) !important;
+    box-shadow: 0 10px 25px rgba(197, 114, 31, 0.15) !important;
+}
+
+/* Textos e links internos com peso adequado */
 a[data-testid="stPageLink"] { 
-    background: linear-gradient(135deg, #ffffff 0%, #fcfbf8 100%) !important; 
-    border: 1px solid #e8ddd3 !important; 
-    border-radius: 16px !important; 
-    padding: 18px 20px !important; 
-    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important; 
-    display: block !important; 
-    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.05) !important; 
+    padding: 16px 20px !important; 
     font-weight: 700 !important; 
     color: #4a2e1b !important; 
-    margin-bottom: 12px !important; 
 }
 a[data-testid="stPageLink"]:hover { 
-    border-color: #c5721f !important; 
-    background: linear-gradient(135deg, #ffffff 0%, #fff7f0 100%) !important;
-    transform: translateY(-4px) !important; 
-    box-shadow: 0 10px 25px rgba(197, 114, 31, 0.15) !important; 
     text-decoration: none !important; 
 }
 
