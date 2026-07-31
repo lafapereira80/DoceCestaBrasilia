@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import urllib.parse
 
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
@@ -78,13 +79,11 @@ with st.spinner("Carregando pedidos..."):
     todos_pedidos = res.data or []
 
 # Contagem dinâmica para exibir nos botões de filtro
-qtd_todos = len(todos_pedidos)
 qtd_recebido = sum(1 for p in todos_pedidos if p.get('status') == 'Recebido')
 qtd_pago = sum(1 for p in todos_pedidos if p.get('status') == 'Pago')
 qtd_desistencia = sum(1 for p in todos_pedidos if p.get('status') == 'Desistência')
 
 opcoes_filtro = [
-    f"Todos ({qtd_todos})",
     f"Recebidos ({qtd_recebido})",
     f"Pagos ({qtd_pago})",
     f"Desistências ({qtd_desistencia})"
@@ -97,9 +96,7 @@ filtro_status = st.radio("Filtrar por Status:", opcoes_filtro, horizontal=True)
 pedidos_filtrados = []
 for p in todos_pedidos:
     st_atual = p.get('status', '')
-    if filtro_status.startswith("Todos"):
-        pedidos_filtrados.append(p)
-    elif filtro_status.startswith("Recebidos") and st_atual == "Recebido":
+    if filtro_status.startswith("Recebidos") and st_atual == "Recebido":
         pedidos_filtrados.append(p)
     elif filtro_status.startswith("Pagos") and st_atual == "Pago":
         pedidos_filtrados.append(p)
