@@ -47,7 +47,7 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .order-type-badge { background: #fef7e0; color: #b06000; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid #fce8b2; text-transform: uppercase; }
 .order-type-badge.corp { background: #e6f4ea; color: #137333; border-color: #ceead6; }
 .order-type-badge.vitrine { background: #e8f0fe; color: #1a73e8; border-color: #d2e3fc; }
-.status-text { font-size: 14px; font-weight: 800; color: #c5721f; text-align: right; text-transform: uppercase;}
+.status-text { font-size: 14px; font-weight: 800; color: #c5721f; text-align: right; text-transform: uppercase; display: flex; align-items: center;}
 
 /* Cartões HTML (Visualização) */
 .info-card {
@@ -189,17 +189,20 @@ if "edit_cart" not in st.session_state or st.session_state.get("edit_pedido_id")
 STATUS_PERMITIDOS = ["Recebido", "Pago", "Desistência"]
 
 # =====================================================
-# CABEÇALHO COM BOTÃO VOLTAR
+# CABEÇALHO COM BOTÃO VOLTAR E BADGE INFINITEPAY
 # =====================================================
 c_head, c_btn = st.columns([4, 1], vertical_alignment="center")
 with c_head:
+    tx_id_topo = pedido.get("infinitepay_transaction_id")
+    badge_infinite = '<span style="background: #111; color: #00ffaa; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; margin-right: 8px; border: 1px solid #333; letter-spacing: 0.5px;">♾️ INFINITEPAY</span>' if tx_id_topo else ''
+
     st.markdown(f"""
     <div class="order-header">
         <div class="order-text">
             Pedido #{id_curto} <span class="order-type-badge {tipo_classe}">{tipo_texto}</span>
         </div>
         <div class="status-text">
-            STATUS: {pedido.get('status') or 'Recebido'}
+            {badge_infinite} STATUS: {pedido.get('status') or 'Recebido'}
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -360,6 +363,32 @@ if not st.session_state.modo_edicao:
                                 st.rerun()
                     else:
                         st.error("Serviço InfinitePay não encontrado.")
+
+            # =========================================================
+            # BLOCO INFINITEPAY VISUAL (Autorização e Horário)
+            # =========================================================
+            tx_id = pedido.get("infinitepay_transaction_id")
+            if tx_id:
+                st.markdown('<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 15px 0;">', unsafe_allow_html=True)
+                
+                col_i1, col_i2 = st.columns(2)
+                with col_i1:
+                    st.markdown('<div class="data-label" style="color: #166534;">💳 Processador de Pagamento</div><div class="data-value" style="color: #15803d; font-size: 15px;">♾️ InfinitePay</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="data-label" style="color: #166534; margin-top: 10px;">Autorização / NSU</div><div class="data-value" style="font-size: 12px; color: #15803d; word-break: break-all;">{tx_id}</div>', unsafe_allow_html=True)
+                
+                with col_i2:
+                    data_pagamento = pedido.get("data_pagamento")
+                    if data_pagamento:
+                        try:
+                            data_obj = datetime.strptime(str(data_pagamento)[:19].replace("T", " "), "%Y-%m-%d %H:%M:%S")
+                            data_f = data_obj.strftime("%d/%m/%Y às %H:%M:%S")
+                        except:
+                            data_f = str(data_pagamento)
+                        st.markdown(f'<div class="data-label" style="color: #166534;">Horário da Aprovação</div><div class="data-value" style="color: #15803d; font-size: 15px;">⏰ {data_f}</div>', unsafe_allow_html=True)
+                    else:
+                        st.markdown('<div class="data-label" style="color: #166534;">Horário da Aprovação</div><div class="data-value" style="color: #15803d; font-size: 12px; font-weight: 500;">⏰ Registrado no banco (Aguardando novo campo)</div>', unsafe_allow_html=True)
+                
+                st.markdown('</div>', unsafe_allow_html=True)
             
             c_btn1, c_btn3 = st.columns([1, 1])
             with c_btn1:
@@ -367,7 +396,6 @@ if not st.session_state.modo_edicao:
                     st.session_state.modo_edicao = True
                     st.rerun()
             with c_btn3:
-                # Geração Inteligente e Limpa do Texto do WhatsApp (Usando a Central)
                 fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone') or '')
                 
                 linhas_wpp = ""
