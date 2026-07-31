@@ -29,8 +29,8 @@ def menu_lateral():
         # BRANDING MINIMALISTA PREMIUM (BOUTIQUE)
         # ==========================================
         html_branding = """
-<div style="text-align: center; margin-top: 10px; margin-bottom: 25px;">
-    <div style="position: relative; z-index: 2; margin-bottom: -22px;">
+<div style="text-align: center;">
+    <div style="position: relative;">
         <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: linear-gradient(135deg, #c5721f 0%, #a65d14 100%); border-radius: 50%; border: 4px solid #f6f7f8; color: white; font-size: 20px; box-shadow: 0 4px 10px rgba(197, 114, 31, 0.25);">🧺</div>
     </div>
     <div style="background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 32px 15px 15px 15px; position: relative; z-index: 1; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03);">
