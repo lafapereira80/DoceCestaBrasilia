@@ -42,13 +42,13 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 /* Ajustes de Selectbox e Botões nativos para ficar compacto */
 div[data-testid="stSelectbox"] label { display: none !important; }
 div[data-testid="stButton"] button { border-radius: 8px !important; font-weight: 800 !important; transition: all 0.2s; }
+div[data-testid="stRadio"] label { font-weight: 700 !important; color: #5a3b28 !important; }
 </style>
 """, unsafe_allow_html=True)
 
 # =====================================================
 # CALLBACKS (A MÁGICA PARA NÃO PRECISAR CLICAR DUAS VEZES)
 # =====================================================
-# Esta função atualiza o banco no exato milissegundo em que você altera o SelectBox
 def alterar_status_callback(pedido_id, widget_key):
     novo_status = st.session_state[widget_key]
     try:
@@ -67,30 +67,53 @@ def ir_para_detalhes(pedido_id):
 st.markdown("<div class='header-title'>📋 Mural Central de Pedidos</div>", unsafe_allow_html=True)
 st.markdown("<div class='header-subtitle'>Gerencie os status e acesse os detalhes rapidamente.</div>", unsafe_allow_html=True)
 
-# Filtro rápido superior
-filtro_status = st.radio("Filtrar por Status:", ["Ativos (Recebido/Pago/Rota)", "Todos", "Entregues", "Desistências"], horizontal=True)
-
 with st.spinner("Carregando pedidos..."):
-    # Selecionamos apenas as colunas necessárias para não sobrecarregar a memória e deixar rápido!
+    # Seleciona apenas as colunas necessárias para extrema velocidade
     query = supabase.table("pedidos").select("id, cliente_nome, cesta_nome, valor_total, data_entrega, periodo_entrega, status, pagamento").order("data_entrega", desc=False)
     res = query.execute()
     todos_pedidos = res.data or []
 
-# Aplicação do Filtro na memória (muito mais rápido que buscar do banco várias vezes)
+# Contagem dinâmica para exibir nos botões de filtro
+qtd_todos = len(todos_pedidos)
+qtd_recebido = sum(1 for p in todos_pedidos if p.get('status') == 'Recebido')
+qtd_pago = sum(1 for p in todos_pedidos if p.get('status') == 'Pago')
+qtd_rota = sum(1 for p in todos_pedidos if p.get('status') == 'Em Rota de Entrega')
+qtd_entregue = sum(1 for p in todos_pedidos if p.get('status') == 'Entregue')
+qtd_desistencia = sum(1 for p in todos_pedidos if p.get('status') == 'Desistência')
+
+opcoes_filtro = [
+    f"Todos ({qtd_todos})",
+    f"Recebidos ({qtd_recebido})",
+    f"Pagos ({qtd_pago})",
+    f"Em Rota ({qtd_rota})",
+    f"Entregues ({qtd_entregue})",
+    f"Desistências ({qtd_desistencia})"
+]
+
+# Filtro rápido superior com as quantidades
+filtro_status = st.radio("Filtrar por Status:", opcoes_filtro, horizontal=True)
+
+# Aplicação do Filtro na memória (muito rápido)
 pedidos_filtrados = []
 for p in todos_pedidos:
     st_atual = p.get('status', '')
-    if filtro_status == "Ativos (Recebido/Pago/Rota)" and st_atual in ["Recebido", "Pago", "Em Rota de Entrega"]:
+    if filtro_status.startswith("Todos"):
         pedidos_filtrados.append(p)
-    elif filtro_status == "Entregues" and st_atual == "Entregue":
+    elif filtro_status.startswith("Recebidos") and st_atual == "Recebido":
         pedidos_filtrados.append(p)
-    elif filtro_status == "Desistências" and st_atual == "Desistência":
+    elif filtro_status.startswith("Pagos") and st_atual == "Pago":
         pedidos_filtrados.append(p)
-    elif filtro_status == "Todos":
+    elif filtro_status.startswith("Em Rota") and st_atual == "Em Rota de Entrega":
+        pedidos_filtrados.append(p)
+    elif filtro_status.startswith("Entregues") and st_atual == "Entregue":
+        pedidos_filtrados.append(p)
+    elif filtro_status.startswith("Desistências") and st_atual == "Desistência":
         pedidos_filtrados.append(p)
 
+st.write("")
+
 if not pedidos_filtrados:
-    st.info("Nenhum pedido encontrado para o filtro atual.")
+    st.info("Nenhum pedido encontrado para o filtro selecionado.")
     st.stop()
 
 # =====================================================
@@ -100,11 +123,11 @@ STATUS_PERMITIDOS = ["Recebido", "Pago", "Em Rota de Entrega", "Entregue", "Desi
 
 cols = st.columns(3)
 for idx, p in enumerate(pedidos_filtrados):
-    col = cols[idx % 3] # Distribui os cards harmoniosamente
+    col = cols[idx % 3] # Distribui os cards
     
     pid = p['id']
     id_curto = str(pid).split('-')[0].upper()
-    cliente = str(p.get('cliente_nome', '')).replace('[B2B]', '').replace('[VITRINE]', '').strip()
+    cliente = str(p.get('cliente_nome') or '').replace('[B2B]', '').replace('[VITRINE]', '').strip()
     
     try: data_f = datetime.strptime(str(p.get('data_entrega'))[:10], "%Y-%m-%d").strftime("%d/%m/%Y")
     except: data_f = "Não definida"
@@ -118,23 +141,23 @@ for idx, p in enumerate(pedidos_filtrados):
             <div class="pedido-card">
                 <div class="pedido-id">Pedido #{id_curto}</div>
                 <div class="pedido-info"><b>👤 Cliente:</b> {cliente}</div>
-                <div class="pedido-info"><b>🎁 Cesta:</b> {p.get('cesta_nome', '-')}</div>
-                <div class="pedido-info"><b>📅 Entrega:</b> {data_f} ({p.get('periodo_entrega', '-')})</div>
-                <div class="pedido-info"><b>💳 Pagto:</b> {p.get('pagamento', '-')}</div>
+                <div class="pedido-info"><b>🎁 Cesta:</b> {p.get('cesta_nome') or '-'}</div>
+                <div class="pedido-info"><b>📅 Entrega:</b> {data_f} ({p.get('periodo_entrega') or '-'})</div>
+                <div class="pedido-info"><b>💳 Pagto:</b> {p.get('pagamento') or '-'}</div>
                 <div class="pedido-total">R$ {valor_f}</div>
             </div>
             """, unsafe_allow_html=True)
             
             c_status, c_btn = st.columns([1.5, 1])
             with c_status:
-                status_atual = p.get('status', 'Recebido')
+                status_atual = p.get('status') or 'Recebido'
                 idx_st = STATUS_PERMITIDOS.index(status_atual) if status_atual in STATUS_PERMITIDOS else 0
                 widget_key = f"st_{pid}"
                 
-                # A MÁGICA: O on_change aciona a função de callback no exato momento do clique!
+                # O on_change aciona a função de callback no exato momento do clique, resolvendo o bug do duplo clique!
                 st.selectbox("Status", STATUS_PERMITIDOS, index=idx_st, key=widget_key, 
                              on_change=alterar_status_callback, args=(pid, widget_key), label_visibility="collapsed")
             with c_btn:
-                # O on_click altera a página sem precisar rodar a tela duas vezes
+                # O on_click altera a página via callback instantâneo
                 st.button("Ver Detalhes", key=f"btn_{pid}", use_container_width=True, type="primary", 
                           on_click=ir_para_detalhes, args=(pid,))
