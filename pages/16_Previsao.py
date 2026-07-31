@@ -117,31 +117,6 @@ div[data-testid="stCheckbox"]:hover {
 ========================================== */
 div[data-testid="stButton"] > button { font-size: 14px !important; font-weight: 800 !important; border-radius: 10px !important; min-height: 40px !important; transition: all 0.2s ease; }
 div[data-testid="stButton"] > button:hover { transform: scale(1.02); }
-
-/* =========================================
-   RESPONSIVIDADE MOBILE E BOTÕES (LADO A LADO)
-========================================== */
-@media (max-width: 768px) {
-    .block-container { padding: 1rem 0.5rem !important; }
-    h1 { font-size: 24px !important; }
-    .cesta-pill { font-size: 13px; padding: 5px 12px; }
-    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 14px 16px !important; }
-
-    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        gap: 8px !important;
-        margin-top: 10px !important;
-        justify-content: space-between;
-    }
-    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) > div[data-testid="stColumn"] {
-        flex: 1 1 0% !important; min-width: 0 !important; padding: 0 !important;
-    }
-    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) button {
-        width: 100% !important; padding: 6px 0px !important;
-    }
-}
 </style>
 """,
 unsafe_allow_html=True
@@ -157,18 +132,16 @@ if "pedido_em_montagem" not in st.session_state:
     st.session_state.pedido_em_montagem = None
 
 # =====================================================
-# BUSCA GERAL (PEDIDOS COM STATUS "Pago" OU "Em Produção")
+# BUSCA GERAL (APENAS PEDIDOS "PAGO")
 # =====================================================
 def buscar_pedidos_producao():
-    # Busca tanto os pedidos com status "Pago" quanto "Em Produção" (Varejo e B2B)
+    # Agora puxa exclusivamente status "Pago", pois "Em Produção" não existe mais no fluxo principal.
     res_pago = supabase.table("pedidos").select("*").eq("status", "Pago").execute()
-    res_prod = supabase.table("pedidos").select("*").eq("status", "Em Produção").execute()
+    lista_total = res_pago.data or []
     
-    lista_total = (res_pago.data or []) + (res_prod.data or [])
-    
-    # Remove duplicados caso haja sobreposição de IDs e ordena pela data
+    # Remove duplicados caso haja sobreposição de IDs e ordena pela data (os sem data vão pro final)
     unicos = {p["id"]: p for p in lista_total}.values()
-    return sorted(list(unicos), key=lambda x: x.get('data_entrega') or '')
+    return sorted(list(unicos), key=lambda x: x.get('data_entrega') or '9999-99-99')
 
 pedidos = buscar_pedidos_producao()
 
@@ -177,36 +150,48 @@ if not pedidos:
     st.stop()
 
 # =====================================================
-# LÓGICA DE AGRUPAMENTO POR DATA
+# LÓGICA DE AGRUPAMENTO POR DATA (COM PROTEÇÃO PARA ATRASADOS E SEM DATA)
 # =====================================================
 resumo = {}
 hoje = date.today()
 
 for p in pedidos:
     dt_str = p.get("data_entrega")
-    if not dt_str: continue
-        
-    try:
-        dt_obj = datetime.strptime(str(dt_str)[:10], "%Y-%m-%d").date()
-        if dt_obj < hoje: continue 
-        
-        dias_diff = (dt_obj - hoje).days
-        if dias_diff == 0: label_dia = f"HOJE ({dt_obj.strftime('%d/%m')})"
-        elif dias_diff == 1: label_dia = f"AMANHÃ ({dt_obj.strftime('%d/%m')})"
-        elif dias_diff == 2: label_dia = f"DEPOIS ({dt_obj.strftime('%d/%m')})"
-        else: label_dia = f"{dias_diff} DIAS ({dt_obj.strftime('%d/%m')})"
-        
-        chave_ordem = dt_obj.strftime("%Y-%m-%d")
-        
-        if chave_ordem not in resumo:
-            resumo[chave_ordem] = {"label": label_dia, "cestas_agrupadas": {}, "pedidos_lista": [], "total": 0}
-            
-        nome_cesta = p.get("cesta_nome", "Cesta Não Informada")
-        resumo[chave_ordem]["cestas_agrupadas"][nome_cesta] = resumo[chave_ordem]["cestas_agrupadas"].get(nome_cesta, 0) + 1
-        resumo[chave_ordem]["pedidos_lista"].append(p)
-        resumo[chave_ordem]["total"] += 1
-    except: pass
     
+    # Se o pedido não tiver data, criamos um grupo especial para não escondê-lo
+    if not dt_str:
+        chave_ordem = "9999-99-99"
+        label_dia = "SEM DATA DEFINIDA"
+    else:
+        try:
+            dt_obj = datetime.strptime(str(dt_str)[:10], "%Y-%m-%d").date()
+            dias_diff = (dt_obj - hoje).days
+            
+            if dias_diff < 0:
+                label_dia = f"⚠️ ATRASADO ({dt_obj.strftime('%d/%m')})"
+            elif dias_diff == 0:
+                label_dia = f"HOJE ({dt_obj.strftime('%d/%m')})"
+            elif dias_diff == 1:
+                label_dia = f"AMANHÃ ({dt_obj.strftime('%d/%m')})"
+            elif dias_diff == 2:
+                label_dia = f"DEPOIS ({dt_obj.strftime('%d/%m')})"
+            else:
+                label_dia = f"{dias_diff} DIAS ({dt_obj.strftime('%d/%m')})"
+            
+            chave_ordem = dt_obj.strftime("%Y-%m-%d")
+        except:
+            chave_ordem = "9999-99-99"
+            label_dia = "SEM DATA DEFINIDA"
+            
+    if chave_ordem not in resumo:
+        resumo[chave_ordem] = {"label": label_dia, "cestas_agrupadas": {}, "pedidos_lista": [], "total": 0}
+        
+    nome_cesta = p.get("cesta_nome", "Cesta Não Informada")
+    resumo[chave_ordem]["cestas_agrupadas"][nome_cesta] = resumo[chave_ordem]["cestas_agrupadas"].get(nome_cesta, 0) + 1
+    resumo[chave_ordem]["pedidos_lista"].append(p)
+    resumo[chave_ordem]["total"] += 1
+    
+# Ordena o dicionário para que datas antigas (atrasados) e os de hoje apareçam primeiro.
 dados_previsao = dict(sorted(resumo.items()))
 
 
@@ -455,7 +440,7 @@ if dados_previsao:
             st.markdown(
                 f"""
                 <div class='resumo-bar'>
-                    <div class='resumo-header'>📊 Resumo de Metas do Dia (Total Fila: {info['total']} cestas/lotes)</div>
+                    <div class='resumo-header'>📊 Resumo de Metas (Total: {info['total']} cestas/lotes)</div>
                     <div class='pills-container'>
                         {html_pills}
                     </div>
