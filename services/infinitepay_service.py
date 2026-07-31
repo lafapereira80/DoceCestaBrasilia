@@ -1,23 +1,18 @@
 import requests
 import streamlit as st
 
-# Sua InfiniteTag real (SEM o símbolo $)
+# Sua InfiniteTag real
 INFINITEPAY_HANDLE = "lafayette-improise" 
 
 def gerar_link_checkout_infinitepay(pedido_id: str, valor_total: float, cliente_nome: str, cliente_tel: str):
     """
     Gera um link de pagamento oficial via Checkout Integrado da InfinitePay.
     """
-    # Removida a trava que verificava o seu próprio nome!
-    if not INFINITEPAY_HANDLE:
-        st.error("Configure sua InfiniteTag no arquivo infinitepay_service.py")
-        return None
-
     # A API da InfinitePay exige o valor em centavos
     valor_em_centavos = int(round(valor_total * 100))
     id_curto = str(pedido_id).split('-')[0].upper()
     
-    # Novo endpoint atualizado da InfinitePay
+    # Endpoint atualizado da InfinitePay
     url_api = "https://api.checkout.infinitepay.io/links"
     
     payload = {
