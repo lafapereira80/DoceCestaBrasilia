@@ -196,7 +196,7 @@ if not st.session_state.modo_edicao:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown(f"""
+        html_info1 = f"""
         <div class="info-card">
             <div class="card-title">👤 Informações do Pedido</div>
             <div class="data-label">Cliente / Empresa</div><div class="data-value">{cliente_limpo} ({pedido.get('cliente_telefone', '-')})</div>
@@ -205,8 +205,15 @@ if not st.session_state.modo_edicao:
             <div class="data-label">Ocasião / Motivo</div><div class="data-value">{pedido.get('motivo_homenagem', '-')}</div>
             <div class="data-label" style="margin-top:10px;">Data e Período</div><div class="data-value">{formata_data(pedido.get('data_entrega'))} - {pedido.get('periodo_entrega', '-')}</div>
             <div class="data-label">Endereço de Entrega</div><div class="data-value">{pedido.get('endereco', '-')}</div>
-        </div>
-        """, unsafe_allow_html=True)
+        """
+        anotacoes_internas = pedido.get('anotacoes_internas', '').strip()
+        if anotacoes_internas:
+            html_info1 += f"""
+            <div class="data-label" style="margin-top:15px; color:#b06000;">⚠️ Anotações Internas</div>
+            <div style="background: #fef7e0; padding: 10px; border-radius: 8px; font-size: 13px; color: #b06000; border-left: 3px solid #b06000;">{anotacoes_internas}</div>
+            """
+        html_info1 += "</div>"
+        st.markdown(html_info1, unsafe_allow_html=True)
 
     with col2:
         st.markdown('<div class="info-card">', unsafe_allow_html=True)
@@ -262,7 +269,7 @@ if not st.session_state.modo_edicao:
         """, unsafe_allow_html=True)
         
         st.write("")
-        c_btn1, c_btn2, c_btn3 = st.columns([1, 1, 1.5])
+        c_btn1, c_btn2, c_btn3 = st.columns([1, 1, 1])
         with c_btn1:
             if st.button("✏️ Editar Pedido Completo", use_container_width=True):
                 st.session_state.modo_edicao = True
@@ -279,11 +286,9 @@ if not st.session_state.modo_edicao:
             texto_resumo = f"""*RESUMO DO PEDIDO — DOCE CESTA BRASÍLIA* 🎁\n\n👤 *Olá {cliente_limpo}!* Segue o resumo atualizado do seu pedido:\n\n📦 *Produto:* {pedido.get('cesta_nome')}\n💳 *Forma de Pagamento:* {pedido.get('pagamento', 'Pix')}\n\n*VALORES:*\n━━━━━━━━━━━━━━━━━━━━\n💰 *TOTAL A PAGAR: R$ {formatar_moeda(total_db)}*\n\n📅 *Entrega:* {formata_data(pedido.get('data_entrega'))} ({pedido.get('periodo_entrega')})\n📍 *Local:* {pedido.get('endereco')}\n\nQualquer dúvida, estamos à disposição! 🌻"""
             link_wpp = f"https://wa.me/55{fone_cliente}?text={urllib.parse.quote(texto_resumo)}" if fone_cliente else "#"
             if fone_cliente:
-                st.markdown(f'<div class="btn-wpp"><a href="{link_wpp}" target="_blank">💬 Enviar Resumo (WhatsApp)</a></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="btn-wpp"><a href="{link_wpp}" target="_blank">💬 WhatsApp Resumo</a></div>', unsafe_allow_html=True)
             else:
-                st.warning("Sem telefone cadastrado.")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+                st.warning("Sem telefone.")
 
 
 # =====================================================
@@ -314,7 +319,10 @@ else:
         c7, c8 = st.columns(2)
         with c7: e_data = st.date_input("Data de Entrega", value=dt_obj, format="DD/MM/YYYY")
         with c8: e_per = st.text_input("Período/Horário", value=pedido.get('periodo_entrega', ''))
-        e_msg = st.text_area("Mensagem do Cartão", value=pedido.get('mensagem', ''), height=70)
+        
+        c9, c10 = st.columns(2)
+        with c9: e_msg = st.text_area("Mensagem do Cartão", value=pedido.get('mensagem', ''), height=70)
+        with c10: e_anotacoes = st.text_area("Anotações Internas (Não aparece p/ cliente)", value=pedido.get('anotacoes_internas', ''), height=70)
 
     with st.container(border=True):
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 1px dashed #e8ddd3; padding-bottom: 6px;'>🎁 3. PRODUTOS E CARRINHO (FECHAMENTO)</div>", unsafe_allow_html=True)
@@ -457,6 +465,7 @@ else:
                 "data_entrega": e_data.strftime("%Y-%m-%d"),
                 "periodo_entrega": e_per,
                 "mensagem": e_msg,
+                "anotacoes_internas": e_anotacoes.strip(),
                 "cesta_nome": n_cesta,
                 "cesta_id": id_cesta,
                 "produtos": "\n\n".join(str_prod),
