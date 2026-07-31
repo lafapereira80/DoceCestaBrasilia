@@ -177,7 +177,7 @@ if "edit_cart" not in st.session_state or st.session_state.get("edit_pedido_id")
         "quantidade": 1, "descricao": pedido.get("produtos") or ""
     })
 
-# Lista exata de status permitidos (Somente Recebido, Pago, Desistência)
+# Lista exata de status permitidos
 STATUS_PERMITIDOS = ["Recebido", "Pago", "Desistência"]
 
 # =====================================================
@@ -230,7 +230,6 @@ if not st.session_state.modo_edicao:
         st.markdown(html_info1, unsafe_allow_html=True)
 
     with col2:
-        # AQUI É ONDE O HTML VAZAVA ANTES. Agora a string é construída inteira antes do render!
         html_info2 = """
         <div class="info-card">
             <div class="card-title">🎁 Detalhamento</div>
@@ -312,7 +311,53 @@ if not st.session_state.modo_edicao:
                 st.rerun()
         with c_btn3:
             fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone') or '')
-            texto_resumo = f"""*RESUMO DO PEDIDO — DOCE CESTA BRASÍLIA* 🎁\n\n👤 *Olá {cliente_limpo}!* Segue o resumo atualizado do seu pedido:\n\n📦 *Produto:* {pedido.get('cesta_nome') or 'Pedido Customizado'}\n💳 *Forma de Pagamento:* {pedido.get('pagamento') or 'Pix'}\n\n*VALORES:*\n━━━━━━━━━━━━━━━━━━━━\n💰 *TOTAL A PAGAR: R$ {formatar_moeda(total_db)}*\n\n📅 *Entrega:* {formata_data(pedido.get('data_entrega'))} ({pedido.get('periodo_entrega') or '-'})\n📍 *Local:* {pedido.get('endereco') or '-'}\n\nQualquer dúvida, estamos à disposição! 🌻"""
+            
+            # --- CONSTRUÇÃO DO RESUMO WHATSAPP FORMATADO ---
+            prods_resumo = [p.strip() for p in (pedido.get('produtos') or '').split('\n') if p.strip()]
+            adics_resumo = [a.strip() for a in (pedido.get('adicionais') or '').split('\n') if a.strip()]
+            
+            texto_itens = ""
+            texto_descontos = ""
+            
+            for p in prods_resumo:
+                texto_itens += f"📦 {p}\n"
+            for a in adics_resumo:
+                if "Desconto" in a or "desconto" in a.lower():
+                    texto_descontos += f"🔻 {a}\n"
+                else:
+                    texto_itens += f"✨ {a}\n"
+                    
+            if not texto_itens.strip():
+                texto_itens = f"📦 {pedido.get('cesta_nome') or 'Pedido Customizado'}\n"
+
+            texto_resumo = f"""✨ *RESUMO DO PEDIDO | DOCE CESTA BRASÍLIA* ✨
+━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 Olá, *{cliente_limpo}*!
+Aqui está o detalhamento do seu pedido:
+
+🚚 *DADOS DA ENTREGA*
+📍 *Local:* {pedido.get('endereco') or 'Não informado'}
+📅 *Data:* {formata_data(pedido.get('data_entrega'))}
+🕒 *Horário:* {pedido.get('periodo_entrega') or 'A combinar'}
+💝 *Destinatário:* {pedido.get('destinatario_nome') or 'O mesmo'}
+
+🛍️ *ITENS DO PEDIDO*
+{texto_itens.strip()}
+
+💵 *RESUMO FINANCEIRO*
+▫️ Subtotal: R$ {formatar_moeda(subtotal_db)}
+▫️ Frete/Taxa: R$ {formatar_moeda(frete_db)}
+"""
+            if texto_descontos:
+                texto_resumo += f"{texto_descontos.strip()}\n"
+
+            texto_resumo += f"""━━━━━━━━━━━━━━━━━━━━━━━
+💰 *TOTAL A PAGAR:* R$ {formatar_moeda(total_db)}
+💳 *Pagamento:* {pedido.get('pagamento') or 'Pix'}
+
+Qualquer dúvida, estamos à disposição! 🌻"""
+            
             link_wpp = f"https://wa.me/55{fone_cliente}?text={urllib.parse.quote(texto_resumo)}" if fone_cliente else "#"
             if fone_cliente:
                 st.markdown(f'<div class="btn-wpp"><a href="{link_wpp}" target="_blank">💬 WhatsApp Resumo</a></div>', unsafe_allow_html=True)
@@ -350,10 +395,11 @@ else:
         with c8: e_per = st.text_input("Período/Horário", value=pedido.get('periodo_entrega') or '')
         
         c9, c10 = st.columns(2)
-        with c9: e_msg = st.text_area("Mensagem do Cartão", value=pedido.get('mensagem') or '', height=70)
-        with c10: 
+        with c9: 
+            e_msg = st.text_area("Mensagem do Cartão", value=pedido.get('mensagem') or '', height=70)
             e_pedido_especial = st.text_area("Pedido Especial (Solicitação do Cliente)", value=pedido.get('pedido_especial') or '', height=70)
-            # A nota interna não precisa estar aqui, pois ela é salva automaticamente por fora, mas se você quiser alterar o pedido como um todo, fica organizado dessa forma.
+        with c10: 
+            e_anotacoes = st.text_area("Anotações Internas (Para a Equipe)", value=pedido.get('anotacoes_internas') or '', height=185)
 
     with st.container(border=True):
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 1px dashed #e8ddd3; padding-bottom: 6px;'>🎁 3. PRODUTOS E CARRINHO (FECHAMENTO)</div>", unsafe_allow_html=True)
@@ -497,6 +543,7 @@ else:
                 "data_entrega": e_data.strftime("%Y-%m-%d"),
                 "periodo_entrega": e_per,
                 "mensagem": e_msg,
+                "anotacoes_internas": e_anotacoes.strip(),
                 "pedido_especial": e_pedido_especial.strip(),
                 "cesta_nome": n_cesta,
                 "cesta_id": id_cesta,
