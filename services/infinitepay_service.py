@@ -1,12 +1,12 @@
 import requests
 import streamlit as st
 
-# Substitua pela sua InfiniteTag real (sem o @)
-INFINITEPAY_HANDLE = "lafayette-improise" 
+# Substitua pela sua InfiniteTag real (aquela que aparece no app, mas SEM o símbolo $)
+INFINITEPAY_HANDLE = "sua_ininitetag_aqui" 
 
 def gerar_link_checkout_infinitepay(pedido_id: str, valor_total: float, cliente_nome: str, cliente_tel: str):
     """
-    Gera um link de pagamento oficial via Checkout da InfinitePay.
+    Gera um link de pagamento oficial via Checkout Integrado da InfinitePay.
     """
     if not INFINITEPAY_HANDLE or INFINITEPAY_HANDLE == "sua_ininitetag_aqui":
         st.error("Configure sua InfiniteTag no arquivo infinitepay_service.py")
@@ -14,17 +14,23 @@ def gerar_link_checkout_infinitepay(pedido_id: str, valor_total: float, cliente_
 
     # A API da InfinitePay exige o valor em centavos
     valor_em_centavos = int(round(valor_total * 100))
+    id_curto = str(pedido_id).split('-')[0].upper()
     
-    url_api = "https://api.infinitepay.io/v2/checkout"
+    # Novo endpoint atualizado da InfinitePay
+    url_api = "https://api.checkout.infinitepay.io/links"
     
     payload = {
         "handle": INFINITEPAY_HANDLE,
+        # AQUI ESTÁ A MÁGICA: Sua URL do Supabase já está injetada no pedido!
+        "webhook_url": "https://qtkcmwydongznncytncw.supabase.co/functions/v1/bright-action",
         "order_nsu": str(pedido_id),
-        "amount": valor_em_centavos,
-        "customer": {
-            "name": cliente_nome,
-            "phone": cliente_tel
-        }
+        "items": [
+            {
+                "quantity": 1,
+                "price": valor_em_centavos,
+                "description": f"Pedido #{id_curto} - Doce Cesta"
+            }
+        ]
     }
     
     try:
