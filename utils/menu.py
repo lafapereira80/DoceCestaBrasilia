@@ -1,7 +1,7 @@
 import streamlit as st
 
 def configurar_pagina():
-    """Oculta elementos padrão do Streamlit, aplica estilos globais, fontes premium e remove o espaço superior da barra lateral"""
+    """Injeta os estilos globais de design, fontes e garante a persistência visual em todas as páginas"""
     st.markdown(
         """
         <style>
@@ -16,12 +16,36 @@ def configurar_pagina():
         /* ESCONDE A LISTA DE ARQUIVOS PADRÃO DO STREAMLIT NO MENU LATERAL */
         [data-testid="stSidebarNav"] {display: none !important;}
         
-        /* REMOVE O ESPAÇO EM BRANCO GRANDE NO TOPO DA BARRA LATERAL (SIDEBAR) */
+        /* REMOVE O ESPAÇO EM BRANCO GRANDE NO TOPO DA BARRA LATERAL */
         section[data-testid="stSidebar"] > div:first-child {
             padding-top: 0rem !important;
         }
         [data-testid="stSidebar"] .block-container {
             padding-top: 0.8rem !important;
+        }
+
+        /* ESTILIZAÇÃO ROBUSTA DOS LINKS DA BARRA LATERAL (PERSISTENTE) */
+        section[data-testid="stSidebar"] div[data-testid="stPageLink"] {
+            background: linear-gradient(135deg, #ffffff 0%, #fcfbf8 100%) !important;
+            border: 1px solid #e8ddd3 !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 12px rgba(90, 59, 40, 0.04) !important;
+            transition: all 0.2s ease !important;
+            margin-bottom: 8px !important;
+        }
+        section[data-testid="stSidebar"] div[data-testid="stPageLink"]:hover {
+            border-color: #c5721f !important;
+            background: linear-gradient(135deg, #ffffff 0%, #fff7f0 100%) !important;
+            transform: translateX(3px) !important;
+            box-shadow: 0 6px 16px rgba(197, 114, 31, 0.12) !important;
+        }
+        section[data-testid="stSidebar"] a[data-testid="stPageLink"] {
+            padding: 10px 14px !important;
+            font-weight: 700 !important;
+            color: #4a2e1b !important;
+        }
+        section[data-testid="stSidebar"] a[data-testid="stPageLink"]:hover {
+            text-decoration: none !important;
         }
         </style>
         """,
@@ -37,12 +61,12 @@ def menu_lateral():
         # BRANDING MINIMALISTA PREMIUM (BOUTIQUE)
         # ==========================================
         html_branding = """
-<div style="text-align: center; margin-top: 0px; margin-bottom: 25px;">
+<div style="text-align: center; margin-top: 0px; margin-bottom: 20px;">
     <div style="position: relative; z-index: 2; margin-bottom: -22px;">
         <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: linear-gradient(135deg, #c5721f 0%, #a65d14 100%); border-radius: 50%; border: 4px solid #f6f7f8; color: white; font-size: 20px; box-shadow: 0 4px 10px rgba(197, 114, 31, 0.25);">🧺</div>
     </div>
     <div style="background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 32px 15px 15px 15px; position: relative; z-index: 1; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03);">
-        <h2 style="color: #4a2e1b; font-family: 'Dancing Script', cursive !important; font-size: 36px; font-weight: 700; margin: 0; line-height: 1.1;">Doce Cesta</h2>
+        <h2 style="color: #4a2e1b; font-family: 'Dancing Script', cursive !important; font-size: 34px; font-weight: 700; margin: 0; line-height: 1.1;">Doce Cesta</h2>
         <div style="color: #c5721f; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px;">Painel de Gestão</div>
     </div>
 </div>
@@ -57,18 +81,18 @@ def menu_lateral():
             # CRACHÁ DE USUÁRIO
             # ==========================================
             html_cracha = f"""
-<div style="background: #ffffff; border: 1px solid #e8ddd3; padding: 12px 15px; border-radius: 14px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(90, 59, 40, 0.04); display: flex; align-items: center; gap: 12px;">
-    <div style="background: linear-gradient(135deg, #fef7e0 0%, #fffbf7 100%); border: 1px solid #fce8b2; color: #b06000; width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🧑‍💻</div>
+<div style="background: #ffffff; border: 1px solid #e8ddd3; padding: 10px 14px; border-radius: 14px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(90, 59, 40, 0.04); display: flex; align-items: center; gap: 12px;">
+    <div style="background: linear-gradient(135deg, #fef7e0 0%, #fffbf7 100%); border: 1px solid #fce8b2; color: #b06000; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px;">🧑‍💻</div>
     <div>
-        <div style="color: #2c1e14; font-size: 14px; font-weight: 800; line-height: 1.2;">{login}</div>
-        <div style="color: #137333; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">{perfil}</div>
+        <div style="color: #2c1e14; font-size: 13px; font-weight: 800; line-height: 1.2;">{login}</div>
+        <div style="color: #137333; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">{perfil}</div>
     </div>
 </div>
 """
             st.markdown(html_cracha, unsafe_allow_html=True)
 
             # ==========================================
-            # MENU DE NAVEGAÇÃO
+            # MENU DE NAVEGAÇÃO ORGANIZADO
             # ==========================================
             if perfil in ["Administrador", "Operador"]:
                 st.markdown("**📦 OPERAÇÃO & VENDAS**")
@@ -92,7 +116,7 @@ def menu_lateral():
 
                 st.write("")
                 st.markdown("**⚙️ CONFIGURAÇÕES**")
-                st.page_link("pages/07_Usuarios.py", label="Gerenciar Usuarios", icon="🔑")
+                st.page_link("pages/07_Usuarios.py", label="Gerenciar Usuários", icon="🔑")
                 st.page_link("app.py", label="Ver Vitrine da Loja", icon="🌐")
 
             elif perfil == "Entregador":
