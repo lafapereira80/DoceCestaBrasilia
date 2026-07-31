@@ -29,7 +29,7 @@ def menu_lateral():
 
     with st.sidebar:
         html_branding = f"""
-        <div style="text-align: center; margin-top: 10px; margin-bottom: 25px;">
+        <div style="text-align: center; margin-top: 0px; margin-bottom: 25px;">
             <div style="position: relative; z-index: 2; margin-bottom: -22px;">
                 <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: linear-gradient(135deg, #c5721f 0%, #a65d14 100%); border-radius: 50%; border: 4px solid #ffffff; color: white; font-size: 20px; box-shadow: 0 4px 10px rgba(197, 114, 31, 0.25);">🧺</div>
             </div>
