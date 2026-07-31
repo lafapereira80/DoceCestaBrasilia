@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import urllib.parse
 
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
@@ -34,7 +33,16 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
     transition: all 0.2s ease;
 }
 .pedido-card:hover { border-color: #c5721f; box-shadow: 0 6px 15px rgba(197, 114, 31, 0.1); transform: translateY(-2px); }
-.pedido-id { font-size: 16px; font-weight: 800; color: #137333; margin-bottom: 8px; border-bottom: 1px dashed #e8ddd3; padding-bottom: 6px;}
+
+/* Cabeçalho do Cartão com Tags */
+.card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e8ddd3; padding-bottom: 10px; margin-bottom: 10px; }
+.pedido-id { font-size: 16px; font-weight: 800; color: #137333; margin: 0; }
+.tag-tipo { font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 6px; text-transform: uppercase; border: 1px solid transparent; }
+.tag-b2b { background: #e6f4ea; color: #137333; border-color: #ceead6; }
+.tag-vitrine { background: #e8f0fe; color: #1a73e8; border-color: #d2e3fc; }
+.tag-varejo { background: #fef7e0; color: #b06000; border-color: #fce8b2; }
+
+/* Informações internas */
 .pedido-info { font-size: 13px; color: #5a3b28; margin-bottom: 4px; font-weight: 500; }
 .pedido-info b { color: #2c1e14; font-weight: 700; }
 .pedido-total { font-size: 18px; font-weight: 800; color: #137333; margin-top: 10px; }
@@ -47,7 +55,7 @@ div[data-testid="stRadio"] label { font-weight: 700 !important; color: #5a3b28 !
 """, unsafe_allow_html=True)
 
 # =====================================================
-# CALLBACKS (A MÁGICA PARA NÃO PRECISAR CLICAR DUAS VEZES)
+# CALLBACKS (PARA ATUALIZAR STATUS INSTANTANEAMENTE)
 # =====================================================
 def alterar_status_callback(pedido_id, widget_key):
     novo_status = st.session_state[widget_key]
@@ -56,10 +64,6 @@ def alterar_status_callback(pedido_id, widget_key):
         st.toast(f"✅ Pedido atualizado para: {novo_status}!")
     except Exception as e:
         st.error("Erro ao atualizar o status.")
-
-def ir_para_detalhes(pedido_id):
-    st.session_state['pedido_detalhe_id'] = pedido_id
-    st.switch_page("pages/09_Detalhes_Pedido.py")
 
 # =====================================================
 # BUSCA OTIMIZADA NO BANCO DE DADOS
@@ -77,16 +81,12 @@ with st.spinner("Carregando pedidos..."):
 qtd_todos = len(todos_pedidos)
 qtd_recebido = sum(1 for p in todos_pedidos if p.get('status') == 'Recebido')
 qtd_pago = sum(1 for p in todos_pedidos if p.get('status') == 'Pago')
-qtd_rota = sum(1 for p in todos_pedidos if p.get('status') == 'Em Rota de Entrega')
-qtd_entregue = sum(1 for p in todos_pedidos if p.get('status') == 'Entregue')
 qtd_desistencia = sum(1 for p in todos_pedidos if p.get('status') == 'Desistência')
 
 opcoes_filtro = [
     f"Todos ({qtd_todos})",
     f"Recebidos ({qtd_recebido})",
     f"Pagos ({qtd_pago})",
-    f"Em Rota ({qtd_rota})",
-    f"Entregues ({qtd_entregue})",
     f"Desistências ({qtd_desistencia})"
 ]
 
@@ -103,10 +103,6 @@ for p in todos_pedidos:
         pedidos_filtrados.append(p)
     elif filtro_status.startswith("Pagos") and st_atual == "Pago":
         pedidos_filtrados.append(p)
-    elif filtro_status.startswith("Em Rota") and st_atual == "Em Rota de Entrega":
-        pedidos_filtrados.append(p)
-    elif filtro_status.startswith("Entregues") and st_atual == "Entregue":
-        pedidos_filtrados.append(p)
     elif filtro_status.startswith("Desistências") and st_atual == "Desistência":
         pedidos_filtrados.append(p)
 
@@ -119,7 +115,7 @@ if not pedidos_filtrados:
 # =====================================================
 # RENDERIZAÇÃO DOS CARTÕES EM GRID (3 COLUNAS)
 # =====================================================
-STATUS_PERMITIDOS = ["Recebido", "Pago", "Em Rota de Entrega", "Entregue", "Desistência"]
+STATUS_PERMITIDOS = ["Recebido", "Pago", "Desistência"]
 
 cols = st.columns(3)
 for idx, p in enumerate(pedidos_filtrados):
@@ -127,7 +123,17 @@ for idx, p in enumerate(pedidos_filtrados):
     
     pid = p['id']
     id_curto = str(pid).split('-')[0].upper()
-    cliente = str(p.get('cliente_nome') or '').replace('[B2B]', '').replace('[VITRINE]', '').strip()
+    
+    # Tratamento da Tag Visual do Pedido
+    cliente_bruto = str(p.get('cliente_nome') or '')
+    if "[B2B]" in cliente_bruto:
+        tag_html = '<span class="tag-tipo tag-b2b">🏢 B2B</span>'
+    elif "[VITRINE]" in cliente_bruto:
+        tag_html = '<span class="tag-tipo tag-vitrine">🌐 VITRINE</span>'
+    else:
+        tag_html = '<span class="tag-tipo tag-varejo">🛍️ VAREJO</span>'
+        
+    cliente_limpo = cliente_bruto.replace('[B2B]', '').replace('[VITRINE]', '').strip()
     
     try: data_f = datetime.strptime(str(p.get('data_entrega'))[:10], "%Y-%m-%d").strftime("%d/%m/%Y")
     except: data_f = "Não definida"
@@ -139,8 +145,11 @@ for idx, p in enumerate(pedidos_filtrados):
         with st.container(border=False):
             st.markdown(f"""
             <div class="pedido-card">
-                <div class="pedido-id">Pedido #{id_curto}</div>
-                <div class="pedido-info"><b>👤 Cliente:</b> {cliente}</div>
+                <div class="card-header">
+                    <h3 class="pedido-id">#{id_curto}</h3>
+                    {tag_html}
+                </div>
+                <div class="pedido-info"><b>👤 Cliente:</b> {cliente_limpo}</div>
                 <div class="pedido-info"><b>🎁 Cesta:</b> {p.get('cesta_nome') or '-'}</div>
                 <div class="pedido-info"><b>📅 Entrega:</b> {data_f} ({p.get('periodo_entrega') or '-'})</div>
                 <div class="pedido-info"><b>💳 Pagto:</b> {p.get('pagamento') or '-'}</div>
@@ -154,10 +163,11 @@ for idx, p in enumerate(pedidos_filtrados):
                 idx_st = STATUS_PERMITIDOS.index(status_atual) if status_atual in STATUS_PERMITIDOS else 0
                 widget_key = f"st_{pid}"
                 
-                # O on_change aciona a função de callback no exato momento do clique, resolvendo o bug do duplo clique!
+                # Atualização do Status Instantânea via Callback
                 st.selectbox("Status", STATUS_PERMITIDOS, index=idx_st, key=widget_key, 
                              on_change=alterar_status_callback, args=(pid, widget_key), label_visibility="collapsed")
             with c_btn:
-                # O on_click altera a página via callback instantâneo
-                st.button("Ver Detalhes", key=f"btn_{pid}", use_container_width=True, type="primary", 
-                          on_click=ir_para_detalhes, args=(pid,))
+                # O redirecionamento foi colocado de forma síncrona, corrigindo o erro do botão morto!
+                if st.button("Ver Detalhes", key=f"btn_{pid}", use_container_width=True, type="primary"):
+                    st.session_state['pedido_detalhe_id'] = pid
+                    st.switch_page("pages/09_Detalhes_Pedido.py")
