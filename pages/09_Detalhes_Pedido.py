@@ -365,30 +365,37 @@ if not st.session_state.modo_edicao:
                         st.error("Serviço InfinitePay não encontrado.")
 
             # =========================================================
-            # BLOCO INFINITEPAY VISUAL (Autorização e Horário)
+            # BLOCO INFINITEPAY VISUAL (Autorização e Horário) - HTML CORRIGIDO!
             # =========================================================
             tx_id = pedido.get("infinitepay_transaction_id")
             if tx_id:
-                st.markdown('<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 15px 0;">', unsafe_allow_html=True)
+                data_pagamento = pedido.get("data_pagamento")
+                if data_pagamento:
+                    try:
+                        data_obj = datetime.strptime(str(data_pagamento)[:19].replace("T", " "), "%Y-%m-%d %H:%M:%S")
+                        data_f = data_obj.strftime("%d/%m/%Y às %H:%M:%S")
+                    except:
+                        data_f = str(data_pagamento)
+                    horario_str = f'<div class="data-value" style="color: #15803d; font-size: 15px; margin-bottom: 0;">⏰ {data_f}</div>'
+                else:
+                    horario_str = '<div class="data-value" style="color: #15803d; font-size: 12px; font-weight: 500; margin-bottom: 0;">⏰ Registrado no banco (Aguardando novo campo)</div>'
                 
-                col_i1, col_i2 = st.columns(2)
-                with col_i1:
-                    st.markdown('<div class="data-label" style="color: #166534;">💳 Processador de Pagamento</div><div class="data-value" style="color: #15803d; font-size: 15px;">♾️ InfinitePay</div>', unsafe_allow_html=True)
-                    st.markdown(f'<div class="data-label" style="color: #166534; margin-top: 10px;">Autorização / NSU</div><div class="data-value" style="font-size: 12px; color: #15803d; word-break: break-all;">{tx_id}</div>', unsafe_allow_html=True)
-                
-                with col_i2:
-                    data_pagamento = pedido.get("data_pagamento")
-                    if data_pagamento:
-                        try:
-                            data_obj = datetime.strptime(str(data_pagamento)[:19].replace("T", " "), "%Y-%m-%d %H:%M:%S")
-                            data_f = data_obj.strftime("%d/%m/%Y às %H:%M:%S")
-                        except:
-                            data_f = str(data_pagamento)
-                        st.markdown(f'<div class="data-label" style="color: #166534;">Horário da Aprovação</div><div class="data-value" style="color: #15803d; font-size: 15px;">⏰ {data_f}</div>', unsafe_allow_html=True)
-                    else:
-                        st.markdown('<div class="data-label" style="color: #166534;">Horário da Aprovação</div><div class="data-value" style="color: #15803d; font-size: 12px; font-weight: 500;">⏰ Registrado no banco (Aguardando novo campo)</div>', unsafe_allow_html=True)
-                
-                st.markdown('</div>', unsafe_allow_html=True)
+                # HTML único com Flexbox garante que nada "vaze" pra fora da caixa verde
+                html_infinite = f"""
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 15px 0; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 15px;">
+                    <div style="flex: 1; min-width: 250px;">
+                        <div class="data-label" style="color: #166534;">💳 Processador de Pagamento</div>
+                        <div class="data-value" style="color: #15803d; font-size: 15px; margin-bottom: 10px;">♾️ InfinitePay</div>
+                        <div class="data-label" style="color: #166534;">Autorização / NSU</div>
+                        <div class="data-value" style="font-size: 12px; color: #15803d; word-break: break-all; margin-bottom: 0;">{tx_id}</div>
+                    </div>
+                    <div style="flex: 1; min-width: 250px;">
+                        <div class="data-label" style="color: #166534;">Horário da Aprovação</div>
+                        {horario_str}
+                    </div>
+                </div>
+                """
+                st.markdown(html_infinite.replace('\n', ''), unsafe_allow_html=True)
             
             c_btn1, c_btn3 = st.columns([1, 1])
             with c_btn1:
