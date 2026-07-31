@@ -230,8 +230,11 @@ if not st.session_state.modo_edicao:
         st.markdown(html_info1, unsafe_allow_html=True)
 
     with col2:
-        st.markdown('<div class="info-card">', unsafe_allow_html=True)
-        st.markdown('<div class="card-title">🎁 Detalhamento</div>', unsafe_allow_html=True)
+        # AQUI É ONDE O HTML VAZAVA ANTES. Agora a string é construída inteira antes do render!
+        html_info2 = """
+        <div class="info-card">
+            <div class="card-title">🎁 Detalhamento</div>
+        """
         
         produtos_str = (pedido.get('produtos') or '')
         adicionais_str = (pedido.get('adicionais') or '')
@@ -239,19 +242,26 @@ if not st.session_state.modo_edicao:
         
         if produtos_str:
             for linha in produtos_str.split("\n"):
-                if linha.strip(): st.markdown(f"<div class='item-pill'>📦 {linha.strip()}</div>", unsafe_allow_html=True)
+                if linha.strip(): 
+                    html_info2 += f"<div class='item-pill'>📦 {linha.strip()}</div>"
+                    
         if adicionais_str:
             for linha in adicionais_str.split("\n"):
                 linha_limpa = linha.strip()
                 if linha_limpa:
-                    if "Desconto" in linha_limpa: st.markdown(f"<div class='item-pill discount'>🔻 {linha_limpa}</div>", unsafe_allow_html=True)
-                    else: st.markdown(f"<div class='item-pill'>✨ {linha_limpa}</div>", unsafe_allow_html=True)
+                    if "Desconto" in linha_limpa: 
+                        html_info2 += f"<div class='item-pill discount'>🔻 {linha_limpa}</div>"
+                    else: 
+                        html_info2 += f"<div class='item-pill'>✨ {linha_limpa}</div>"
         
         if msg_cartao:
-            st.markdown("<div class='data-label' style='margin-top: 15px;'>💌 Mensagem do Cartão</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='background: #fdfbf8; padding: 10px; border-radius: 8px; font-style: italic; font-size: 13px; color: #4a2e1b; border-left: 3px solid #c5721f;'>\"{msg_cartao}\"</div>", unsafe_allow_html=True)
+            html_info2 += f"""
+            <div class='data-label' style='margin-top: 15px;'>💌 Mensagem do Cartão</div>
+            <div style='background: #fdfbf8; padding: 10px; border-radius: 8px; font-style: italic; font-size: 13px; color: #4a2e1b; border-left: 3px solid #c5721f;'>"{msg_cartao}"</div>
+            """
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        html_info2 += "</div>"
+        st.markdown(html_info2, unsafe_allow_html=True)
 
     # ANOTAÇÕES INTERNAS COM SALVAMENTO AUTOMÁTICO (NO MODO DE VISUALIZAÇÃO)
     with st.container(border=True):
@@ -340,12 +350,10 @@ else:
         with c8: e_per = st.text_input("Período/Horário", value=pedido.get('periodo_entrega') or '')
         
         c9, c10 = st.columns(2)
-        with c9: 
-            e_msg = st.text_area("Mensagem do Cartão", value=pedido.get('mensagem') or '', height=70)
-            e_pedido_especial = st.text_area("Pedido Especial (Solicitação do Cliente)", value=pedido.get('pedido_especial') or '', height=70)
+        with c9: e_msg = st.text_area("Mensagem do Cartão", value=pedido.get('mensagem') or '', height=70)
         with c10: 
-            # AQUI ESTÁ A CORREÇÃO: Variável e_anotacoes foi inserida perfeitamente no Layout
-            e_anotacoes = st.text_area("Anotações Internas (Para a Equipe)", value=pedido.get('anotacoes_internas') or '', height=185)
+            e_pedido_especial = st.text_area("Pedido Especial (Solicitação do Cliente)", value=pedido.get('pedido_especial') or '', height=70)
+            # A nota interna não precisa estar aqui, pois ela é salva automaticamente por fora, mas se você quiser alterar o pedido como um todo, fica organizado dessa forma.
 
     with st.container(border=True):
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 1px dashed #e8ddd3; padding-bottom: 6px;'>🎁 3. PRODUTOS E CARRINHO (FECHAMENTO)</div>", unsafe_allow_html=True)
@@ -489,7 +497,6 @@ else:
                 "data_entrega": e_data.strftime("%Y-%m-%d"),
                 "periodo_entrega": e_per,
                 "mensagem": e_msg,
-                "anotacoes_internas": e_anotacoes.strip(),
                 "pedido_especial": e_pedido_especial.strip(),
                 "cesta_nome": n_cesta,
                 "cesta_id": id_cesta,
