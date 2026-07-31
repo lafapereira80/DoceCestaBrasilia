@@ -8,7 +8,7 @@ def gerar_link_checkout_infinitepay(pedido_id: str, valor_total: float, cliente_
     """
     Gera um link de pagamento oficial via Checkout Integrado da InfinitePay.
     """
-    if not INFINITEPAY_HANDLE or INFINITEPAY_HANDLE == "sua_ininitetag_aqui":
+    if not INFINITEPAY_HANDLE or INFINITEPAY_HANDLE == "lafayette-improise":
         st.error("Configure sua InfiniteTag no arquivo infinitepay_service.py")
         return None
 
