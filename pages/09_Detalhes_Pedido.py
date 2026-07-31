@@ -253,10 +253,10 @@ if not st.session_state.modo_edicao:
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # NOVO: ANOTAÇÕES INTERNAS COM SALVAMENTO AUTOMÁTICO (NO MODO DE VISUALIZAÇÃO)
+    # ANOTAÇÕES INTERNAS COM SALVAMENTO AUTOMÁTICO (NO MODO DE VISUALIZAÇÃO)
     with st.container(border=True):
         st.markdown("<div style='font-size: 13px; font-weight: 800; color: #b06000; margin-bottom: 4px; text-transform: uppercase;'>⚠️ Anotações Internas (Para a Equipe)</div>", unsafe_allow_html=True)
-        st.text_area("Anotações Internas", value=pedido.get('anotacoes_internas') or '', height=80, key=f"nota_{pedido_id}", on_change=salvar_nota_interna, args=(pedido_id, f"nota_{pedido_id}"), label_visibility="collapsed", placeholder="Digite aqui anotações para a equipe e clique fora da caixa para salvar...")
+        st.text_area("Anotações Internas", value=pedido.get('anotacoes_internas') or '', height=80, key=f"nota_{pedido_id}", on_change=salvar_nota_interna, args=(pedido_id, f"nota_{pedido_id}"), label_visibility="collapsed", placeholder="Digite aqui anotações para a equipe e clique fora da caixa para salvar automaticamente...")
 
     # RESUMO FINANCEIRO E AÇÕES
     total_db = tratar_preco(pedido.get('valor_total', 0))
@@ -340,8 +340,12 @@ else:
         with c8: e_per = st.text_input("Período/Horário", value=pedido.get('periodo_entrega') or '')
         
         c9, c10 = st.columns(2)
-        with c9: e_msg = st.text_area("Mensagem do Cartão", value=pedido.get('mensagem') or '', height=70)
-        with c10: e_pedido_especial = st.text_area("Pedido Especial (Solicitação do Cliente)", value=pedido.get('pedido_especial') or '', height=70)
+        with c9: 
+            e_msg = st.text_area("Mensagem do Cartão", value=pedido.get('mensagem') or '', height=70)
+            e_pedido_especial = st.text_area("Pedido Especial (Solicitação do Cliente)", value=pedido.get('pedido_especial') or '', height=70)
+        with c10: 
+            # AQUI ESTÁ A CORREÇÃO: Variável e_anotacoes foi inserida perfeitamente no Layout
+            e_anotacoes = st.text_area("Anotações Internas (Para a Equipe)", value=pedido.get('anotacoes_internas') or '', height=185)
 
     with st.container(border=True):
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 1px dashed #e8ddd3; padding-bottom: 6px;'>🎁 3. PRODUTOS E CARRINHO (FECHAMENTO)</div>", unsafe_allow_html=True)
@@ -485,6 +489,7 @@ else:
                 "data_entrega": e_data.strftime("%Y-%m-%d"),
                 "periodo_entrega": e_per,
                 "mensagem": e_msg,
+                "anotacoes_internas": e_anotacoes.strip(),
                 "pedido_especial": e_pedido_especial.strip(),
                 "cesta_nome": n_cesta,
                 "cesta_id": id_cesta,
