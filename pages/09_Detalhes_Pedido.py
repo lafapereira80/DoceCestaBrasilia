@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-import requests
 import re
+import uuid
 import urllib.parse
 from datetime import datetime, date
 
@@ -30,44 +30,45 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 /* Header Banner */
 .order-header {
     background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%);
-    padding: 24px 30px; border-radius: 20px; border: 1px solid #e8ddd3;
-    box-shadow: 0 8px 24px rgba(90, 59, 40, 0.04); margin-bottom: 24px;
+    padding: 20px 24px; border-radius: 16px; border: 1px solid #e8ddd3;
+    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03); margin-bottom: 24px;
     display: flex; justify-content: space-between; align-items: center;
 }
-.order-id { font-size: 20px; font-weight: 800; color: #775a46; margin: 0; line-height: 1.2; letter-spacing: -0.5px; }
-.order-type-badge { background: #fef7e0; color: #b06000; padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid #fce8b2; display: inline-block; margin-top: 6px; }
+.order-id { font-size: 16px; font-weight: 800; color: #4a2e1b; margin: 0; }
+.order-type-badge { background: #fef7e0; color: #b06000; padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid #fce8b2; display: inline-block; margin-top: 4px; }
 .order-type-badge.corp { background: #e6f4ea; color: #137333; border-color: #ceead6; }
-.status-label { font-size: 12px; color: #775a46; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; text-align: right; }
-.status-value { font-size: 18px; font-weight: 800; color: #c5721f; text-align: right; }
+.status-label { font-size: 12px; color: #775a46; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; text-align: right; }
+.status-value { font-size: 16px; font-weight: 800; color: #c5721f; text-align: right; }
 
-/* Content Cards */
+/* Content Cards Superiores (HTML Custom) */
 .info-card {
-    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 24px;
+    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 20px;
     box-shadow: 0 4px 15px rgba(90, 59, 40, 0.02); margin-bottom: 20px; height: 100%;
 }
-.card-title { font-size: 15px; font-weight: 800; color: #c5721f; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; border-bottom: 2px dashed #f5eee6; padding-bottom: 10px; text-transform: uppercase; }
-.card-title.finance { color: #137333; border-bottom-color: #ceead6; }
+.card-title { font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; border-bottom: 2px dashed #f5eee6; padding-bottom: 8px; text-transform: uppercase; }
 
 /* Data Rows */
-.data-group { margin-bottom: 14px; }
+.data-group { margin-bottom: 12px; }
 .data-label { font-size: 11.5px; color: #8c7362; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
-.data-value { font-size: 14.5px; color: #2c1e14; font-weight: 600; }
-.highlight-box { background: #fdfbf8; border: 1px solid #e8ddd3; border-radius: 10px; padding: 12px; font-size: 14px; font-style: italic; color: #4a2e1b; border-left: 4px solid #c5721f; margin-top: 8px; }
+.data-value { font-size: 14px; color: #2c1e14; font-weight: 600; }
+.highlight-box { background: #fdfbf8; border: 1px solid #e8ddd3; border-radius: 10px; padding: 10px; font-size: 13.5px; font-style: italic; color: #4a2e1b; border-left: 4px solid #c5721f; margin-top: 6px; }
 
 /* Items / Products */
-.item-pill { background: #faf7f3; border: 1px solid #e8ddd3; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 13.5px; font-weight: 600; color: #4a2e1b; display: flex; align-items: center; gap: 8px; }
+.item-pill { background: #faf7f3; border: 1px solid #e8ddd3; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; font-size: 13.5px; font-weight: 600; color: #4a2e1b; }
 .item-pill.discount { background: #fef7e0; border-color: #fce8b2; color: #b06000; }
 
-/* Finance Summary */
-.receipt-box { background: #f9f9f9; border: 1px dashed #ccc; border-radius: 12px; padding: 18px; margin-top: 20px; }
-.receipt-line { display: flex; justify-content: space-between; font-size: 14px; color: #555; margin-bottom: 8px; font-weight: 500;}
-.receipt-line.total { border-top: 2px solid #ddd; padding-top: 10px; margin-top: 10px; font-size: 20px; font-weight: 800; color: #137333; }
+/* Receipt */
+.receipt-box { background: #f9f9f9; border: 1px dashed #ccc; border-radius: 10px; padding: 15px; margin-top: 15px; }
+.receipt-line { display: flex; justify-content: space-between; font-size: 13.5px; color: #555; margin-bottom: 6px; font-weight: 500;}
+.receipt-line.total { border-top: 2px solid #ddd; padding-top: 8px; margin-top: 8px; font-size: 18px; font-weight: 800; color: #137333; }
 
 /* Buttons */
 div[data-testid="stButton"] button { border-radius: 10px !important; font-weight: 800 !important; font-size: 14px !important; transition: all 0.2s ease !important; }
 div[data-testid="stButton"] button:hover { transform: translateY(-2px) !important; box-shadow: 0 4px 10px rgba(0,0,0,0.08) !important; }
-.wpp-btn > a { background: #25d366 !important; color: white !important; font-weight: 800 !important; font-size: 15px !important; border-radius: 12px !important; padding: 14px !important; display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none !important; transition: all 0.2s ease !important; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2) !important; }
-.wpp-btn > a:hover { background: #1ebd5a !important; transform: translateY(-2px) !important; box-shadow: 0 6px 15px rgba(37, 211, 102, 0.3) !important; }
+div[data-testid="stButton"] button[kind="primary"] { background: linear-gradient(135deg, #137333 0%, #0d4e22) !important; color: white !important; border: none !important; box-shadow: 0 4px 15px rgba(19, 115, 51, 0.2) !important; }
+
+/* Containers nativos */
+div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff !important; border-radius: 16px !important; border: 1px solid #e8ddd3 !important; padding: 20px !important; box-shadow: 0 4px 12px rgba(90, 59, 40, 0.02) !important; margin-bottom: 15px !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -97,8 +98,6 @@ is_b2b = "[B2B]" in pedido.get('cliente_nome', '')
 cliente_limpo = pedido.get('cliente_nome', '').replace("[B2B]", "").strip()
 tipo_classe = "corp" if is_b2b else ""
 tipo_texto = "🏢 CORPORATIVO (B2B)" if is_b2b else "🛍️ VAREJO (B2C)"
-
-# ID Curto para visualização limpa (apenas primeira parte)
 id_curto = str(pedido['id']).split('-')[0].upper()
 
 def formata_data(d_str):
@@ -134,7 +133,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # =====================================================
-# GRID DE INFORMAÇÕES (2 COLUNAS)
+# GRID SUPERIOR (INFORMAÇÕES ESTÁTICAS)
 # =====================================================
 col_info1, col_info2 = st.columns(2)
 
@@ -145,7 +144,7 @@ with col_info1:
         <div class="data-group"><div class="data-label">Cliente / Empresa</div><div class="data-value">{cliente_limpo}</div></div>
         <div class="data-group"><div class="data-label">Contato (WhatsApp)</div><div class="data-value">{pedido.get('cliente_telefone', '-')}</div></div>
         <div class="data-group"><div class="data-label">CPF / CNPJ</div><div class="data-value">{pedido.get('cliente_cpf', '-')}</div></div>
-        <div class="data-group" style="margin-top: 20px;"><div class="data-label">Recebedor (Destinatário)</div><div class="data-value">{pedido.get('destinatario_nome', '-')}</div></div>
+        <div class="data-group" style="margin-top: 15px;"><div class="data-label">Recebedor (Destinatário)</div><div class="data-value">{pedido.get('destinatario_nome', '-')}</div></div>
         <div class="data-group"><div class="data-label">Ocasião / Motivo</div><div class="data-value">{pedido.get('motivo_homenagem', '-')}</div></div>
     </div>
     """, unsafe_allow_html=True)
@@ -169,137 +168,153 @@ with col_info2:
 
 
 # =====================================================
-# GRID DE PRODUTOS E FECHAMENTO FINANCEIRO
+# GRID INFERIOR (DETALHAMENTO E FECHAMENTO NATIVOS)
 # =====================================================
 col_prod, col_fin = st.columns(2)
 
+# CAIXA DA ESQUERDA: DETALHAMENTO DO PEDIDO
 with col_prod:
-    st.markdown('<div class="info-card">', unsafe_allow_html=True)
-    st.markdown('<div class="card-title">🎁 Detalhamento do Pedido</div>', unsafe_allow_html=True)
-    
-    produtos_str = pedido.get('produtos', '')
-    adicionais_str = pedido.get('adicionais', '')
-    
-    if produtos_str:
-        st.markdown("<div class='data-label'>Cestas e Pacotes</div>", unsafe_allow_html=True)
-        for linha in produtos_str.split("\n"):
-            if linha.strip(): st.markdown(f"<div class='item-pill'>📦 {linha.strip()}</div>", unsafe_allow_html=True)
-            
-    if adicionais_str:
-        st.markdown("<div class='data-label' style='margin-top: 15px;'>Extras e Adicionais</div>", unsafe_allow_html=True)
-        for linha in adicionais_str.split("\n"):
-            linha_limpa = linha.strip()
-            if linha_limpa:
-                if "Desconto" in linha_limpa:
-                    st.markdown(f"<div class='item-pill discount'>🔻 {linha_limpa}</div>", unsafe_allow_html=True)
-                elif "EXTRAS" not in linha_limpa:
-                    st.markdown(f"<div class='item-pill'>✨ {linha_limpa}</div>", unsafe_allow_html=True)
-    
-    if not produtos_str and not adicionais_str:
-        st.caption("Nenhum item detalhado neste pedido.")
+    with st.container(border=True):
+        st.markdown("<h4 style='color: #c5721f; margin-top: 0; font-size: 15px; text-transform: uppercase;'>🎁 Detalhamento do Pedido</h4>", unsafe_allow_html=True)
+        st.divider()
         
-    st.markdown('</div>', unsafe_allow_html=True)
+        produtos_str = pedido.get('produtos', '')
+        adicionais_str = pedido.get('adicionais', '')
+        
+        if produtos_str:
+            st.markdown("<div class='data-label'>Cestas e Pacotes</div>", unsafe_allow_html=True)
+            for linha in produtos_str.split("\n"):
+                if linha.strip(): st.markdown(f"<div class='item-pill'>📦 {linha.strip()}</div>", unsafe_allow_html=True)
+                
+        if adicionais_str:
+            st.markdown("<div class='data-label' style='margin-top: 15px;'>Extras e Adicionais</div>", unsafe_allow_html=True)
+            for linha in adicionais_str.split("\n"):
+                linha_limpa = linha.strip()
+                if linha_limpa:
+                    if "Desconto" in linha_limpa:
+                        st.markdown(f"<div class='item-pill discount'>🔻 {linha_limpa}</div>", unsafe_allow_html=True)
+                    elif "EXTRAS" not in linha_limpa:
+                        st.markdown(f"<div class='item-pill'>✨ {linha_limpa}</div>", unsafe_allow_html=True)
+        
+        if not produtos_str and not adicionais_str:
+            st.caption("Nenhum item detalhado neste pedido.")
 
+# CAIXA DA DIREITA: FECHAMENTO & PAGAMENTO
 with col_fin:
-    st.markdown('<div class="info-card">', unsafe_allow_html=True)
-    st.markdown('<div class="card-title finance">💰 Fechamento & Pagamento</div>', unsafe_allow_html=True)
-    
-    frete_atual_db = tratar_preco(pedido.get('valor_frete', 0))
-    total_atual_db = tratar_preco(pedido.get('valor_total', 0))
-    sub_estimado = total_atual_db - frete_atual_db
-    
-    forma_pagamento = pedido.get('pagamento', 'Pix')
-    
-    # 1. Inputs de Fechamento (Iniciando zerados conforme solicitado)
-    c_f1, c_f2 = st.columns(2)
-    with c_f1:
-        novo_frete = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=0.0)
-    with c_f2:
-        desconto_perc = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0)
+    with st.container(border=True):
+        st.markdown("<h4 style='color: #137333; margin-top: 0; font-size: 15px; text-transform: uppercase;'>💰 Fechamento & Pagamento</h4>", unsafe_allow_html=True)
+        st.divider()
+        
+        frete_atual_db = tratar_preco(pedido.get('valor_frete', 0))
+        total_atual_db = tratar_preco(pedido.get('valor_total', 0))
+        forma_pagamento = pedido.get('pagamento', 'Pix')
+        
+        # 1. Inputs de Fechamento (Zerados para adição de extras/descontos/taxas sobre o valor atual)
+        c_f1, c_f2 = st.columns(2)
+        with c_f1: novo_frete = st.number_input("Adicionar Frete/Taxa (R$)", min_value=0.0, step=5.0, value=0.0)
+        with c_f2: desconto_perc = st.number_input("Aplicar Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0)
 
-    # Status restritos
-    lista_status = ["Recebido", "Pago", "Em Produção", "Em Rota de Entrega"]
-    status_db = pedido.get('status', 'Recebido')
-    idx_status = lista_status.index(status_db) if status_db in lista_status else 0
-    novo_status = st.selectbox("Status do Pedido", lista_status, index=idx_status)
+        # Status Restritos
+        lista_status = ["Recebido", "Pago", "Em Produção", "Em Rota de Entrega"]
+        status_db = pedido.get('status', 'Recebido')
+        idx_status = lista_status.index(status_db) if status_db in lista_status else 0
+        novo_status = st.selectbox("Atualizar Status", lista_status, index=idx_status)
 
-    st.markdown("<div class='data-label' style='margin-top: 8px;'>Inserir Extra Não Cadastrado</div>", unsafe_allow_html=True)
-    c_ex1, c_ex2 = st.columns([2.5, 1])
-    with c_ex1: nome_extra_novo = st.text_input("Nome", placeholder="Ex: Vinho", label_visibility="collapsed")
-    with c_ex2: valor_extra_novo = st.number_input("Valor", min_value=0.0, step=5.0, value=0.0, label_visibility="collapsed")
+        st.markdown("<div class='data-label' style='margin-top: 8px;'>Inserir Extra Não Cadastrado</div>", unsafe_allow_html=True)
+        c_ex1, c_ex2 = st.columns([2.5, 1])
+        with c_ex1: nome_extra_novo = st.text_input("Nome", placeholder="Ex: Cartão Extra", label_visibility="collapsed")
+        with c_ex2: valor_extra_novo = st.number_input("Valor", min_value=0.0, step=5.0, value=0.0, label_visibility="collapsed")
 
-    # Cálculos dinâmicos a partir do subtotal
-    v_desconto = sub_estimado * (desconto_perc / 100)
-    v_extra = valor_extra_novo if nome_extra_novo.strip() else 0.0
-    total_calculado = sub_estimado - v_desconto + novo_frete + v_extra
+        # Cálculos Matemáticos Preservando Histórico
+        v_desconto_novo = total_atual_db * (desconto_perc / 100)
+        v_extra_novo = valor_extra_novo if nome_extra_novo.strip() else 0.0
+        
+        # O novo total considera o total salvo no banco + Frete extra - Desconto novo + Extra novo
+        total_calculado = total_atual_db - v_desconto_novo + novo_frete + v_extra_novo
 
-    if st.button("💾 Aplicar Ajustes", use_container_width=True):
-        adicionais_atuais = pedido.get('adicionais', '') or ""
-        novo_adicional = adicionais_atuais
-        if desconto_perc > 0: novo_adicional += f"\n🔻 Desconto de {desconto_perc}% aplicado."
-        if nome_extra_novo.strip(): novo_adicional += f"\n✨ 1x {nome_extra_novo.strip()} (R$ {formata_moeda(v_extra)})"
+        # Resumo do Extrato em Tempo Real
+        st.markdown(f"""
+        <div class="receipt-box">
+            <div class="receipt-line"><span>Total Atual do Pedido</span> <span>R$ {formata_moeda(total_atual_db)}</span></div>
+            {f'<div class="receipt-line" style="color: #b06000;"><span>Novo Desconto ({desconto_perc}%)</span> <span>- R$ {formata_moeda(v_desconto_novo)}</span></div>' if desconto_perc > 0 else ''}
+            {f'<div class="receipt-line"><span>Novo Frete/Taxa</span> <span>+ R$ {formata_moeda(novo_frete)}</span></div>' if novo_frete > 0 else ''}
+            {f'<div class="receipt-line"><span>Novo Item Extra</span> <span>+ R$ {formata_moeda(v_extra_novo)}</span></div>' if v_extra_novo > 0 else ''}
+            <div class="receipt-line total"><span>TOTAL FINAL A PAGAR</span> <span>R$ {formata_moeda(total_calculado)}</span></div>
+            <div style="text-align: center; margin-top: 10px; font-size: 12px; font-weight: 700; color: #888;">💳 Forma de Pagamento: {forma_pagamento}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        try:
-            supabase.table("pedidos").update({
-                "valor_frete": novo_frete,
-                "valor_total": total_calculado,
-                "adicionais": novo_adicional.strip(),
-                "status": novo_status
-            }).eq("id", pedido_id).execute()
-            st.success("✅ Pedido atualizado!")
-            st.rerun()
-        except Exception as e:
-            st.error(f"Erro: {e}")
+        # Botão Salvar Dados
+        st.write("")
+        if st.button("💾 Salvar Dados e Atualizar Valores", use_container_width=True, type="primary"):
+            adicionais_atuais = pedido.get('adicionais', '') or ""
+            novo_adicional = adicionais_atuais
+            
+            if desconto_perc > 0: novo_adicional += f"\n🔻 Desconto extra de {desconto_perc}% aplicado."
+            if nome_extra_novo.strip(): novo_adicional += f"\n✨ 1x {nome_extra_novo.strip()} (R$ {formata_moeda(v_extra_novo)})"
 
-    # 2. Resumo Extrato
-    st.markdown(f"""
-    <div class="receipt-box">
-        <div class="receipt-line"><span>Cesta Base & Itens</span> <span>R$ {formata_moeda(sub_estimado)}</span></div>
-        <div class="receipt-line"><span>Adicionais Atuais</span> <span>Inclusos no Subtotal</span></div>
-        <div class="receipt-line" style="color: #b06000;"><span>Desconto Aplicado</span> <span>- R$ {formata_moeda(v_desconto)}</span></div>
-        <div class="receipt-line"><span>Taxa de Entrega</span> <span>R$ {formata_moeda(novo_frete)}</span></div>
-        <div class="receipt-line"><span>Item Extra Avulso</span> <span>R$ {formata_moeda(v_extra)}</span></div>
-        <div class="receipt-line total"><span>TOTAL A PAGAR</span> <span>R$ {formata_moeda(total_calculado)}</span></div>
-        <div style="text-align: center; margin-top: 10px; font-size: 12px; font-weight: 700; color: #888;">💳 Forma de Pagamento: {forma_pagamento}</div>
-    </div>
-    """, unsafe_allow_html=True)
+            try:
+                supabase.table("pedidos").update({
+                    "valor_frete": frete_atual_db + novo_frete,
+                    "valor_total": total_calculado,
+                    "adicionais": novo_adicional.strip(),
+                    "status": novo_status
+                }).eq("id", pedido_id).execute()
+                st.success("✅ Pedido salvo e atualizado!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Erro ao salvar: {e}")
 
-    # 3. Botão WhatsApp
-    fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone', ''))
-    
-    texto_resumo = f"""*RESUMO DO PEDIDO — DOCE CESTA BRASÍLIA* 🎁\n\n👤 *Olá {cliente_limpo}!* Segue o resumo para pagamento do seu pedido:\n\n📦 *Produto Principal:* {pedido.get('cesta_nome')}\n💳 *Forma de Pagamento:* {forma_pagamento}\n\n*VALORES:*\n🔸 Subtotal: R$ {formata_moeda(sub_estimado)}\n🚚 Frete: R$ {formata_moeda(novo_frete)}\n"""
-    if v_desconto > 0: texto_resumo += f"🔻 Desconto: - R$ {formata_moeda(v_desconto)}\n"
-    if v_extra > 0: texto_resumo += f"✨ Adicionais: R$ {formata_moeda(v_extra)}\n"
-    texto_resumo += f"━━━━━━━━━━━━━━━━━━━━\n💰 *TOTAL A PAGAR: R$ {formata_moeda(total_calculado)}*\n\n📅 *Entrega:* {formata_data(pedido.get('data_entrega'))} ({pedido.get('periodo_entrega')})\n📍 *Local:* {pedido.get('endereco')}\n\nQualquer dúvida, estamos à disposição! 🌻"
-    
-    link_wpp = f"https://wa.me/55{fone_cliente}?text={urllib.parse.quote(texto_resumo)}" if fone_cliente else "#"
-
-    st.write("")
-    if fone_cliente:
-        st.markdown(f'<div class="wpp-btn"><a href="{link_wpp}" target="_blank">💬 Enviar Resumo p/ Pagamento no WhatsApp</a></div>', unsafe_allow_html=True)
-    else:
-        st.warning("⚠️ O comprador não possui telefone cadastrado.")
-
-    st.markdown('</div>', unsafe_allow_html=True)
+        # Botão WhatsApp
+        fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone', ''))
+        texto_resumo = f"""*RESUMO DO PEDIDO — DOCE CESTA BRASÍLIA* 🎁\n\n👤 *Olá {cliente_limpo}!* Segue o resumo atualizado do seu pedido:\n\n📦 *Produto Principal:* {pedido.get('cesta_nome')}\n💳 *Forma de Pagamento:* {forma_pagamento}\n\n*VALORES ATUALIZADOS:*\n━━━━━━━━━━━━━━━━━━━━\n💰 *TOTAL A PAGAR: R$ {formata_moeda(total_calculado)}*\n\n📅 *Entrega:* {formata_data(pedido.get('data_entrega'))} ({pedido.get('periodo_entrega')})\n📍 *Local:* {pedido.get('endereco')}\n\nQualquer dúvida, estamos à disposição! 🌻"""
+        link_wpp = f"https://wa.me/55{fone_cliente}?text={urllib.parse.quote(texto_resumo)}" if fone_cliente else "#"
+        
+        st.write("")
+        if fone_cliente:
+            st.markdown(f'<a href="{link_wpp}" target="_blank" style="background: #25d366; color: white; font-weight: 800; font-size: 14px; border-radius: 10px; padding: 12px; display: flex; justify-content: center; text-decoration: none; box-shadow: 0 4px 10px rgba(37,211,102,0.2);">💬 Enviar Resumo p/ Pagamento (WhatsApp)</a>', unsafe_allow_html=True)
 
 # ==========================================
-# BOTÕES DE AÇÃO INFERIORES (EDIÇÃO COMPLETA E MOVIMENTAÇÃO)
+# BOTÃO DE EDIÇÃO GERAL (REDIRECIONAMENTO PRÉ-PREENCHIDO)
 # ==========================================
 st.markdown("<hr style='border-top: 1px dashed #e8ddd3; margin: 10px 0 20px 0;'>", unsafe_allow_html=True)
-col_a1, col_a2, col_a3 = st.columns(3)
+col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
 
-with col_a1:
-    if st.button("✏️ Editar Pedido Inteiro", use_container_width=True):
-        st.session_state['editar_pedido_id'] = pedido_id
-        if is_b2b: st.switch_page("pages/18_Corporativo.py")
-        else: st.switch_page("pages/19_Pedido_Manual.py")
-
-with col_a2:
-    if st.button("⏩ Avançar p/ Produção", use_container_width=True):
-        supabase.table("pedidos").update({"status": "Em Produção"}).eq("id", pedido_id).execute()
-        st.rerun()
-
-with col_a3:
-    if st.button("🚚 Enviar p/ Rota", use_container_width=True):
-        supabase.table("pedidos").update({"status": "Em Rota de Entrega"}).eq("id", pedido_id).execute()
-        st.rerun()
+with col_btn2:
+    if st.button("✏️ Editar Pedido Inteiro (Cestas, Endereços e Itens)", use_container_width=True):
+        
+        # Gera a lista de itens para recomposição do carrinho na tela de edição
+        lista_itens_recriados = []
+        lista_itens_recriados.append({
+            "id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": pedido.get("cesta_id"), "nome": pedido.get("cesta_nome", "Cesta"),
+            "preco_unitario": 0.0, "quantidade": 1, "descricao": pedido.get("produtos", "")
+        })
+        
+        # Pré-preenche os dados de sessão para as páginas 18 e 19 herdarem nativamente
+        st.session_state['pedido_editando_id'] = pedido_id
+        
+        if is_b2b:
+            st.session_state['corp_nome'] = cliente_limpo
+            st.session_state['corp_cnpj'] = pedido.get('cliente_cpf', '')
+            st.session_state['corp_tel'] = pedido.get('cliente_telefone', '')
+            st.session_state['corp_end'] = pedido.get('endereco', '')
+            st.session_state['itens_orcamento_corp'] = lista_itens_recriados
+            st.switch_page("pages/18_Corporativo.py")
+        else:
+            st.session_state['man_nome'] = cliente_limpo
+            st.session_state['in_nome'] = cliente_limpo
+            st.session_state['man_cpf'] = pedido.get('cliente_cpf', '')
+            st.session_state['in_cpf'] = pedido.get('cliente_cpf', '')
+            st.session_state['man_tel'] = pedido.get('cliente_telefone', '')
+            st.session_state['in_tel'] = pedido.get('cliente_telefone', '')
+            st.session_state['man_dest_nome'] = pedido.get('destinatario_nome', '')
+            st.session_state['man_dest_tel'] = pedido.get('destinatario_telefone', '')
+            st.session_state['man_motivo'] = pedido.get('motivo_homenagem', '')
+            st.session_state['man_msg'] = pedido.get('mensagem', '')
+            st.session_state['man_rua'] = pedido.get('endereco', '')
+            st.session_state['in_rua'] = pedido.get('endereco', '')
+            st.session_state['man_frete'] = tratar_preco(pedido.get('valor_frete', 0))
+            st.session_state['man_pag'] = pedido.get('pagamento', 'Pix')
+            st.session_state['man_status'] = pedido.get('status', 'Recebido')
+            st.session_state['itens_orcamento_varejo'] = lista_itens_recriados
+            st.switch_page("pages/19_Pedido_Manual.py")
