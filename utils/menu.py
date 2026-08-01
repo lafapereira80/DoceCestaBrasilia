@@ -1,51 +1,102 @@
 import streamlit as st
 
 def configurar_pagina():
-    """Injeta os estilos globais de design e garante a persistência visual do menu e páginas"""
+    """Design Mobile-First estilo App Nativo (iOS / Nubank)"""
     st.markdown(
         """
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Dancing+Script:wght@700&display=swap');
         
-        html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; }
+        /* Fontes e Fundo Global do App */
+        html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
+        .stApp { background-color: #F8FAFC !important; }
         
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         .stAppDeployMenu {display: none;}
-        
-        /* ESCONDE A LISTA DE ARQUIVOS PADRÃO DO STREAMLIT NO MENU LATERAL */
         [data-testid="stSidebarNav"] {display: none !important;}
         
-        /* REMOVE O ESPAÇO EM BRANCO GRANDE NO TOPO DA BARRA LATERAL */
-        section[data-testid="stSidebar"] > div:first-child {
-            padding-top: 0rem !important;
+        /* ----------------------------------------------------
+           AJUSTES DA BARRA LATERAL (SIDEBAR)
+        ---------------------------------------------------- */
+        section[data-testid="stSidebar"] {
+            background-color: #FFFFFF !important;
+            border-right: 1px solid #E2E8F0 !important;
         }
-        [data-testid="stSidebar"] .block-container {
-            padding-top: 0.8rem !important;
-        }
+        section[data-testid="stSidebar"] > div:first-child { padding-top: 0rem !important; }
+        [data-testid="stSidebar"] .block-container { padding-top: 1.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important;}
 
-        /* ESTILIZAÇÃO DOS LINKS DA BARRA LATERAL (COM RELEVO E SOMBRA) */
-        section[data-testid="stSidebar"] div[data-testid="stPageLink"] {
-            background: linear-gradient(135deg, #ffffff 0%, #fcfbf8 100%) !important;
-            border: 1px solid #e8ddd3 !important;
-            border-radius: 12px !important;
-            box-shadow: 0 4px 12px rgba(90, 59, 40, 0.04) !important;
-            transition: all 0.2s ease !important;
-            margin-bottom: 8px !important;
-        }
-        section[data-testid="stSidebar"] div[data-testid="stPageLink"]:hover {
-            border-color: #c5721f !important;
-            background: linear-gradient(135deg, #ffffff 0%, #fff7f0 100%) !important;
-            transform: translateX(3px) !important;
-            box-shadow: 0 6px 16px rgba(197, 114, 31, 0.12) !important;
-        }
+        /* Links da Barra Lateral (Clean & Flat) */
+        section[data-testid="stSidebar"] div[data-testid="stPageLink"] { margin-bottom: 4px !important; }
         section[data-testid="stSidebar"] a[data-testid="stPageLink"] {
-            padding: 10px 14px !important;
-            font-weight: 700 !important;
-            color: #4a2e1b !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 12px !important;
+            padding: 12px 16px !important;
+            font-weight: 600 !important;
+            color: #475569 !important;
+            transition: all 0.2s ease !important;
         }
         section[data-testid="stSidebar"] a[data-testid="stPageLink"]:hover {
-            text-decoration: none !important;
+            background-color: #F1F5F9 !important;
+            color: #C5721F !important;
+            transform: translateX(4px) !important;
+        }
+
+        /* ----------------------------------------------------
+           AJUSTES DOS BOTÕES NA PÁGINA PRINCIPAL (ADMIN)
+        ---------------------------------------------------- */
+        /* Cartões de Seção (Grupos) */
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E2E8F0 !important;
+            border-radius: 24px !important;
+            padding: 24px 20px !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02) !important;
+            margin-bottom: 24px !important;
+        }
+
+        /* Botões "App Style" nas páginas */
+        .stApp a[data-testid="stPageLink"] {
+            background: #F8FAFC !important;
+            border: 1px solid #F1F5F9 !important;
+            border-radius: 16px !important;
+            padding: 16px 20px !important;
+            color: #1E293B !important;
+            font-weight: 700 !important;
+            font-size: 15px !important;
+            display: flex !important;
+            align-items: center !important;
+            transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.01) !important;
+            margin-bottom: 12px !important;
+            width: 100% !important;
+        }
+        .stApp a[data-testid="stPageLink"]:hover {
+            background: #FFFFFF !important;
+            border-color: #C5721F !important;
+            color: #C5721F !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 20px rgba(197, 114, 31, 0.12) !important;
+        }
+
+        /* Títulos de Seção */
+        .app-section-title {
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94A3B8;
+            margin-bottom: 16px;
+            padding-left: 4px;
+        }
+
+        /* Oculta label do Page Link nativo que fica feio */
+        div[data-testid="stPageLink"] p { margin: 0 !important; }
+
+        @media (max-width: 640px) {
+            .block-container { padding: 1rem 0.8rem !important; }
+            div[data-testid="stVerticalBlockBorderWrapper"] { padding: 20px 16px !important; border-radius: 20px !important; }
         }
         </style>
         """,
@@ -53,80 +104,65 @@ def configurar_pagina():
     )
 
 def menu_lateral():
-    """Gera o menu lateral dinâmico baseado no perfil do usuário"""
     usuario = st.session_state.get("usuario")
 
     with st.sidebar:
-        # ==========================================
-        # BRANDING MINIMALISTA PREMIUM
-        # ==========================================
+        # BRANDING TIPO "CARTÃO BLACK"
         html_branding = """
-<div style="text-align: center; margin-top: 0px; margin-bottom: 20px;">
-    <div style="position: relative; z-index: 2; margin-bottom: -22px;">
-        <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: linear-gradient(135deg, #c5721f 0%, #a65d14 100%); border-radius: 50%; border: 4px solid #f6f7f8; color: white; font-size: 20px; box-shadow: 0 4px 10px rgba(197, 114, 31, 0.25);">🧺</div>
-    </div>
-    <div style="background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 32px 15px 15px 15px; position: relative; z-index: 1; box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03);">
-        <h2 style="color: #4a2e1b; font-family: 'Dancing Script', cursive !important; font-size: 34px; font-weight: 700; margin: 0; line-height: 1.1;">Doce Cesta</h2>
-        <div style="color: #c5721f; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px;">Painel de Gestão</div>
-    </div>
-</div>
-"""
+        <div style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); border-radius: 20px; padding: 24px 16px; text-align: center; margin-bottom: 24px; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);">
+            <div style="font-size: 32px; margin-bottom: 5px;">🧺</div>
+            <h2 style="font-family: 'Dancing Script', cursive !important; font-size: 32px; font-weight: 700; color: #FFFFFF; margin: 0; line-height: 1;">Doce Cesta</h2>
+            <div style="color: #C5721F; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-top: 8px;">App de Gestão</div>
+        </div>
+        """
         st.markdown(html_branding, unsafe_allow_html=True)
 
         if usuario:
             perfil = usuario.get("perfil", "Usuário")
             login = usuario.get("login", "Admin")
             
-            # ==========================================
-            # CRACHÁ DE USUÁRIO
-            # ==========================================
+            # CRACHÁ ESTILO "APPLE ID"
             html_cracha = f"""
-<div style="background: #ffffff; border: 1px solid #e8ddd3; padding: 10px 14px; border-radius: 14px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(90, 59, 40, 0.04); display: flex; align-items: center; gap: 12px;">
-    <div style="background: linear-gradient(135deg, #fef7e0 0%, #fffbf7 100%); border: 1px solid #fce8b2; color: #b06000; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px;">🧑‍💻</div>
-    <div>
-        <div style="color: #2c1e14; font-size: 13px; font-weight: 800; line-height: 1.2;">{login}</div>
-        <div style="color: #137333; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">{perfil}</div>
-    </div>
-</div>
-"""
+            <div style="background: #F8FAFC; border: 1px solid #F1F5F9; padding: 12px; border-radius: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+                <div style="background: #FFFFFF; border: 1px solid #E2E8F0; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">🧑‍💻</div>
+                <div>
+                    <div style="color: #1E293B; font-size: 14px; font-weight: 700; line-height: 1.2;">{login}</div>
+                    <div style="color: #64748B; font-size: 11px; font-weight: 600; margin-top: 2px;">{perfil}</div>
+                </div>
+            </div>
+            """
             st.markdown(html_cracha, unsafe_allow_html=True)
 
-            # ==========================================
-            # MENU DE NAVEGAÇÃO ORGANIZADO
-            # ==========================================
             if perfil in ["Administrador", "Operador"]:
-                st.markdown("**📦 OPERAÇÃO & VENDAS**")
+                st.markdown('<div style="font-size: 12px; font-weight: 700; color: #94A3B8; margin-bottom: 8px; margin-top: 10px; padding-left: 8px;">OPERAÇÃO & VENDAS</div>', unsafe_allow_html=True)
                 st.page_link("pages/02_Pedidos.py", label="Gestão de Pedidos", icon="📋")
                 st.page_link("pages/19_Pedido_Manual.py", label="Venda Varejo (PDV)", icon="🛍️")
                 st.page_link("pages/18_Corporativo.py", label="Vendas B2B", icon="🏢")
                 st.page_link("pages/16_Previsao.py", label="Previsão de Produção", icon="📈")
                 st.page_link("pages/08_Entregas.py", label="Rotas de Entrega", icon="🛵")
                 
-                st.write("")
-                st.markdown("**📊 GESTÃO & FINANCEIRO**")
+                st.markdown('<div style="font-size: 12px; font-weight: 700; color: #94A3B8; margin-bottom: 8px; margin-top: 24px; padding-left: 8px;">GESTÃO & FINANCEIRO</div>', unsafe_allow_html=True)
                 st.page_link("pages/03_Clientes.py", label="Base de Clientes", icon="👥")
                 st.page_link("pages/06_Financeiro.py", label="Painel Financeiro", icon="💰")
                 
-                st.write("")
-                st.markdown("**🍓 CATÁLOGO DA LOJA**")
+                st.markdown('<div style="font-size: 12px; font-weight: 700; color: #94A3B8; margin-bottom: 8px; margin-top: 24px; padding-left: 8px;">CATÁLOGO DA LOJA</div>', unsafe_allow_html=True)
                 st.page_link("pages/04_Cestas.py", label="Cestas e Kits", icon="🧺")
                 st.page_link("pages/05_Produtos.py", label="Produtos e Insumos", icon="🍓")
                 st.page_link("pages/15_Categorias.py", label="Categorias", icon="🏷️")
                 st.page_link("pages/17_Secoes_Vitrine.py", label="Seções da Vitrine", icon="🖥️")
 
-                st.write("")
-                st.markdown("**⚙️ CONFIGURAÇÕES**")
+                st.markdown('<div style="font-size: 12px; font-weight: 700; color: #94A3B8; margin-bottom: 8px; margin-top: 24px; padding-left: 8px;">CONFIGURAÇÕES</div>', unsafe_allow_html=True)
                 st.page_link("pages/07_Usuarios.py", label="Gerenciar Usuários", icon="🔑")
                 st.page_link("app.py", label="Ver Vitrine da Loja", icon="🌐")
 
             elif perfil == "Entregador":
-                st.markdown("**🛵 ÁREA DO ENTREGADOR**")
+                st.markdown('<div style="font-size: 12px; font-weight: 700; color: #94A3B8; margin-bottom: 8px; margin-top: 10px; padding-left: 8px;">ENTREGADOR</div>', unsafe_allow_html=True)
                 st.page_link("pages/08_Entregas.py", label="Minha Rota", icon="🗺️")
 
             st.write("")
             st.divider()
             
-            if st.button("🚪 Sair (Logout)", use_container_width=True):
+            if st.button("🚪 Sair da Conta", use_container_width=True):
                 st.session_state.clear()
                 st.switch_page("app.py")
         else:
