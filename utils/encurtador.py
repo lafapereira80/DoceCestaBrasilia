@@ -4,35 +4,33 @@ import streamlit as st
 
 def encurtar_link(link_longo):
     """
-    Encurtador Premium Spoo.me (Focado em Devs, sem anúncios, redirecionamento direto).
+    Recebe um link longo, aplica o 'Disfarce' (User-Agent) para não ser 
+    bloqueado como robô, e retorna a versão curta via Is.gd ou Clck.ru.
     """
     if not link_longo or not str(link_longo).startswith("http"):
         return link_longo
         
+    # A máscara que engana a API fingindo ser o navegador Chrome
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+        
     try:
-        # TENTATIVA 1: Spoo.me API (Muito estável e não bloqueia links de pagamento)
-        headers = {'Accept': 'application/json'}
-        data = {'url': link_longo}
-        
-        res = requests.post("https://spoo.me/", data=data, headers=headers, timeout=5)
-        
-        if res.status_code in [200, 201]:
-            link_curto = res.json().get("short_url")
-            if link_curto:
-                st.toast("✅ Link encurtado com sucesso!")
-                return link_curto
-                
-        # TENTATIVA 2: Is.gd formatado 
+        # TENTATIVA 1: Is.gd (Sem anúncios, limpo)
         url_isgd = f"https://is.gd/create.php?format=simple&url={urllib.parse.quote(link_longo)}"
-        res2 = requests.get(url_isgd, timeout=5)
+        res = requests.get(url_isgd, headers=headers, timeout=5)
         
-        if res2.status_code == 200 and "is.gd" in res2.text:
-            st.toast("✅ Link encurtado (Alternativo)!")
+        if res.status_code == 200 and "is.gd" in res.text:
+            return res.text.strip()
+            
+        # TENTATIVA 2: Clck.ru (Backup rápido)
+        url_clck = f"https://clck.ru/--?url={urllib.parse.quote(link_longo)}"
+        res2 = requests.get(url_clck, headers=headers, timeout=5)
+        
+        if res2.status_code == 200 and "clck" in res2.text:
             return res2.text.strip()
             
-        st.toast("⚠️ Encurtador indisponível no momento. Usando link original.")
         return link_longo
         
     except Exception as e:
-        print(f"Erro no encurtador: {e}")
         return link_longo
