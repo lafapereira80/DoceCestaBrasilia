@@ -28,15 +28,11 @@ st.markdown(
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
 
-/* =========================================
-   CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
-========================================== */
 html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; color: #4a2e1b !important; }
 .block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; max-width: 1250px; }
 
 h1, h2, h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-bottom: 8px !important; letter-spacing: -0.3px; }
 
-/* Banner / Cabeçalho Luxuoso */
 .header-banner {
     display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; margin-bottom: 2rem;
     background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%); padding: 25px 20px;
@@ -45,9 +41,6 @@ h1, h2, h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-
 .header-title { font-family: 'Dancing Script', cursive !important; font-size: 42px !important; font-weight: 700 !important; color: #c5721f !important; margin: 0 !important; line-height: 1.1 !important; text-align: center;}
 .header-subtitle { font-size: 14px !important; color: #775a46 !important; font-weight: 600 !important; margin-top: 0px !important; text-align: center;}
 
-/* =========================================
-   CARDS DE PEDIDO (ENTREGAS)
-========================================== */
 div[data-testid="stVerticalBlockBorderWrapper"] { 
     background: #ffffff !important; 
     border: 1px solid #e8ddd3 !important; 
@@ -57,33 +50,19 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     box-shadow: 0 4px 15px rgba(90, 59, 40, 0.03) !important; 
     transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
-div[data-testid="stVerticalBlockBorderWrapper"]:hover {
-    border-color: #d2bfae !important;
-    box-shadow: 0 8px 25px rgba(90, 59, 40, 0.08) !important;
-}
+div[data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: #d2bfae !important; box-shadow: 0 8px 25px rgba(90, 59, 40, 0.08) !important; }
 
-/* =========================================
-   TIPOGRAFIA INTERNA DOS CARDS
-========================================== */
 .pedido-id-badge { background: linear-gradient(135deg, #c5721f 0%, #a65d14 100%); color: white; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 11px; display: inline-block; letter-spacing: 0.5px; text-transform: uppercase; box-shadow: 0 4px 8px rgba(197, 114, 31, 0.2); }
 .comprador-txt { font-size: 13px; color: #775a46; margin-top: 10px; font-weight: 600; }
 .destinatario-txt { font-size: 16px; font-weight: 800; color: #2c1e14; margin-top: 2px; }
 .endereco-box { font-size: 14px; color: #4a2e1b; margin-top: 10px; background: #faf7f3; padding: 12px 15px; border-radius: 12px; border-left: 4px solid #1a73e8; line-height: 1.4; font-weight: 600; }
 .hora-badge { font-size: 12px; font-weight: 800; color: #b06000; background: #fef7e0; padding: 6px 10px; border-radius: 8px; display: inline-block; margin-top: 12px; border: 1px solid #fce8b2; }
 
-/* =========================================
-   BOTÕES DE AÇÃO E SELECTS
-========================================== */
 div[data-testid="stButton"] button { border-radius: 12px !important; font-weight: 800 !important; font-size: 14px !important; min-height: 44px !important; transition: all 0.2s ease !important; }
 div[data-testid="stButton"] button:hover { transform: translateY(-2px) !important; box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important; }
-
-/* Botões Primários */
 div[data-testid="stButton"] button[kind="primary"] { background: linear-gradient(135deg, #137333 0%, #0d4e22) !important; color: white !important; border: none !important; box-shadow: 0 4px 15px rgba(19, 115, 51, 0.2) !important; }
 div[data-testid="stButton"] button[kind="primary"]:hover { background: linear-gradient(135deg, #0f5c28 0%, #093818) !important; box-shadow: 0 6px 20px rgba(19, 115, 51, 0.3) !important; }
 
-/* =========================================
-   FICHA DE ENTREGA E BOTÕES GPS
-========================================== */
 .ficha-entrega { font-size: 15px; color: #4a2e1b; }
 .ficha-entrega strong { color: #5a3b28; font-weight: 800; }
 .ficha-secao { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #dfcdbb; }
@@ -93,9 +72,6 @@ div[data-testid="stLinkButton"] a:hover { transform: translateY(-2px) !important
 .btn-waze > a { background-color: #e8f0fe !important; color: #1a73e8 !important; border: 1px solid #d2e3fc !important; }
 .btn-maps > a { background-color: #fce8e6 !important; color: #c5221f !important; border: 1px solid #fad2cf !important; }
 
-/* =========================================
-   CARTÃO DE ENTREGUE E CABEÇALHO DO ADMIN
-========================================== */
 .entregue-box { opacity: 0.85; background-color: #f0f7f4 !important; border: 1px solid #c8e6c9 !important; border-left: 6px solid #137333 !important; }
 .admin-card-header { text-align: center; background: linear-gradient(135deg, #fdfbf8 0%, #ffffff 100%); color: #5a3b28; font-weight: 800; padding: 15px; border-radius: 14px; margin-bottom: 15px; font-size: 16px; border: 1px solid #e8ddd3; }
 
@@ -103,17 +79,9 @@ div[data-testid="stLinkButton"] a:hover { transform: translateY(-2px) !important
     .block-container { padding-left: 0.6rem !important; padding-right: 0.6rem !important; }
     .header-title { font-size: 34px !important; }
     div[data-testid="stVerticalBlockBorderWrapper"] { padding: 16px !important; }
-    
-    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) {
-        display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important;
-        gap: 8px !important; margin-top: 10px !important; justify-content: space-between;
-    }
-    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) > div[data-testid="stColumn"] {
-        flex: 1 1 0% !important; min-width: 0 !important; padding: 0 !important;
-    }
-    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) button {
-        width: 100% !important; padding: 8px 0px !important;
-    }
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; gap: 8px !important; margin-top: 10px !important; justify-content: space-between; }
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) > div[data-testid="stColumn"] { flex: 1 1 0% !important; min-width: 0 !important; padding: 0 !important; }
+    div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) button { width: 100% !important; padding: 8px 0px !important; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -138,7 +106,6 @@ def obter_horario_brasilia():
 def buscar_entregas_dia(driver_login=None):
     data_hoje = obter_horario_brasilia().strftime("%d/%m/%Y")
     
-    # Busca tanto pedidos com status "Enviado" quanto "Em Rota de Entrega"
     query_env = supabase.table("pedidos").select("*").in_("status", ["Enviado", "Em Rota de Entrega"])
     if perfil_usuario == "Entregador" or driver_login:
         alvo = login_atual if perfil_usuario == "Entregador" else driver_login
@@ -175,13 +142,19 @@ def atualizar_entregador(pedido_id, widget_key):
     except Exception as e: 
         st.error(f"Erro ao atribuir: {e}")
 
-def marcar_como_entregue(pedido, login_autor):
+def marcar_como_entregue(pedido, login_autor, quem_recebeu):
     try:
         agora_br = obter_horario_brasilia()
         hora_formatada = agora_br.strftime("%d/%m/%Y %H:%M")
         apenas_hora = agora_br.strftime("%H:%M")
+        nome_recebedor_final = quem_recebeu.strip() if quem_recebeu.strip() else "Não informado"
         
-        supabase.table("pedidos").update({"status": "Entregue", "ordem_entrega": 999, "hora_entrega_realizada": hora_formatada}).eq("id", pedido["id"]).execute()
+        supabase.table("pedidos").update({
+            "status": "Entregue", 
+            "ordem_entrega": 999, 
+            "hora_entrega_realizada": hora_formatada,
+            "quem_recebeu": nome_recebedor_final
+        }).eq("id", pedido["id"]).execute()
         
         bairro_local = str(pedido.get('endereco', '')).split(',')[-1].split('(')[0].strip() or "Região Central"
         texto_telegram = (
@@ -194,6 +167,7 @@ def marcar_como_entregue(pedido, login_autor):
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🛵 *Responsável:* {login_autor}\n"
             f"⏰ *Horário Real:* {apenas_hora}\n"
+            f"👤 *Recebido por:* {nome_recebedor_final}\n"
             f"✅ *Status:* Concluído com Sucesso!"
         )
         enviar_notificacao_telegram(texto_telegram)
@@ -202,11 +176,10 @@ def marcar_como_entregue(pedido, login_autor):
 
 def voltar_para_enviado(pedido_id):
     try:
-        supabase.table("pedidos").update({"status": "Em Rota de Entrega", "ordem_entrega": 0, "hora_entrega_realizada": None}).eq("id", pedido_id).execute()
+        supabase.table("pedidos").update({"status": "Em Rota de Entrega", "ordem_entrega": 0, "hora_entrega_realizada": None, "quem_recebeu": None}).eq("id", pedido_id).execute()
         st.toast("↩️ Cesta retornada para a rota com sucesso!")
     except Exception as e:
         st.error(f"Erro ao reverter status: {e}")
-
 
 pedidos_ativos_geral, pedidos_concluidos_geral = buscar_entregas_dia()
 
@@ -281,8 +254,11 @@ if perfil_usuario in ["Administrador", "Operador"]:
                             st.selectbox("Entregador", opcoes_ent, index=0, key=chave_widget, label_visibility="collapsed", on_change=atualizar_entregador, args=(ped["id"], chave_widget))
                             
                             st.write("")
+                            st.markdown("<div style='font-size: 11px; font-weight: 800; color: #775a46; margin-bottom: 4px; text-transform: uppercase;'>Finalizar:</div>", unsafe_allow_html=True)
+                            recebedor_desp = st.text_input("Quem recebeu?", key=f"rec_desp_{ped['id']}", placeholder="Nome da pessoa", label_visibility="collapsed")
                             if st.button("✅ Dar Baixa Manual", key=f"entregue_desp_{ped['id']}", use_container_width=True):
-                                marcar_como_entregue(ped, login_atual)
+                                se_vazio = recebedor_desp if recebedor_desp else "Baixa Manual Admin"
+                                marcar_como_entregue(ped, login_atual, se_vazio)
                                 st.rerun()
 
         # Verifica rotas ativas
@@ -350,8 +326,11 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                         st.selectbox("Realocar", opcoes_ent, index=indice_atual, key=chave_realocar, label_visibility="collapsed", on_change=atualizar_entregador, args=(ped["id"], chave_realocar))
                                         
                                         st.write("")
+                                        st.markdown("<div style='font-size: 11px; font-weight: 800; color: #775a46; margin-bottom: 4px; text-transform: uppercase;'>Finalizar:</div>", unsafe_allow_html=True)
+                                        recebedor_ativa = st.text_input("Quem recebeu?", key=f"rec_ativa_{ped['id']}", placeholder="Nome da pessoa", label_visibility="collapsed")
                                         if st.button("✅ Forçar Baixa", key=f"entregue_ativa_{ped['id']}", use_container_width=True, type="primary"):
-                                            marcar_como_entregue(ped, login_atual)
+                                            se_vazio = recebedor_ativa if recebedor_ativa else "Forçado Admin"
+                                            marcar_como_entregue(ped, login_atual, se_vazio)
                                             st.rerun()
 
                                     st.write("")
@@ -450,10 +429,14 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                     st.markdown('</div>', unsafe_allow_html=True)
 
                             with col_btn_mb:
-                                st.markdown("<div style='font-size: 11px; font-weight: 800; color: #775a46; margin-bottom: 4px; text-transform: uppercase;'>Ação:</div>", unsafe_allow_html=True)
+                                st.markdown("<div style='font-size: 11px; font-weight: 800; color: #775a46; margin-bottom: 4px; text-transform: uppercase;'>Finalizar:</div>", unsafe_allow_html=True)
+                                recebedor_sim = st.text_input("Quem recebeu?", key=f"rec_sim_{ped['id']}", placeholder="Nome...", label_visibility="collapsed")
                                 if st.button("✅ Concluir Entrega", key=f"entregue_sim_{ped['id']}", use_container_width=True, type="primary"):
-                                    marcar_como_entregue(ped, motoboy_selecionado)
-                                    st.rerun()
+                                    if not recebedor_sim.strip():
+                                        st.error("Digite o nome de quem recebeu!")
+                                    else:
+                                        marcar_como_entregue(ped, motoboy_selecionado, recebedor_sim)
+                                        st.rerun()
 
                 if p_concluidos_mb:
                     st.write("")
@@ -529,10 +512,14 @@ else:
                             st.markdown('</div>', unsafe_allow_html=True)
 
                     with col_btn_drv:
-                        st.markdown("<div style='font-size: 11px; font-weight: 800; color: #775a46; margin-bottom: 4px; text-transform: uppercase;'>Ação:</div>", unsafe_allow_html=True)
+                        st.markdown("<div style='font-size: 11px; font-weight: 800; color: #775a46; margin-bottom: 4px; text-transform: uppercase;'>Finalizar:</div>", unsafe_allow_html=True)
+                        recebedor_fila = st.text_input("Quem recebeu?", key=f"rec_fila_{ped['id']}", placeholder="Nome...", label_visibility="collapsed")
                         if st.button("✅ Dar Baixa", key=f"entregue_fila_{ped['id']}", use_container_width=True, type="primary"):
-                            marcar_como_entregue(ped, login_atual)
-                            st.rerun()
+                            if not recebedor_fila.strip():
+                                st.error("⚠️ Digite o nome de quem recebeu!")
+                            else:
+                                marcar_como_entregue(ped, login_atual, recebedor_fila)
+                                st.rerun()
 
                     st.write("")
                     col_up, col_down = st.columns(2)
@@ -593,11 +580,16 @@ else:
                         st.markdown('</div>', unsafe_allow_html=True)
 
                 with col_foco_botoes:
-                    st.markdown("<div style='font-size: 12px; font-weight: 800; color: #137333; margin-bottom: 8px; text-transform: uppercase;'>Concluir Atendimento:</div>", unsafe_allow_html=True)
+                    st.markdown("<div style='font-size: 13px; font-weight: 800; color: #137333; margin-bottom: 8px; text-transform: uppercase;'>Finalizar Entrega:</div>", unsafe_allow_html=True)
+                    recebedor_foco = st.text_input("Nome de quem recebeu o pacote:", key=f"rec_foco_{pedido_atual['id']}", placeholder="Ex: Porteiro José...")
+                    
                     if st.button("✅ MARCAR COMO ENTREGUE", type="primary", use_container_width=True):
-                        with st.spinner("Confirmando entrega..."):
-                            marcar_como_entregue(pedido_atual, login_atual)
-                        st.rerun() 
+                        if not recebedor_foco.strip():
+                            st.error("⚠️ Obrigatório digitar o nome de quem recebeu a encomenda!")
+                        else:
+                            with st.spinner("Confirmando entrega..."):
+                                marcar_como_entregue(pedido_atual, login_atual, recebedor_foco)
+                            st.rerun() 
                         
                     st.write("")
                     st.markdown("<div style='font-size: 12px; font-weight: 800; color: #775a46; margin-bottom: 8px; text-transform: uppercase;'>Gerenciar Rota:</div>", unsafe_allow_html=True)
@@ -615,9 +607,10 @@ else:
         for ped in pedidos_concluidos_driver:
             hora_extraida = ped.get('hora_entrega_realizada', '')[-5:] 
             bairro_concluido = str(ped.get('endereco', '')).split(',')[-1].split('(')[0].strip()
+            recebedor_nome = ped.get('quem_recebeu', 'Não informado')
             st.markdown(f"""
             <div data-testid="stVerticalBlockBorderWrapper" class="entregue-box">
                 <div style="font-size:14px; font-weight:800; color:#137333;">✅ Entregue às {hora_extraida} - 📍 {bairro_concluido}</div>
-                <div class="nome-destaque" style="margin-top:6px; font-size: 13px;">🎁 {ped.get('cesta_nome')} p/ <strong>{ped.get('destinatario_nome')}</strong></div>
+                <div class="nome-destaque" style="margin-top:6px; font-size: 13px;">🎁 {ped.get('cesta_nome')} | 👤 Recebido por: <strong>{recebedor_nome}</strong></div>
             </div>
             """, unsafe_allow_html=True)
