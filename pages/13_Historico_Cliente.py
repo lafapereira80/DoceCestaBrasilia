@@ -193,6 +193,20 @@ if pedido_aberto_id:
                 st.markdown('<div class="card-title">✨ Observações Especiais</div>', unsafe_allow_html=True)
                 st.text_area("", value=pedido.get("pedido_especial") or "Nenhuma solicitação especial.", disabled=True, height=85, label_visibility="collapsed")
 
+        # =====================================================
+        # NOVO: COMPROVANTE DE ENTREGA DA LOGÍSTICA
+        # =====================================================
+        if pedido.get("status") == "Entregue":
+            with st.container(border=True):
+                st.markdown('<div class="card-title" style="color: #137333; border-bottom: 1px solid #ceead6;">✅ Comprovante de Entrega</div>', unsafe_allow_html=True)
+                col_c1, col_c2, col_c3 = st.columns(3)
+                with col_c1:
+                    st.markdown(f'<div class="info-label">Recebido por</div><div class="info-value" style="color:#137333; font-size: 16px !important;">👤 {pedido.get("quem_recebeu") or "Não informado"}</div>', unsafe_allow_html=True)
+                with col_c2:
+                    st.markdown(f'<div class="info-label">Data e Hora da Baixa</div><div class="info-value">⏰ {pedido.get("hora_entrega_realizada") or "-"}</div>', unsafe_allow_html=True)
+                with col_c3:
+                    st.markdown(f'<div class="info-label">Entregador Responsável</div><div class="info-value">🛵 {pedido.get("entregador_login") or "-"}</div>', unsafe_allow_html=True)
+                    
         with st.container(border=True):
             st.markdown('<div class="card-title">📍 Localização e Roteirização (GPS)</div>', unsafe_allow_html=True)
             endereco_pedido = pedido.get("endereco", "")
@@ -413,6 +427,9 @@ for compra in compras_cliente:
             st.markdown(f'<div class="info-label">Pedido ID</div><div class="info-value">#{str(c_id).split("-")[0].upper()}</div>', unsafe_allow_html=True)
         with col_c2:
             st.markdown(f'<div class="info-label">Pacote Adquirido</div><div class="info-value">🎁 {compra.get("cesta_nome", "-")}</div>', unsafe_allow_html=True)
+            # NOVO: Exibe quem recebeu direto na lista principal!
+            if status == "Entregue" and compra.get("quem_recebeu"):
+                st.markdown(f"<div style='font-size:12px; color:#137333; margin-top:2px;'>👤 Recebido por: <strong>{compra.get('quem_recebeu')}</strong></div>", unsafe_allow_html=True)
         with col_c3:
             dt_entrega = compra.get("data_entrega", "-")
             dt_fmt = f"{dt_entrega[8:10]}/{dt_entrega[5:7]}/{dt_entrega[0:4]}" if dt_entrega and len(str(dt_entrega)) >= 10 else str(dt_entrega)
