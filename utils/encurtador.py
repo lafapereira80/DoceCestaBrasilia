@@ -4,38 +4,35 @@ import streamlit as st
 
 def encurtar_link(link_longo):
     """
-    Recebe um link longo de pagamento e tenta encurtar usando serviços profissionais.
-    Redirecionamento 100% direto, sem telas de espera ou propagandas.
+    Encurtador Premium Spoo.me (Focado em Devs, sem anúncios, redirecionamento direto).
     """
     if not link_longo or not str(link_longo).startswith("http"):
         return link_longo
         
     try:
-        # ==========================================
-        # TENTATIVA 1: CleanURI (Profissional e Limpo)
-        # ==========================================
-        url_clean = "https://cleanuri.com/api/v1/shorten"
-        res_clean = requests.post(url_clean, data={'url': link_longo}, timeout=5)
+        # TENTATIVA 1: Spoo.me API (Muito estável e não bloqueia links de pagamento)
+        headers = {'Accept': 'application/json'}
+        data = {'url': link_longo}
         
-        if res_clean.status_code == 200:
-            dados = res_clean.json()
-            if "result_url" in dados:
-                return dados["result_url"]
-
-        # ==========================================
-        # TENTATIVA 2: Clck.ru (Rápido e sem frescuras)
-        # ==========================================
-        link_codificado = urllib.parse.quote(link_longo)
-        url_clck = f"https://clck.ru/--?url={link_codificado}"
-        res_clck = requests.get(url_clck, timeout=5)
+        res = requests.post("https://spoo.me/", data=data, headers=headers, timeout=5)
         
-        if res_clck.status_code == 200 and "clck.ru" in res_clck.text:
-            return res_clck.text.strip()
+        if res.status_code in [200, 201]:
+            link_curto = res.json().get("short_url")
+            if link_curto:
+                st.toast("✅ Link encurtado com sucesso!")
+                return link_curto
+                
+        # TENTATIVA 2: Is.gd formatado 
+        url_isgd = f"https://is.gd/create.php?format=simple&url={urllib.parse.quote(link_longo)}"
+        res2 = requests.get(url_isgd, timeout=5)
+        
+        if res2.status_code == 200 and "is.gd" in res2.text:
+            st.toast("✅ Link encurtado (Alternativo)!")
+            return res2.text.strip()
             
-        # Se os dois bloquearem por segurança, avisa o usuário sutilmente e devolve o longo
-        st.toast("⚠️ Os encurtadores de segurança recusaram o link. Usando o original para não travar a venda.")
+        st.toast("⚠️ Encurtador indisponível no momento. Usando link original.")
         return link_longo
         
     except Exception as e:
-        # Em caso de queda geral de internet
+        print(f"Erro no encurtador: {e}")
         return link_longo
