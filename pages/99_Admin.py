@@ -25,23 +25,21 @@ div[data-testid="stForm"] { background: #ffffff; border: 1px solid #e8ddd3; bord
 
 .section-title { font-size: 18px; font-weight: 800; color: #5a3b28; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px dashed #f5eee6; padding-bottom: 8px; }
 
-/* Força o design refinado com sombra profunda e borda marcante nos links de página */
+/* Estilização refinada para os cards de links principais na central */
 div[data-testid="stPageLink"] {
-    background: #ffffff !important;
+    background: linear-gradient(135deg, #ffffff 0%, #fcfbf8 100%) !important;
     border: 1px solid #dfcdbb !important;
-    border-radius: 14px !important;
-    box-shadow: 0 6px 16px rgba(90, 59, 40, 0.06) !important;
-    transition: all 0.25s ease !important;
+    border-radius: 16px !important;
+    box-shadow: 0 6px 18px rgba(90, 59, 40, 0.06) !important;
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
     margin-bottom: 12px !important;
 }
 div[data-testid="stPageLink"]:hover {
     border-color: #c5721f !important;
-    background: #fffdfa !important;
-    transform: translateY(-3px) !important;
-    box-shadow: 0 10px 25px rgba(197, 114, 31, 0.15) !important;
+    background: linear-gradient(135deg, #ffffff 0%, #fff7f0 100%) !important;
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 28px rgba(197, 114, 31, 0.15) !important;
 }
-
-/* Textos e links internos com peso adequado */
 a[data-testid="stPageLink"] { 
     padding: 16px 20px !important; 
     font-weight: 700 !important; 
@@ -100,36 +98,36 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- OPERAÇÃO & VENDAS ---
+# --- OPERAÇÃO & VENDAS (5 itens organizados em grades de 4) ---
 st.markdown('<div class="section-title">📦 Operação & Vendas</div>', unsafe_allow_html=True)
-row1_cols = st.columns(4)
-with row1_cols[0]: st.page_link("pages/02_Pedidos.py", label="Gestão de Pedidos", icon="📋")
-with row1_cols[1]: st.page_link("pages/19_Pedido_Manual.py", label="Venda Varejo (PDV)", icon="🛍️")
-with row1_cols[2]: st.page_link("pages/18_Corporativo.py", label="Vendas B2B", icon="🏢")
-with row1_cols[3]: st.page_link("pages/16_Previsao.py", label="Previsão de Produção", icon="📈")
+r1 = st.columns(4)
+with r1[0]: st.page_link("pages/02_Pedidos.py", label="Gestão de Pedidos", icon="📋")
+with r1[1]: st.page_link("pages/19_Pedido_Manual.py", label="Venda Varejo (PDV)", icon="🛍️")
+with r1[2]: st.page_link("pages/18_Corporativo.py", label="Vendas B2B", icon="🏢")
+with r1[3]: st.page_link("pages/16_Previsao.py", label="Previsão de Produção", icon="📈")
 
-row2_cols = st.columns(4)
-with row2_cols[0]: st.page_link("pages/08_Entregas.py", label="Rotas de Entrega", icon="🛵")
+r2 = st.columns(4)
+with r2[0]: st.page_link("pages/08_Entregas.py", label="Rotas de Entrega", icon="🛵")
 
-# --- GESTÃO & FINANCEIRO ---
+# --- GESTÃO & FINANCEIRO (2 itens) ---
 st.markdown('<div class="section-title">📊 Gestão & Financeiro</div>', unsafe_allow_html=True)
-fin_cols = st.columns(4)
-with fin_cols[0]: st.page_link("pages/03_Clientes.py", label="Base de Clientes", icon="👥")
-with fin_cols[1]: st.page_link("pages/06_Financeiro.py", label="Painel Financeiro", icon="💰")
+r3 = st.columns(4)
+with r3[0]: st.page_link("pages/03_Clientes.py", label="Base de Clientes", icon="👥")
+with r3[1]: st.page_link("pages/06_Financeiro.py", label="Painel Financeiro", icon="💰")
 
-# --- CATÁLOGO DA LOJA ---
+# --- CATÁLOGO DA LOJA (4 itens) ---
 st.markdown('<div class="section-title">🍓 Catálogo da Loja</div>', unsafe_allow_html=True)
-cat_cols = st.columns(4)
-with cat_cols[0]: st.page_link("pages/04_Cestas.py", label="Cestas e Kits", icon="🧺")
-with cat_cols[1]: st.page_link("pages/05_Produtos.py", label="Produtos e Insumos", icon="🍓")
-with cat_cols[2]: st.page_link("pages/15_Categorias.py", label="Categorias", icon="🏷️")
-with cat_cols[3]: st.page_link("pages/17_Secoes_Vitrine.py", label="Seções da Vitrine", icon="🖥️")
+r4 = st.columns(4)
+with r4[0]: st.page_link("pages/04_Cestas.py", label="Cestas e Kits", icon="🧺")
+with r4[1]: st.page_link("pages/05_Produtos.py", label="Produtos e Insumos", icon="🍓")
+with r4[2]: st.page_link("pages/15_Categorias.py", label="Categorias", icon="🏷️")
+with r4[3]: st.page_link("pages/17_Secoes_Vitrine.py", label="Seções da Vitrine", icon="🖥️")
 
-# --- CONFIGURAÇÕES ---
+# --- CONFIGURAÇÕES (2 itens) ---
 st.markdown('<div class="section-title">⚙️ Configurações</div>', unsafe_allow_html=True)
-cfg_cols = st.columns(4)
-with cfg_cols[0]: st.page_link("pages/07_Usuarios.py", label="Gerenciar Usuários", icon="🔑")
-with cfg_cols[1]: st.page_link("app.py", label="Ver Vitrine da Loja", icon="🌐")
+r5 = st.columns(4)
+with r5[0]: st.page_link("pages/07_Usuarios.py", label="Gerenciar Usuários", icon="🔑")
+with r5[1]: st.page_link("app.py", label="Ver Vitrine da Loja", icon="🌐")
 
 st.write("")
 st.divider()
