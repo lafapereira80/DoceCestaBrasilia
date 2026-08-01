@@ -1,7 +1,7 @@
 import streamlit as st
 
 def configurar_pagina():
-    """Injeta os estilos globais de design, fontes e garante a persistência visual em todas as páginas"""
+    """Injeta os estilos globais de design e garante a persistência visual do menu e páginas"""
     st.markdown(
         """
         <style>
@@ -24,7 +24,7 @@ def configurar_pagina():
             padding-top: 0.8rem !important;
         }
 
-        /* ESTILIZAÇÃO ROBUSTA DOS LINKS DA BARRA LATERAL (PERSISTENTE) */
+        /* ESTILIZAÇÃO DOS LINKS DA BARRA LATERAL (COM RELEVO E SOMBRA) */
         section[data-testid="stSidebar"] div[data-testid="stPageLink"] {
             background: linear-gradient(135deg, #ffffff 0%, #fcfbf8 100%) !important;
             border: 1px solid #e8ddd3 !important;
@@ -58,7 +58,7 @@ def menu_lateral():
 
     with st.sidebar:
         # ==========================================
-        # BRANDING MINIMALISTA PREMIUM (BOUTIQUE)
+        # BRANDING MINIMALISTA PREMIUM
         # ==========================================
         html_branding = """
 <div style="text-align: center; margin-top: 0px; margin-bottom: 20px;">
