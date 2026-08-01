@@ -11,6 +11,7 @@ from services.produto_service import listar_produtos_por_categoria_id
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 from utils.formatacao import formatar_moeda, tratar_preco, formatar_data_br, gerar_link_wpp, gerar_resumo_whatsapp
+from utils.email_service import enviar_email_cobranca
 
 # Tentativa de importar o serviço da InfinitePay
 try:
@@ -36,7 +37,6 @@ st.markdown("""
 html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; color: #4a2e1b !important; font-size: 14px !important; }
 .block-container { padding-top: 1.5rem !important; padding-bottom: 4rem !important; max-width: 1200px !important; }
 
-/* Header Banner - FONTE DO MESMO TAMANHO PADRÃO */
 .order-header {
     background: linear-gradient(135deg, #ffffff 0%, #fdfbf8 100%);
     padding: 16px 20px; border-radius: 12px; border: 1px solid #e8ddd3;
@@ -49,37 +49,26 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .order-type-badge.vitrine { background: #e8f0fe; color: #1a73e8; border-color: #d2e3fc; }
 .status-text { font-size: 14px; font-weight: 800; color: #c5721f; text-align: right; text-transform: uppercase; display: flex; align-items: center;}
 
-/* Cartões HTML (Visualização) */
-.info-card {
-    background: #ffffff; border: 1px solid #e8ddd3; border-radius: 12px; padding: 20px;
-    box-shadow: 0 4px 12px rgba(90, 59, 40, 0.02); margin-bottom: 16px; height: 100%;
-}
+.info-card { background: #ffffff; border: 1px solid #e8ddd3; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(90, 59, 40, 0.02); margin-bottom: 16px; height: 100%; }
 .card-title { font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px dashed #e8ddd3; padding-bottom: 6px; text-transform: uppercase; }
 
-/* Linhas de Dados */
 .data-label { font-size: 11.5px; color: #8c7362; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
 .data-value { font-size: 14px; color: #2c1e14; font-weight: 600; margin-bottom: 12px; }
 .item-pill { background: #faf7f3; border: 1px solid #e8ddd3; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; font-size: 13.5px; font-weight: 600; color: #4a2e1b; }
 .item-pill.discount { background: #fef7e0; border-color: #fce8b2; color: #b06000; }
 
-/* Resumo Financeiro Seguro */
-.resumo-financeiro {
-    background: #fdfbf8; border: 1px solid #e8ddd3; border-radius: 10px; padding: 16px;
-    display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 15px;
-}
+.resumo-financeiro { background: #fdfbf8; border: 1px solid #e8ddd3; border-radius: 10px; padding: 16px; display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 15px; }
 .resumo-item { text-align: center; }
 .resumo-label { font-size: 11.5px; font-weight: 700; color: #775a46; text-transform: uppercase; }
 .resumo-valor { font-size: 15px; font-weight: 800; color: #4a2e1b; margin-top: 4px; }
 .resumo-destaque { font-size: 16px; font-weight: 800; color: #137333; margin-top: 4px; }
 
-/* Botões Nativos */
 div[data-testid="stButton"] button { border-radius: 8px !important; font-weight: 800 !important; font-size: 13px !important; transition: all 0.2s ease !important; }
 div[data-testid="stButton"] button:hover { transform: translateY(-1px) !important; box-shadow: 0 4px 10px rgba(0,0,0,0.06) !important; }
 div[data-testid="stButton"] button[kind="primary"] { background: linear-gradient(135deg, #137333 0%, #0d4e22) !important; color: white !important; border: none !important; box-shadow: 0 4px 12px rgba(19, 115, 51, 0.15) !important; }
 .btn-wpp > a { background: #25d366 !important; color: white !important; font-weight: 800 !important; font-size: 13px !important; border-radius: 8px !important; padding: 12px !important; display: flex; justify-content: center; align-items: center; text-decoration: none !important; box-shadow: 0 4px 10px rgba(37,211,102,0.2) !important; transition: all 0.2s; }
 .btn-wpp > a:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(37,211,102,0.3) !important; }
 
-/* Containers Fechados do Streamlit */
 div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff !important; border-radius: 12px !important; border: 1px solid #e8ddd3 !important; padding: 18px !important; box-shadow: 0 4px 12px rgba(90, 59, 40, 0.02) !important; margin-bottom: 15px !important; }
 </style>
 """, unsafe_allow_html=True)
@@ -116,7 +105,21 @@ if not pedido:
     st.error("Pedido não encontrado.")
     st.stop()
 
-# Helpers (Tratamento Anti-NoneType/Null)
+# =====================================================
+# BUSCAR E-MAIL SALVO NO PERFIL DO CLIENTE
+# =====================================================
+cliente_id = pedido.get('cliente_id')
+email_cliente = ""
+if cliente_id:
+    try:
+        res_cliente = supabase.table("clientes").select("email").eq("id", cliente_id).execute()
+        if res_cliente.data and 'email' in res_cliente.data[0] and res_cliente.data[0]["email"]:
+            email_cliente = res_cliente.data[0]["email"]
+    except Exception as e:
+        # Silencioso, apenas ignora se não achar ou a coluna não existir ainda
+        pass
+
+# Helpers
 cliente_nome_banco = pedido.get('cliente_nome') or ''
 is_b2b = "[B2B]" in cliente_nome_banco
 is_vitrine = "[VITRINE]" in cliente_nome_banco
@@ -155,9 +158,6 @@ def carregar_config_cesta_cached(cesta_id):
     try: return carregar_configuracao_cesta(cesta_id)
     except: return []
 
-# =====================================================
-# MATEMÁTICA SEGURA DE RECUPERAÇÃO DO DESCONTO
-# =====================================================
 vd_db = 0.0
 ads_bruto = pedido.get('adicionais') or ''
 for l in ads_bruto.split('\n'):
@@ -172,7 +172,6 @@ frete_db = tratar_preco(pedido.get('valor_frete', 0))
 subtotal_db = total_db - frete_db + vd_db  
 desc_perc_inicial = float(round((vd_db / subtotal_db) * 100, 2)) if subtotal_db > 0 else 0.0
 
-# CONTROLE DE ESTADO
 if "modo_edicao" not in st.session_state:
     st.session_state.modo_edicao = False
 
@@ -223,6 +222,7 @@ if not st.session_state.modo_edicao:
             <div class="card-title">👤 Informações do Pedido</div>
             <div class="data-label">Cliente / Empresa</div><div class="data-value">{cliente_limpo} ({pedido.get('cliente_telefone') or '-'})</div>
             <div class="data-label">CPF / CNPJ</div><div class="data-value">{pedido.get('cliente_cpf') or '-'}</div>
+            <div class="data-label">E-mail Cadastrado</div><div class="data-value">{email_cliente or 'Não informado'}</div>
             <div class="data-label" style="margin-top:10px;">Recebedor (Destinatário)</div><div class="data-value">{pedido.get('destinatario_nome') or '-'}</div>
             <div class="data-label">Ocasião / Motivo</div><div class="data-value">{pedido.get('motivo_homenagem') or '-'}</div>
             <div class="data-label" style="margin-top:10px;">Data e Período</div><div class="data-value">{formatar_data_br(pedido.get('data_entrega'))} - {pedido.get('periodo_entrega') or '-'}</div>
@@ -245,8 +245,7 @@ if not st.session_state.modo_edicao:
         
         if produtos_str:
             for linha in produtos_str.split("\n"):
-                if linha.strip(): 
-                    html_info2 += f"<div class='item-pill'>📦 {linha.strip()}</div>"
+                if linha.strip(): html_info2 += f"<div class='item-pill'>📦 {linha.strip()}</div>"
                     
         if adicionais_str:
             for linha in adicionais_str.split("\n"):
@@ -264,7 +263,6 @@ if not st.session_state.modo_edicao:
         html_info2 += "</div>"
         st.markdown(html_info2.replace('\n', ''), unsafe_allow_html=True)
 
-    # ANOTAÇÕES INTERNAS
     with st.container(border=True):
         st.markdown("<div style='font-size: 13px; font-weight: 800; color: #b06000; margin-bottom: 4px; text-transform: uppercase;'>⚠️ Anotações Internas (Para a Equipe)</div>", unsafe_allow_html=True)
         st.text_area("Anotações Internas", value=pedido.get('anotacoes_internas') or '', height=80, key=f"nota_{pedido_id}", on_change=salvar_nota_interna, args=(pedido_id, f"nota_{pedido_id}"), label_visibility="collapsed", placeholder="Digite aqui anotações para a equipe e clique fora da caixa para salvar automaticamente...")
@@ -274,7 +272,6 @@ if not st.session_state.modo_edicao:
     # =========================================================
     st.markdown("<div style='font-size: 14px; font-weight: 800; color: #137333; margin-bottom: 8px; margin-top: 15px; text-transform: uppercase;'>⚡ Ajustes Rápidos & Valores</div>", unsafe_allow_html=True)
     with st.container(border=True):
-        
         c_f1, c_f2, c_f3, c_f4 = st.columns(4)
         with c_f1: e_frete_rapido = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=float(frete_db), key="frete_rap")
         with c_f2: e_desc_rapido = st.number_input("Desconto (%)", min_value=0.0, max_value=100.0, step=1.0, value=float(desc_perc_inicial), key="desc_rap")
@@ -286,7 +283,6 @@ if not st.session_state.modo_edicao:
         st_idx = STATUS_PERMITIDOS.index(status_atual) if status_atual in STATUS_PERMITIDOS else 0
         with c_f4: e_status_rapido = st.selectbox("Status", STATUS_PERMITIDOS, index=st_idx, key="status_rap")
         
-        # Recálculo instantâneo para mostrar no resumo
         novo_vd = subtotal_db * (e_desc_rapido / 100)
         novo_total = subtotal_db - novo_vd + e_frete_rapido
         
@@ -302,32 +298,19 @@ if not st.session_state.modo_edicao:
         
         st.markdown(html_resumo.replace('\n', ''), unsafe_allow_html=True)
         
-        # Verifica se o usuário mexeu em algum campo rápido
-        mudou_valores = (round(e_frete_rapido, 2) != round(frete_db, 2)) or \
-                        (round(e_desc_rapido, 2) != round(desc_perc_inicial, 2)) or \
-                        (e_pag_rapido != pedido.get('pagamento')) or \
-                        (e_status_rapido != status_atual)
+        mudou_valores = (round(e_frete_rapido, 2) != round(frete_db, 2)) or (round(e_desc_rapido, 2) != round(desc_perc_inicial, 2)) or (e_pag_rapido != pedido.get('pagamento')) or (e_status_rapido != status_atual)
         
         if mudou_valores:
             st.warning("⚠️ Você alterou os valores acima. Salve os ajustes para gerar os links e mensagens atualizados.")
             if st.button("💾 SALVAR AJUSTES RÁPIDOS", type="primary", use_container_width=True):
-                # Remonta o texto de adicionais com o novo desconto
                 ads_list = [l.strip() for l in (pedido.get('adicionais') or '').split('\n') if l.strip()]
                 ads_list = [l for l in ads_list if not ("Desconto" in l or "desconto" in l.lower())]
-                
-                if novo_vd > 0:
-                    ads_list.insert(0, f"Desconto: - R$ {formatar_moeda(novo_vd)}")
-                
-                novo_adicionais_str = "\n".join(ads_list)
+                if novo_vd > 0: ads_list.insert(0, f"Desconto: - R$ {formatar_moeda(novo_vd)}")
                 
                 update_data = {
-                    "valor_frete": e_frete_rapido,
-                    "valor_total": novo_total,
-                    "pagamento": e_pag_rapido,
-                    "status": e_status_rapido,
-                    "adicionais": novo_adicionais_str
+                    "valor_frete": e_frete_rapido, "valor_total": novo_total, "pagamento": e_pag_rapido,
+                    "status": e_status_rapido, "adicionais": "\n".join(ads_list)
                 }
-                
                 if round(e_frete_rapido, 2) != round(frete_db, 2) or round(e_desc_rapido, 2) != round(desc_perc_inicial, 2):
                     update_data["infinitepay_url"] = None
                     update_data["infinitepay_transaction_id"] = None
@@ -336,12 +319,8 @@ if not st.session_state.modo_edicao:
                     supabase.table("pedidos").update(update_data).eq("id", pedido_id).execute()
                     st.success("✅ Ajustes salvos com sucesso!")
                     st.rerun()
-                except Exception as e:
-                    st.error(f"Erro ao salvar: {e}")
+                except Exception as e: st.error(f"Erro ao salvar: {e}")
         else:
-            # =========================================================
-            # ÁREA DE BOTÕES FINAIS & INTEGRAÇÕES
-            # =========================================================
             st.write("")
             link_pagamento_atual = pedido.get('infinitepay_url')
             
@@ -352,30 +331,21 @@ if not st.session_state.modo_edicao:
                     if gerar_link_checkout_infinitepay:
                         with st.spinner("Gerando e encurtando link seguro na InfinitePay..."):
                             link_gerado = gerar_link_checkout_infinitepay(
-                                pedido_id=pedido_id,
-                                valor_total=total_db,
-                                cliente_nome=cliente_limpo,
-                                cliente_tel=pedido.get('cliente_telefone') or ''
+                                pedido_id=pedido_id, valor_total=total_db,
+                                cliente_nome=cliente_limpo, cliente_tel=pedido.get('cliente_telefone') or ''
                             )
                             if link_gerado:
                                 supabase.table("pedidos").update({"infinitepay_url": link_gerado}).eq("id", pedido_id).execute()
                                 st.success("✅ Link curto gerado com sucesso!")
                                 st.rerun()
-                    else:
-                        st.error("Serviço InfinitePay não encontrado.")
+                    else: st.error("Serviço InfinitePay não encontrado.")
 
-            # =========================================================
-            # BLOCO INFINITEPAY VISUAL (Autorização e Horário)
-            # =========================================================
             tx_id = pedido.get("infinitepay_transaction_id")
             if tx_id:
                 data_pagamento = pedido.get("data_pagamento")
                 if data_pagamento:
-                    try:
-                        data_obj = datetime.strptime(str(data_pagamento)[:19].replace("T", " "), "%Y-%m-%d %H:%M:%S")
-                        data_f = data_obj.strftime("%d/%m/%Y às %H:%M:%S")
-                    except:
-                        data_f = str(data_pagamento)
+                    try: data_f = datetime.strptime(str(data_pagamento)[:19].replace("T", " "), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y às %H:%M:%S")
+                    except: data_f = str(data_pagamento)
                     horario_str = f'<div class="data-value" style="color: #15803d; font-size: 15px; margin-bottom: 0;">⏰ {data_f}</div>'
                 else:
                     horario_str = '<div class="data-value" style="color: #15803d; font-size: 12px; font-weight: 500; margin-bottom: 0;">⏰ Registrado no banco (Aguardando novo campo)</div>'
@@ -396,56 +366,72 @@ if not st.session_state.modo_edicao:
                 """
                 st.markdown(html_infinite.replace('\n', ''), unsafe_allow_html=True)
             
-            c_btn1, c_btn3 = st.columns([1, 1])
-            with c_btn1:
-                if st.button("✏️ Editar Carrinho / Dados Completos", use_container_width=True):
-                    st.session_state.modo_edicao = True
-                    st.rerun()
-            with c_btn3:
-                fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone') or '')
+            # =========================================================
+            # ÁREA DE COMPARTILHAMENTO (WHATSAPP E E-MAIL COM SALVAMENTO INTELIGENTE)
+            # =========================================================
+            st.markdown("<div style='font-size: 14px; font-weight: 800; color: #1E293B; margin-bottom: 8px; margin-top: 25px; text-transform: uppercase;'>📲 Notificar Cliente</div>", unsafe_allow_html=True)
+            
+            fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone') or '')
+            linhas_wpp = ""
+            if produtos_str: linhas_wpp += "\n".join([f"📦 {p.strip()}" for p in produtos_str.split('\n') if p.strip()])
+            
+            linhas_extras_wpp = ""
+            if adicionais_str:
+                for linha in adicionais_str.split('\n'):
+                    linha_l = linha.strip()
+                    if not linha_l or "EXTRAS" in linha_l.upper() or "ADICIONAIS" in linha_l.upper() or "Desconto" in linha_l or "desconto" in linha_l.lower(): continue
+                    else: linhas_extras_wpp += f"🎀 {linha_l}\n"
+            if linhas_extras_wpp:
+                if linhas_wpp: linhas_wpp += "\n"
+                linhas_wpp += linhas_extras_wpp.strip()
+            if not linhas_wpp: linhas_wpp = f"📦 {pedido.get('cesta_nome') or 'Itens do Pedido'}"
+
+            texto_resumo = gerar_resumo_whatsapp(
+                cliente=cliente_limpo, destinatario=pedido.get('destinatario_nome') or 'O mesmo',
+                data=formatar_data_br(pedido.get('data_entrega')), periodo=pedido.get('periodo_entrega') or 'A combinar',
+                local=pedido.get('endereco') or 'Não informado', itens_str=linhas_wpp,
+                subtotal=subtotal_db, desconto=vd_db, frete=frete_db, total=total_db,
+                pagamento=pedido.get('pagamento') or 'Pix', link_pagamento=link_pagamento_atual
+            )
+
+            with st.container(border=True):
+                c_wpp, c_mail = st.columns(2)
                 
-                linhas_wpp = ""
-                produtos_str_wpp = pedido.get('produtos') or ''
-                if produtos_str_wpp:
-                    linhas_wpp += "\n".join([f"📦 {p.strip()}" for p in produtos_str_wpp.split('\n') if p.strip()])
-
-                adicionais_str_wpp = pedido.get('adicionais') or ''
-                linhas_extras_wpp = ""
-                if adicionais_str_wpp:
-                    for linha in adicionais_str_wpp.split('\n'):
-                        linha_l = linha.strip()
-                        if not linha_l or "EXTRAS" in linha_l.upper() or "ADICIONAIS" in linha_l.upper(): continue
-                        if "Desconto" in linha_l or "desconto" in linha_l.lower(): continue
-                        else: linhas_extras_wpp += f"🎀 {linha_l}\n"
-                            
-                if linhas_extras_wpp:
-                    if linhas_wpp: linhas_wpp += "\n"
-                    linhas_wpp += linhas_extras_wpp.strip()
-                    
-                if not linhas_wpp:
-                    linhas_wpp = f"📦 {pedido.get('cesta_nome') or 'Itens do Pedido'}"
-
-                texto_wpp = gerar_resumo_whatsapp(
-                    cliente=cliente_limpo,
-                    destinatario=pedido.get('destinatario_nome') or 'O mesmo',
-                    data=formatar_data_br(pedido.get('data_entrega')),
-                    periodo=pedido.get('periodo_entrega') or 'A combinar',
-                    local=pedido.get('endereco') or 'Não informado',
-                    itens_str=linhas_wpp,
-                    subtotal=subtotal_db,
-                    desconto=vd_db,
-                    frete=frete_db,
-                    total=total_db,
-                    pagamento=pedido.get('pagamento') or 'Pix',
-                    link_pagamento=link_pagamento_atual
-                )
-
-                link_wpp = gerar_link_wpp(fone_cliente, texto_wpp)
+                with c_wpp:
+                    st.markdown("<div style='font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;'>Via WhatsApp</div>", unsafe_allow_html=True)
+                    link_wpp = gerar_link_wpp(fone_cliente, texto_resumo)
+                    if fone_cliente: st.markdown(f'<div class="btn-wpp"><a href="{link_wpp}" target="_blank">💬 Enviar Resumo</a></div>', unsafe_allow_html=True)
+                    else: st.warning("Sem telefone cadastrado.")
                 
-                if fone_cliente:
-                    st.markdown(f'<div class="btn-wpp"><a href="{link_wpp}" target="_blank">💬 WhatsApp Resumo</a></div>', unsafe_allow_html=True)
-                else:
-                    st.warning("Sem telefone cadastrado.")
+                with c_mail:
+                    st.markdown("<div style='font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;'>Via E-mail (HTML)</div>", unsafe_allow_html=True)
+                    e_col1, e_col2 = st.columns([2, 1])
+                    with e_col1:
+                        # O CAMPO JÁ VEM PREENCHIDO COM O E-MAIL DO BANCO
+                        email_input = st.text_input("E-mail", value=email_cliente, placeholder="cliente@email.com", label_visibility="collapsed", key="email_dest")
+                    with e_col2:
+                        if st.button("✉️ Disparar", use_container_width=True):
+                            if email_input:
+                                with st.spinner("Enviando..."):
+                                    sucesso, msg_retorno = enviar_email_cobranca(email_input, cliente_limpo, id_curto, texto_resumo, link_pagamento_atual)
+                                    if sucesso:
+                                        st.success(msg_retorno)
+                                        # SALVAMENTO AUTOMÁTICO DO E-MAIL NO PERFIL DO CLIENTE
+                                        if cliente_id and email_input.strip() != email_cliente:
+                                            try:
+                                                supabase.table("clientes").update({"email": email_input.strip()}).eq("id", cliente_id).execute()
+                                                st.toast("📧 E-mail salvo no perfil do cliente!")
+                                            except Exception as e:
+                                                pass
+                                    else:
+                                        st.error(msg_retorno)
+                            else:
+                                st.warning("⚠️ Digite um e-mail.")
+
+            st.write("")
+            if st.button("✏️ Editar Carrinho / Dados Completos", use_container_width=True):
+                st.session_state.modo_edicao = True
+                st.rerun()
 
 
 # =====================================================
@@ -456,10 +442,13 @@ else:
     
     with st.container(border=True):
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 1px dashed #e8ddd3; padding-bottom: 6px;'>👤 1. DADOS DO COMPRADOR</div>", unsafe_allow_html=True)
-        c1, c2, c3 = st.columns(3)
+        # Ajustado para 4 campos, incluindo o de E-mail
+        c1, c2 = st.columns(2)
         with c1: e_nome = st.text_input("Nome Comprador", value=pedido.get('cliente_nome') or '')
         with c2: e_tel = st.text_input("WhatsApp", value=pedido.get('cliente_telefone') or '')
+        c3, c4 = st.columns(2)
         with c3: e_cpf = st.text_input("CPF / CNPJ", value=pedido.get('cliente_cpf') or '')
+        with c4: e_email = st.text_input("E-mail (Salva no Perfil)", value=email_cliente, placeholder="Opcional")
 
     with st.container(border=True):
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 1px dashed #e8ddd3; padding-bottom: 6px;'>💌 2. DESTINATÁRIO, ENTREGA E CARTÃO</div>", unsafe_allow_html=True)
@@ -645,6 +634,14 @@ else:
             }
             try:
                 supabase.table("pedidos").update(dados_update).eq("id", pedido_id).execute()
+                
+                # SE ALTEROU O E-MAIL, SALVA NO BANCO DE CLIENTES TAMBÉM
+                if cliente_id and e_email.strip() != email_cliente:
+                    try:
+                        supabase.table("clientes").update({"email": e_email.strip()}).eq("id", cliente_id).execute()
+                    except Exception as e:
+                        pass
+                
                 st.success("✅ Pedido atualizado com sucesso!")
                 st.session_state.modo_edicao = False
                 st.rerun()
