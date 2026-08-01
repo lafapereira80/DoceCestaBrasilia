@@ -8,49 +8,16 @@ menu_lateral()
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
-html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; color: #4a2e1b; }
-.block-container { max-width: 1000px; padding-top: 2rem; padding-bottom: 4rem; }
+.app-greeting { font-size: clamp(28px, 4vw, 36px); font-weight: 800; color: #0F172A; margin-top: 10px; margin-bottom: 5px; letter-spacing: -1px; }
+.app-sub { font-size: 16px; color: #64748B; margin-bottom: 30px; font-weight: 500; }
 
-.login-header { text-align: center; margin-top: 4vh; margin-bottom: 20px; }
-.login-logo { font-size: 50px; margin-bottom: 10px; }
-.login-title { font-size: 26px; font-weight: 800; color: #c5721f; margin-bottom: 5px; }
-.login-subtitle { font-size: 14px; color: #775a46; font-weight: 500; }
-
-div[data-testid="stForm"] { background: #ffffff; border: 1px solid #e8ddd3; border-radius: 20px; padding: 30px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); }
-
-.welcome-box { background: #ffffff; border: 1px solid #e8ddd3; border-radius: 20px; padding: 30px; text-align: center; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-.welcome-title { font-size: 28px; font-weight: 800; color: #c5721f; margin-bottom: 5px; }
-.welcome-sub { font-size: 15px; color: #775a46; font-weight: 500; }
-
-.section-title { font-size: 18px; font-weight: 800; color: #5a3b28; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px dashed #f5eee6; padding-bottom: 8px; }
-
-/* Estilização refinada para os cards de links principais na central */
-div[data-testid="stPageLink"] {
-    background: linear-gradient(135deg, #ffffff 0%, #fcfbf8 100%) !important;
-    border: 1px solid #dfcdbb !important;
-    border-radius: 16px !important;
-    box-shadow: 0 6px 18px rgba(90, 59, 40, 0.06) !important;
-    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-    margin-bottom: 12px !important;
-}
-div[data-testid="stPageLink"]:hover {
-    border-color: #c5721f !important;
-    background: linear-gradient(135deg, #ffffff 0%, #fff7f0 100%) !important;
-    transform: translateY(-4px) !important;
-    box-shadow: 0 12px 28px rgba(197, 114, 31, 0.15) !important;
-}
-a[data-testid="stPageLink"] { 
-    padding: 16px 20px !important; 
-    font-weight: 700 !important; 
-    color: #4a2e1b !important; 
-}
-a[data-testid="stPageLink"]:hover { 
-    text-decoration: none !important; 
-}
-
-div[data-testid="stFormSubmitButton"] button { border-radius: 12px !important; font-weight: 800 !important; height: 45px !important; background: linear-gradient(135deg, #137333 0%, #0d4e22) !important; color: white !important; border: none !important;}
-div[data-testid="stFormSubmitButton"] button:hover { transform: translateY(-2px) !important; box-shadow: 0 6px 15px rgba(19, 115, 51, 0.2) !important; }
+.login-header { text-align: center; margin-top: 10vh; margin-bottom: 30px; }
+.login-logo { font-size: 60px; margin-bottom: 15px; }
+.login-title { font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 5px; letter-spacing: -1px;}
+.login-subtitle { font-size: 15px; color: #64748B; font-weight: 500; }
+div[data-testid="stForm"] { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 24px; padding: 35px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+div[data-testid="stFormSubmitButton"] button { border-radius: 14px !important; font-weight: 800 !important; height: 50px !important; background: #0F172A !important; color: white !important; border: none !important;}
+div[data-testid="stFormSubmitButton"] button:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.2) !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -59,17 +26,17 @@ if "usuario" not in st.session_state or not st.session_state["usuario"]:
     <div class="login-header">
         <div class="login-logo">🔒</div>
         <div class="login-title">Acesso Restrito</div>
-        <div class="login-subtitle">Área de Gestão - Doce Cesta Brasília</div>
+        <div class="login-subtitle">Área Exclusiva para Colaboradores</div>
     </div>
     """, unsafe_allow_html=True)
     
     col_esp1, col_login, col_esp2 = st.columns([1, 1.5, 1])
     with col_login:
         with st.form("form_login"):
-            usuario_input = st.text_input("Login", placeholder="Digite seu usuário")
-            senha_input = st.text_input("Senha", type="password", placeholder="Digite sua senha")
+            usuario_input = st.text_input("Usuário", placeholder="Seu login de acesso")
+            senha_input = st.text_input("Senha", type="password", placeholder="Sua senha secreta")
             st.write("")
-            submit_login = st.form_submit_button("Entrar no Sistema", use_container_width=True)
+            submit_login = st.form_submit_button("Acessar Painel", use_container_width=True)
             
             if submit_login:
                 if usuario_input and senha_input:
@@ -91,44 +58,53 @@ from utils.permissao import administrador_operador
 administrador_operador()
 usuario = st.session_state.get("usuario", {})
 
+# Cabeçalho Limpo Estilo App
 st.markdown(f"""
-<div class="welcome-box">
-    <div class="welcome-title">Central de Comando</div>
-    <div class="welcome-sub">Bem-vindo(a), <b>{usuario.get('login', 'Admin')}</b>. Selecione um módulo abaixo para começar.</div>
-</div>
+    <div class="app-greeting">Olá, {usuario.get('login', 'Admin')} 👋</div>
+    <div class="app-sub">O que vamos gerenciar hoje? Selecione um módulo abaixo.</div>
 """, unsafe_allow_html=True)
 
-# --- OPERAÇÃO & VENDAS (5 itens organizados em grades de 4) ---
-st.markdown('<div class="section-title">📦 Operação & Vendas</div>', unsafe_allow_html=True)
-r1 = st.columns(4)
-with r1[0]: st.page_link("pages/02_Pedidos.py", label="Gestão de Pedidos", icon="📋")
-with r1[1]: st.page_link("pages/19_Pedido_Manual.py", label="Venda Varejo (PDV)", icon="🛍️")
-with r1[2]: st.page_link("pages/18_Corporativo.py", label="Vendas B2B", icon="🏢")
-with r1[3]: st.page_link("pages/16_Previsao.py", label="Previsão de Produção", icon="📈")
 
-r2 = st.columns(4)
-with r2[0]: st.page_link("pages/08_Entregas.py", label="Rotas de Entrega", icon="🛵")
+# --- 📦 OPERAÇÃO & VENDAS ---
+with st.container(border=True):
+    st.markdown('<div class="app-section-title">📦 Operação & Vendas</div>', unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        st.page_link("pages/02_Pedidos.py", label="Gestão de Pedidos", icon="📋")
+        st.page_link("pages/18_Corporativo.py", label="Vendas B2B", icon="🏢")
+        st.page_link("pages/08_Entregas.py", label="Rotas de Entrega", icon="🛵")
+    with c2:
+        st.page_link("pages/19_Pedido_Manual.py", label="Venda Varejo (PDV)", icon="🛍️")
+        st.page_link("pages/16_Previsao.py", label="Previsão de Produção", icon="📈")
 
-# --- GESTÃO & FINANCEIRO (2 itens) ---
-st.markdown('<div class="section-title">📊 Gestão & Financeiro</div>', unsafe_allow_html=True)
-r3 = st.columns(4)
-with r3[0]: st.page_link("pages/03_Clientes.py", label="Base de Clientes", icon="👥")
-with r3[1]: st.page_link("pages/06_Financeiro.py", label="Painel Financeiro", icon="💰")
+# --- 📊 GESTÃO & FINANCEIRO ---
+with st.container(border=True):
+    st.markdown('<div class="app-section-title">📊 Gestão & Financeiro</div>', unsafe_allow_html=True)
+    c3, c4 = st.columns(2)
+    with c3:
+        st.page_link("pages/03_Clientes.py", label="Base de Clientes", icon="👥")
+    with c4:
+        st.page_link("pages/06_Financeiro.py", label="Painel Financeiro", icon="💰")
 
-# --- CATÁLOGO DA LOJA (4 itens) ---
-st.markdown('<div class="section-title">🍓 Catálogo da Loja</div>', unsafe_allow_html=True)
-r4 = st.columns(4)
-with r4[0]: st.page_link("pages/04_Cestas.py", label="Cestas e Kits", icon="🧺")
-with r4[1]: st.page_link("pages/05_Produtos.py", label="Produtos e Insumos", icon="🍓")
-with r4[2]: st.page_link("pages/15_Categorias.py", label="Categorias", icon="🏷️")
-with r4[3]: st.page_link("pages/17_Secoes_Vitrine.py", label="Seções da Vitrine", icon="🖥️")
+# --- 🍓 CATÁLOGO DA LOJA ---
+with st.container(border=True):
+    st.markdown('<div class="app-section-title">🍓 Catálogo da Loja</div>', unsafe_allow_html=True)
+    c5, c6 = st.columns(2)
+    with c5:
+        st.page_link("pages/04_Cestas.py", label="Cestas e Kits", icon="🧺")
+        st.page_link("pages/15_Categorias.py", label="Categorias", icon="🏷️")
+    with c6:
+        st.page_link("pages/05_Produtos.py", label="Produtos e Insumos", icon="🍓")
+        st.page_link("pages/17_Secoes_Vitrine.py", label="Seções da Vitrine", icon="🖥️")
 
-# --- CONFIGURAÇÕES (2 itens) ---
-st.markdown('<div class="section-title">⚙️ Configurações</div>', unsafe_allow_html=True)
-r5 = st.columns(4)
-with r5[0]: st.page_link("pages/07_Usuarios.py", label="Gerenciar Usuários", icon="🔑")
-with r5[1]: st.page_link("app.py", label="Ver Vitrine da Loja", icon="🌐")
+# --- ⚙️ CONFIGURAÇÕES ---
+with st.container(border=True):
+    st.markdown('<div class="app-section-title">⚙️ Configurações</div>', unsafe_allow_html=True)
+    c7, c8 = st.columns(2)
+    with c7:
+        st.page_link("pages/07_Usuarios.py", label="Gerenciar Usuários", icon="🔑")
+    with c8:
+        st.page_link("app.py", label="Ver Vitrine da Loja", icon="🌐")
 
 st.write("")
-st.divider()
-st.caption("Doce Cesta Brasília © 2026 - Central Administrativa")
+st.markdown('<div style="text-align: center; color: #94A3B8; font-size: 12px; margin-top: 20px;">Doce Cesta Brasília © App Nativo Web</div>', unsafe_allow_html=True)
