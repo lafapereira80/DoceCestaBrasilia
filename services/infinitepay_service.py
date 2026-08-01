@@ -1,9 +1,11 @@
 import requests
 import streamlit as st
+from utils.encurtador import encurtar_link  # <-- Importando a sua nova ferramenta!
 
 def gerar_link_checkout_infinitepay(pedido_id: str, valor_total: float, cliente_nome: str, cliente_tel: str):
     """
-    Gera um link de pagamento oficial via Checkout Integrado da InfinitePay.
+    Gera um link de pagamento oficial via Checkout Integrado da InfinitePay
+    e retorna a versão encurtada automaticamente.
     """
     # =======================================================
     # BUSCA DE CHAVES SEGURAS (ST.SECRETS) COM FALLBACK
@@ -41,7 +43,15 @@ def gerar_link_checkout_infinitepay(pedido_id: str, valor_total: float, cliente_
         response = requests.post(url_api, json=payload, timeout=10)
         if response.status_code in [200, 201]:
             dados = response.json()
-            return dados.get("url") or dados.get("checkout_url")
+            link_longo = dados.get("url") or dados.get("checkout_url")
+            
+            # =======================================================
+            # A MÁGICA ACONTECE AQUI: Encurtando antes de devolver
+            # =======================================================
+            if link_longo:
+                return encurtar_link(link_longo)
+            return None
+            
         else:
             st.error(f"Erro na API InfinitePay: {response.text}")
             return None
