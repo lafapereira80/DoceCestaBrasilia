@@ -348,9 +348,9 @@ if not st.session_state.modo_edicao:
             if link_pagamento_atual:
                 st.success(f"🔗 **Link de Pagamento Gerado:** {link_pagamento_atual}")
             else:
-                if st.button("💳 Gerar Link para Pagamento", use_container_width=True):
+                if st.button("💳 Gerar Link Encurtado para Pagamento", use_container_width=True):
                     if gerar_link_checkout_infinitepay:
-                        with st.spinner("Gerando link seguro na InfinitePay..."):
+                        with st.spinner("Gerando e encurtando link seguro na InfinitePay..."):
                             link_gerado = gerar_link_checkout_infinitepay(
                                 pedido_id=pedido_id,
                                 valor_total=total_db,
@@ -359,13 +359,13 @@ if not st.session_state.modo_edicao:
                             )
                             if link_gerado:
                                 supabase.table("pedidos").update({"infinitepay_url": link_gerado}).eq("id", pedido_id).execute()
-                                st.success("✅ Link gerado com sucesso!")
+                                st.success("✅ Link curto gerado com sucesso!")
                                 st.rerun()
                     else:
                         st.error("Serviço InfinitePay não encontrado.")
 
             # =========================================================
-            # BLOCO INFINITEPAY VISUAL (Autorização e Horário) - HTML CORRIGIDO!
+            # BLOCO INFINITEPAY VISUAL (Autorização e Horário)
             # =========================================================
             tx_id = pedido.get("infinitepay_transaction_id")
             if tx_id:
@@ -380,7 +380,6 @@ if not st.session_state.modo_edicao:
                 else:
                     horario_str = '<div class="data-value" style="color: #15803d; font-size: 12px; font-weight: 500; margin-bottom: 0;">⏰ Registrado no banco (Aguardando novo campo)</div>'
                 
-                # HTML único com Flexbox garante que nada "vaze" pra fora da caixa verde
                 html_infinite = f"""
                 <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 15px 0; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 15px;">
                     <div style="flex: 1; min-width: 250px;">
