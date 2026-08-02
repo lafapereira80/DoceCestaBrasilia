@@ -66,6 +66,35 @@ a[data-testid="stPageLink"]:hover {
 }
 
 .rodape { text-align: center; color: #94A3B8; font-size: 12px; margin-top: 24px; }
+
+/* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    div[data-testid="stForm"] { padding: 28px 22px; }
+}
+
+/* =========================================
+   RESPONSIVIDADE — CELULAR (≤ 640px)
+========================================== */
+@media (max-width: 640px) {
+    .block-container { padding-left: .8rem !important; padding-right: .8rem !important; }
+
+    .login-header { margin-top: 6vh; margin-bottom: 20px; }
+    .login-logo { font-size: 44px; margin-bottom: 10px; }
+    .login-title { font-size: 24px; }
+    .login-subtitle { font-size: 13px; }
+    div[data-testid="stForm"] { padding: 22px 16px; border-radius: 18px; }
+    div[data-testid="stFormSubmitButton"] button { height: 44px !important; }
+
+    .header-row { gap: 10px; margin-top: 4px; }
+    .avatar-circle { width: 40px; height: 40px; border-radius: 12px; font-size: 15px; }
+    .app-greeting { font-size: 20px !important; letter-spacing: -.5px; }
+    .app-sub { font-size: 12.5px; margin-bottom: 0; }
+
+    .app-section-title { font-size: 13.5px; margin-bottom: 10px; }
+    a[data-testid="stPageLink"] { padding: 8px 10px !important; font-size: 13.5px; }
+}
 </style>
 """, unsafe_allow_html=True)
 
