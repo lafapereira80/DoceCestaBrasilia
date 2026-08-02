@@ -5,3 +5,4 @@ supabase
 reportlab
 streamlit-cookies-controller
 requests
+bcrypt
