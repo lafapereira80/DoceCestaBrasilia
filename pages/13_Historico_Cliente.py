@@ -1,6 +1,5 @@
 import streamlit as st
-import pandas as pd
-from datetime import datetime
+import html
 import json
 import urllib.parse
 import re
@@ -12,6 +11,31 @@ from services.pedido_adicional_service import listar_adicionais_pedido
 from services.cesta_service import buscar_cesta
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
+
+
+def esc(valor, padrao='-'):
+    """Escapa texto antes de inserir em blocos HTML (evita XSS/quebra de layout).
+    Importante nesta página: nome, motivo, endereço etc. vêm do formulário público
+    (01_Inicio.py) — ou seja, de qualquer visitante da internet, não só de admins."""
+    texto = str(valor) if valor not in (None, '') else padrao
+    return html.escape(texto)
+
+
+def montar_link_whatsapp(telefone):
+    """
+    Monta o link wa.me. Desde que o checkout público passou a ter seletor de DDI
+    internacional, o telefone salvo já vem com o código do país embutido (55, 1,
+    351, 34...). Números BR com DDI+DDD+número costumam ter 12-13 dígitos; abaixo
+    disso, assumimos que é um cadastro antigo/sem DDI e prefixamos 55 (Brasil),
+    que é como esse link sempre funcionou até aqui.
+    """
+    digitos = re.sub(r'\D', '', str(telefone or ''))
+    if not digitos:
+        return ""
+    if len(digitos) >= 12:
+        return f"https://wa.me/{digitos}"
+    return f"https://wa.me/55{digitos}"
+
 
 # =====================================================
 # CONFIGURAÇÃO DA PÁGINA E DESIGN PREMIUM
@@ -63,7 +87,27 @@ div[data-testid="stLinkButton"] > a { width: 100% !important; border-radius: 10p
 .stTabs [data-baseweb="tab"] { border-radius: 10px 10px 0px 0px; font-weight: 800; color: #5a3b28; background-color: #faf7f3; border: 1px solid #e8ddd3; padding: 10px 20px; }
 .stTabs [aria-selected="true"] { background-color: #ffffff !important; color: #c5721f !important; border-bottom: 2px solid #c5721f !important; }
 
-@media (max-width: 768px) { h1 { font-size: 24px !important; } }
+/* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+    .resumo-total-val { font-size: 20px !important; }
+}
+
+/* =========================================
+   RESPONSIVIDADE — CELULAR (≤ 768px)
+========================================== */
+@media (max-width: 768px) {
+    .block-container { padding-top: 1rem !important; padding-left: .8rem !important; padding-right: .8rem !important; }
+    h1 { font-size: 22px !important; }
+    .cliente-header { font-size: 18px; }
+    .card-title { font-size: 13px !important; }
+    .info-value { font-size: 12.5px !important; }
+    .resumo-total-val { font-size: 18px !important; }
+    .stTabs [data-baseweb="tab"] { padding: 8px 12px; font-size: 12.5px; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 12px 14px !important; }
+}
 </style>
 """,
 unsafe_allow_html=True
@@ -113,7 +157,7 @@ if pedido_aberto_id:
     with col_t1:
         st.title("👁️ Visualização de Pedido")
         badge_montada = '<span class="badge-montada">✅ Cesta Montada</span>' if pedido.get("cesta_montada") else ''
-        st.markdown(f"**ID #{pedido.get('id')}** | Status: **{pedido.get('status','-')}** {badge_montada}", unsafe_allow_html=True)
+        st.markdown(f"**ID #{esc(pedido.get('id'))}** | Status: **{esc(pedido.get('status'))}** {badge_montada}", unsafe_allow_html=True)
     with col_t2:
         st.write("")
         if st.button("⬅ Voltar ao Histórico", use_container_width=True):
@@ -154,7 +198,7 @@ if pedido_aberto_id:
         elif "cart" in m: return '<div class="pgto-badge" style="background: #e8f0fe; border-color: #1a73e8; color: #1a73e8;">💳 CARTÃO</div>'
         elif "dinheiro" in m: return '<div class="pgto-badge" style="background: #fef7e0; border-color: #b06000; color: #b06000;">💵 DINHEIRO</div>'
         elif "transfer" in m: return '<div class="pgto-badge" style="background: #f3ece6; border-color: #5a3b28; color: #5a3b28;">🏦 TRANSF.</div>'
-        return f'<span class="pgto-badge">{metodo}</span>'
+        return f'<span class="pgto-badge">{esc(metodo)}</span>'
 
     # ABAS DA FICHA TRAVADA
     aba_geral, aba_itens, aba_financeiro, aba_anexos = st.tabs([
@@ -169,10 +213,10 @@ if pedido_aberto_id:
         with col_g1:
             with st.container(border=True):
                 st.markdown('<div class="card-title">👤 Informações de Contato</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="info-label">Comprador</div><div class="info-value">{pedido.get("cliente_nome") or "-"} <span style="font-size:12px;color:#666;">(CPF: {pedido.get("cliente_cpf") or "-"})</span></div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="info-value">📞 +{pedido.get("cliente_telefone") or "-"}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="info-label">Homenageado (Destinatário)</div><div class="info-value">{pedido.get("destinatario_nome") or "-"} (📞 {pedido.get("destinatario_telefone") or "Não inf."})</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="info-label">Motivo</div><div class="info-value">{pedido.get("motivo_homenagem") or "-"}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="info-label">Comprador</div><div class="info-value">{esc(pedido.get("cliente_nome"))} <span style="font-size:12px;color:#666;">(CPF: {esc(pedido.get("cliente_cpf"))})</span></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="info-value">📞 +{esc(pedido.get("cliente_telefone"))}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="info-label">Homenageado (Destinatário)</div><div class="info-value">{esc(pedido.get("destinatario_nome"))} (📞 {esc(pedido.get("destinatario_telefone"), "Não inf.")})</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="info-label">Motivo</div><div class="info-value">{esc(pedido.get("motivo_homenagem"))}</div>', unsafe_allow_html=True)
 
             with st.container(border=True):
                 st.markdown('<div class="card-title">💌 Cartão de Homenagem</div>', unsafe_allow_html=True)
@@ -183,11 +227,11 @@ if pedido_aberto_id:
                 st.markdown('<div class="card-title">🎁 Detalhes da Entrega e Pacote</div>', unsafe_allow_html=True)
                 c1, c2 = st.columns(2)
                 with c1: 
-                    st.markdown(f'<div class="info-label">Cesta Adquirida</div><div class="info-value">{pedido.get("cesta_nome","-")}</div>', unsafe_allow_html=True)
-                    st.markdown(f'<div class="info-label">Data Limite</div><div class="info-value">{formatar_data(pedido.get("data_entrega"))}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="info-label">Cesta Adquirida</div><div class="info-value">{esc(pedido.get("cesta_nome"))}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="info-label">Data Limite</div><div class="info-value">{esc(formatar_data(pedido.get("data_entrega")))}</div>', unsafe_allow_html=True)
                 with c2: 
                     st.markdown(f'<div class="info-label">Forma de Pagto</div><div class="info-value">{obter_icone_pagamento(pedido.get("pagamento", "-"))}</div>', unsafe_allow_html=True)
-                    st.markdown(f'<div class="info-label">Período Ideal</div><div class="info-value">{pedido.get("periodo_entrega","-")}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="info-label">Período Ideal</div><div class="info-value">{esc(pedido.get("periodo_entrega"))}</div>', unsafe_allow_html=True)
 
             with st.container(border=True):
                 st.markdown('<div class="card-title">✨ Observações Especiais</div>', unsafe_allow_html=True)
@@ -201,11 +245,11 @@ if pedido_aberto_id:
                 st.markdown('<div class="card-title" style="color: #137333; border-bottom: 1px solid #ceead6;">✅ Comprovante de Entrega</div>', unsafe_allow_html=True)
                 col_c1, col_c2, col_c3 = st.columns(3)
                 with col_c1:
-                    st.markdown(f'<div class="info-label">Recebido por</div><div class="info-value" style="color:#137333; font-size: 16px !important;">👤 {pedido.get("quem_recebeu") or "Não informado"}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="info-label">Recebido por</div><div class="info-value" style="color:#137333; font-size: 16px !important;">👤 {esc(pedido.get("quem_recebeu"), "Não informado")}</div>', unsafe_allow_html=True)
                 with col_c2:
-                    st.markdown(f'<div class="info-label">Data e Hora da Baixa</div><div class="info-value">⏰ {pedido.get("hora_entrega_realizada") or "-"}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="info-label">Data e Hora da Baixa</div><div class="info-value">⏰ {esc(pedido.get("hora_entrega_realizada"))}</div>', unsafe_allow_html=True)
                 with col_c3:
-                    st.markdown(f'<div class="info-label">Entregador Responsável</div><div class="info-value">🛵 {pedido.get("entregador_login") or "-"}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="info-label">Entregador Responsável</div><div class="info-value">🛵 {esc(pedido.get("entregador_login"))}</div>', unsafe_allow_html=True)
                     
         with st.container(border=True):
             st.markdown('<div class="card-title">📍 Localização e Roteirização (GPS)</div>', unsafe_allow_html=True)
@@ -225,7 +269,7 @@ if pedido_aberto_id:
                 st.markdown('<div class="card-title">🛒 Checklist / Composição da Cesta</div>', unsafe_allow_html=True)
                 produtos = pedido.get("produtos", "")
                 if produtos:
-                    for item in produtos.split("\n"): st.markdown(f"<div style='font-size:13px; margin-bottom:6px; font-weight:600;'>✅ {item.replace('•','').strip()}</div>", unsafe_allow_html=True)
+                    for item in produtos.split("\n"): st.markdown(f"<div style='font-size:13px; margin-bottom:6px; font-weight:600;'>✅ {esc(item.replace('•','').strip())}</div>", unsafe_allow_html=True)
                 else: st.caption("Nenhum item configurado.")
 
         with col_i2:
@@ -238,10 +282,10 @@ if pedido_aberto_id:
                         nome = adicional.get("nome_produto", "-")
                         valor = adicional.get("valor_unitario")
                         if valor is not None:
-                            st.markdown(f"<div style='font-size:13px; margin-bottom:6px; font-weight:600;'>➕ {nome} - <span style='color:#137333;'>{formatar_valor(valor)}</span></div>", unsafe_allow_html=True)
+                            st.markdown(f"<div style='font-size:13px; margin-bottom:6px; font-weight:600;'>➕ {esc(nome)} - <span style='color:#137333;'>{formatar_valor(valor)}</span></div>", unsafe_allow_html=True)
                         else:
                             val_manual = itens_consulta_salvos.get(nome, 0)
-                            st.markdown(f"<div style='font-size:13px; margin-bottom:6px; font-weight:600;'>➕ {nome} - <span style='color:#137333;'>{formatar_valor(val_manual)}</span></div>", unsafe_allow_html=True)
+                            st.markdown(f"<div style='font-size:13px; margin-bottom:6px; font-weight:600;'>➕ {esc(nome)} - <span style='color:#137333;'>{formatar_valor(val_manual)}</span></div>", unsafe_allow_html=True)
                 
                 # 2. Extras Avulsos Dinâmicos consolidados na Aba 2
                 tem_extras_dinamicos = False
@@ -250,7 +294,7 @@ if pedido_aberto_id:
                         if not tem_extras_dinamicos:
                             st.markdown("<div style='margin-top: 10px; font-size: 13px; font-weight: 800; color: #5a3b28;'>➕ Extras Avulsos Personalizados:</div>", unsafe_allow_html=True)
                             tem_extras_dinamicos = True
-                        st.markdown(f"<div style='font-size:13px; margin-bottom:4px; font-weight:600;'>🔹 {k} - <span style='color:#137333;'>{formatar_valor(v)}</span></div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='font-size:13px; margin-bottom:4px; font-weight:600;'>🔹 {esc(k)} - <span style='color:#137333;'>{formatar_valor(v)}</span></div>", unsafe_allow_html=True)
 
                 if not adicionais_pedido and not tem_extras_dinamicos:
                     st.caption("Nenhum adicional ou extra solicitado.")
@@ -283,8 +327,8 @@ if pedido_aberto_id:
         with col_f1:
             with st.container(border=True):
                 st.markdown('<div class="card-title">💰 Informações Logísticas e Fiscais</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="info-label">Horário Fixo de Entrega</div><div class="info-value">🕒 {pedido.get("horario_combinado") or "Não definido"}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="info-label">Status do Pedido</div><div class="info-value">{pedido.get("status")}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="info-label">Horário Fixo de Entrega</div><div class="info-value">🕒 {esc(pedido.get("horario_combinado"), "Não definido")}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="info-label">Status do Pedido</div><div class="info-value">{esc(pedido.get("status"))}</div>', unsafe_allow_html=True)
                 st.markdown(f'<div class="info-label">Cesta Montada</div><div class="info-value">{"✅ Sim" if pedido.get("cesta_montada") else "⏳ Não"}</div>', unsafe_allow_html=True)
 
         with col_f2:
@@ -383,15 +427,16 @@ st.write("")
 with st.container(border=True):
     col_inf1, col_inf2, col_inf3, col_inf4 = st.columns([2.5, 1.5, 2, 1.5])
     with col_inf1:
-        st.markdown(f"<div class='cliente-header'>👤 {cliente_atual['nome']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='cliente-header'>👤 {esc(cliente_atual['nome'])}</div>", unsafe_allow_html=True)
         st.caption("Perfil Cadastrado Oficial")
     with col_inf2:
-        st.markdown(f'<div class="info-label">CPF</div><div class="info-value">{cliente_atual["cpf"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="info-label">CPF</div><div class="info-value">{esc(cliente_atual["cpf"])}</div>', unsafe_allow_html=True)
     with col_inf3:
-        tel_limpo = str(cliente_atual["telefone"]).replace("+", "").replace("-", "").replace(" ", "").replace("(", "").replace(")", "")
-        st.markdown(f'<div class="info-label">Contato / WhatsApp</div><div class="info-value"><a href="https://wa.me/55{tel_limpo}" target="_blank" style="color: #137333; text-decoration: none; font-weight: 800;">📱 +{cliente_atual["telefone"]}</a></div>', unsafe_allow_html=True)
+        link_wpp_cliente = montar_link_whatsapp(cliente_atual["telefone"])
+        st.markdown(f'<div class="info-label">Contato / WhatsApp</div><div class="info-value"><a href="{esc(link_wpp_cliente, "#")}" target="_blank" style="color: #137333; text-decoration: none; font-weight: 800;">📱 +{esc(cliente_atual["telefone"])}</a></div>', unsafe_allow_html=True)
     with col_inf4:
-        st.markdown(f'<div class="info-label">Total Gasto (LTV)</div><div class="info-value" style="color: #137333; font-size: 16px !important;">R$ {total_gasto:,.2f}</div>'.replace(",", "X").replace(".", ",").replace("X", "."), unsafe_allow_html=True)
+        total_gasto_fmt = f"R$ {total_gasto:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        st.markdown(f'<div class="info-label">Total Gasto (LTV)</div><div class="info-value" style="color: #137333; font-size: 16px !important;">{total_gasto_fmt}</div>', unsafe_allow_html=True)
 
     if perfil_usuario == "Administrador":
         with st.expander("⚙️ Zona de Perigo - Excluir Cliente Permanentemente", expanded=False):
@@ -424,21 +469,22 @@ for compra in compras_cliente:
 
         col_c1, col_c2, col_c3, col_c4, col_c5 = st.columns([1.2, 3.0, 1.6, 1.6, 1.2])
         with col_c1:
-            st.markdown(f'<div class="info-label">Pedido ID</div><div class="info-value">#{str(c_id).split("-")[0].upper()}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-label">Pedido ID</div><div class="info-value">#{esc(str(c_id).split("-")[0].upper())}</div>', unsafe_allow_html=True)
         with col_c2:
-            st.markdown(f'<div class="info-label">Pacote Adquirido</div><div class="info-value">🎁 {compra.get("cesta_nome", "-")}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-label">Pacote Adquirido</div><div class="info-value">🎁 {esc(compra.get("cesta_nome"))}</div>', unsafe_allow_html=True)
             # NOVO: Exibe quem recebeu direto na lista principal!
             if status == "Entregue" and compra.get("quem_recebeu"):
-                st.markdown(f"<div style='font-size:12px; color:#137333; margin-top:2px;'>👤 Recebido por: <strong>{compra.get('quem_recebeu')}</strong></div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-size:12px; color:#137333; margin-top:2px;'>👤 Recebido por: <strong>{esc(compra.get('quem_recebeu'))}</strong></div>", unsafe_allow_html=True)
         with col_c3:
             dt_entrega = compra.get("data_entrega", "-")
             dt_fmt = f"{dt_entrega[8:10]}/{dt_entrega[5:7]}/{dt_entrega[0:4]}" if dt_entrega and len(str(dt_entrega)) >= 10 else str(dt_entrega)
-            st.markdown(f'<div class="info-label">Data Entrega</div><div class="info-value">🗓️ {dt_fmt}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-label">Data Entrega</div><div class="info-value">🗓️ {esc(dt_fmt)}</div>', unsafe_allow_html=True)
         with col_c4:
             val = float(compra.get("valor_total", 0) or 0)
-            st.markdown(f'<div class="info-label">Valor Total</div><div class="info-value" style="color: #137333;">R$ {val:,.2f}</div>'.replace(",", "X").replace(".", ",").replace("X", "."), unsafe_allow_html=True)
+            val_fmt = f"R$ {val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            st.markdown(f'<div class="info-label">Valor Total</div><div class="info-value" style="color: #137333;">{val_fmt}</div>', unsafe_allow_html=True)
         with col_c5:
-            st.markdown(f'<div class="info-label">Status</div><div><span class="badge-status {classe_badge}">{status}</span></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-label">Status</div><div><span class="badge-status {classe_badge}">{esc(status)}</span></div>', unsafe_allow_html=True)
 
         st.write("")
         cc_acao1, cc_acao2 = st.columns([1, 1])
