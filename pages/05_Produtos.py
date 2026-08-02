@@ -1,4 +1,5 @@
 import streamlit as st
+import html
 
 from services.produto_service import (
     listar_produtos,
@@ -34,6 +35,8 @@ menu_lateral()
 administrador_operador()
 
 usuario = st.session_state.usuario
+if "produto_confirmar_exclusao" not in st.session_state:
+    st.session_state["produto_confirmar_exclusao"] = None
 
 
 # =====================================================
@@ -184,10 +187,22 @@ div[data-testid="stColumn"] div[data-testid="stButton"] button:hover {
 .stImage img { border-radius: 8px; object-fit: cover; border: 1px solid #e8ddd3; }
 
 /* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+}
+
+/* =========================================
    RESPONSIVIDADE MOBILE E BOTÕES LADO A LADO
 ========================================== */
 @media (max-width: 768px) {
     h1 { font-size: 24px !important; }
+    .categoria-header { font-size: 13px !important; padding: 8px 14px; margin-top: 22px; }
+    .produto-nome { font-size: 13.5px !important; }
+    .produto-preco { font-size: 13.5px !important; }
+    .badge-incluso, .badge-consulta, .badge-ativo, .badge-inativo { font-size: 9.5px !important; padding: 3px 8px; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 10px 12px !important; }
     
     /* Força os botões dentro do bloco da direita a ficarem na horizontal */
     div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) {
@@ -346,11 +361,11 @@ def exibir_produto(produto, categoria):
                 with col_img:
                     st.image(imagem_url, width=50)
                 with col_txt:
-                    st.markdown(f'<div class="produto-nome">{produto.get("nome","-")}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="produto-nome">{html.escape(str(produto.get("nome") or "-"))}</div>', unsafe_allow_html=True)
                     if produto.get("descricao"):
                         st.caption(produto["descricao"])
             else:
-                st.markdown(f'<div class="produto-nome">{produto.get("nome","-")}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="produto-nome">{html.escape(str(produto.get("nome") or "-"))}</div>', unsafe_allow_html=True)
                 if produto.get("descricao"):
                     st.caption(produto["descricao"])
 
@@ -406,6 +421,14 @@ if not produtos:
     st.info("O catálogo de produtos está vazio. Cadastre o primeiro item acima.")
     st.stop()
 
+busca_produto = st.text_input("Buscar produto", placeholder="🔎 Buscar produto por nome...", label_visibility="collapsed")
+if busca_produto:
+    termo = busca_produto.strip().lower()
+    produtos = [p for p in produtos if termo in str(p.get("nome") or "").lower()]
+    if not produtos:
+        st.info("Nenhum produto encontrado para essa busca.")
+        st.stop()
+
 
 # Organiza e Agrupa Produtos por Categoria
 categorias_dict = {categoria["id"]: categoria for categoria in categorias}
@@ -434,7 +457,7 @@ for categoria_nome, dados in categorias_ordenadas:
     categoria = dados["categoria"] or {}
 
     st.markdown(
-        f'<div class="categoria-header">📁 {categoria_nome}</div>',
+        f'<div class="categoria-header">📁 {html.escape(str(categoria_nome))}</div>',
         unsafe_allow_html=True
     )
 
@@ -454,12 +477,26 @@ for categoria_nome, dados in categorias_ordenadas:
                 st.error(f"Erro ao alterar status: {erro}")
 
         if excluir:
-            try:
-                excluir_produto(produto["id"])
-                st.toast("✅ Produto removido com sucesso!")
-                st.rerun()
-            except Exception as erro:
-                st.error(f"Erro ao excluir produto: {erro}")
+            st.session_state["produto_confirmar_exclusao"] = produto["id"]
+            st.rerun()
+
+        if st.session_state.get("produto_confirmar_exclusao") == produto["id"]:
+            with st.container(border=True):
+                st.warning(f"⚠️ Confirma excluir **{produto.get('nome') or 'este produto'}** do catálogo? Essa ação não pode ser desfeita.")
+                cc1, cc2 = st.columns(2)
+                with cc1:
+                    if st.button("✅ Sim, excluir", key=f"conf_excluir_{produto['id']}", use_container_width=True, type="primary"):
+                        try:
+                            excluir_produto(produto["id"])
+                            st.session_state["produto_confirmar_exclusao"] = None
+                            st.toast("✅ Produto removido com sucesso!")
+                            st.rerun()
+                        except Exception as erro:
+                            st.error(f"Erro ao excluir produto: {erro}")
+                with cc2:
+                    if st.button("❌ Cancelar", key=f"canc_excluir_{produto['id']}", use_container_width=True):
+                        st.session_state["produto_confirmar_exclusao"] = None
+                        st.rerun()
 
 
 # =====================================================
