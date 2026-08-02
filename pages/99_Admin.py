@@ -56,12 +56,14 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
 }
 
-/* --- Links de módulo --- */
-a[data-testid="stPageLink"] {
+/* --- Links de módulo ---
+   Selector precisa ter especificidade >= .stApp a[data-testid="stPageLink"]
+   (definido em utils/menu.py), senão essas regras nunca vencem o CSS global. */
+.stApp a[data-testid="stPageLink"] {
     border-radius: 12px !important; padding: 10px 12px !important; margin-bottom: 2px !important;
     transition: all .15s ease !important; font-weight: 600 !important;
 }
-a[data-testid="stPageLink"]:hover {
+.stApp a[data-testid="stPageLink"]:hover {
     background: var(--bg-soft) !important; transform: translateX(3px);
 }
 
@@ -93,7 +95,7 @@ a[data-testid="stPageLink"]:hover {
     .app-sub { font-size: 12.5px; margin-bottom: 0; }
 
     .app-section-title { font-size: 13.5px; margin-bottom: 10px; }
-    a[data-testid="stPageLink"] { padding: 8px 10px !important; font-size: 13.5px; }
+    .stApp a[data-testid="stPageLink"] { padding: 8px 10px !important; font-size: 13.5px !important; }
 }
 </style>
 """, unsafe_allow_html=True)
