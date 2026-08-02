@@ -85,14 +85,15 @@ h1 {
 /* =========================================
    MÉTRICAS RÁPIDAS
 ========================================== */
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 6px; }
 .metric-box {
     background: #fff; border: 1px solid var(--border); border-radius: 14px;
     padding: 14px 16px; display: flex; align-items: center; gap: 12px;
-    box-shadow: 0 2px 8px rgba(90,59,40,.03);
+    box-shadow: 0 2px 8px rgba(90,59,40,.03); min-width: 0;
 }
-.metric-icon { font-size: 22px; }
+.metric-icon { font-size: 22px; flex-shrink: 0; }
 .metric-num { font-size: 20px; font-weight: 800; color: var(--ink); line-height: 1; }
-.metric-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.metric-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* =========================================
    ACORDEÃO (EXPANDER) "NOVO USUÁRIO"
@@ -149,7 +150,8 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
 /* =========================================
    AVATAR DO USUÁRIO
 ========================================== */
-.user-row { display: flex; align-items: center; gap: 10px; }
+.user-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.user-row > div:last-child { min-width: 0; overflow: hidden; }
 .avatar-user {
     width: 36px; height: 36px; border-radius: 10px; background: var(--brand); color: #fff;
     display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px;
@@ -164,6 +166,10 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     color: var(--ink);
     font-size: 16px !important;
     margin-bottom: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
 }
 
 .badge-admin { background-color: #fef7e0; color: #b06000; border: 1px solid #fce8b2; }
@@ -206,10 +212,28 @@ div[data-testid="stColumn"] div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+}
+
+/* =========================================
    RESPONSIVIDADE MOBILE E BOTÕES (LADO A LADO)
 ========================================== */
 @media (max-width: 768px) {
     h1 { font-size: 24px !important; }
+
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .metric-box { padding: 10px 12px; gap: 8px; }
+    .metric-icon { font-size: 18px; }
+    .metric-num { font-size: 16px; }
+    .metric-label { font-size: 9.5px; }
+
+    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 12px !important; }
+    .avatar-user { width: 32px; height: 32px; font-size: 12px; }
+    .user-title { font-size: 14px !important; }
+    .user-date { margin-top: 4px; }
 
     div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) {
         display: flex !important;
@@ -230,6 +254,14 @@ div[data-testid="stColumn"] div[data-testid="stButton"] button:hover {
         width: 100% !important;
         padding: 6px 0px !important;
     }
+}
+
+/* =========================================
+   RESPONSIVIDADE — CELULAR PEQUENO (≤ 480px)
+========================================== */
+@media (max-width: 480px) {
+    div[data-testid="stExpander"] summary { padding: 12px 14px !important; font-size: 14px !important; }
+    div[data-testid="stExpanderDetails"] { padding: 14px !important; }
 }
 </style>
 """,
@@ -310,29 +342,28 @@ if not usuarios:
     st.info("Nenhum usuário cadastrado.")
     st.stop()
 
-# --- Métricas rápidas por perfil ---
+# --- Métricas rápidas por perfil (grid único, reflow controlado por CSS) ---
 qtd_admin = sum(1 for u in usuarios if u.get("perfil") == "Administrador")
 qtd_operador = sum(1 for u in usuarios if u.get("perfil") == "Operador")
 qtd_entregador = sum(1 for u in usuarios if u.get("perfil") == "Entregador")
 
-m1, m2, m3, m4 = st.columns(4)
 metricas = [
-    (m1, "👥", len(usuarios), "Total"),
-    (m2, "👑", qtd_admin, "Administradores"),
-    (m3, "👤", qtd_operador, "Operadores"),
-    (m4, "🛵", qtd_entregador, "Entregadores"),
+    ("👥", len(usuarios), "Total"),
+    ("👑", qtd_admin, "Administradores"),
+    ("👤", qtd_operador, "Operadores"),
+    ("🛵", qtd_entregador, "Entregadores"),
 ]
-for col, icone, num, label in metricas:
-    with col:
-        st.markdown(f"""
-        <div class="metric-box">
-            <div class="metric-icon">{icone}</div>
-            <div>
-                <div class="metric-num">{num}</div>
-                <div class="metric-label">{label}</div>
-            </div>
+metrics_html = "<div class='metrics-grid'>" + "".join(
+    f"""<div class="metric-box">
+        <div class="metric-icon">{icone}</div>
+        <div>
+            <div class="metric-num">{num}</div>
+            <div class="metric-label">{label}</div>
         </div>
-        """, unsafe_allow_html=True)
+    </div>"""
+    for icone, num, label in metricas
+) + "</div>"
+st.markdown(metrics_html, unsafe_allow_html=True)
 
 st.write("")
 
