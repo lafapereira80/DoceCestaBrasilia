@@ -1,7 +1,4 @@
 import streamlit as st
-import pandas as pd
-from datetime import datetime
-import time
 
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
@@ -21,29 +18,49 @@ perfil_usuario = usuario.get("perfil", "Operador")
 st.markdown(
 """
 <style>
+:root { --ink: #4a2e1b; --ink-strong: #5a3b28; --border: #e8ddd3; --muted: #775a46; }
+
 .block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; max-width: 1200px; }
-h1 { font-size: 28px !important; font-weight: 800 !important; color: #4a2e1b; margin-bottom: 2px !important; letter-spacing: -0.5px; }
-h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-top: 15px !important; margin-bottom: 10px !important; }
+h1 { font-size: 28px !important; font-weight: 800 !important; color: var(--ink); margin-bottom: 2px !important; letter-spacing: -0.5px; }
+h3, h4 { color: var(--ink-strong) !important; font-weight: 800 !important; margin-top: 15px !important; margin-bottom: 10px !important; }
 p, label { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; font-size: 13px !important; }
 
 /* Cards de Métricas (KPIs) */
 .metric-card {
     background: linear-gradient(145deg, #ffffff 0%, #fdfcfb 100%);
-    border: 1px solid #e8ddd3;
+    border: 1px solid var(--border);
     border-radius: 16px;
     padding: 20px;
     text-align: center;
     box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    min-width: 0;
 }
-.metric-title { font-size: 12px; font-weight: 800; color: #775a46; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
-.metric-value { font-size: 26px; font-weight: 800; color: #4a2e1b; }
+.metric-title { font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.metric-value { font-size: 26px; font-weight: 800; color: var(--ink); }
 
 div[data-testid="stVerticalBlockBorderWrapper"] { 
-    background: #ffffff; border: 1px solid #e8ddd3 !important; border-radius: 14px !important; 
+    background: #ffffff; border: 1px solid var(--border) !important; border-radius: 14px !important; 
     padding: 16px 20px !important; margin-bottom: 10px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.02); 
 }
 
-@media (max-width: 768px) { h1 { font-size: 24px !important; } }
+/* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+    .metric-value { font-size: 22px; }
+}
+
+/* =========================================
+   RESPONSIVIDADE — CELULAR (≤ 768px)
+========================================== */
+@media (max-width: 768px) {
+    .block-container { padding-top: 1rem !important; padding-left: .8rem !important; padding-right: .8rem !important; }
+    h1 { font-size: 22px !important; }
+    .metric-card { padding: 14px; }
+    .metric-title { font-size: 10.5px; }
+    .metric-value { font-size: 19px; }
+}
 </style>
 """,
 unsafe_allow_html=True
@@ -145,17 +162,20 @@ st.write("")
 # =====================================================
 # SELETOR / PESQUISA FLEXÍVEL
 # =====================================================
-opcoes_select = ["🔍 Selecione ou digite o nome, CPF ou celular..."] + [f"{c['nome']} (CPF: {c['cpf']})" if c['cpf'] != '-' else f"{c['nome']} (Tel: {c['telefone']})" for c in lista_clientes]
+def _rotulo_cliente(c):
+    if c is None:
+        return "🔍 Selecione ou digite o nome, CPF ou celular..."
+    return f"{c['nome']} (CPF: {c['cpf']})" if c['cpf'] != '-' else f"{c['nome']} (Tel: {c['telefone']})"
 
-cliente_selecionado_str = st.selectbox("Pesquisar Cliente na Base:", opcoes_select)
+# Usar os objetos de cliente diretamente (via format_func) em vez de reconstruir a string
+# e procurar o índice: evita pegar o cliente errado quando dois clientes têm o mesmo
+# nome + mesmo telefone/CPF ausente (o texto exibido ficaria idêntico).
+cliente_atual = st.selectbox("Pesquisar Cliente na Base:", [None] + lista_clientes, format_func=_rotulo_cliente)
 
-if cliente_selecionado_str == "🔍 Selecione ou digite o nome, CPF ou celular...":
+if cliente_atual is None:
     st.write("")
     st.info("💡 Utilize o campo acima para pesquisar e selecionar um cliente e visualizar seu perfil completo e histórico.")
     st.stop()
-
-idx_escolhido = opcoes_select.index(cliente_selecionado_str) - 1
-cliente_atual = lista_clientes[idx_escolhido]
 
 # Salva a chave primária na sessão e redireciona (telefone ou cpf)
 st.session_state["cliente_historico_alvo"] = cliente_atual['cpf'] if cliente_atual['cpf'] != '-' else cliente_atual['telefone']
