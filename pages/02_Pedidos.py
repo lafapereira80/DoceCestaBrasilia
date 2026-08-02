@@ -46,15 +46,16 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .header-title { font-size: 28px !important; font-weight: 800 !important; color: var(--brand) !important; margin-bottom: 2px; }
 .header-subtitle { font-size: 13px !important; color: var(--text-muted) !important; font-weight: 600 !important; margin-bottom: 18px; }
 
-/* --- Métricas topo --- */
+/* --- Métricas topo (grid próprio, não depende de st.columns) --- */
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 6px; }
 .metric-box {
     background: #fff; border: 1px solid var(--border); border-radius: 14px;
     padding: 14px 16px; display: flex; align-items: center; gap: 12px;
-    box-shadow: 0 2px 8px rgba(90,59,40,.03);
+    box-shadow: 0 2px 8px rgba(90,59,40,.03); min-width: 0;
 }
-.metric-icon { font-size: 22px; }
+.metric-icon { font-size: 22px; flex-shrink: 0; }
 .metric-num { font-size: 20px; font-weight: 800; color: var(--text-strong); line-height: 1; }
-.metric-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; }
+.metric-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* --- Card --- */
 .pedido-card {
@@ -69,7 +70,7 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 }
 .pedido-card:hover { border-color: var(--accent, var(--brand)); box-shadow: 0 10px 22px rgba(197, 114, 31, .12); transform: translateY(-3px); }
 
-.card-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px dashed var(--border); }
+.card-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px dashed var(--border); flex-wrap: wrap; gap: 8px; }
 .pedido-id { font-size: 16px; font-weight: 800; color: var(--ok); margin: 0; letter-spacing: .02em; }
 
 .tag-tipo { font-size: 10px; font-weight: 800; padding: 4px 9px; border-radius: 20px; text-transform: uppercase; border: 1px solid transparent; letter-spacing: .02em; }
@@ -107,6 +108,45 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 div[data-testid="stSelectbox"] label { display: none !important; }
 div[data-testid="stButton"] button { border-radius: 8px !important; font-weight: 800 !important; transition: all .2s; }
 div[data-testid="stButton"] button:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(197,114,31,.25); }
+
+/* Grupo de filtro (radio horizontal) precisa poder quebrar linha em telas estreitas */
+div[role="radiogroup"] { flex-wrap: wrap !important; row-gap: 6px !important; }
+
+/* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .header-title { font-size: 24px !important; }
+}
+
+/* =========================================
+   RESPONSIVIDADE — CELULAR (≤ 640px)
+========================================== */
+@media (max-width: 640px) {
+    .block-container { padding-top: 1rem !important; padding-left: .8rem !important; padding-right: .8rem !important; }
+    .header-title { font-size: 21px !important; }
+    .header-subtitle { font-size: 12px !important; margin-bottom: 12px; }
+
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .metric-box { padding: 10px 12px; gap: 8px; }
+    .metric-icon { font-size: 18px; }
+    .metric-num { font-size: 16px; }
+    .metric-label { font-size: 9.5px; }
+
+    .pedido-card { padding: 14px 14px 12px 14px; }
+    .pedido-id { font-size: 15px; }
+    .pedido-info { font-size: 12.5px; }
+    .pedido-total { font-size: 17px; }
+
+    /* Stepper mais compacto: mantém as bolinhas, encolhe os rótulos */
+    .stepper { margin-top: 10px; padding-top: 8px; }
+    .step-label { font-size: 7px; letter-spacing: 0; }
+    .step-dot { width: 10px; height: 10px; }
+
+    .status-badge { font-size: 9.5px; padding: 3px 8px; }
+    .tag-tipo { font-size: 9px; padding: 3px 7px; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -192,25 +232,24 @@ qtd_pago = sum(1 for p in todos_pedidos if p.get('status') == 'Pago')
 qtd_rota = sum(1 for p in todos_pedidos if p.get('status') in ['Enviado', 'Em Rota de Entrega'])
 qtd_desistencia = sum(1 for p in todos_pedidos if p.get('status') == 'Desistência')
 
-# --- Métricas rápidas ---
-m1, m2, m3, m4 = st.columns(4)
+# --- Métricas rápidas (grid único, reflow controlado por CSS) ---
 metricas = [
-    (m1, "📥", qtd_recebido, "Recebidos"),
-    (m2, "💰", qtd_pago, "Pagos"),
-    (m3, "🛵", qtd_rota, "Em Rota"),
-    (m4, "⚠️", qtd_desistencia, "Desistências"),
+    ("📥", qtd_recebido, "Recebidos"),
+    ("💰", qtd_pago, "Pagos"),
+    ("🛵", qtd_rota, "Em Rota"),
+    ("⚠️", qtd_desistencia, "Desistências"),
 ]
-for col, icone, num, label in metricas:
-    with col:
-        st.markdown(f"""
-        <div class="metric-box">
-            <div class="metric-icon">{icone}</div>
-            <div>
-                <div class="metric-num">{num}</div>
-                <div class="metric-label">{label}</div>
-            </div>
+metrics_html = "<div class='metrics-grid'>" + "".join(
+    f"""<div class="metric-box">
+        <div class="metric-icon">{icone}</div>
+        <div>
+            <div class="metric-num">{num}</div>
+            <div class="metric-label">{label}</div>
         </div>
-        """, unsafe_allow_html=True)
+    </div>"""
+    for icone, num, label in metricas
+) + "</div>"
+st.markdown(metrics_html, unsafe_allow_html=True)
 
 st.write("")
 
