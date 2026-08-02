@@ -100,6 +100,42 @@ div[data-testid="stButton"] button[kind="primary"]:hover { box-shadow: 0 6px 16p
 .btn-wpp > a { background: #25d366 !important; color: white !important; font-weight: 800 !important; font-size: 13px !important; border-radius: 10px !important; padding: 12px !important; display: flex; justify-content: center; align-items: center; text-decoration: none !important; transition: all .2s ease; }
 .btn-wpp > a:hover { box-shadow: 0 6px 16px rgba(37, 211, 102, .3); transform: translateY(-1px); }
 div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff !important; border-radius: 14px !important; border: 1px solid var(--border) !important; padding: 18px !important; margin-bottom: 15px !important; }
+
+/* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    .info-card { padding: 16px; }
+    .resumo-financeiro { justify-content: flex-start; gap: 18px; }
+}
+
+/* =========================================
+   RESPONSIVIDADE — CELULAR (≤ 640px)
+========================================== */
+@media (max-width: 640px) {
+    .block-container { padding-left: .8rem !important; padding-right: .8rem !important; padding-top: 1rem !important; }
+
+    .order-header { padding: 12px 14px; flex-direction: column; align-items: flex-start; }
+    .order-text { font-size: 13px; flex-wrap: wrap; }
+    .status-text { text-align: left; justify-content: flex-start; width: 100%; }
+
+    .info-card { padding: 14px; }
+    .card-title { font-size: 12.5px; }
+    .data-label { font-size: 10.5px; }
+    .data-value { font-size: 13px; margin-bottom: 10px; }
+    .item-pill { font-size: 12.5px; padding: 7px 10px; }
+
+    /* Resumo financeiro vira grid 2x2 em vez de espremer tudo numa linha */
+    .resumo-financeiro { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; padding: 14px; text-align: left; }
+    .resumo-item { text-align: left; }
+    .resumo-valor { font-size: 13.5px; }
+    .resumo-destaque { font-size: 15px; }
+
+    .section-step { font-size: 13px; }
+    .step-num { width: 20px; height: 20px; font-size: 11px; }
+
+    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 14px !important; }
+}
 </style>
 """, unsafe_allow_html=True)
 
