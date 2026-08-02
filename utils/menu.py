@@ -1,4 +1,13 @@
+import html
+
 import streamlit as st
+
+
+def _esc(valor, padrao=''):
+    """Escapa texto do usuário antes de inserir em blocos HTML (evita XSS/quebra de layout)."""
+    texto = str(valor) if valor not in (None, '') else padrao
+    return html.escape(texto)
+
 
 def configurar_pagina():
     """Design Mobile-First estilo App Nativo (iOS / Nubank)"""
@@ -94,9 +103,27 @@ def configurar_pagina():
         /* Oculta label do Page Link nativo que fica feio */
         div[data-testid="stPageLink"] p { margin: 0 !important; }
 
+        /* =========================================
+           RESPONSIVIDADE — TABLET (≤ 1024px)
+        ========================================== */
+        @media (max-width: 1024px) {
+            [data-testid="stSidebar"] .block-container { padding-left: .8rem !important; padding-right: .8rem !important; }
+            .stApp a[data-testid="stPageLink"] { padding: 13px 16px !important; font-size: 14px !important; }
+        }
+
+        /* =========================================
+           RESPONSIVIDADE — CELULAR (≤ 640px)
+        ========================================== */
         @media (max-width: 640px) {
             .block-container { padding: 1rem 0.8rem !important; }
             div[data-testid="stVerticalBlockBorderWrapper"] { padding: 20px 16px !important; border-radius: 20px !important; }
+
+            /* Sidebar no celular abre como painel quase full-width: reduz respiros */
+            [data-testid="stSidebar"] .block-container { padding-top: 1rem !important; padding-left: .7rem !important; padding-right: .7rem !important; }
+            section[data-testid="stSidebar"] a[data-testid="stPageLink"] { padding: 10px 12px !important; font-size: 13.5px !important; }
+
+            .stApp a[data-testid="stPageLink"] { padding: 12px 14px !important; font-size: 13.5px !important; border-radius: 12px !important; }
+            .app-section-title { font-size: 12px; margin-bottom: 10px; }
         }
         </style>
         """,
@@ -118,15 +145,15 @@ def menu_lateral():
         st.markdown(html_branding, unsafe_allow_html=True)
 
         if usuario:
-            perfil = usuario.get("perfil", "Usuário")
-            login = usuario.get("login", "Admin")
-            
+            perfil = _esc(usuario.get("perfil", "Usuário"))
+            login = _esc(usuario.get("login", "Admin"))
+
             # CRACHÁ ESTILO "APPLE ID"
             html_cracha = f"""
-            <div style="background: #F8FAFC; border: 1px solid #F1F5F9; padding: 12px; border-radius: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
-                <div style="background: #FFFFFF; border: 1px solid #E2E8F0; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">🧑‍💻</div>
-                <div>
-                    <div style="color: #1E293B; font-size: 14px; font-weight: 700; line-height: 1.2;">{login}</div>
+            <div style="background: #F8FAFC; border: 1px solid #F1F5F9; padding: 12px; border-radius: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; min-width: 0;">
+                <div style="background: #FFFFFF; border: 1px solid #E2E8F0; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); flex-shrink: 0;">🧑‍💻</div>
+                <div style="min-width: 0; overflow: hidden;">
+                    <div style="color: #1E293B; font-size: 14px; font-weight: 700; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{login}</div>
                     <div style="color: #64748B; font-size: 11px; font-weight: 600; margin-top: 2px;">{perfil}</div>
                 </div>
             </div>
