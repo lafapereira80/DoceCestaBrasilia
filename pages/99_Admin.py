@@ -3,7 +3,7 @@ from datetime import datetime
 
 import streamlit as st
 
-from config.supabase import supabase
+from services.usuario_service import autenticar_usuario
 from utils.menu import configurar_pagina, menu_lateral
 
 st.set_page_config(page_title="Painel Administrativo", page_icon="⚙️", layout="wide")
@@ -90,9 +90,9 @@ if "usuario" not in st.session_state or not st.session_state["usuario"]:
                 if usuario_input and senha_input:
                     with st.spinner("Autenticando..."):
                         try:
-                            res = supabase.table("usuarios").select("*").eq("login", usuario_input.strip()).eq("senha", senha_input.strip()).execute()
-                            if res.data and len(res.data) > 0:
-                                st.session_state["usuario"] = res.data[0]
+                            usuario_autenticado = autenticar_usuario(usuario_input.strip(), senha_input.strip())
+                            if usuario_autenticado:
+                                st.session_state["usuario"] = usuario_autenticado
                                 st.rerun()
                             else:
                                 st.error("❌ Usuário ou senha incorretos.")
