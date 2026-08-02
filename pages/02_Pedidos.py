@@ -1,14 +1,12 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import json
 
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 
-# =====================================================
-# CONFIGURAÇÃO DA PÁGINA E CSS
-# =====================================================
 st.set_page_config(page_title="Mural de Pedidos", page_icon="📋", layout="wide")
 configurar_pagina()
 menu_lateral()
@@ -36,26 +34,20 @@ html, body, [class*="css"] { font-family: 'Montserrat', sans-serif !important; c
 .tag-vitrine { background: #e8f0fe; color: #1a73e8; border-color: #d2e3fc; }
 .tag-varejo { background: #fef7e0; color: #b06000; border-color: #fce8b2; }
 
-.ticket-status { display: inline-block; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 6px; margin-bottom: 10px; width: 100%; text-align: center; }
-.ticket-pendente { background: #fef7e0; color: #b06000; border: 1px solid #fce8b2; }
-.ticket-montagem { background: #fdf7e3; color: #b06000; border: 1px solid #fce8b2; }
-.ticket-pronto { background: #e6f4ea; color: #137333; border: 1px solid #ceead6; }
-.ticket-rota { background: #e8f0fe; color: #1a73e8; border: 1px solid #d2e3fc; }
-
 .pedido-info { font-size: 13px; color: #5a3b28; margin-bottom: 4px; font-weight: 500; }
 .pedido-info b { color: #2c1e14; font-weight: 700; }
 .pedido-total { font-size: 18px; font-weight: 800; color: #137333; margin-top: 10px; }
 
+/* Destaque discreto para a Etapa Logística */
+.linha-producao { color: #0d4e22; font-weight: 700; font-size: 11.5px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #f3ece6; }
+
 div[data-testid="stSelectbox"] label { display: none !important; }
 div[data-testid="stButton"] button { border-radius: 8px !important; font-weight: 800 !important; transition: all 0.2s; }
-div[data-testid="stRadio"] label { font-weight: 700 !important; color: #5a3b28 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# =====================================================
-# STATUS E FILTRAGEM (TUDO VISÍVEL AGORA)
-# =====================================================
-STATUS_PERMITIDOS = ["Recebido", "Pago", "Em Montagem", "Pronto", "Enviado", "Em Rota de Entrega", "Desistência"]
+# OS STATUS OFICIAIS DO BANCO
+STATUS_PERMITIDOS = ["Recebido", "Pago", "Enviado", "Em Rota de Entrega", "Entregue", "Desistência"]
 
 def alterar_status_callback(pedido_id, widget_key):
     novo_status = st.session_state[widget_key]
@@ -65,46 +57,30 @@ def alterar_status_callback(pedido_id, widget_key):
     except: pass
 
 st.markdown("<div class='header-title'>📋 Mural Central de Pedidos</div>", unsafe_allow_html=True)
-st.markdown("<div class='header-subtitle'>Acompanhe a evolução das encomendas em tempo real.</div>", unsafe_allow_html=True)
+st.markdown("<div class='header-subtitle'>Acompanhe a situação e etapa dos pedidos.</div>", unsafe_allow_html=True)
 
-with st.spinner("Carregando fluxo logístico..."):
-    # Carrega todos os pedidos ativos
-    res = supabase.table("pedidos").select("*").in_("status", STATUS_PERMITIDOS).order("data_entrega", desc=False).execute()
+with st.spinner("Carregando pedidos ativos..."):
+    res = supabase.table("pedidos").select("*").in_("status", ["Recebido", "Pago", "Enviado", "Em Rota de Entrega", "Desistência"]).order("data_entrega", desc=False).execute()
     todos_pedidos = res.data or []
 
-# Contagem Dinâmica
 qtd_recebido = sum(1 for p in todos_pedidos if p.get('status') == 'Recebido')
 qtd_pago = sum(1 for p in todos_pedidos if p.get('status') == 'Pago')
-qtd_montagem = sum(1 for p in todos_pedidos if p.get('status') in ['Em Montagem', 'Pronto'])
 qtd_rota = sum(1 for p in todos_pedidos if p.get('status') in ['Enviado', 'Em Rota de Entrega'])
 
-opcoes_filtro = [
-    f"Pendentes de Pgto ({qtd_recebido})",
-    f"Fila de Produção ({qtd_pago})",
-    f"Na Fábrica ({qtd_montagem})",
-    f"Com Entregador ({qtd_rota})"
-]
+filtro_selecionado = st.radio("Filtro:", [f"Recebidos ({qtd_recebido})", f"Pagos ({qtd_pago})", f"Em Rota ({qtd_rota})", "Todos"], horizontal=True)
 
-filtro_selecionado = st.radio("Selecione o filtro logístico:", opcoes_filtro, horizontal=True)
-
-# Aplicação do Filtro
 pedidos_filtrados = []
 for p in todos_pedidos:
     st_atual = p.get('status', '')
-    if filtro_selecionado.startswith("Pendentes") and st_atual == "Recebido": pedidos_filtrados.append(p)
-    elif filtro_selecionado.startswith("Fila de Produção") and st_atual == "Pago": pedidos_filtrados.append(p)
-    elif filtro_selecionado.startswith("Na Fábrica") and st_atual in ["Em Montagem", "Pronto"]: pedidos_filtrados.append(p)
-    elif filtro_selecionado.startswith("Com Entregador") and st_atual in ["Enviado", "Em Rota de Entrega"]: pedidos_filtrados.append(p)
-
-st.write("")
+    if filtro_selecionado.startswith("Recebidos") and st_atual == "Recebido": pedidos_filtrados.append(p)
+    elif filtro_selecionado.startswith("Pagos") and st_atual == "Pago": pedidos_filtrados.append(p)
+    elif filtro_selecionado.startswith("Em Rota") and st_atual in ["Enviado", "Em Rota de Entrega"]: pedidos_filtrados.append(p)
+    elif filtro_selecionado.startswith("Todos"): pedidos_filtrados.append(p)
 
 if not pedidos_filtrados:
-    st.info("Nenhum pedido nesta fase logística no momento.")
+    st.info("Nenhum pedido encontrado no filtro.")
     st.stop()
 
-# =====================================================
-# RENDERIZAÇÃO DOS CARTÕES INTELIGENTES
-# =====================================================
 cols = st.columns(3)
 for idx, p in enumerate(pedidos_filtrados):
     col = cols[idx % 3] 
@@ -120,34 +96,44 @@ for idx, p in enumerate(pedidos_filtrados):
     
     try: data_f = datetime.strptime(str(p.get('data_entrega'))[:10], "%Y-%m-%d").strftime("%d/%m/%Y")
     except: data_f = "Não definida"
-    
     try: valor_f = f"{float(p.get('valor_total', 0)):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     except: valor_f = "0,00"
 
     # ==========================================
-    # TICKET VISUAL INTELIGENTE DENTRO DO CARTÃO
+    # LÓGICA DO TEXTO DISCRETO (LINHA DO TEMPO)
     # ==========================================
-    st_banco = p.get('status', 'Recebido')
-    ticket_html = ""
-    if st_banco == "Pago": ticket_html = '<div class="ticket-status ticket-pendente">⏳ AGUARDANDO MONTAGEM</div>'
-    elif st_banco == "Em Montagem": ticket_html = '<div class="ticket-status ticket-montagem">⚙️ MONTAGEM INICIADA</div>'
-    elif st_banco == "Pronto": ticket_html = '<div class="ticket-status ticket-pronto">✅ CESTA MONTADA</div>'
-    elif st_banco in ["Enviado", "Em Rota de Entrega"]: ticket_html = '<div class="ticket-status ticket-rota">🛵 NA RUA PARA ENTREGA</div>'
+    chk_str = p.get('checklist') or "{}"
+    if isinstance(chk_str, str):
+        try: chk_str = json.loads(chk_str)
+        except: chk_str = {}
+        
+    status_db = p.get('status', '')
+    entregador = p.get('entregador_login')
+    cesta_montada = p.get('cesta_montada', False)
+    
+    if status_db == 'Entregue': 
+        texto_discreto = "🎉 Pedido entregue ao destinatário"
+    elif status_db in ['Enviado', 'Em Rota de Entrega'] or entregador:
+        texto_discreto = "🛵 Saiu para entrega (Rota)"
+    elif cesta_montada:
+        texto_discreto = "✅ Cesta montada na fábrica"
+    elif chk_str and any(chk_str.values()):
+        texto_discreto = "⚙️ Montagem iniciada (fábrica)"
+    else:
+        texto_discreto = "⏳ Aguardando montagem"
 
     with col:
         with st.container(border=False):
-            # A MÁGICA AQUI: O .replace('\n', '') evita a quebra de linha que estava estragando o HTML
             html_card = f"""
             <div class="pedido-card">
                 <div class="card-header">
                     <h3 class="pedido-id">#{id_curto}</h3>
                     {tag_html}
                 </div>
-                {ticket_html}
                 <div class="pedido-info"><b>👤 Cliente:</b> {cliente_limpo}</div>
                 <div class="pedido-info"><b>🎁 Cesta:</b> {p.get('cesta_nome') or '-'}</div>
                 <div class="pedido-info"><b>📅 Entrega:</b> {data_f} ({p.get('periodo_entrega') or '-'})</div>
-                <div class="pedido-info"><b>💳 Pagto:</b> {p.get('pagamento') or '-'}</div>
+                <div class="pedido-info linha-producao">🛠️ Etapa Logística: {texto_discreto}</div>
                 <div class="pedido-total">R$ {valor_f}</div>
             </div>
             """
@@ -155,9 +141,9 @@ for idx, p in enumerate(pedidos_filtrados):
             
             c_status, c_btn = st.columns([1.5, 1])
             with c_status:
-                idx_st = STATUS_PERMITIDOS.index(st_banco) if st_banco in STATUS_PERMITIDOS else 0
+                idx_st = STATUS_PERMITIDOS.index(status_db) if status_db in STATUS_PERMITIDOS else 0
                 widget_key = f"st_{pid}"
-                st.selectbox("Status", STATUS_PERMITIDOS, index=idx_st, key=widget_key, on_change=alterar_status_callback, args=(pid, widget_key), label_visibility="collapsed")
+                st.selectbox("Status Oficial", STATUS_PERMITIDOS, index=idx_st, key=widget_key, on_change=alterar_status_callback, args=(pid, widget_key), label_visibility="collapsed")
             with c_btn:
                 if st.button("Detalhes", key=f"btn_{pid}", use_container_width=True, type="primary"):
                     st.session_state['pedido_detalhe_id'] = pid
