@@ -68,7 +68,7 @@ st.markdown("<div class='header-title'>📋 Mural Central de Pedidos</div>", uns
 st.markdown("<div class='header-subtitle'>Acompanhe a evolução das encomendas em tempo real.</div>", unsafe_allow_html=True)
 
 with st.spinner("Carregando fluxo logístico..."):
-    # Carrega todos os pedidos ativos (Exceto os já "Entregues" que não precisam mais estar no painel)
+    # Carrega todos os pedidos ativos
     res = supabase.table("pedidos").select("*").in_("status", STATUS_PERMITIDOS).order("data_entrega", desc=False).execute()
     todos_pedidos = res.data or []
 
@@ -136,7 +136,8 @@ for idx, p in enumerate(pedidos_filtrados):
 
     with col:
         with st.container(border=False):
-            st.markdown(f"""
+            # A MÁGICA AQUI: O .replace('\n', '') evita a quebra de linha que estava estragando o HTML
+            html_card = f"""
             <div class="pedido-card">
                 <div class="card-header">
                     <h3 class="pedido-id">#{id_curto}</h3>
@@ -149,7 +150,8 @@ for idx, p in enumerate(pedidos_filtrados):
                 <div class="pedido-info"><b>💳 Pagto:</b> {p.get('pagamento') or '-'}</div>
                 <div class="pedido-total">R$ {valor_f}</div>
             </div>
-            """, unsafe_allow_html=True)
+            """
+            st.markdown(html_card.replace('\n', ''), unsafe_allow_html=True)
             
             c_status, c_btn = st.columns([1.5, 1])
             with c_status:
