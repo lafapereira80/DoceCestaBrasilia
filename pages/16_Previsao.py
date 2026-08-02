@@ -11,7 +11,7 @@ from services.cesta_service import buscar_cesta
 from services.pedido_adicional_service import listar_adicionais_pedido
 
 # =====================================================
-# CONFIGURAÇÃO DA PÁGINA E DESIGN PREMIUM
+# CONFIGURAÇÃO DA PÁGINA
 # =====================================================
 st.set_page_config(page_title="Painel de Produção", page_icon="🏭", layout="wide")
 configurar_pagina()
@@ -21,140 +21,65 @@ administrador_operador()
 st.markdown(
 """
 <style>
-/* =========================================
-   CONFIGURAÇÃO GERAL E ESPAÇAMENTOS
-========================================== */
 .block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; max-width: 1200px; }
 h1 { font-size: 28px !important; font-weight: 800 !important; color: #4a2e1b !important; margin-bottom: 2px !important; letter-spacing: -0.5px; }
 h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-top: 15px !important; margin-bottom: 10px !important; }
 p, label { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; font-size: 13px !important; }
 
-/* =========================================
-   BARRA DE RESUMO DAS METAS (PILLS)
-========================================== */
-.resumo-bar {
-    background: linear-gradient(145deg, #ffffff 0%, #fdfcfb 100%);
-    border: 1px solid #e8ddd3;
-    border-radius: 16px;
-    padding: 20px 24px;
-    margin-bottom: 24px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-}
-.resumo-header { font-size: 13px; font-weight: 800; color: #775a46; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
+.resumo-bar { background: linear-gradient(145deg, #ffffff 0%, #fdfcfb 100%); border: 1px solid #e8ddd3; border-radius: 16px; padding: 20px 24px; margin-bottom: 24px; }
+.resumo-header { font-size: 13px; font-weight: 800; color: #775a46; text-transform: uppercase; margin-bottom: 12px; }
 .pills-container { display: flex; flex-wrap: wrap; gap: 10px; }
-.cesta-pill {
-    background: #faf7f3; border: 1px solid #e8ddd3; padding: 6px 14px; border-radius: 20px; 
-    font-size: 14px; font-weight: 800; color: #5a3b28; display: flex; align-items: center; gap: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.2s ease;
-}
-.cesta-pill:hover { border-color: #d2bfae; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(90,59,40,0.08); }
+.cesta-pill { background: #faf7f3; border: 1px solid #e8ddd3; padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: 800; color: #5a3b28; display: flex; align-items: center; gap: 8px; }
 .cesta-pill-qtd { background: #b06000; color: #ffffff; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 800; }
 
-/* =========================================
-   CARDS KANBAN (PEDIDOS NA FILA)
-========================================== */
-.pedido-card {
-    background: #ffffff;
-    border: 1px solid #e8ddd3;
-    border-radius: 14px;
-    padding: 18px 20px;
-    margin-bottom: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-.pedido-card:hover {
-    border-color: #d2bfae;
-    box-shadow: 0 8px 20px rgba(90,59,40,0.08);
-    transform: translateY(-2px);
-}
+.pedido-card { background: #ffffff; border: 1px solid #e8ddd3; border-radius: 14px; padding: 18px 20px; margin-bottom: 12px; transition: all 0.2s ease; }
+.pedido-card:hover { border-color: #d2bfae; transform: translateY(-2px); }
 .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #f3ece6; padding-bottom: 6px; }
-.pedido-id { font-size: 13px; font-weight: 800; color: #9d7d65; text-transform: uppercase; letter-spacing: 0.5px; }
+.pedido-id { font-size: 13px; font-weight: 800; color: #9d7d65; text-transform: uppercase; }
 
-/* Badges Status Kanban */
 .badge-status-pendente { background: #fef7e0; color: #b06000; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid #fce8b2; }
 .badge-status-andamento { background: #fdf7e3; color: #b06000; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid #fce8b2; }
 .badge-status-pronta { background: #e6f4ea; color: #137333; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid #ceead6; }
 
-/* Textos do Card Kanban */
 .cliente-titulo { font-size: 17px; font-weight: 800; color: #2c1e14; margin-bottom: 2px; }
 .cesta-subtitulo { font-size: 15px; font-weight: 800; color: #b06000; margin-bottom: 10px; }
 .info-linha-card { font-size: 13px; color: #555; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; font-weight: 500; }
 
-/* Barra de Progresso Customizada */
 .progresso-container { background: #f3ece6; border-radius: 8px; height: 8px; width: 100%; margin: 14px 0 6px 0; overflow: hidden; }
 .progresso-barra { background: linear-gradient(90deg, #b06000, #137333); height: 100%; border-radius: 8px; transition: width 0.4s ease; }
 
-/* =========================================
-   ESTILIZAÇÃO DA GAVETA DE MONTAGEM (CHECKLIST)
-========================================== */
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #ffffff;
-    border: 1px solid #e8ddd3 !important;
-    border-radius: 14px !important;
-    padding: 20px 24px !important;
-    box-shadow: 0 4px 15px rgba(90, 59, 40, 0.05);
-}
-
+div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1px solid #e8ddd3 !important; border-radius: 14px !important; padding: 20px 24px !important; }
 .montagem-header { background: #faf7f3; border: 1px solid #e8ddd3; border-radius: 12px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #b06000; }
-.secao-titulo { font-size: 14px; font-weight: 800; color: #775a46; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 15px; margin-bottom: 10px; border-bottom: 1px dashed #dfcdbb; padding-bottom: 4px; }
+.secao-titulo { font-size: 14px; font-weight: 800; color: #775a46; text-transform: uppercase; margin-top: 15px; margin-bottom: 10px; border-bottom: 1px dashed #dfcdbb; padding-bottom: 4px; }
 
-/* Checkboxes (Pílulas Clicáveis) */
-div[data-testid="stCheckbox"] {
-    background: #faf7f3;
-    border: 1px solid #e8ddd3;
-    padding: 8px 12px;
-    border-radius: 10px;
-    margin-bottom: 6px;
-    transition: all 0.2s ease;
-}
-div[data-testid="stCheckbox"]:hover {
-    background: #fdfcfb;
-    border-color: #d2bfae;
-    transform: translateX(2px);
-}
-
-/* =========================================
-   BOTÕES DE AÇÃO
-========================================== */
-div[data-testid="stButton"] > button { font-size: 14px !important; font-weight: 800 !important; border-radius: 10px !important; min-height: 40px !important; transition: all 0.2s ease; }
-div[data-testid="stButton"] > button:hover { transform: scale(1.02); }
+div[data-testid="stCheckbox"] { background: #faf7f3; border: 1px solid #e8ddd3; padding: 8px 12px; border-radius: 10px; margin-bottom: 6px; }
+div[data-testid="stButton"] > button { font-size: 14px !important; font-weight: 800 !important; border-radius: 10px !important; min-height: 40px !important; }
 </style>
-""",
-unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
-st.title("🏭 Painel de Produção (Chão de Fábrica)")
-st.caption("Acompanhe o volume diário, abra a gaveta de montagem e valide os itens via checklist.")
+st.title("🏭 Painel de Produção")
+st.caption("Acompanhe o volume diário e valide os itens via checklist.")
 
-if "pedido_em_montagem" not in st.session_state:
-    st.session_state.pedido_em_montagem = None
+if "pedido_em_montagem" not in st.session_state: st.session_state.pedido_em_montagem = None
 
-# =====================================================
-# BUSCA GERAL (APENAS PEDIDOS NAS ETAPAS DA FÁBRICA)
-# =====================================================
 def buscar_pedidos_producao():
-    # AGORA BUSCA: Pago, Em Montagem e Pronto (para eles continuarem visíveis até o Despacho)
-    res_producao = supabase.table("pedidos").select("*").in_("status", ["Pago", "Em Montagem", "Pronto"]).execute()
+    # A fábrica só vê os pedidos com Status "Pago".
+    res_producao = supabase.table("pedidos").select("*").eq("status", "Pago").execute()
     lista_total = res_producao.data or []
-    
     unicos = {p["id"]: p for p in lista_total}.values()
     return sorted(list(unicos), key=lambda x: x.get('data_entrega') or '9999-99-99')
 
 pedidos = buscar_pedidos_producao()
 
 if not pedidos:
-    st.success("🎉 Excelente trabalho! A fila de produção está limpa. Não há pedidos aguardando montagem.")
+    st.success("🎉 Excelente trabalho! A fila de produção está limpa.")
     st.stop()
 
-# =====================================================
-# LÓGICA DE AGRUPAMENTO POR DATA 
-# =====================================================
 resumo = {}
 hoje = date.today()
 
 for p in pedidos:
     dt_str = p.get("data_entrega")
-    
     if not dt_str:
         chave_ordem = "9999-99-99"
         label_dia = "SEM DATA DEFINIDA"
@@ -162,21 +87,17 @@ for p in pedidos:
         try:
             dt_obj = datetime.strptime(str(dt_str)[:10], "%Y-%m-%d").date()
             dias_diff = (dt_obj - hoje).days
-            
             if dias_diff < 0: label_dia = f"⚠️ ATRASADO ({dt_obj.strftime('%d/%m')})"
             elif dias_diff == 0: label_dia = f"HOJE ({dt_obj.strftime('%d/%m')})"
             elif dias_diff == 1: label_dia = f"AMANHÃ ({dt_obj.strftime('%d/%m')})"
             elif dias_diff == 2: label_dia = f"DEPOIS ({dt_obj.strftime('%d/%m')})"
             else: label_dia = f"{dias_diff} DIAS ({dt_obj.strftime('%d/%m')})"
-            
             chave_ordem = dt_obj.strftime("%Y-%m-%d")
         except:
             chave_ordem = "9999-99-99"
             label_dia = "SEM DATA DEFINIDA"
             
-    if chave_ordem not in resumo:
-        resumo[chave_ordem] = {"label": label_dia, "cestas_agrupadas": {}, "pedidos_lista": [], "total": 0}
-        
+    if chave_ordem not in resumo: resumo[chave_ordem] = {"label": label_dia, "cestas_agrupadas": {}, "pedidos_lista": [], "total": 0}
     nome_cesta = p.get("cesta_nome", "Cesta Não Informada")
     resumo[chave_ordem]["cestas_agrupadas"][nome_cesta] = resumo[chave_ordem]["cestas_agrupadas"].get(nome_cesta, 0) + 1
     resumo[chave_ordem]["pedidos_lista"].append(p)
@@ -184,42 +105,34 @@ for p in pedidos:
     
 dados_previsao = dict(sorted(resumo.items()))
 
-
 # =====================================================
-# TELA DE CHECKLIST EM MODO "GAVETA" 
+# GAVETA DE MONTAGEM
 # =====================================================
 if st.session_state.pedido_em_montagem:
     p_ativo = next((p for p in pedidos if p["id"] == st.session_state.pedido_em_montagem), None)
     
     if p_ativo:
-        st.write("")
         with st.container(border=True):
             col_tit, col_fechar = st.columns([4, 1])
-            with col_tit:
-                st.markdown(f"### 🛠️ Montagem da Cesta / Lote (Pedido #{str(p_ativo['id']).split('-')[0].upper()})")
+            with col_tit: st.markdown(f"### 🛠️ Montagem da Cesta (Pedido #{str(p_ativo['id']).split('-')[0].upper()})")
             with col_fechar:
                 if st.button("❌ Fechar Painel", use_container_width=True):
                     st.session_state.pedido_em_montagem = None
                     st.rerun()
             
-            is_b2b = "[B2B]" in p_ativo.get('cliente_nome', '')
             nome_cli_exibicao = p_ativo.get('cliente_nome', '').replace("[B2B]", "").strip()
 
-            st.markdown(
-                f"""
+            st.markdown(f"""
                 <div class="montagem-header">
                     <div style="font-size: 18px; font-weight: 800; color: #2c1e14;">👤 {nome_cli_exibicao}</div>
-                    <div style="font-size: 15px; font-weight: 800; color: #b06000; margin-top: 4px; margin-bottom: 8px;">🎁 {p_ativo.get('cesta_nome')}</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #b06000;">🎁 {p_ativo.get('cesta_nome')}</div>
                     <div style="font-size: 13px; color: #444; margin-top: 4px;">📍 <strong>Endereço:</strong> {p_ativo.get('endereco', 'N/I')}</div>
-                    <div style="font-size: 13px; color: #444; margin-top: 2px;">🕒 <strong>Turno Ideal:</strong> {p_ativo.get('periodo_entrega', '')} ({p_ativo.get('horario_combinado', 'Livre')})</div>
                 </div>
-                """, unsafe_allow_html=True
-            )
+                """, unsafe_allow_html=True)
             
-            if p_ativo.get('anotacoes_internas'):
-                st.warning(f"✨ **Atenções Internas:** {p_ativo.get('anotacoes_internas')}")
+            if p_ativo.get('anotacoes_internas'): st.warning(f"✨ **Atenções Internas:** {p_ativo.get('anotacoes_internas')}")
             
-            st.markdown("#### 📋 Checklist de Verificação Oficial")
+            st.markdown("#### 📋 Checklist")
             
             checklist_salvo = p_ativo.get("checklist") or {}
             if isinstance(checklist_salvo, str):
@@ -240,13 +153,11 @@ if st.session_state.pedido_em_montagem:
                 if "Inclusos:" in descricao_cesta: bloco_inclusos = descricao_cesta.split("Inclusos:")[1]
                 elif "inclusos:" in descricao_cesta.lower(): bloco_inclusos = descricao_cesta.lower().split("inclusos:")[1]
                 bloco_inclusos = bloco_inclusos.split("\n\n")[0]
-                for item in [i.strip() for i in bloco_inclusos.split(";") if i.strip()]:
-                    chaves_itens_pedido.append(f"📦 {item}")
+                for item in [i.strip() for i in bloco_inclusos.split(";") if i.strip()]: chaves_itens_pedido.append(f"📦 {item}")
             
             produtos = p_ativo.get("produtos", "")
             if produtos:
-                for prod_limpo in [p.replace('•', '').strip() for p in produtos.split("\n") if p.replace('•', '').strip()]:
-                    chaves_itens_pedido.append(f"✔️ {prod_limpo}")
+                for prod_limpo in [p.replace('•', '').strip() for p in produtos.split("\n") if p.replace('•', '').strip()]: chaves_itens_pedido.append(f"✔️ {prod_limpo}")
             
             adicionais_bd = []
             try:
@@ -263,35 +174,24 @@ if st.session_state.pedido_em_montagem:
                 nome_ad = ad.get("nome_produto", "")
                 if nome_ad:
                     chave_ad = f"➕ {nome_ad}"
-                    if chave_ad not in chaves_itens_pedido:
-                        chaves_itens_pedido.append(chave_ad)
+                    if chave_ad not in chaves_itens_pedido: chaves_itens_pedido.append(chave_ad)
 
             for k, v in itens_consulta_salvos.items():
                 if "Valor Manual de" not in k and not k.startswith("Valor de "):
                     chave_extra = f"🔹 {k}"
-                    if chave_extra not in chaves_itens_pedido:
-                        chaves_itens_pedido.append(chave_extra)
+                    if chave_extra not in chaves_itens_pedido: chaves_itens_pedido.append(chave_extra)
             
-            if p_ativo.get("mensagem", ""):
-                chaves_itens_pedido.append("✅ Cartão impresso e posicionado")
+            if p_ativo.get("mensagem", ""): chaves_itens_pedido.append("✅ Cartão impresso e posicionado")
 
             col_m1, col_m2 = st.columns(2)
-            marcar_todos_click = col_m1.button("✅ Marcar Todos os Itens", use_container_width=True)
-            desmarcar_todos_click = col_m2.button("❌ Desmarcar Todos", use_container_width=True)
-            
-            if marcar_todos_click:
-                for k in chaves_itens_pedido:
-                    st.session_state[f"chk_item_{p_ativo['id']}_{k}"] = True
-                st.toast("✅ Todos os itens foram marcados!")
+            if col_m1.button("✅ Marcar Todos", use_container_width=True):
+                for k in chaves_itens_pedido: st.session_state[f"chk_item_{p_ativo['id']}_{k}"] = True
                 st.rerun()
-            elif desmarcar_todos_click:
-                for k in chaves_itens_pedido:
-                    st.session_state[f"chk_item_{p_ativo['id']}_{k}"] = False
-                st.toast("❌ Todos os itens foram desmarcados!")
+            if col_m2.button("❌ Desmarcar Todos", use_container_width=True):
+                for k in chaves_itens_pedido: st.session_state[f"chk_item_{p_ativo['id']}_{k}"] = False
                 st.rerun()
 
             novo_checklist = {}
-            
             itens_desc = []
             if descricao_cesta:
                 bloco_inclusos = descricao_cesta
@@ -301,18 +201,17 @@ if st.session_state.pedido_em_montagem:
                 itens_desc = [i.strip() for i in bloco_inclusos.split(";") if i.strip()]
 
             if itens_desc:
-                st.markdown("<div class='secao-titulo'>📦 Itens Padrão do Catálogo</div>", unsafe_allow_html=True)
+                st.markdown("<div class='secao-titulo'>📦 Itens Padrão</div>", unsafe_allow_html=True)
                 cols_padrao = st.columns(2)
                 for idx, item in enumerate(itens_desc):
                     chave_chk = f"📦 {item}"
                     val_padrao = checklist_salvo.get(chave_chk, False)
                     session_key = f"chk_item_{p_ativo['id']}_{chave_chk}"
                     if session_key in st.session_state: val_padrao = st.session_state[session_key]
-
                     with cols_padrao[idx % 2]: novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
             
             if produtos:
-                st.markdown("<div class='secao-titulo'>🍓 Produtos / Lote do Pedido</div>", unsafe_allow_html=True)
+                st.markdown("<div class='secao-titulo'>🍓 Produtos / Lote</div>", unsafe_allow_html=True)
                 prods_lista = [p.replace('•', '').strip() for p in produtos.split("\n") if p.replace('•', '').strip()]
                 cols_pers = st.columns(2)
                 for idx, prod_limpo in enumerate(prods_lista):
@@ -320,14 +219,12 @@ if st.session_state.pedido_em_montagem:
                     val_padrao = checklist_salvo.get(chave_chk, False)
                     session_key = f"chk_item_{p_ativo['id']}_{chave_chk}"
                     if session_key in st.session_state: val_padrao = st.session_state[session_key]
-
                     with cols_pers[idx % 2]: novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
 
             if adicionais_bd or itens_consulta_salvos:
-                st.markdown("<div class='secao-titulo'>🎀 Adicionais e Extras do Pedido</div>", unsafe_allow_html=True)
+                st.markdown("<div class='secao-titulo'>🎀 Adicionais e Extras</div>", unsafe_allow_html=True)
                 cols_add = st.columns(2)
                 contador_add = 0
-                
                 for ad in adicionais_bd:
                     nome_ad = ad.get('nome_produto', '')
                     if nome_ad:
@@ -350,12 +247,10 @@ if st.session_state.pedido_em_montagem:
             mensagem = p_ativo.get("mensagem", "")
             if mensagem:
                 st.markdown("<div class='secao-titulo'>💌 Mensagem do Cartão</div>", unsafe_allow_html=True)
-                st.info(f"_{mensagem}_")
                 chave_chk = "✅ Cartão impresso e posicionado"
                 val_padrao = checklist_salvo.get(chave_chk, False)
                 session_key = f"chk_item_{p_ativo['id']}_{chave_chk}"
                 if session_key in st.session_state: val_padrao = st.session_state[session_key]
-
                 novo_checklist[chave_chk] = st.checkbox(chave_chk, value=val_padrao, key=session_key)
                 
             st.write("")
@@ -364,20 +259,14 @@ if st.session_state.pedido_em_montagem:
             col_b1, col_b2 = st.columns(2)
             with col_b1:
                 if st.button("💾 Salvar Checklist (Progresso)", use_container_width=True):
-                    # LÓGICA DE STATUS AUTOMÁTICA
-                    tem_marcados = any(novo_checklist.values())
+                    # APENAS ATUALIZA O PROGRESSO, NÃO TOCA NO STATUS GERAL.
                     tudo_pronto = len(novo_checklist) > 0 and all(novo_checklist.values())
-                    
-                    # Se marcou algo, mas não tudo: "Em Montagem" | Se marcou tudo: "Pronto"
-                    novo_status_bd = "Pronto" if tudo_pronto else ("Em Montagem" if tem_marcados else "Pago")
-                    
                     try:
                         supabase.table("pedidos").update({
                             "checklist": novo_checklist,
-                            "cesta_montada": tudo_pronto,
-                            "status": novo_status_bd
+                            "cesta_montada": tudo_pronto
                         }).eq("id", p_ativo['id']).execute()
-                        st.toast(f"✅ Progresso salvo! Status alterado para: {novo_status_bd}")
+                        st.toast("✅ Progresso salvo no sistema!")
                         time.sleep(0.5)
                         st.rerun(scope="app")
                     except Exception as e: st.error(f"❌ Erro ao salvar: {e}")
@@ -387,18 +276,17 @@ if st.session_state.pedido_em_montagem:
                         supabase.table("pedidos").update({
                             "checklist": novo_checklist,
                             "cesta_montada": True,
-                            "status": "Em Rota de Entrega"
+                            "status": "Em Rota de Entrega" # Aqui sim o status muda de fato
                         }).eq("id", p_ativo['id']).execute()
-                        st.success("✅ Excelente! Cesta pronta e despachada para a rota de entrega.")
+                        st.success("✅ Cesta despachada!")
                         st.session_state.pedido_em_montagem = None
                         time.sleep(1.5)
                         st.rerun(scope="app")
                     except Exception as e: st.error(f"❌ Erro ao despachar: {e}")
         st.divider()
 
-
 # =====================================================
-# INTERFACE PRINCIPAL (ABAS POR DATA + CARDS KANBAN)
+# INTERFACE PRINCIPAL
 # =====================================================
 if dados_previsao:
     nomes_abas = [info["label"] for data, info in dados_previsao.items()]
@@ -406,24 +294,14 @@ if dados_previsao:
     
     for i, (data, info) in enumerate(dados_previsao.items()):
         with abas[i]:
-            
             html_pills = "".join([f"<div class='cesta-pill'>📦 {cesta} <span class='cesta-pill-qtd'>{qtd}</span></div>" for cesta, qtd in info["cestas_agrupadas"].items()])
-            st.markdown(f"<div class='resumo-bar'><div class='resumo-header'>📊 Resumo de Metas (Total: {info['total']} cestas/lotes)</div><div class='pills-container'>{html_pills}</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='resumo-bar'><div class='resumo-header'>📊 Resumo (Total: {info['total']})</div><div class='pills-container'>{html_pills}</div></div>", unsafe_allow_html=True)
             
             pedidos_lista = info["pedidos_lista"]
             col_esq, col_dir = st.columns(2)
             
             for idx, p in enumerate(pedidos_lista):
                 pid = str(p["id"]).split('-')[0].upper()
-                
-                # BADGES DE PROGRESSO VISUAL NO CARD
-                status_banco = p.get('status', '')
-                if p.get("cesta_montada", False) or status_banco == "Pronto":
-                    status_badge = '<span class="badge-status-pronta">✅ PRONTA</span>'
-                elif status_banco == "Em Montagem":
-                    status_badge = '<span class="badge-status-andamento">⚙️ EM MONTAGEM</span>'
-                else:
-                    status_badge = '<span class="badge-status-pendente">⏳ PENDENTE</span>'
                 
                 chk_atual = p.get("checklist") or {}
                 if isinstance(chk_atual, str):
@@ -434,34 +312,31 @@ if dados_previsao:
                 itens_marcados = sum(1 for v in chk_atual.values() if v)
                 porcentagem = int((itens_marcados / total_itens) * 100) if total_itens > 0 else 0
                 
+                # Visual do Progresso no Kanban
+                if p.get("cesta_montada", False) or porcentagem == 100:
+                    status_badge = '<span class="badge-status-pronta">✅ PRONTA</span>'
+                elif itens_marcados > 0:
+                    status_badge = '<span class="badge-status-andamento">⚙️ EM MONTAGEM</span>'
+                else:
+                    status_badge = '<span class="badge-status-pendente">⏳ PENDENTE</span>'
+                
                 endereco_completo = p.get('endereco', 'Endereço não informado')
                 bairro = endereco_completo.split(',')[-1].split('(')[0].strip() if ',' in endereco_completo else endereco_completo
-                
-                is_b2b = "[B2B]" in p.get('cliente_nome', '')
                 nome_cliente_card = p.get('cliente_nome', '-').replace("[B2B]", "").strip()
-                tag_tipo = '<span style="background: #e6f4ea; color: #137333; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px; margin-left: 6px;">CORP</span>' if is_b2b else ''
                 
                 card_html = f"""
                 <div class="pedido-card">
-                    <div class="card-top">
-                        <span class="pedido-id">Pedido #{pid}</span>
-                        {status_badge}
-                    </div>
-                    <div class="cliente-titulo">{nome_cliente_card} {tag_tipo}</div>
+                    <div class="card-top"><span class="pedido-id">Pedido #{pid}</span>{status_badge}</div>
+                    <div class="cliente-titulo">{nome_cliente_card}</div>
                     <div class="cesta-subtitulo">🎁 {p.get('cesta_nome', '-')}</div>
                     <div class="info-linha-card">📍 <strong>Localização:</strong> {bairro}</div>
-                    <div class="info-linha-card">🕒 <strong>Turno Ideal:</strong> {p.get('periodo_entrega', 'Livre')} ({p.get('horario_combinado', 'Flexível')})</div>
-                    <div class="progresso-container">
-                        <div class="progresso-barra" style="width: {porcentagem}%;"></div>
-                    </div>
+                    <div class="progresso-container"><div class="progresso-barra" style="width: {porcentagem}%;"></div></div>
                     <div style="font-size: 11px; color: #775a46; text-align: right; font-weight: 800;">Verificação: {itens_marcados}/{total_itens} ({porcentagem}%)</div>
                 </div>
                 """
-                
                 col_alvo = col_esq if idx % 2 == 0 else col_dir
-                
                 with col_alvo:
-                    st.markdown(card_html, unsafe_allow_html=True)
+                    st.markdown(card_html.replace('\n', ''), unsafe_allow_html=True)
                     if st.button("🔍 Abrir Gaveta de Montagem", key=f"abrir_montagem_{p['id']}", use_container_width=True):
                         st.session_state.pedido_em_montagem = p['id']
                         st.rerun()
