@@ -1,8 +1,8 @@
 import streamlit as st
 import base64
+import html
 import re
 from pathlib import Path
-import uuid
 from datetime import date
 import requests
 
@@ -14,6 +14,13 @@ from services.pedido_adicional_service import salvar_adicionais_pedido
 from services.telegram_service import enviar_notificacao_telegram
 from services.foto_service import salvar_fotos
 from config.supabase import supabase
+
+
+def esc(valor, padrao=''):
+    """Escapa texto antes de inserir em blocos HTML (evita XSS/quebra de layout)."""
+    texto = str(valor) if valor not in (None, '') else padrao
+    return html.escape(texto)
+
 
 # ==========================================================
 # CONFIGURAÇÃO DA PÁGINA
@@ -128,6 +135,12 @@ div[data-testid="stCheckbox"] { background: #faf7f3; border: 1px solid #e8ddd3; 
 .sucesso-icone { font-size: 60px; margin-bottom: 10px; }
 .sucesso-titulo { font-size: 32px; font-weight: 800; color: #137333; margin-bottom: 12px; letter-spacing: -0.5px;}
 
+@media (max-width: 1024px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+    .header-title { font-size: 36px !important; }
+    .destaque-cesta-nome-local { font-size: 32px !important; }
+}
+
 @media (max-width: 640px) {
     .block-container { padding: 0.8rem 0.5rem !important; }
     .header-banner { flex-direction: column; text-align: center; padding: 25px 16px; }
@@ -144,6 +157,7 @@ if "pedido_enviado_com_sucesso" not in st.session_state: st.session_state["pedid
 if "ultimo_cep_buscado" not in st.session_state: st.session_state["ultimo_cep_buscado"] = ""
 if "cesta_selecionada_id" not in st.session_state: st.session_state["cesta_selecionada_id"] = None
 if "fotos_polaroid_cliente" not in st.session_state: st.session_state["fotos_polaroid_cliente"] = []
+if "pedido_processando" not in st.session_state: st.session_state["pedido_processando"] = False
 
 # ==========================================================
 # TELA DE SUCESSO
@@ -157,23 +171,28 @@ if st.session_state["pedido_enviado_com_sucesso"]:
 <div class="sucesso-icone">🎉</div>
 <div class="sucesso-titulo">Pedido Confirmado!</div>
 <div style="font-size: 16px; color: #4a2e1b; line-height: 1.6; margin-bottom: 25px;">
-Que alegria, <b>{dados.get('cliente_nome')}</b>! Seu pedido foi reservado com muito carinho pela nossa equipe. <br><br>
+Que alegria, <b>{esc(dados.get('cliente_nome'))}</b>! Seu pedido foi reservado com muito carinho pela nossa equipe. <br><br>
 ⏳ <b>Próximo Passo:</b> Nossa equipe entrará em contato via WhatsApp em instantes para confirmar a taxa de entrega e enviar o link/chave de pagamento.
 </div>
 <div class="receipt-box" style="margin-top: 0; background-image: none; background: #ffffff;">
 <div style="font-size: 16px; font-weight: 800; color: #5a3b28; margin-bottom: 15px; border-bottom: 1px solid #e8ddd3; padding-bottom: 10px;">📋 Seu Ticket de Encomenda</div>
-<div class="receipt-line"><span>💝 <b>Para:</b></span> <span>{dados.get('destinatario_nome', '-')}</span></div>
-<div class="receipt-line"><span>🎁 <b>Presente:</b></span> <span style="text-align: right;">{dados.get('cesta_nome')}</span></div>
-<div class="receipt-line"><span>🎀 <b>Extras:</b></span> <span style="text-align: right;">{dados.get('adicionais_str') if dados.get('adicionais_str') else 'Nenhum'}</span></div>
-<div class="receipt-line"><span>📅 <b>Data:</b></span> <span>{dados.get('data_entrega')} ({dados.get('periodo_entrega')})</span></div>
-<div class="receipt-total"><span>TOTAL (sem frete)</span> <span>{dados.get('valor_total')}</span></div>
+<div class="receipt-line"><span>💝 <b>Para:</b></span> <span>{esc(dados.get('destinatario_nome'), '-')}</span></div>
+<div class="receipt-line"><span>🎁 <b>Presente:</b></span> <span style="text-align: right;">{esc(dados.get('cesta_nome'))}</span></div>
+<div class="receipt-line"><span>🎀 <b>Extras:</b></span> <span style="text-align: right;">{esc(dados.get('adicionais_str')) if dados.get('adicionais_str') else 'Nenhum'}</span></div>
+<div class="receipt-line"><span>📅 <b>Data:</b></span> <span>{esc(dados.get('data_entrega'))} ({esc(dados.get('periodo_entrega'))})</span></div>
+<div class="receipt-total"><span>TOTAL (sem frete)</span> <span>{esc(dados.get('valor_total'))}</span></div>
 </div>
 </div>
 """, unsafe_allow_html=True)
     st.write("")
     if st.button("🎁 Fazer Novo Pedido", use_container_width=True):
         for key in list(st.session_state.keys()):
-            if key.startswith("input_") or key in ["pedido_enviado_com_sucesso", "cesta_selecionada_id", "fotos_polaroid_cliente", "ultimo_cep_buscado", "secao_form", "cesta_selecionada_home"]:
+            if (
+                key.startswith("input_") or key.startswith("add_") or key.startswith("rad_") or key.startswith("mul_")
+                or key in ["pedido_enviado_com_sucesso", "cesta_selecionada_id", "fotos_polaroid_cliente",
+                           "ultimo_cep_buscado", "secao_form", "cesta_selecionada_home", "pedido_processando",
+                           "resumo_pedido_sucesso", "forma_pagamento_radio"]
+            ):
                 del st.session_state[key]
         st.rerun()
     st.stop()
@@ -259,10 +278,11 @@ if cestas_ativas and secoes_disponiveis:
                 valor_base_txt = f"R$ {valor_base_num:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                 st.markdown(f'<div style="margin-top: 15px; background: #ffffff; border: 2px solid #e8ddd3; border-radius: 16px; padding: 15px 10px; text-align: center;"><div style="font-size: 11px; font-weight: 800; color: #a65d14; text-transform: uppercase;">Valor</div><div style="font-size: 28px; color: #137333; font-weight: 800; line-height: 1;">{valor_base_txt}</div></div>', unsafe_allow_html=True)
             with col_txt:
-                sec_txt = cesta_obj.get("secao_vitrine") or "Cestas de Café"
-                st.markdown(f'<div class="destaque-cesta-nome-local">{cesta_obj.get("nome", "")}</div><div style="color: #8c7362; font-size:13px; font-weight: 600; margin-bottom: 20px; text-transform: uppercase;">Coleção: {sec_txt}</div>', unsafe_allow_html=True)
+                sec_txt = esc(cesta_obj.get("secao_vitrine") or "Cestas de Café")
+                st.markdown(f'<div class="destaque-cesta-nome-local">{esc(cesta_obj.get("nome"))}</div><div style="color: #8c7362; font-size:13px; font-weight: 600; margin-bottom: 20px; text-transform: uppercase;">Coleção: {sec_txt}</div>', unsafe_allow_html=True)
                 if cesta_obj.get("descricao"):
-                    st.markdown(f'<div style="background: #ffffff; padding: 20px; border-radius: 16px; font-size: 14px; color: #4a2e1b; line-height: 1.6; border: 1px solid #f5eee6;"><div style="color: #c5721f; font-weight: 800; text-transform: uppercase; margin-bottom: 12px;">✨ O que compõe esta cesta?</div><div style="text-align: justify;">{cesta_obj.get("descricao")}</div></div>', unsafe_allow_html=True)
+                    descricao_segura = esc(cesta_obj.get("descricao")).replace("\n", "<br>")
+                    st.markdown(f'<div style="background: #ffffff; padding: 20px; border-radius: 16px; font-size: 14px; color: #4a2e1b; line-height: 1.6; border: 1px solid #f5eee6;"><div style="color: #c5721f; font-weight: 800; text-transform: uppercase; margin-bottom: 12px;">✨ O que compõe esta cesta?</div><div style="text-align: justify;">{descricao_segura}</div></div>', unsafe_allow_html=True)
             
             configuracao = obter_configuracao_cesta_cacheada(cesta_obj["id"])
             if configuracao and any(grp.get("produtos") for grp in configuracao):
@@ -382,7 +402,7 @@ if cesta_obj:
         st.markdown(f"""
 <div class="receipt-box">
 <div style="font-size: 16px; font-weight: 800; color: #5a3b28; margin-bottom: 15px; text-align: center;">RESUMO DO PEDIDO</div>
-<div class="receipt-line"><span>🎁 <b>{cesta_obj['nome']}</b></span> <strong>{valor_base_fmt}</strong></div>
+<div class="receipt-line"><span>🎁 <b>{esc(cesta_obj['nome'])}</b></span> <strong>{valor_base_fmt}</strong></div>
 {linha_extras_html}
 <div class="receipt-line"><span>🚚 Taxa de Entrega</span> <strong>A calcular pelo WhatsApp</strong></div>
 <div class="receipt-total"><span>SUBTOTAL:</span> <span>{total_fmt}</span></div>
@@ -394,7 +414,10 @@ if cesta_obj:
 # PROCESSAMENTO FINAL (SALVAMENTO CASCATA SEGURO)
 # ==========================================================
 st.write("")
-enviar = st.button("🎁 FINALIZAR MEU PEDIDO AGORA", use_container_width=True, type="primary")
+enviar = st.button(
+    "🎁 FINALIZAR MEU PEDIDO AGORA", use_container_width=True, type="primary",
+    disabled=st.session_state.get("pedido_processando", False),
+)
 
 if enviar:
     nome = st.session_state.get("input_nome_comprador", "")
@@ -404,6 +427,7 @@ if enviar:
     
     if not nome.strip(): st.error("❌ Por favor, informe seu Nome."); st.stop()
     if not tel_bruto.strip(): st.error("❌ Por favor, informe seu WhatsApp."); st.stop()
+    if not re.sub(r'\D', '', tel_bruto): st.error("❌ WhatsApp inválido. Verifique os números."); st.stop()
     if not validar_cpf(cpf_bruto): st.error("❌ CPF inválido. Verifique os números."); st.stop()
     
     cpf_limpo = re.sub(r'\D', '', cpf_bruto)
@@ -454,9 +478,11 @@ if enviar:
     }
 
     with st.spinner("Reservando seu presente e finalizando pedido..."):
+        st.session_state["pedido_processando"] = True
         try: 
             sucesso, pedido_id = salvar_pedido(dados)
         except Exception as e: 
+            st.session_state["pedido_processando"] = False
             st.error("❌ Erro de conexão ao salvar pedido. Tente novamente."); st.stop()
         
         if sucesso:
@@ -497,6 +523,7 @@ if enviar:
             st.session_state["pedido_enviado_com_sucesso"] = True
             st.rerun()
         else:
+            st.session_state["pedido_processando"] = False
             st.error("❌ Ocorreu um problema ao registrar o pedido. Tente novamente em instantes.")
 
 st.divider()
