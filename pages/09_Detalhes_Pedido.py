@@ -168,7 +168,7 @@ tipo_texto = "🏢 CORPORATIVO" if is_b2b else ("🌐 VITRINE" if is_vitrine els
 id_curto = str(pedido['id']).split('-')[0].upper()
 
 # =====================================================
-# CACHING DE DADOS (INCLUINDO AS FOTOS)
+# CACHING DE DADOS 
 # =====================================================
 @st.cache_data(ttl=300, show_spinner=False)
 def obter_cestas():
@@ -188,7 +188,6 @@ def carregar_config_cesta_cached(cesta_id):
     try: return carregar_configuracao_cesta(cesta_id)
     except: return []
 
-# NOVA FUNÇÃO PARA PUXAR AS POLAROIDS DO BANCO
 @st.cache_data(ttl=60, show_spinner=False)
 def obter_fotos_cacheadas(pid):
     try:
@@ -222,7 +221,7 @@ if "edit_cart" not in st.session_state or st.session_state.get("edit_pedido_id")
 STATUS_PERMITIDOS = ["Recebido", "Pago", "Em Montagem", "Pronto", "Enviado", "Em Rota de Entrega", "Entregue", "Desistência"]
 
 # =====================================================
-# CABEÇALHO COM A NOVA MÁQUINA DE ESTADOS VISUAIS (TICKETS)
+# CABEÇALHO COM TICKETS
 # =====================================================
 c_head, c_btn = st.columns([4, 1], vertical_alignment="center")
 with c_head:
@@ -235,13 +234,11 @@ with c_head:
     
     tickets_visuais = []
 
-    # 1. Lógica de Montagem (Produção)
     if status_db == 'Em Montagem':
         tickets_visuais.append('<span style="background: #fdf7e3; color: #b06000; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; border: 1px solid #fce8b2; margin-right: 6px;">⚙️ MONTAGEM INICIADA</span>')
     elif status_db == 'Pronto' or is_montada:
         tickets_visuais.append('<span style="background: #e6f4ea; color: #137333; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; border: 1px solid #ceead6; margin-right: 6px;">✅ CESTA MONTADA</span>')
 
-    # 2. Lógica de Logística (Entregas)
     if status_db == 'Entregue':
         tickets_visuais.append('<span style="background: #f3e8fd; color: #6a1b9a; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; border: 1px solid #e9d2fd; margin-right: 6px;">🎉 PEDIDO ENTREGUE</span>')
     elif status_db in ['Enviado', 'Em Rota de Entrega'] or (entregador and status_db not in ['Entregue', 'Desistência']):
@@ -301,7 +298,7 @@ if not st.session_state.modo_edicao:
         st.text_area("Anotações Internas", value=pedido.get('anotacoes_internas') or '', height=80, key=f"nota_{pedido_id}", on_change=salvar_nota_interna, args=(pedido_id, f"nota_{pedido_id}"), label_visibility="collapsed")
 
     # ==========================================================
-    # NOVO: EXIBIÇÃO DE FOTOS POLAROID DO CLIENTE
+    # EXIBIÇÃO DE FOTOS POLAROID DO CLIENTE
     # ==========================================================
     fotos_anexadas = obter_fotos_cacheadas(pedido_id)
     if fotos_anexadas:
@@ -465,16 +462,54 @@ else:
         st.markdown("<div class='card-title'>🎁 3. PRODUTOS E CARRINHO (FECHAMENTO)</div>", unsafe_allow_html=True)
         col_add1, col_add2, col_add3 = st.columns(3)
         cestas_disponiveis, adicionais_disponiveis = obter_cestas(), obter_adicionais()
+        
         with col_add1:
             cesta_sel = st.selectbox("Nova Cesta", [None] + cestas_disponiveis, format_func=lambda x: x["nome"] if x else "Selecione...")
+            
+            # RESTAURADO: Inteligência de carregar as opções da cesta para edição
+            selecoes_cesta_edit = {}
+            if cesta_sel:
+                cfg = carregar_config_cesta_cached(cesta_sel["id"])
+                if cfg and any(grp.get("produtos") for grp in cfg):
+                    st.markdown("<div style='font-size: 11.5px; font-weight: 700; color: #137333; margin-top: 5px; margin-bottom: 5px;'>🍓 Opções de Cesta:</div>", unsafe_allow_html=True)
+                    for grp in cfg:
+                        cat = grp.get("categoria", "Geral")
+                        prods = grp.get("produtos", [])
+                        maximo = grp.get("max_escolhas", 1)
+                        if not prods: continue
+                        if maximo == 1:
+                            esc_prod = st.selectbox(f"{cat}", prods, format_func=lambda p: p["nome"], key=f"edit_rad_{cesta_sel['id']}_{cat}")
+                            if esc_prod: selecoes_cesta_edit[cat] = [esc_prod]
+                        else:
+                            escs_prod = st.multiselect(f"{cat} (Máx: {maximo})", prods, format_func=lambda p: p["nome"], max_selections=maximo, key=f"edit_mul_{cesta_sel['id']}_{cat}")
+                            selecoes_cesta_edit[cat] = escs_prod
+
             if st.button("➕ Inserir Cesta", use_container_width=True) and cesta_sel:
-                st.session_state["edit_cart"].append({"id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": cesta_sel["id"], "nome": cesta_sel["nome"], "preco_unitario": tratar_preco(cesta_sel.get("preco")), "quantidade": 1, "descricao": ""})
+                produtos_txt = []
+                if selecoes_cesta_edit:
+                    for cat_nome, itens in selecoes_cesta_edit.items():
+                        for it_prod in itens:
+                            produtos_txt.append(f"{cat_nome}: {it_prod['nome']}")
+                itens_sel_str = "\n".join(produtos_txt)
+
+                preco_base = cesta_sel.get("preco")
+                preco_calc = tratar_preco(preco_base) if preco_base is not None else 0.0
+
+                st.session_state["edit_cart"].append({
+                    "id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": cesta_sel["id"], 
+                    "nome": cesta_sel["nome"], "preco_unitario": preco_calc, 
+                    "quantidade": 1, "descricao": itens_sel_str
+                })
                 st.rerun()
+                
         with col_add2:
             adc_sel = st.selectbox("Extra do Catálogo", [None] + adicionais_disponiveis, format_func=lambda x: x["nome"] if x else "Selecione...")
             if st.button("➕ Inserir Extra", use_container_width=True) and adc_sel:
-                st.session_state["edit_cart"].append({"id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None, "nome": adc_sel["nome"], "preco_unitario": tratar_preco(adc_sel.get("preco")), "quantidade": 1, "descricao": ""})
+                preco_base_adc = adc_sel.get("preco")
+                preco_calc_adc = tratar_preco(preco_base_adc) if preco_base_adc is not None else 0.0
+                st.session_state["edit_cart"].append({"id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None, "nome": adc_sel["nome"], "preco_unitario": preco_calc_adc, "quantidade": 1, "descricao": ""})
                 st.rerun()
+                
         with col_add3:
             txt_man = st.text_input("Extra Manual", placeholder="Ex: Vinho Personalizado")
             if st.button("➕ Inserir Manual", use_container_width=True) and txt_man.strip():
@@ -486,7 +521,11 @@ else:
             st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
             for i, item in enumerate(st.session_state["edit_cart"]):
                 c1, c2, c3, c4, c5 = st.columns([3.5, 1.5, 1.5, 1.5, 0.5])
-                with c1: st.markdown(f"**{esc(item['nome'])}**")
+                with c1: 
+                    st.markdown(f"**{esc(item['nome'])}**")
+                    if item.get("descricao"):
+                        desc_html = item['descricao'].replace('\n', '<br>')
+                        st.markdown(f"<div style='font-size:11px; color:#8c7362; line-height:1.2;'>{desc_html}</div>", unsafe_allow_html=True)
                 with c2: n_preco = st.number_input("V", value=float(item["preco_unitario"]), key=f"e_p_{item['id']}", label_visibility="collapsed")
                 with c3: n_qtd = st.number_input("Q", value=int(item["quantidade"]), min_value=1, key=f"e_q_{item['id']}", label_visibility="collapsed")
                 with c4:
@@ -522,7 +561,7 @@ else:
             lista_cestas = [it for it in st.session_state["edit_cart"] if it["tipo"] == "Cesta"]
             lista_extras = [it for it in st.session_state["edit_cart"] if it["tipo"] == "Extra"]
             
-            str_prod = [f"{it['quantidade']}x {it['nome']} (R$ {formatar_moeda(it['preco_unitario'])})" for it in lista_cestas]
+            str_prod = [f"{it.get('descricao','')}".strip() for it in lista_cestas if it.get('descricao')]
             str_ext = [f"{it['quantidade']}x {it['nome']} (R$ {formatar_moeda(it['preco_unitario'])})" for it in lista_extras]
             
             n_cesta = lista_cestas[0]["nome"] if lista_cestas else "Pedido Editado"
