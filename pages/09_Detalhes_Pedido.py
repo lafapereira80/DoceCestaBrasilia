@@ -6,9 +6,7 @@ import uuid
 from datetime import datetime, date
 
 from config.supabase import supabase
-from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
-from services.produto_service import listar_produtos_por_categoria_id
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 from utils.formatacao import formatar_moeda, tratar_preco, formatar_data_br, gerar_link_wpp, gerar_resumo_whatsapp
@@ -168,18 +166,23 @@ tipo_texto = "🏢 CORPORATIVO" if is_b2b else ("🌐 VITRINE" if is_vitrine els
 id_curto = str(pedido['id']).split('-')[0].upper()
 
 # =====================================================
-# CACHING DE DADOS
+# CACHING DE DADOS (COM BUSCA DIRETA E BLINDADA)
 # =====================================================
 @st.cache_data(ttl=300, show_spinner=False)
 def obter_cestas():
-    try: return sorted([c for c in listar_cestas() if c.get("ativa", True)], key=lambda x: x.get("nome", ""))
+    # Buscamos diretamente do banco para garantir que puxa TUDO de todas as seções
+    try:
+        res = supabase.table("cestas").select("*").eq("ativa", True).execute()
+        return sorted(res.data or [], key=lambda x: x.get("nome", ""))
     except: return []
 
 @st.cache_data(ttl=300, show_spinner=False)
 def obter_adicionais():
     try:
         cat_add = next((c for c in supabase.table("categorias").select("*").execute().data if c.get("nome", "").strip().lower() == "adicionais"), None)
-        if cat_add: return sorted([p for p in listar_produtos_por_categoria_id(cat_add["id"]) if p.get("ativo", True)], key=lambda x: x.get("nome", ""))
+        if cat_add:
+            prods = supabase.table("produtos").select("*").eq("categoria_id", cat_add["id"]).eq("ativo", True).execute()
+            return sorted(prods.data or [], key=lambda x: x.get("nome", ""))
         return []
     except: return []
 
@@ -188,23 +191,16 @@ def carregar_config_cesta_cached(cesta_id):
     try: return carregar_configuracao_cesta(cesta_id)
     except: return []
 
-# =====================================================
-# RECUPERAÇÃO DAS FOTOS (SEM CACHE)
-# =====================================================
 def obter_fotos_do_pedido(pid):
-    """Busca em tempo real as polaroids, sem usar cache que congela os dados"""
     try:
         resposta = supabase.table("pedido_fotos").select("*").eq("pedido_id", pid).order("created_at").execute()
         fotos = resposta.data or []
-        
-        # Constrói o link público usando a API nativa do Supabase
         for foto in fotos:
             if not foto.get("url") and foto.get("arquivo"):
                 url = supabase.storage.from_("pedido_fotos").get_public_url(foto["arquivo"])
                 foto["url"] = url
         return fotos
     except Exception as e:
-        # Se houver erro, exibe um alerta no canto inferior sem travar a tela
         st.toast(f"⚠️ Aviso: Falha ao carregar anexo de fotos. Erro: {e}")
         return []
 
@@ -306,7 +302,7 @@ if not st.session_state.modo_edicao:
         st.text_area("Anotações Internas", value=pedido.get('anotacoes_internas') or '', height=80, key=f"nota_{pedido_id}", on_change=salvar_nota_interna, args=(pedido_id, f"nota_{pedido_id}"), label_visibility="collapsed")
 
     # ==========================================================
-    # EXIBIÇÃO DE FOTOS POLAROID DO CLIENTE (EM TEMPO REAL)
+    # EXIBIÇÃO DE FOTOS POLAROID DO CLIENTE
     # ==========================================================
     fotos_anexadas = obter_fotos_do_pedido(pedido_id)
     if fotos_anexadas:
@@ -468,11 +464,21 @@ else:
 
     with st.container(border=True):
         st.markdown("<div class='card-title'>🎁 3. PRODUTOS E CARRINHO (FECHAMENTO)</div>", unsafe_allow_html=True)
+        st.info("💡 **Dica:** Para alterar os itens/sabores da cesta atual, clique na lixeira (🗑️) abaixo, selecione a cesta novamente no campo, marque as novas opções e clique em Inserir.")
+        
         col_add1, col_add2, col_add3 = st.columns(3)
         cestas_disponiveis, adicionais_disponiveis = obter_cestas(), obter_adicionais()
         
         with col_add1:
-            cesta_sel = st.selectbox("Nova Cesta", [None] + cestas_disponiveis, format_func=lambda x: x["nome"] if x else "Selecione...")
+            cesta_atual_id = pedido.get("cesta_id")
+            cesta_idx = 0
+            if cesta_atual_id:
+                for idx_c, c in enumerate(cestas_disponiveis):
+                    if c["id"] == cesta_atual_id:
+                        cesta_idx = idx_c + 1
+                        break
+            
+            cesta_sel = st.selectbox("Catálogo de Cestas / Kits", [None] + cestas_disponiveis, index=cesta_idx, format_func=lambda x: f"{x['nome']} ({x.get('secao_vitrine', 'Geral')})" if x else "Selecione...")
             
             selecoes_cesta_edit = {}
             if cesta_sel:
