@@ -168,7 +168,7 @@ tipo_texto = "🏢 CORPORATIVO" if is_b2b else ("🌐 VITRINE" if is_vitrine els
 id_curto = str(pedido['id']).split('-')[0].upper()
 
 # =====================================================
-# CACHING DE DADOS 
+# CACHING DE DADOS
 # =====================================================
 @st.cache_data(ttl=300, show_spinner=False)
 def obter_cestas():
@@ -188,17 +188,25 @@ def carregar_config_cesta_cached(cesta_id):
     try: return carregar_configuracao_cesta(cesta_id)
     except: return []
 
-@st.cache_data(ttl=60, show_spinner=False)
-def obter_fotos_cacheadas(pid):
+# =====================================================
+# RECUPERAÇÃO DAS FOTOS (SEM CACHE)
+# =====================================================
+def obter_fotos_do_pedido(pid):
+    """Busca em tempo real as polaroids, sem usar cache que congela os dados"""
     try:
         resposta = supabase.table("pedido_fotos").select("*").eq("pedido_id", pid).order("created_at").execute()
         fotos = resposta.data or []
-        url_base = st.secrets.get("SUPABASE_URL", "").rstrip("/")
+        
+        # Constrói o link público usando a API nativa do Supabase
         for foto in fotos:
             if not foto.get("url") and foto.get("arquivo"):
-                foto["url"] = f"{url_base}/storage/v1/object/public/pedido_fotos/{foto['arquivo']}"
+                url = supabase.storage.from_("pedido_fotos").get_public_url(foto["arquivo"])
+                foto["url"] = url
         return fotos
-    except: return []
+    except Exception as e:
+        # Se houver erro, exibe um alerta no canto inferior sem travar a tela
+        st.toast(f"⚠️ Aviso: Falha ao carregar anexo de fotos. Erro: {e}")
+        return []
 
 vd_db = 0.0
 for l in (pedido.get('adicionais') or '').split('\n'):
@@ -298,9 +306,9 @@ if not st.session_state.modo_edicao:
         st.text_area("Anotações Internas", value=pedido.get('anotacoes_internas') or '', height=80, key=f"nota_{pedido_id}", on_change=salvar_nota_interna, args=(pedido_id, f"nota_{pedido_id}"), label_visibility="collapsed")
 
     # ==========================================================
-    # EXIBIÇÃO DE FOTOS POLAROID DO CLIENTE
+    # EXIBIÇÃO DE FOTOS POLAROID DO CLIENTE (EM TEMPO REAL)
     # ==========================================================
-    fotos_anexadas = obter_fotos_cacheadas(pedido_id)
+    fotos_anexadas = obter_fotos_do_pedido(pedido_id)
     if fotos_anexadas:
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #d1476a; margin-bottom: 8px; margin-top: 15px; text-transform: uppercase;'>📷 Fotos Polaroid / Anexos do Cliente</div>", unsafe_allow_html=True)
         with st.container(border=True):
@@ -466,7 +474,6 @@ else:
         with col_add1:
             cesta_sel = st.selectbox("Nova Cesta", [None] + cestas_disponiveis, format_func=lambda x: x["nome"] if x else "Selecione...")
             
-            # RESTAURADO: Inteligência de carregar as opções da cesta para edição
             selecoes_cesta_edit = {}
             if cesta_sel:
                 cfg = carregar_config_cesta_cached(cesta_sel["id"])
