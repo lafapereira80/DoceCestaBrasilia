@@ -12,9 +12,10 @@ from services.configuracao_cesta_service import carregar_configuracao_cesta
 from services.produto_service import listar_produtos_por_categoria_id
 from services.pedido_service import salvar_pedido
 from services.pedido_adicional_service import salvar_adicionais_pedido
+from services.foto_service import salvar_fotos # <-- Adicionado para salvar as polaroids!
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
-from utils.formatacao import formatar_moeda, tratar_preco, NOME_LOJA # <-- Puxando da Central!
+from utils.formatacao import formatar_moeda, tratar_preco, NOME_LOJA
 
 # =====================================================
 # CONFIGURAÇÃO DA PÁGINA 
@@ -285,6 +286,30 @@ mensagem = st.text_area("Mensagem do Cartão", height=70, key="man_msg", placeho
 st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
+# 4. FOTOS E POLAROID (DINÂMICO)
+# =====================================================
+# A magia acontece aqui: Verifica se a palavra Polaroid ou Foto está no carrinho
+precisa_foto = False
+if st.session_state["itens_orcamento_varejo"]:
+    precisa_foto = any("polaroid" in item["nome"].lower() or "foto" in item["nome"].lower() for item in st.session_state["itens_orcamento_varejo"])
+
+fotos_upload = []
+if precisa_foto:
+    st.markdown('<div class="corp-card">', unsafe_allow_html=True)
+    st.markdown('<div class="corp-title">📷 4. Fotos (Polaroid / Revelação)</div>', unsafe_allow_html=True)
+    st.info("O sistema detectou um item de Foto/Polaroid no carrinho. Faça o upload das imagens do cliente abaixo.")
+    
+    fotos_upload = st.file_uploader(
+        "Anexar Imagens", 
+        type=["jpg", "jpeg", "png", "webp", "heic"], 
+        accept_multiple_files=True, 
+        label_visibility="collapsed"
+    )
+    if fotos_upload:
+        st.success(f"✅ {len(fotos_upload)} foto(s) anexada(s) e prontas para o envio!")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# =====================================================
 # 5. ENDEREÇO E ENTREGA
 # =====================================================
 st.markdown('<div class="corp-card">', unsafe_allow_html=True)
@@ -385,7 +410,7 @@ if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width
         if lista_str_extras:
             msg_adicionais += "\n\nEXTRAS E ADICIONAIS:\n" + "\n".join(lista_str_extras)
 
-    end_comp = f"{rua}, {num} - {comp} - {bairro}, {cidade} (CEP: {cep_in})"
+    end_comp = f"{rua}, {num} - {st.session_state.man_comp} - {bairro}, {cidade} (CEP: {cep_in})"
     
     dados_ped = {
         "cliente_nome": nome_comp.strip(),
@@ -413,8 +438,14 @@ if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width
     with st.spinner("Registrando pedido..."):
         suc, p_id = salvar_pedido(dados_ped)
         if suc:
-            adicionais_para_banco = [{"produto_id": e.get("produto_id"), "nome": e["nome"], "preco": e.get("preco", 0.0)} for e in lista_extras]
+            # 1. Salva os adicionais
+            adicionais_para_banco = [{"produto_id": e.get("produto_id"), "nome": e["nome"], "preco": e.get("preco_unitario", 0.0)} for e in lista_extras]
             if adicionais_para_banco: salvar_adicionais_pedido(p_id, adicionais_para_banco)
+            
+            # 2. SE HOUVER FOTO, MANDA PARA O BUCKET 'pedido_fotos'
+            if fotos_upload:
+                with st.spinner("📦 Salvando imagens Polaroid no servidor..."):
+                    salvar_fotos(p_id, fotos_upload)
             
             st.success(f"✅ Pedido criado com sucesso para {nome_comp}!")
             st.session_state["itens_orcamento_varejo"] = []
