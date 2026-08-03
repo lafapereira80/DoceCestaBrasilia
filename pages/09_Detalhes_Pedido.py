@@ -606,19 +606,25 @@ else:
                         st.rerun()
 
         # ==========================================================
-        # UPLOAD DE FOTOS SEMPRE VISÍVEL FORA DE COLUNAS ANINHADAS
+        # 📷 DETECTOR INTELIGENTE DE POLAROID NO MODO EDIÇÃO
         # ==========================================================
-        st.markdown("<hr style='margin: 20px 0;'>", unsafe_allow_html=True)
-        st.markdown("<div style='font-size: 14px; font-weight: 800; color: #d1476a; margin-bottom: 6px; text-transform: uppercase;'>📷 Anexar Novas Fotos (Polaroid / Revelação)</div>", unsafe_allow_html=True)
+        precisa_foto_edit = any("polaroid" in item["nome"].lower() or "foto" in item["nome"].lower() for item in st.session_state.get("edit_cart", []))
         
-        fotos_upload_edit = st.file_uploader(
-            "Selecione as imagens para enviar", 
-            type=["jpg", "jpeg", "png", "webp", "heic"], 
-            accept_multiple_files=True, 
-            key="uploader_edit_polaroid_global"
-        )
-        if fotos_upload_edit:
-            st.success(f"✅ {len(fotos_upload_edit)} foto(s) pronta(s) para ser(em) salva(s)!")
+        fotos_upload_edit = []
+        if precisa_foto_edit:
+            st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='background: #fce8e6; border: 1px solid #fad2cf; padding: 15px; border-radius: 12px;'>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5221f; margin-bottom: 6px;'>📷 Enviar Fotos Polaroid (Detectado no Carrinho)</div>", unsafe_allow_html=True)
+            
+            fotos_upload_edit = st.file_uploader(
+                "Anexar imagens para este pedido", 
+                type=["jpg", "jpeg", "png", "webp", "heic"], 
+                accept_multiple_files=True, 
+                key="uploader_edit_polaroid_condicional"
+            )
+            if fotos_upload_edit:
+                st.success(f"✅ {len(fotos_upload_edit)} foto(s) pronta(s) para ser(em) salva(s)!")
+            st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
         c_f1, c_f2, c_f3, c_f4 = st.columns(4)
@@ -664,7 +670,7 @@ else:
             try:
                 supabase.table("pedidos").update(dados_update).eq("id", pedido_id).execute()
                 
-                # Se houver fotos novas selecionadas, salva no servidor e vincula ao pedido
+                # Se houver fotos novas anexadas, envia para o Bucket
                 if fotos_upload_edit:
                     with st.spinner("📦 Salvando fotos Polaroid no servidor..."):
                         salvar_fotos(pedido_id, fotos_upload_edit)
