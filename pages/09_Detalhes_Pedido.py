@@ -167,7 +167,6 @@ id_curto = str(pedido['id']).split('-')[0].upper()
 
 # =====================================================
 # CARREGAMENTO DIRETO DO BANCO (SEM CACHE)
-# ISSO EVITA O BUG DE NÃO ACHAR CESTAS/SEÇÕES NOVAS
 # =====================================================
 def obter_cestas():
     try:
@@ -282,19 +281,15 @@ if not st.session_state.modo_edicao:
         st.markdown(html_info1 + "</div>", unsafe_allow_html=True)
 
     with col2:
-        # AQUI FOI CORRIGIDO O BUG DA TÁBUA DE FRIOS EM BRANCO!
         html_info2 = """<div class="info-card"><div class="card-title">🎁 Detalhamento</div>"""
         
-        # 1. Nome da Cesta Sempre Visível (Mesmo que não tenha opções personalizadas)
         cesta_principal = pedido.get('cesta_nome') or 'Cesta Personalizada'
         html_info2 += f"<div class='item-pill' style='background: #fef7e0; border-color: #fce8b2; color: #b06000; font-size: 14.5px;'>🛍️ <b>{esc(cesta_principal)}</b></div>"
         
-        # 2. Produtos/Sabores (Se a cesta tiver)
         if pedido.get('produtos'):
             for linha in pedido.get('produtos').split("\n"):
                 if linha.strip(): html_info2 += f"<div class='item-pill' style='margin-left: 15px;'>📦 {esc(linha.strip())}</div>"
                 
-        # 3. Adicionais Extras
         if pedido.get('adicionais'):
             html_info2 += "<div style='margin-top: 15px; margin-bottom: 5px; font-size: 11.5px; font-weight: 700; color: #8c7362; text-transform: uppercase;'>Adicionais e Extras</div>"
             for linha in pedido.get('adicionais').split("\n"):
@@ -303,7 +298,6 @@ if not st.session_state.modo_edicao:
                     if "desconto" in linha_limpa.lower(): html_info2 += f"<div class='item-pill discount'>🔻 {esc(linha_limpa)}</div>"
                     else: html_info2 += f"<div class='item-pill'>✨ {esc(linha_limpa)}</div>"
                     
-        # 4. Mensagem
         if pedido.get('mensagem'):
             html_info2 += f"""<div class='data-label' style='margin-top: 15px;'>💌 Mensagem do Cartão</div>
             <div style='background:#fdfbf8; padding:10px; border-radius:8px; font-style:italic; font-size:13px; color:#4a2e1b; border-left:3px solid #c5721f;'>"{esc(pedido.get('mensagem'))}"</div>"""
@@ -315,7 +309,7 @@ if not st.session_state.modo_edicao:
         st.text_area("Anotações Internas", value=pedido.get('anotacoes_internas') or '', height=80, key=f"nota_{pedido_id}", on_change=salvar_nota_interna, args=(pedido_id, f"nota_{pedido_id}"), label_visibility="collapsed")
 
     # ==========================================================
-    # EXIBIÇÃO DE FOTOS POLAROID DO CLIENTE (AVISO INTELIGENTE)
+    # EXIBIÇÃO DE FOTOS POLAROID DO CLIENTE 
     # ==========================================================
     fotos_anexadas = obter_fotos_do_pedido(pedido_id)
     
@@ -338,6 +332,8 @@ if not st.session_state.modo_edicao:
             st.warning("⚠️ **Aviso Importante:** Este pedido inclui 'Polaroid' ou 'Fotos' na lista de adicionais, mas nenhuma imagem foi encontrada anexada a ele no sistema.")
 
     st.markdown("<div class='section-step'><span class='step-num'>⚡</span><span style='color:#137333;'>Ajustes Rápidos & Valores</span></div>", unsafe_allow_html=True)
+    
+    # A MÁGICA FOI FEITA AQUI: Remoção do "else:" para os botões nunca mais sumirem
     with st.container(border=True):
         c_f1, c_f2, c_f3, c_f4 = st.columns(4)
         with c_f1: e_frete_rapido = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=float(frete_db), key=f"frete_rap_{pedido_id}")
@@ -363,7 +359,7 @@ if not st.session_state.modo_edicao:
         mudou_valores = (round(e_frete_rapido, 2) != round(frete_db, 2)) or (round(e_desc_rapido, 2) != round(desc_perc_inicial, 2)) or (e_pag_rapido != pedido.get('pagamento')) or (e_status_rapido != status_db)
         
         if mudou_valores:
-            st.warning("⚠️ Você alterou os valores/status acima. Salve os ajustes.")
+            st.warning("⚠️ Você alterou os valores/status acima. Para aplicá-los e gerar um novo link de pagamento, clique em Salvar.")
             if st.button("💾 SALVAR AJUSTES RÁPIDOS", type="primary", use_container_width=True):
                 ads_list = [l.strip() for l in (pedido.get('adicionais') or '').split('\n') if l.strip()]
                 ads_list = [l for l in ads_list if not ("desconto" in l.lower())]
@@ -382,73 +378,75 @@ if not st.session_state.modo_edicao:
                     st.success("✅ Ajustes salvos com sucesso!")
                     st.rerun()
                 except Exception as e: st.error(f"Erro ao salvar: {e}")
-        else:
-            st.write("")
-            link_pagamento_atual = pedido.get('infinitepay_url')
-            if link_pagamento_atual: st.success(f"🔗 **Link de Pagamento Gerado:** {link_pagamento_atual}")
-            else:
-                if st.button("💳 Gerar Link Encurtado para Pagamento", use_container_width=True):
-                    if gerar_link_checkout_infinitepay:
-                        with st.spinner("Gerando link seguro..."):
-                            link_gerado = gerar_link_checkout_infinitepay(pedido_id=pedido_id, valor_total=total_db, cliente_nome=cliente_limpo, cliente_tel=pedido.get('cliente_telefone') or '')
-                            if link_gerado:
-                                supabase.table("pedidos").update({"infinitepay_url": link_gerado}).eq("id", pedido_id).execute()
-                                st.success("✅ Link gerado!")
-                                st.rerun()
 
-            tx_id = pedido.get("infinitepay_transaction_id")
-            if tx_id:
-                data_pagamento = pedido.get("data_pagamento")
-                try: data_f = datetime.strptime(str(data_pagamento)[:19].replace("T", " "), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y às %H:%M:%S")
-                except: data_f = str(data_pagamento)
-                st.markdown(f"""
-                <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:16px; margin:15px 0; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-                    <div><div class="data-label" style="color:#166534;">💳 Pagamento</div><div class="data-value" style="color:#15803d; font-size:15px;">♾️ InfinitePay ({esc(tx_id)})</div></div>
-                    <div><div class="data-label" style="color:#166534;">Horário da Aprovação</div><div class="data-value" style="color:#15803d; font-size:15px;">⏰ {esc(data_f)}</div></div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            st.markdown("<div class='section-step' style='color:#1E293B;'>📲 Notificar Cliente</div>", unsafe_allow_html=True)
-            fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone') or '')
-            linhas_wpp = "\n".join([f"📦 {p.strip()}" for p in (pedido.get('produtos') or '').split('\n') if p.strip()]) or f"📦 {pedido.get('cesta_nome') or 'Itens do Pedido'}"
-            linhas_extras_wpp = "".join([f"🎀 {l.strip()}\n" for l in (pedido.get('adicionais') or '').split('\n') if l.strip() and "desconto" not in l.lower() and "EXTRAS" not in l.upper()])
-            if linhas_extras_wpp: linhas_wpp += "\n" + linhas_extras_wpp.strip()
+    # ===== BOTÕES E NOTIFICAÇÕES AGORA FICAM SEMPRE VISÍVEIS =====
+    st.write("")
+    link_pagamento_atual = pedido.get('infinitepay_url')
+    if link_pagamento_atual: 
+        st.success(f"🔗 **Link de Pagamento Gerado:** {link_pagamento_atual}")
+    else:
+        if st.button("💳 Gerar Link Encurtado para Pagamento", use_container_width=True):
+            if gerar_link_checkout_infinitepay:
+                with st.spinner("Gerando link seguro..."):
+                    link_gerado = gerar_link_checkout_infinitepay(pedido_id=pedido_id, valor_total=total_db, cliente_nome=cliente_limpo, cliente_tel=pedido.get('cliente_telefone') or '')
+                    if link_gerado:
+                        supabase.table("pedidos").update({"infinitepay_url": link_gerado}).eq("id", pedido_id).execute()
+                        st.success("✅ Link gerado!")
+                        st.rerun()
 
-            texto_resumo = gerar_resumo_whatsapp(
-                cliente=cliente_limpo, destinatario=pedido.get('destinatario_nome') or 'O mesmo',
-                data=formatar_data_br(pedido.get('data_entrega')), periodo=pedido.get('periodo_entrega') or 'A combinar',
-                local=pedido.get('endereco') or 'Não informado', itens_str=linhas_wpp,
-                subtotal=subtotal_db, desconto=vd_db, frete=frete_db, total=total_db,
-                pagamento=pedido.get('pagamento') or 'Pix', link_pagamento=link_pagamento_atual
-            )
+    tx_id = pedido.get("infinitepay_transaction_id")
+    if tx_id:
+        data_pagamento = pedido.get("data_pagamento")
+        try: data_f = datetime.strptime(str(data_pagamento)[:19].replace("T", " "), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y às %H:%M:%S")
+        except: data_f = str(data_pagamento)
+        st.markdown(f"""
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:16px; margin:15px 0; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <div><div class="data-label" style="color:#166534;">💳 Pagamento</div><div class="data-value" style="color:#15803d; font-size:15px;">♾️ InfinitePay ({esc(tx_id)})</div></div>
+            <div><div class="data-label" style="color:#166534;">Horário da Aprovação</div><div class="data-value" style="color:#15803d; font-size:15px;">⏰ {esc(data_f)}</div></div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("<div class='section-step' style='color:#1E293B;'>📲 Notificar Cliente</div>", unsafe_allow_html=True)
+    fone_cliente = re.sub(r'\D', '', pedido.get('cliente_telefone') or '')
+    linhas_wpp = "\n".join([f"📦 {p.strip()}" for p in (pedido.get('produtos') or '').split('\n') if p.strip()]) or f"📦 {pedido.get('cesta_nome') or 'Itens do Pedido'}"
+    linhas_extras_wpp = "".join([f"🎀 {l.strip()}\n" for l in (pedido.get('adicionais') or '').split('\n') if l.strip() and "desconto" not in l.lower() and "EXTRAS" not in l.upper()])
+    if linhas_extras_wpp: linhas_wpp += "\n" + linhas_extras_wpp.strip()
 
-            with st.container(border=True):
-                c_wpp, c_mail = st.columns(2)
-                with c_wpp:
-                    link_wpp = gerar_link_wpp(fone_cliente, texto_resumo)
-                    if fone_cliente: st.markdown(f'<div class="btn-wpp"><a href="{link_wpp}" target="_blank">💬 Enviar Resumo (WhatsApp)</a></div>', unsafe_allow_html=True)
-                    else: st.warning("Sem telefone cadastrado.")
-                with c_mail:
-                    e_col1, e_col2 = st.columns([2, 1])
-                    with e_col1: email_input = st.text_input("E-mail", value=email_cliente, placeholder="cliente@email.com", label_visibility="collapsed", key=f"email_dest_{pedido_id}")
-                    with e_col2:
-                        if st.button("✉️ Disparar E-mail", use_container_width=True):
-                            if email_input:
-                                sucesso, msg_retorno = enviar_email_cobranca(email_input, cliente_limpo, id_curto, texto_resumo, link_pagamento_atual)
-                                if sucesso:
-                                    st.success(msg_retorno)
-                                    if cliente_id and email_input.strip() != email_cliente:
-                                        try:
-                                            supabase.table("clientes").update({"email": email_input.strip()}).eq("id", cliente_id).execute()
-                                        except Exception as e:
-                                            st.toast(f"⚠️ E-mail enviado, mas não foi possível atualizar o cadastro do cliente: {e}")
-                                else: st.error(msg_retorno)
-                            else: st.warning("⚠️ Digite um e-mail.")
+    texto_resumo = gerar_resumo_whatsapp(
+        cliente=cliente_limpo, destinatario=pedido.get('destinatario_nome') or 'O mesmo',
+        data=formatar_data_br(pedido.get('data_entrega')), periodo=pedido.get('periodo_entrega') or 'A combinar',
+        local=pedido.get('endereco') or 'Não informado', itens_str=linhas_wpp,
+        subtotal=subtotal_db, desconto=vd_db, frete=frete_db, total=total_db,
+        pagamento=pedido.get('pagamento') or 'Pix', link_pagamento=link_pagamento_atual
+    )
 
-            st.write("")
-            if st.button("✏️ Editar Carrinho / Dados Completos", use_container_width=True):
-                st.session_state.modo_edicao = True
-                st.rerun()
+    with st.container(border=True):
+        c_wpp, c_mail = st.columns(2)
+        with c_wpp:
+            link_wpp = gerar_link_wpp(fone_cliente, texto_resumo)
+            if fone_cliente: st.markdown(f'<div class="btn-wpp"><a href="{link_wpp}" target="_blank">💬 Enviar Resumo (WhatsApp)</a></div>', unsafe_allow_html=True)
+            else: st.warning("Sem telefone cadastrado.")
+        with c_mail:
+            e_col1, e_col2 = st.columns([2, 1])
+            with e_col1: email_input = st.text_input("E-mail", value=email_cliente, placeholder="cliente@email.com", label_visibility="collapsed", key=f"email_dest_{pedido_id}")
+            with e_col2:
+                if st.button("✉️ Disparar E-mail", use_container_width=True):
+                    if email_input:
+                        sucesso, msg_retorno = enviar_email_cobranca(email_input, cliente_limpo, id_curto, texto_resumo, link_pagamento_atual)
+                        if sucesso:
+                            st.success(msg_retorno)
+                            if cliente_id and email_input.strip() != email_cliente:
+                                try:
+                                    supabase.table("clientes").update({"email": email_input.strip()}).eq("id", cliente_id).execute()
+                                except Exception as e:
+                                    st.toast(f"⚠️ E-mail enviado, mas não foi possível atualizar o cadastro do cliente: {e}")
+                        else: st.error(msg_retorno)
+                    else: st.warning("⚠️ Digite um e-mail.")
+
+    st.write("")
+    if st.button("✏️ Editar Carrinho / Dados Completos", use_container_width=True):
+        st.session_state.modo_edicao = True
+        st.rerun()
 
 # =====================================================
 # MODO EDIÇÃO (EDIÇÃO PROFUNDA - CARRINHO E COMPRADOR)
