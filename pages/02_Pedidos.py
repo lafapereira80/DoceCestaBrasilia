@@ -389,10 +389,22 @@ for idx, p in enumerate(pedidos_filtrados):
                 with c_del:
                     if st.button("🗑️ Excluir", key=f"del_{pid}", use_container_width=True):
                         try:
+                            # 1. Buscar arquivos físicos no banco e excluir do bucket de fotos (Limpando a memória do servidor)
+                            fotos_bd = supabase.table("pedido_fotos").select("arquivo").eq("pedido_id", pid).execute()
+                            if fotos_bd.data:
+                                arquivos = [f["arquivo"] for f in fotos_bd.data if f.get("arquivo")]
+                                if arquivos:
+                                    supabase.storage.from_("pedido_fotos").remove(arquivos)
+                            
+                            # 2. Excluir dependências (tabelas filhas) para evitar erros estruturais
                             supabase.table("pedido_fotos").delete().eq("pedido_id", pid).execute()
                             supabase.table("pedido_adicionais").delete().eq("pedido_id", pid).execute()
+                            
+                            # 3. Excluir o pedido principal
                             supabase.table("pedidos").delete().eq("id", pid).execute()
+                            
                             carregar_pedidos.clear()
+                            st.toast("✅ Pedido e fotos apagados com sucesso!")
                             st.rerun()
                         except Exception as e:
                             st.toast(f"Erro ao excluir permanentemente: {e}", icon="❌")
