@@ -166,9 +166,9 @@ tipo_texto = "🏢 CORPORATIVO" if is_b2b else ("🌐 VITRINE" if is_vitrine els
 id_curto = str(pedido['id']).split('-')[0].upper()
 
 # =====================================================
-# CACHING DE DADOS
+# CARREGAMENTO DIRETO DO BANCO (SEM CACHE)
+# ISSO EVITA O BUG DE NÃO ACHAR CESTAS/SEÇÕES NOVAS
 # =====================================================
-@st.cache_data(ttl=300, show_spinner=False)
 def obter_cestas():
     try:
         res = supabase.table("cestas").select("*").execute()
@@ -176,7 +176,6 @@ def obter_cestas():
     except Exception as e: 
         return []
 
-@st.cache_data(ttl=300, show_spinner=False)
 def obter_adicionais():
     try:
         cat_add = next((c for c in supabase.table("categorias").select("*").execute().data if c.get("nome", "").strip().lower() == "adicionais"), None)
@@ -186,37 +185,24 @@ def obter_adicionais():
         return []
     except: return []
 
-@st.cache_data(ttl=300, show_spinner=False)
-def carregar_config_cesta_cached(cesta_id):
+def carregar_config_cesta_no_cache(cesta_id):
     try: return carregar_configuracao_cesta(cesta_id)
     except: return []
 
-# =====================================================
-# RECUPERAÇÃO DAS FOTOS BLINDADA
-# =====================================================
 def obter_fotos_do_pedido(pid):
     try:
-        # Busca no banco sem ordenar por created_at para evitar crash se a coluna faltar
         resposta = supabase.table("pedido_fotos").select("*").eq("pedido_id", pid).execute()
         fotos = resposta.data or []
-    except Exception as e:
-        st.toast(f"⚠️ Erro ao consultar banco de fotos: {e}")
-        return []
-        
-    supa_url = st.secrets.get("SUPABASE_URL", "").rstrip("/")
-    
-    for foto in fotos:
-        if not foto.get("url") and foto.get("arquivo"):
-            # Tenta gerar a URL oficial. Se o bucket não existir, ele vai pro except.
-            try:
-                link = supabase.storage.from_("pedido_fotos").get_public_url(foto["arquivo"])
-                # Pega a URL independente da versão da biblioteca do Supabase Python
-                foto["url"] = link if isinstance(link, str) else link.get("publicURL", link.get("publicUrl", ""))
-            except:
-                # Força Bruta: Monta o link manualmente se a biblioteca falhar
-                if supa_url:
-                    foto["url"] = f"{supa_url}/storage/v1/object/public/pedido_fotos/{foto['arquivo']}"
-    return fotos
+        supa_url = st.secrets.get("SUPABASE_URL", "").rstrip("/")
+        for foto in fotos:
+            if not foto.get("url") and foto.get("arquivo"):
+                try:
+                    link = supabase.storage.from_("pedido_fotos").get_public_url(foto["arquivo"])
+                    foto["url"] = link if isinstance(link, str) else link.get("publicURL", link.get("publicUrl", ""))
+                except:
+                    if supa_url: foto["url"] = f"{supa_url}/storage/v1/object/public/pedido_fotos/{foto['arquivo']}"
+        return fotos
+    except: return []
 
 vd_db = 0.0
 for l in (pedido.get('adicionais') or '').split('\n'):
@@ -296,19 +282,32 @@ if not st.session_state.modo_edicao:
         st.markdown(html_info1 + "</div>", unsafe_allow_html=True)
 
     with col2:
+        # AQUI FOI CORRIGIDO O BUG DA TÁBUA DE FRIOS EM BRANCO!
         html_info2 = """<div class="info-card"><div class="card-title">🎁 Detalhamento</div>"""
+        
+        # 1. Nome da Cesta Sempre Visível (Mesmo que não tenha opções personalizadas)
+        cesta_principal = pedido.get('cesta_nome') or 'Cesta Personalizada'
+        html_info2 += f"<div class='item-pill' style='background: #fef7e0; border-color: #fce8b2; color: #b06000; font-size: 14.5px;'>🛍️ <b>{esc(cesta_principal)}</b></div>"
+        
+        # 2. Produtos/Sabores (Se a cesta tiver)
         if pedido.get('produtos'):
             for linha in pedido.get('produtos').split("\n"):
-                if linha.strip(): html_info2 += f"<div class='item-pill'>📦 {esc(linha.strip())}</div>"
+                if linha.strip(): html_info2 += f"<div class='item-pill' style='margin-left: 15px;'>📦 {esc(linha.strip())}</div>"
+                
+        # 3. Adicionais Extras
         if pedido.get('adicionais'):
+            html_info2 += "<div style='margin-top: 15px; margin-bottom: 5px; font-size: 11.5px; font-weight: 700; color: #8c7362; text-transform: uppercase;'>Adicionais e Extras</div>"
             for linha in pedido.get('adicionais').split("\n"):
                 linha_limpa = linha.strip()
                 if linha_limpa and not "EXTRAS E ADICIONAIS" in linha_limpa:
                     if "desconto" in linha_limpa.lower(): html_info2 += f"<div class='item-pill discount'>🔻 {esc(linha_limpa)}</div>"
                     else: html_info2 += f"<div class='item-pill'>✨ {esc(linha_limpa)}</div>"
+                    
+        # 4. Mensagem
         if pedido.get('mensagem'):
             html_info2 += f"""<div class='data-label' style='margin-top: 15px;'>💌 Mensagem do Cartão</div>
             <div style='background:#fdfbf8; padding:10px; border-radius:8px; font-style:italic; font-size:13px; color:#4a2e1b; border-left:3px solid #c5721f;'>"{esc(pedido.get('mensagem'))}"</div>"""
+        
         st.markdown(html_info2 + "</div>", unsafe_allow_html=True)
 
     with st.container(border=True):
@@ -334,7 +333,6 @@ if not st.session_state.modo_edicao:
                         except:
                             st.error("❌ Link da imagem quebrado.")
     else:
-        # SISTEMA ANTI-FANTASMA: Avisa se comprou polaroid mas não tem foto no banco
         adicionais_texto = str(pedido.get("adicionais", "")).lower()
         if "polaroid" in adicionais_texto or "foto" in adicionais_texto:
             st.warning("⚠️ **Aviso Importante:** Este pedido inclui 'Polaroid' ou 'Fotos' na lista de adicionais, mas nenhuma imagem foi encontrada anexada a ele no sistema.")
@@ -505,7 +503,7 @@ else:
             
             selecoes_cesta_edit = {}
             if cesta_sel:
-                cfg = carregar_config_cesta_cached(cesta_sel["id"])
+                cfg = carregar_config_cesta_no_cache(cesta_sel["id"])
                 if cfg and any(grp.get("produtos") for grp in cfg):
                     st.markdown("<div style='font-size: 11.5px; font-weight: 700; color: #137333; margin-top: 5px; margin-bottom: 5px;'>🍓 Opções de Cesta:</div>", unsafe_allow_html=True)
                     for grp in cfg:
@@ -520,7 +518,7 @@ else:
                             escs_prod = st.multiselect(f"{cat} (Máx: {maximo})", prods, format_func=lambda p: p["nome"], max_selections=maximo, key=f"edit_mul_{cesta_sel['id']}_{cat}")
                             selecoes_cesta_edit[cat] = escs_prod
                 else:
-                    st.info("📌 Esta cesta não possui opções de personalização (sabores/bebidas) configuradas no sistema.")
+                    st.info("📌 Esta cesta não possui opções de personalização configuradas no sistema.")
 
             if st.button("➕ Inserir Cesta", use_container_width=True) and cesta_sel:
                 produtos_txt = []
