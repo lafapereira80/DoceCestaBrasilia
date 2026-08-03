@@ -221,7 +221,7 @@ if "edit_cart" not in st.session_state or st.session_state.get("edit_pedido_id")
     st.session_state["edit_cart"] = [{"id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": pedido.get("cesta_id"), "nome": pedido.get("cesta_nome") or "Cesta", "preco_unitario": subtotal_db, "quantidade": 1, "descricao": pedido.get("produtos") or ""}]
     st.session_state["edit_pedido_id"] = pedido_id
 
-STATUS_PERMITIDOS = ["Recebido", "Pago", "Em Montagem", "Pronto", "Enviado", "Em Rota de Entrega", "Entregue", "Desistência"]
+STATUS_PERMITIDOS = ["Recebido", "Pago", "Em Rota", "Entregue", "Desistência"]
 
 # =====================================================
 # CABEÇALHO COM TICKETS
@@ -333,7 +333,6 @@ if not st.session_state.modo_edicao:
 
     st.markdown("<div class='section-step'><span class='step-num'>⚡</span><span style='color:#137333;'>Ajustes Rápidos & Valores</span></div>", unsafe_allow_html=True)
     
-    # A MÁGICA FOI FEITA AQUI: Remoção do "else:" para os botões nunca mais sumirem
     with st.container(border=True):
         c_f1, c_f2, c_f3, c_f4 = st.columns(4)
         with c_f1: e_frete_rapido = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=float(frete_db), key=f"frete_rap_{pedido_id}")
@@ -379,7 +378,7 @@ if not st.session_state.modo_edicao:
                     st.rerun()
                 except Exception as e: st.error(f"Erro ao salvar: {e}")
 
-    # ===== BOTÕES E NOTIFICAÇÕES AGORA FICAM SEMPRE VISÍVEIS =====
+    # ===== BOTÕES E NOTIFICAÇÕES SEMPRE VISÍVEIS =====
     st.write("")
     link_pagamento_atual = pedido.get('infinitepay_url')
     if link_pagamento_atual: 
@@ -447,6 +446,38 @@ if not st.session_state.modo_edicao:
     if st.button("✏️ Editar Carrinho / Dados Completos", use_container_width=True):
         st.session_state.modo_edicao = True
         st.rerun()
+
+    # ==========================================================
+    # 🚨 ZONA DE PERIGO (LIMPEZA TOTAL DO PEDIDO E FOTOS)
+    # ==========================================================
+    if status_db == 'Desistência':
+        st.markdown("<hr style='margin: 30px 0; border: none; border-top: 1px dashed #fce8e6;'>", unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("<div style='color: #c5221f; font-weight: 800; font-size: 15px; margin-bottom: 5px;'>🚨 ZONA DE PERIGO: Exclusão Definitiva</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size: 13px; color: #4a2e1b; margin-bottom: 12px; line-height: 1.5;'>Como este pedido foi marcado como <b>Desistência</b>, você pode apagá-lo definitivamente para organizar seu painel. <br>Isso irá limpar o banco de dados e <b>apagar permanentemente os arquivos físicos de fotos (Polaroid)</b> do servidor para não consumir sua memória.</div>", unsafe_allow_html=True)
+            
+            if st.button("🗑️ APAGAR PEDIDO E RASTROS PERMANENTEMENTE", type="primary", use_container_width=True):
+                with st.spinner("Limpando banco de dados e arquivos..."):
+                    try:
+                        # 1. Buscar e apagar os arquivos físicos do Bucket de Fotos
+                        fotos_bd = supabase.table("pedido_fotos").select("arquivo").eq("pedido_id", pedido_id).execute()
+                        if fotos_bd.data:
+                            arquivos = [f["arquivo"] for f in fotos_bd.data if f.get("arquivo")]
+                            if arquivos:
+                                supabase.storage.from_("pedido_fotos").remove(arquivos)
+                        
+                        # 2. Apagar das tabelas dependentes (Evita erro de Foreign Key)
+                        supabase.table("pedido_fotos").delete().eq("pedido_id", pedido_id).execute()
+                        supabase.table("pedido_adicionais").delete().eq("pedido_id", pedido_id).execute()
+                        
+                        # 3. Apagar o pedido principal
+                        supabase.table("pedidos").delete().eq("id", pedido_id).execute()
+                        
+                        st.session_state['pedido_detalhe_id'] = None
+                        st.success("✅ Pedido e fotos apagados com sucesso!")
+                        st.switch_page("pages/02_Pedidos.py")
+                    except Exception as e:
+                        st.error(f"Erro ao excluir o pedido: {e}")
 
 # =====================================================
 # MODO EDIÇÃO (EDIÇÃO PROFUNDA - CARRINHO E COMPRADOR)
