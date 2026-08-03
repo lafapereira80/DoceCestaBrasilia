@@ -106,6 +106,7 @@ def obter_horario_brasilia():
 def buscar_entregas_dia(driver_login=None):
     data_hoje = obter_horario_brasilia().strftime("%d/%m/%Y")
     
+    # Busca Enviados e Rota
     query_env = supabase.table("pedidos").select("*").in_("status", ["Enviado", "Em Rota de Entrega"])
     if perfil_usuario == "Entregador" or driver_login:
         alvo = login_atual if perfil_usuario == "Entregador" else driver_login
@@ -113,8 +114,16 @@ def buscar_entregas_dia(driver_login=None):
         
     res_env = query_env.execute()
     enviados = res_env.data or []
-    enviados.sort(key=lambda x: (x.get('ordem_entrega') if x.get('ordem_entrega') is not None else 999, x.get('created_at')))
     
+    # CORREÇÃO DA ORDENAÇÃO (BLINDADA CONTRA NULOS)
+    for p in enviados:
+        if p.get('ordem_entrega') is None:
+            p['ordem_entrega'] = 999
+        if p.get('created_at') is None:
+            p['created_at'] = ""
+    enviados.sort(key=lambda x: (x.get('ordem_entrega'), x.get('created_at')))
+    
+    # Busca Entregues
     query_ent = supabase.table("pedidos").select("*").eq("status", "Entregue")
     if perfil_usuario == "Entregador" or driver_login:
         alvo = login_atual if perfil_usuario == "Entregador" else driver_login
@@ -176,7 +185,8 @@ def marcar_como_entregue(pedido, login_autor, quem_recebeu):
 
 def voltar_para_enviado(pedido_id):
     try:
-        supabase.table("pedidos").update({"status": "Em Rota de Entrega", "ordem_entrega": 0, "hora_entrega_realizada": None, "quem_recebeu": None}).eq("id", pedido_id).execute()
+        # Quando reverter a entrega, volta para a fila na posição 999 para que o motoboy defina a nova ordem
+        supabase.table("pedidos").update({"status": "Em Rota de Entrega", "ordem_entrega": 999, "hora_entrega_realizada": None, "quem_recebeu": None}).eq("id", pedido_id).execute()
         st.toast("↩️ Cesta retornada para a rota com sucesso!")
     except Exception as e:
         st.error(f"Erro ao reverter status: {e}")
@@ -333,20 +343,20 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                             marcar_como_entregue(ped, login_atual, se_vazio)
                                             st.rerun()
 
-                                    st.write("")
-                                    col_u, col_d = st.columns(2)
-                                    with col_u:
-                                        if i > 0:
-                                            if st.button("⬆️ Subir na Rota", key=f"up_admin_{ped['id']}", use_container_width=True):
-                                                ped_driver_ativos[i], ped_driver_ativos[i-1] = ped_driver_ativos[i-1], ped_driver_ativos[i]
-                                                salvar_ordem(ped_driver_ativos)
-                                                st.rerun()
-                                    with col_d:
-                                        if i < len(ped_driver_ativos) - 1:
-                                            if st.button("⬇️ Descer na Rota", key=f"down_admin_{ped['id']}", use_container_width=True):
-                                                ped_driver_ativos[i], ped_driver_ativos[i+1] = ped_driver_ativos[i+1], ped_driver_ativos[i]
-                                                salvar_ordem(ped_driver_ativos)
-                                                st.rerun()
+                                st.write("")
+                                col_u, col_d = st.columns(2)
+                                with col_u:
+                                    if i > 0:
+                                        if st.button("⬆️ Subir na Rota", key=f"up_admin_{ped['id']}", use_container_width=True):
+                                            ped_driver_ativos[i], ped_driver_ativos[i-1] = ped_driver_ativos[i-1], ped_driver_ativos[i]
+                                            salvar_ordem(ped_driver_ativos)
+                                            st.rerun()
+                                with col_d:
+                                    if i < len(ped_driver_ativos) - 1:
+                                        if st.button("⬇️ Descer na Rota", key=f"down_admin_{ped['id']}", use_container_width=True):
+                                            ped_driver_ativos[i], ped_driver_ativos[i+1] = ped_driver_ativos[i+1], ped_driver_ativos[i]
+                                            salvar_ordem(ped_driver_ativos)
+                                            st.rerun()
 
                         if ped_driver_concluidos:
                             st.markdown("<span style='font-size:13px; font-weight:800; color:#137333; margin-top:15px; display:block; text-transform: uppercase;'>✅ Finalizados Hoje:</span>", unsafe_allow_html=True)
