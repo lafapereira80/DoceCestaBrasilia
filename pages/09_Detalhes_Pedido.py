@@ -606,29 +606,51 @@ else:
                         st.rerun()
 
         # ==========================================================
-        # 📷 DETECTOR INTELIGENTE ULTRA-FLEXÍVEL DE FOTOS NO MODO EDIÇÃO
+        # 📷 DETECTOR INTELIGENTE E GERENCIADOR DE FOTOS (MODO EDIÇÃO)
         # ==========================================================
         carrinho_atual = st.session_state.get("edit_cart", [])
-        # Verifica se alguma palavra-chave (polaroid, foto, revelação) existe no nome do item ou se há itens adicionais em geral
-        precisa_foto_edit = any(any(termo in str(item.get("nome", "")).lower() for termo in ["polaroid", "foto", "revelação", "retrato"]) for item in carrinho_atual)
+        termos_foto = ["polaroid", "foto", "revelação", "retrato", "imagem"]
+        precisa_foto_edit = any(any(termo in str(item.get("nome", "")).lower() for termo in termos_foto) for item in carrinho_atual)
         
-        # Se preferir que o campo apareça sempre que houver QUALQUER extra, remova o comentário da linha abaixo:
-        # precisa_foto_edit = True
+        fotos_existentes_edit = obter_fotos_do_pedido(pedido_id)
 
         fotos_upload_edit = []
-        if precisa_foto_edit or True: # Mantido True para garantir que o uploader apareça sem travar por nome
+        if precisa_foto_edit or fotos_existentes_edit:
             st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-            st.markdown("<div style='background: #fce8e6; border: 1px solid #fad2cf; padding: 15px; border-radius: 12px;'>", unsafe_allow_html=True)
-            st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5221f; margin-bottom: 6px;'>📷 Enviar Fotos Polaroid / Anexos</div>", unsafe_allow_html=True)
+            st.markdown("<div style='background: #fdfbf8; border: 1px solid #e8ddd3; padding: 18px; border-radius: 12px;'>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size: 15px; font-weight: 800; color: #d1476a; margin-bottom: 12px;'>📷 Gerenciar Fotos Polaroid / Anexos</div>", unsafe_allow_html=True)
             
-            fotos_upload_edit = st.file_uploader(
-                "Anexar imagens para este pedido", 
-                type=["jpg", "jpeg", "png", "webp", "heic"], 
-                accept_multiple_files=True, 
-                key="uploader_edit_polaroid_flexivel"
-            )
-            if fotos_upload_edit:
-                st.success(f"✅ {len(fotos_upload_edit)} foto(s) pronta(s) para ser(em) salva(s)!")
+            # --- Exibir e Excluir fotos existentes ---
+            if fotos_existentes_edit:
+                st.markdown("<div style='font-size: 13px; font-weight: 700; color: #4a2e1b; margin-bottom: 8px;'>Fotos Já Salvas no Pedido:</div>", unsafe_allow_html=True)
+                cols_fotos_edit = st.columns(len(fotos_existentes_edit) if len(fotos_existentes_edit) < 4 else 4)
+                for idx, f_obj in enumerate(fotos_existentes_edit):
+                    with cols_fotos_edit[idx % 4]:
+                        if f_obj.get("url"):
+                            st.image(f_obj["url"], use_container_width=True)
+                            if st.button("🗑️ Remover", key=f"del_foto_edit_{f_obj['id']}", use_container_width=True):
+                                with st.spinner("Excluindo..."):
+                                    if f_obj.get("arquivo"):
+                                        try: supabase.storage.from_("pedido_fotos").remove([f_obj["arquivo"]])
+                                        except: pass
+                                    supabase.table("pedido_fotos").delete().eq("id", f_obj["id"]).execute()
+                                st.toast("✅ Foto removida com sucesso!")
+                                st.rerun()
+                st.markdown("<hr style='margin: 15px 0; border-top: 1px dashed #e8ddd3;'>", unsafe_allow_html=True)
+            
+            # --- Upload de novas fotos ---
+            if precisa_foto_edit:
+                st.markdown("<div style='font-size: 13px; font-weight: 700; color: #4a2e1b; margin-bottom: 8px;'>Adicionar Novas Imagens:</div>", unsafe_allow_html=True)
+                fotos_upload_edit = st.file_uploader(
+                    "Arraste ou selecione os arquivos", 
+                    type=["jpg", "jpeg", "png", "webp", "heic"], 
+                    accept_multiple_files=True, 
+                    key="uploader_edit_polaroid_condicional",
+                    label_visibility="collapsed"
+                )
+                if fotos_upload_edit:
+                    st.success(f"✅ {len(fotos_upload_edit)} nova(s) foto(s) selecionada(s). Clique em SALVAR para enviar!")
+            
             st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
