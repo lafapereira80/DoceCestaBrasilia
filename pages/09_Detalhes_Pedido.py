@@ -606,16 +606,16 @@ else:
                         st.rerun()
 
         # ==========================================================
-        # UPLOAD DE FOTOS SEMPRE VISÍVEL NO MODO EDIÇÃO
+        # UPLOAD DE FOTOS SEMPRE VISÍVEL FORA DE COLUNAS ANINHADAS
         # ==========================================================
-        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-        st.markdown("<div style='font-size: 13px; font-weight: 800; color: #d1476a; margin-bottom: 4px;'>📷 Anexar Fotos (Polaroid / Revelação)</div>", unsafe_allow_html=True)
+        st.markdown("<hr style='margin: 20px 0;'>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size: 14px; font-weight: 800; color: #d1476a; margin-bottom: 6px; text-transform: uppercase;'>📷 Anexar Novas Fotos (Polaroid / Revelação)</div>", unsafe_allow_html=True)
+        
         fotos_upload_edit = st.file_uploader(
-            "Adicionar Imagens", 
+            "Selecione as imagens para enviar", 
             type=["jpg", "jpeg", "png", "webp", "heic"], 
             accept_multiple_files=True, 
-            key="uploader_edit_polaroid_sempre_visivel",
-            label_visibility="collapsed"
+            key="uploader_edit_polaroid_global"
         )
         if fotos_upload_edit:
             st.success(f"✅ {len(fotos_upload_edit)} foto(s) pronta(s) para ser(em) salva(s)!")
@@ -664,7 +664,7 @@ else:
             try:
                 supabase.table("pedidos").update(dados_update).eq("id", pedido_id).execute()
                 
-                # Se houver fotos novas no uploader, envia para o Bucket
+                # Se houver fotos novas selecionadas, salva no servidor e vincula ao pedido
                 if fotos_upload_edit:
                     with st.spinner("📦 Salvando fotos Polaroid no servidor..."):
                         salvar_fotos(pedido_id, fotos_upload_edit)
