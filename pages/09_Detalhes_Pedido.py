@@ -7,6 +7,7 @@ from datetime import datetime, date
 
 from config.supabase import supabase
 from services.configuracao_cesta_service import carregar_configuracao_cesta
+from services.foto_service import salvar_fotos # <-- Adicionado para subir as fotos na edição!
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 from utils.formatacao import formatar_moeda, tratar_preco, formatar_data_br, gerar_link_wpp, gerar_resumo_whatsapp
@@ -604,6 +605,27 @@ else:
                         st.session_state["edit_cart"].pop(i)
                         st.rerun()
 
+        # ==========================================================
+        # SENSOR DINÂMICO DE FOTOS NO MODO EDIÇÃO
+        # ==========================================================
+        precisa_foto_edit = False
+        if st.session_state.get("edit_cart"):
+            precisa_foto_edit = any("polaroid" in item["nome"].lower() or "foto" in item["nome"].lower() for item in st.session_state["edit_cart"])
+
+        fotos_upload_edit = []
+        if precisa_foto_edit:
+            st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size: 13px; font-weight: 800; color: #d1476a; margin-bottom: 4px;'>📷 Anexar Novas Fotos (Polaroid / Revelação)</div>", unsafe_allow_html=True)
+            fotos_upload_edit = st.file_uploader(
+                "Adicionar Imagens", 
+                type=["jpg", "jpeg", "png", "webp", "heic"], 
+                accept_multiple_files=True, 
+                key="uploader_edit_polaroid",
+                label_visibility="collapsed"
+            )
+            if fotos_upload_edit:
+                st.success(f"✅ {len(fotos_upload_edit)} nova(s) foto(s) pronta(s) para ser(em) salva(s)!")
+
         st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
         c_f1, c_f2, c_f3, c_f4 = st.columns(4)
         with c_f1: e_frete = st.number_input("Frete / Taxa (R$)", min_value=0.0, step=5.0, value=tratar_preco(pedido.get('valor_frete', 0)))
@@ -647,6 +669,12 @@ else:
             }
             try:
                 supabase.table("pedidos").update(dados_update).eq("id", pedido_id).execute()
+                
+                # Se adicionou novas fotos durante a edição, envia para o Bucket
+                if fotos_upload_edit:
+                    with st.spinner("📦 Salvando novas fotos Polaroid no servidor..."):
+                        salvar_fotos(pedido_id, fotos_upload_edit)
+
                 if cliente_id and e_email.strip() != email_cliente:
                     try:
                         supabase.table("clientes").update({"email": e_email.strip()}).eq("id", cliente_id).execute()
