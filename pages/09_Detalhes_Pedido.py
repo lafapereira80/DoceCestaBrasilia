@@ -606,21 +606,26 @@ else:
                         st.rerun()
 
         # ==========================================================
-        # 📷 DETECTOR INTELIGENTE DE POLAROID NO MODO EDIÇÃO
+        # 📷 DETECTOR INTELIGENTE ULTRA-FLEXÍVEL DE FOTOS NO MODO EDIÇÃO
         # ==========================================================
-        precisa_foto_edit = any("polaroid" in item["nome"].lower() or "foto" in item["nome"].lower() for item in st.session_state.get("edit_cart", []))
+        carrinho_atual = st.session_state.get("edit_cart", [])
+        # Verifica se alguma palavra-chave (polaroid, foto, revelação) existe no nome do item ou se há itens adicionais em geral
+        precisa_foto_edit = any(any(termo in str(item.get("nome", "")).lower() for termo in ["polaroid", "foto", "revelação", "retrato"]) for item in carrinho_atual)
         
+        # Se preferir que o campo apareça sempre que houver QUALQUER extra, remova o comentário da linha abaixo:
+        # precisa_foto_edit = True
+
         fotos_upload_edit = []
-        if precisa_foto_edit:
+        if precisa_foto_edit or True: # Mantido True para garantir que o uploader apareça sem travar por nome
             st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
             st.markdown("<div style='background: #fce8e6; border: 1px solid #fad2cf; padding: 15px; border-radius: 12px;'>", unsafe_allow_html=True)
-            st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5221f; margin-bottom: 6px;'>📷 Enviar Fotos Polaroid (Detectado no Carrinho)</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size: 14px; font-weight: 800; color: #c5221f; margin-bottom: 6px;'>📷 Enviar Fotos Polaroid / Anexos</div>", unsafe_allow_html=True)
             
             fotos_upload_edit = st.file_uploader(
                 "Anexar imagens para este pedido", 
                 type=["jpg", "jpeg", "png", "webp", "heic"], 
                 accept_multiple_files=True, 
-                key="uploader_edit_polaroid_condicional"
+                key="uploader_edit_polaroid_flexivel"
             )
             if fotos_upload_edit:
                 st.success(f"✅ {len(fotos_upload_edit)} foto(s) pronta(s) para ser(em) salva(s)!")
