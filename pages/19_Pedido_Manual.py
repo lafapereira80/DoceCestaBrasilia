@@ -12,7 +12,7 @@ from services.configuracao_cesta_service import carregar_configuracao_cesta
 from services.produto_service import listar_produtos_por_categoria_id
 from services.pedido_service import salvar_pedido
 from services.pedido_adicional_service import salvar_adicionais_pedido
-from services.foto_service import salvar_fotos # <-- Adicionado para salvar as polaroids!
+from services.foto_service import salvar_fotos 
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 from utils.formatacao import formatar_moeda, tratar_preco, NOME_LOJA
@@ -111,14 +111,22 @@ def carregar_config_cesta_cached(cesta_id):
 
 def buscar_cep_api(cep_str):
     cep_limpo = re.sub(r'\D', '', cep_str)
-    if len(cep_limpo) != 8: return False, "CEP inválido."
+    if len(cep_limpo) != 8: return False, "CEP inválido. Digite 8 números."
     try:
-        r = requests.get(f"https://brasilapi.com.br/api/cep/v2/{cep_limpo}", timeout=2)
+        # Utilizando ViaCEP para maior robustez e estabilidade
+        r = requests.get(f"https://viacep.com.br/ws/{cep_limpo}/json/", timeout=3)
         if r.status_code == 200:
             d = r.json()
-            return True, {"logradouro": d.get("street", ""), "bairro": d.get("neighborhood", ""), "localidade": d.get("city", ""), "uf": d.get("state", "")}
+            if d.get("erro"):
+                return False, "CEP não encontrado."
+            return True, {
+                "logradouro": d.get("logradouro", ""), 
+                "bairro": d.get("bairro", ""), 
+                "localidade": d.get("localidade", ""), 
+                "uf": d.get("uf", "")
+            }
         return False, "CEP não encontrado."
-    except: return False, "Erro de conexão."
+    except: return False, "Erro de conexão ao buscar CEP."
 
 cestas_disponiveis = obter_cestas_admin()
 adicionais_disponiveis = obter_adicionais_admin()
@@ -216,7 +224,7 @@ with col_add2:
     if st.button("➕ Inserir Extra", use_container_width=True):
         if adc_sel:
             st.session_state["itens_orcamento_varejo"].append({
-                "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None, "nome": adc_sel["nome"], 
+                "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None, "produto_id": adc_sel.get("id"), "nome": adc_sel["nome"], 
                 "preco_unitario": tratar_preco(adc_sel.get("preco")), "quantidade": 1, "descricao": ""
             })
             st.rerun()
@@ -227,7 +235,7 @@ with col_add3:
     if st.button("➕ Inserir Manual", use_container_width=True):
         if txt_man.strip():
             st.session_state["itens_orcamento_varejo"].append({
-                "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None, "nome": txt_man.strip(), 
+                "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None, "produto_id": None, "nome": txt_man.strip(), 
                 "preco_unitario": 0.0, "quantidade": 1, "descricao": ""
             })
             st.rerun()
@@ -288,7 +296,6 @@ st.markdown('</div>', unsafe_allow_html=True)
 # =====================================================
 # 4. FOTOS E POLAROID (DINÂMICO)
 # =====================================================
-# A magia acontece aqui: Verifica se a palavra Polaroid ou Foto está no carrinho
 precisa_foto = False
 if st.session_state["itens_orcamento_varejo"]:
     precisa_foto = any("polaroid" in item["nome"].lower() or "foto" in item["nome"].lower() for item in st.session_state["itens_orcamento_varejo"])
@@ -325,7 +332,7 @@ with cx2:
             st.session_state.man_rua = dados.get("logradouro", "")
             st.session_state.man_bairro = dados.get("bairro", "")
             st.session_state.man_cidade = f"{dados.get('localidade', '')} - {dados.get('uf', '')}"
-            st.toast("✅ Endereço carregado!")
+            st.toast("✅ Endereço carregado com sucesso!")
             st.rerun()
         else: st.warning(dados)
 
@@ -391,7 +398,14 @@ if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width
     lista_cestas = [it for it in st.session_state["itens_orcamento_varejo"] if it["tipo"] == "Cesta"]
     lista_extras = [it for it in st.session_state["itens_orcamento_varejo"] if it["tipo"] == "Extra"]
     
-    lista_str_produtos = [f"{it['quantidade']}x {it['nome']} (R$ {formatar_moeda(it['preco_unitario'])})\n{it.get('descricao','')}".strip() for it in lista_cestas]
+    # Tratamento para múltiplas cestas inseridas no carrinho
+    str_cestas_prod = []
+    for c_item in lista_cestas:
+        bloco = f"📦 {c_item['quantidade']}x {c_item['nome']} (R$ {formatar_moeda(c_item['preco_unitario'])})"
+        if c_item.get('descricao'):
+            bloco += f"\n{c_item['descricao']}"
+        str_cestas_prod.append(bloco)
+
     lista_str_extras = [f"{it['quantidade']}x {it['nome']} (R$ {formatar_moeda(it['preco_unitario'])})" for it in lista_extras]
     
     nome_da_cesta_principal = "Pedido Varejo"
@@ -402,15 +416,11 @@ if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width
     elif lista_extras:
         nome_da_cesta_principal = "Itens Extras"
         
-    if not lista_cestas and lista_extras:
-        lista_str_produtos = lista_str_extras
-        msg_adicionais = f"Desconto de {desconto_perc}% aplicado."
-    else:
-        msg_adicionais = f"Desconto de {desconto_perc}% aplicado."
-        if lista_str_extras:
-            msg_adicionais += "\n\nEXTRAS E ADICIONAIS:\n" + "\n".join(lista_str_extras)
+    msg_adicionais = f"Desconto de {desconto_perc}% aplicado."
+    if lista_str_extras:
+        msg_adicionais += "\n\nEXTRAS E ADICIONAIS:\n" + "\n".join(lista_str_extras)
 
-    end_comp = f"{rua}, {num} - {st.session_state.man_comp} - {bairro}, {cidade} (CEP: {cep_in})"
+    end_comp = f"{rua}, {num} - {st.session_state.get('man_comp', '')} - {bairro}, {cidade} (CEP: {cep_in})"
     
     dados_ped = {
         "cliente_nome": nome_comp.strip(),
@@ -421,7 +431,7 @@ if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width
         "motivo_homenagem": motivo.strip() or "Varejo/Manual",
         "cesta_id": cesta_id_principal,
         "cesta_nome": nome_da_cesta_principal,
-        "produtos": "\n\n".join(lista_str_produtos),
+        "produtos": "\n\n".join(str_cestas_prod),
         "adicionais": msg_adicionais,
         "pagamento": pag,
         "mensagem": mensagem,
@@ -438,11 +448,18 @@ if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width
     with st.spinner("Registrando pedido..."):
         suc, p_id = salvar_pedido(dados_ped)
         if suc:
-            # 1. Salva os adicionais
-            adicionais_para_banco = [{"produto_id": e.get("produto_id"), "nome": e["nome"], "preco": e.get("preco_unitario", 0.0)} for e in lista_extras]
-            if adicionais_para_banco: salvar_adicionais_pedido(p_id, adicionais_para_banco)
+            adicionais_para_banco = [
+                {
+                    "produto_id": e.get("produto_id"), 
+                    "nome_produto": e["nome"], 
+                    "quantidade": e.get("quantidade", 1),
+                    "valor_unitario": e.get("preco_unitario", 0.0)
+                } 
+                for e in lista_extras if e.get("produto_id") is not None
+            ]
+            if adicionais_para_banco: 
+                salvar_adicionais_pedido(p_id, adicionais_para_banco)
             
-            # 2. SE HOUVER FOTO, MANDA PARA O BUCKET 'pedido_fotos'
             if fotos_upload:
                 with st.spinner("📦 Salvando imagens Polaroid no servidor..."):
                     salvar_fotos(p_id, fotos_upload)
@@ -450,7 +467,7 @@ if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width
             st.success(f"✅ Pedido criado com sucesso para {nome_comp}!")
             st.session_state["itens_orcamento_varejo"] = []
             
-            linhas_wpp = "\n".join([f"📦 {p}" for p in lista_str_produtos])
+            linhas_wpp = "\n".join(str_cestas_prod)
             if lista_str_extras:
                 linhas_wpp += "\n" + "\n".join([f"🎀 {e}" for e in lista_str_extras])
             
