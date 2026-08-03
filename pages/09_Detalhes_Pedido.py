@@ -170,18 +170,20 @@ id_curto = str(pedido['id']).split('-')[0].upper()
 # =====================================================
 @st.cache_data(ttl=300, show_spinner=False)
 def obter_cestas():
-    # Buscamos diretamente do banco para garantir que puxa TUDO de todas as seções
+    # Trazemos TODAS as cestas (inclusive inativas) para que pedidos criados antes da inativação possam ser editados.
     try:
-        res = supabase.table("cestas").select("*").eq("ativa", True).execute()
+        res = supabase.table("cestas").select("*").execute()
         return sorted(res.data or [], key=lambda x: x.get("nome", ""))
-    except: return []
+    except Exception as e: 
+        print(f"Erro obter_cestas: {e}")
+        return []
 
 @st.cache_data(ttl=300, show_spinner=False)
 def obter_adicionais():
     try:
         cat_add = next((c for c in supabase.table("categorias").select("*").execute().data if c.get("nome", "").strip().lower() == "adicionais"), None)
         if cat_add:
-            prods = supabase.table("produtos").select("*").eq("categoria_id", cat_add["id"]).eq("ativo", True).execute()
+            prods = supabase.table("produtos").select("*").eq("categoria_id", cat_add["id"]).execute()
             return sorted(prods.data or [], key=lambda x: x.get("nome", ""))
         return []
     except: return []
@@ -201,7 +203,6 @@ def obter_fotos_do_pedido(pid):
                 foto["url"] = url
         return fotos
     except Exception as e:
-        st.toast(f"⚠️ Aviso: Falha ao carregar anexo de fotos. Erro: {e}")
         return []
 
 vd_db = 0.0
@@ -470,11 +471,12 @@ else:
         cestas_disponiveis, adicionais_disponiveis = obter_cestas(), obter_adicionais()
         
         with col_add1:
-            cesta_atual_id = pedido.get("cesta_id")
+            # CORREÇÃO CRUCIAL AQUI: Casting para string garante a comparação blindada!
+            cesta_atual_id = str(pedido.get("cesta_id")) if pedido.get("cesta_id") else None
             cesta_idx = 0
             if cesta_atual_id:
                 for idx_c, c in enumerate(cestas_disponiveis):
-                    if c["id"] == cesta_atual_id:
+                    if str(c["id"]) == cesta_atual_id:
                         cesta_idx = idx_c + 1
                         break
             
@@ -496,6 +498,8 @@ else:
                         else:
                             escs_prod = st.multiselect(f"{cat} (Máx: {maximo})", prods, format_func=lambda p: p["nome"], max_selections=maximo, key=f"edit_mul_{cesta_sel['id']}_{cat}")
                             selecoes_cesta_edit[cat] = escs_prod
+                else:
+                    st.info("📌 Esta cesta não possui opções de personalização (sabores/bebidas) configuradas no sistema.")
 
             if st.button("➕ Inserir Cesta", use_container_width=True) and cesta_sel:
                 produtos_txt = []
