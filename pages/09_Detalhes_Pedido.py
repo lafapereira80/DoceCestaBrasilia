@@ -166,16 +166,14 @@ tipo_texto = "🏢 CORPORATIVO" if is_b2b else ("🌐 VITRINE" if is_vitrine els
 id_curto = str(pedido['id']).split('-')[0].upper()
 
 # =====================================================
-# CACHING DE DADOS (COM BUSCA DIRETA E BLINDADA)
+# CACHING DE DADOS
 # =====================================================
 @st.cache_data(ttl=300, show_spinner=False)
 def obter_cestas():
-    # Trazemos TODAS as cestas (inclusive inativas) para que pedidos criados antes da inativação possam ser editados.
     try:
         res = supabase.table("cestas").select("*").execute()
         return sorted(res.data or [], key=lambda x: x.get("nome", ""))
     except Exception as e: 
-        print(f"Erro obter_cestas: {e}")
         return []
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -193,17 +191,32 @@ def carregar_config_cesta_cached(cesta_id):
     try: return carregar_configuracao_cesta(cesta_id)
     except: return []
 
+# =====================================================
+# RECUPERAÇÃO DAS FOTOS BLINDADA
+# =====================================================
 def obter_fotos_do_pedido(pid):
     try:
-        resposta = supabase.table("pedido_fotos").select("*").eq("pedido_id", pid).order("created_at").execute()
+        # Busca no banco sem ordenar por created_at para evitar crash se a coluna faltar
+        resposta = supabase.table("pedido_fotos").select("*").eq("pedido_id", pid).execute()
         fotos = resposta.data or []
-        for foto in fotos:
-            if not foto.get("url") and foto.get("arquivo"):
-                url = supabase.storage.from_("pedido_fotos").get_public_url(foto["arquivo"])
-                foto["url"] = url
-        return fotos
     except Exception as e:
+        st.toast(f"⚠️ Erro ao consultar banco de fotos: {e}")
         return []
+        
+    supa_url = st.secrets.get("SUPABASE_URL", "").rstrip("/")
+    
+    for foto in fotos:
+        if not foto.get("url") and foto.get("arquivo"):
+            # Tenta gerar a URL oficial. Se o bucket não existir, ele vai pro except.
+            try:
+                link = supabase.storage.from_("pedido_fotos").get_public_url(foto["arquivo"])
+                # Pega a URL independente da versão da biblioteca do Supabase Python
+                foto["url"] = link if isinstance(link, str) else link.get("publicURL", link.get("publicUrl", ""))
+            except:
+                # Força Bruta: Monta o link manualmente se a biblioteca falhar
+                if supa_url:
+                    foto["url"] = f"{supa_url}/storage/v1/object/public/pedido_fotos/{foto['arquivo']}"
+    return fotos
 
 vd_db = 0.0
 for l in (pedido.get('adicionais') or '').split('\n'):
@@ -303,9 +316,10 @@ if not st.session_state.modo_edicao:
         st.text_area("Anotações Internas", value=pedido.get('anotacoes_internas') or '', height=80, key=f"nota_{pedido_id}", on_change=salvar_nota_interna, args=(pedido_id, f"nota_{pedido_id}"), label_visibility="collapsed")
 
     # ==========================================================
-    # EXIBIÇÃO DE FOTOS POLAROID DO CLIENTE
+    # EXIBIÇÃO DE FOTOS POLAROID DO CLIENTE (AVISO INTELIGENTE)
     # ==========================================================
     fotos_anexadas = obter_fotos_do_pedido(pedido_id)
+    
     if fotos_anexadas:
         st.markdown("<div style='font-size: 14px; font-weight: 800; color: #d1476a; margin-bottom: 8px; margin-top: 15px; text-transform: uppercase;'>📷 Fotos Polaroid / Anexos do Cliente</div>", unsafe_allow_html=True)
         with st.container(border=True):
@@ -314,8 +328,16 @@ if not st.session_state.modo_edicao:
                 with cols_fotos[i % 4]:
                     url_foto = foto.get("url")
                     if url_foto:
-                        st.image(url_foto, caption=foto.get("nome_original", "Polaroid"), use_container_width=True)
-                        st.markdown(f'<div style="text-align: center;"><a href="{url_foto}" target="_blank" style="font-size:12px; text-decoration:none; color:#1a73e8; font-weight:700; border: 1px solid #d2e3fc; padding: 4px 10px; border-radius: 6px; background: #e8f0fe; display: inline-block; margin-top: 4px;">📥 Ampliar Imagem</a></div>', unsafe_allow_html=True)
+                        try:
+                            st.image(url_foto, caption=foto.get("nome_original", f"Foto {i+1}"), use_container_width=True)
+                            st.markdown(f'<div style="text-align: center;"><a href="{url_foto}" target="_blank" style="font-size:12px; text-decoration:none; color:#1a73e8; font-weight:700; border: 1px solid #d2e3fc; padding: 4px 10px; border-radius: 6px; background: #e8f0fe; display: inline-block; margin-top: 4px;">📥 Ampliar Imagem</a></div>', unsafe_allow_html=True)
+                        except:
+                            st.error("❌ Link da imagem quebrado.")
+    else:
+        # SISTEMA ANTI-FANTASMA: Avisa se comprou polaroid mas não tem foto no banco
+        adicionais_texto = str(pedido.get("adicionais", "")).lower()
+        if "polaroid" in adicionais_texto or "foto" in adicionais_texto:
+            st.warning("⚠️ **Aviso Importante:** Este pedido inclui 'Polaroid' ou 'Fotos' na lista de adicionais, mas nenhuma imagem foi encontrada anexada a ele no sistema.")
 
     st.markdown("<div class='section-step'><span class='step-num'>⚡</span><span style='color:#137333;'>Ajustes Rápidos & Valores</span></div>", unsafe_allow_html=True)
     with st.container(border=True):
@@ -471,7 +493,6 @@ else:
         cestas_disponiveis, adicionais_disponiveis = obter_cestas(), obter_adicionais()
         
         with col_add1:
-            # CORREÇÃO CRUCIAL AQUI: Casting para string garante a comparação blindada!
             cesta_atual_id = str(pedido.get("cesta_id")) if pedido.get("cesta_id") else None
             cesta_idx = 0
             if cesta_atual_id:
