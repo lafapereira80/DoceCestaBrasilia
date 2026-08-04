@@ -1,4 +1,5 @@
 import streamlit as st
+import html
 
 from services.produto_service import (
     listar_produtos,
@@ -168,6 +169,13 @@ div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > bu
 }
 
 /* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+}
+
+/* =========================================
    RESPONSIVIDADE MOBILE (LADO A LADO)
 ========================================== */
 @media (max-width: 768px) {
@@ -226,12 +234,15 @@ with col_t1:
 st.write("")
 
 # Bloco de destaque topo da página com a cesta sendo configurada
-nome_cesta_vitrine = cesta_atual.get("nome", "Cesta Selecionada")
-preco_cesta_vitrine = cesta_atual.get("preco", 0.0)
-try:
-    preco_fmt = f"R$ {float(preco_cesta_vitrine):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-except:
-    preco_fmt = "R$ 0,00"
+nome_cesta_vitrine = html.escape(str(cesta_atual.get("nome") or "Cesta Selecionada"))
+preco_cesta_vitrine = cesta_atual.get("preco")
+if preco_cesta_vitrine is None:
+    preco_fmt = "💬 Sob consulta"
+else:
+    try:
+        preco_fmt = f"R$ {float(preco_cesta_vitrine):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except:
+        preco_fmt = "R$ 0,00"
 
 st.markdown(
     f"""
@@ -332,7 +343,7 @@ else:
 
         with st.container(border=True):
             st.markdown(
-                f'<div class="categoria-title">📁 {categoria}</div>',
+                f'<div class="categoria-title">📁 {html.escape(str(categoria))}</div>',
                 unsafe_allow_html=True
             )
 
@@ -354,7 +365,7 @@ else:
                     escolhido = st.checkbox(
                         produto["nome"],
                         value=marcado,
-                        key=f"produto_{produto['id']}"
+                        key=f"produto_{cesta_id}_{produto['id']}"
                     )
 
                     if escolhido:

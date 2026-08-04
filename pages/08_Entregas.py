@@ -1,10 +1,22 @@
 import streamlit as st
 import urllib.parse
 import re
+import html
 from datetime import datetime, timezone, timedelta
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
 from services.telegram_service import enviar_notificacao_telegram
+
+
+def esc(valor, padrao='-'):
+    """Escapa texto antes de inserir em blocos HTML (evita XSS/quebra de layout).
+    Importante nesta página: nome, endereço etc. vêm do formulário público (01_Inicio.py)."""
+    texto = str(valor) if valor not in (None, '') else padrao
+    return html.escape(texto)
+
+
+def id_curto(pid):
+    return html.escape(str(pid).split('-')[0].upper())
 
 # =====================================================
 # CONFIGURAÇÃO DA PÁGINA E BLINDAGEM DE SESSÃO
@@ -75,10 +87,18 @@ div[data-testid="stLinkButton"] a:hover { transform: translateY(-2px) !important
 .entregue-box { opacity: 0.85; background-color: #f0f7f4 !important; border: 1px solid #c8e6c9 !important; border-left: 6px solid #137333 !important; }
 .admin-card-header { text-align: center; background: linear-gradient(135deg, #fdfbf8 0%, #ffffff 100%); color: #5a3b28; font-weight: 800; padding: 15px; border-radius: 14px; margin-bottom: 15px; font-size: 16px; border: 1px solid #e8ddd3; }
 
+@media (max-width: 1024px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+    .header-title { font-size: 36px !important; }
+}
+
 @media (max-width: 768px) {
     .block-container { padding-left: 0.6rem !important; padding-right: 0.6rem !important; }
-    .header-title { font-size: 34px !important; }
-    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 16px !important; }
+    .header-title { font-size: 28px !important; }
+    .header-subtitle { font-size: 12.5px !important; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 14px !important; }
+    .destinatario-txt { font-size: 14px; }
+    .endereco-box { font-size: 13px; padding: 10px 12px; }
     div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; gap: 8px !important; margin-top: 10px !important; justify-content: space-between; }
     div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) > div[data-testid="stColumn"] { flex: 1 1 0% !important; min-width: 0 !important; padding: 0 !important; }
     div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"]:has(button) button { width: 100% !important; padding: 8px 0px !important; }
@@ -106,7 +126,6 @@ def obter_horario_brasilia():
 def buscar_entregas_dia(driver_login=None):
     data_hoje = obter_horario_brasilia().strftime("%d/%m/%Y")
     
-    # Busca Enviados e Rota
     query_env = supabase.table("pedidos").select("*").in_("status", ["Enviado", "Em Rota de Entrega"])
     if perfil_usuario == "Entregador" or driver_login:
         alvo = login_atual if perfil_usuario == "Entregador" else driver_login
@@ -114,16 +133,8 @@ def buscar_entregas_dia(driver_login=None):
         
     res_env = query_env.execute()
     enviados = res_env.data or []
+    enviados.sort(key=lambda x: (x.get('ordem_entrega') if x.get('ordem_entrega') is not None else 999, x.get('created_at')))
     
-    # CORREÇÃO DA ORDENAÇÃO (BLINDADA CONTRA NULOS)
-    for p in enviados:
-        if p.get('ordem_entrega') is None:
-            p['ordem_entrega'] = 999
-        if p.get('created_at') is None:
-            p['created_at'] = ""
-    enviados.sort(key=lambda x: (x.get('ordem_entrega'), x.get('created_at')))
-    
-    # Busca Entregues
     query_ent = supabase.table("pedidos").select("*").eq("status", "Entregue")
     if perfil_usuario == "Entregador" or driver_login:
         alvo = login_atual if perfil_usuario == "Entregador" else driver_login
@@ -165,7 +176,7 @@ def marcar_como_entregue(pedido, login_autor, quem_recebeu):
             "quem_recebeu": nome_recebedor_final
         }).eq("id", pedido["id"]).execute()
         
-        bairro_local = str(pedido.get('endereco', '')).split(',')[-1].split('(')[0].strip() or "Região Central"
+        bairro_local = (str(pedido.get('endereco') or '').split(',')[-1].split('(')[0].strip()) or "Região Central"
         texto_telegram = (
             f"🚀 *ATUALIZAÇÃO DE ROTA — DOÇURA ENTREGUE!* 🎁\n\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
@@ -185,8 +196,7 @@ def marcar_como_entregue(pedido, login_autor, quem_recebeu):
 
 def voltar_para_enviado(pedido_id):
     try:
-        # Quando reverter a entrega, volta para a fila na posição 999 para que o motoboy defina a nova ordem
-        supabase.table("pedidos").update({"status": "Em Rota de Entrega", "ordem_entrega": 999, "hora_entrega_realizada": None, "quem_recebeu": None}).eq("id", pedido_id).execute()
+        supabase.table("pedidos").update({"status": "Em Rota de Entrega", "ordem_entrega": 0, "hora_entrega_realizada": None, "quem_recebeu": None}).eq("id", pedido_id).execute()
         st.toast("↩️ Cesta retornada para a rota com sucesso!")
     except Exception as e:
         st.error(f"Erro ao reverter status: {e}")
@@ -235,13 +245,13 @@ if perfil_usuario in ["Administrador", "Operador"]:
             for i, ped in enumerate(nao_atribuidos):
                 with cols_despacho[i % 2]:
                     with st.container(border=True):
-                        endereco_completo = ped.get('endereco', 'Endereço não informado')
+                        endereco_completo = ped.get('endereco') or 'Endereço não informado'
                         data_entrega = formatar_data(ped.get('data_entrega'))
-                        turno = ped.get('periodo_entrega', 'N/I')
+                        turno = ped.get('periodo_entrega') or 'N/I'
                         hora_combinada = ped.get('horario_combinado', '')
-                        hora_str = f" • Às {hora_combinada}" if hora_combinada else ""
+                        hora_str = f" • Às {esc(hora_combinada)}" if hora_combinada else ""
                         tel_dest = ped.get('destinatario_telefone')
-                        tel_dest_str = f" (📞 {tel_dest})" if tel_dest else ""
+                        tel_dest_str = f" (📞 {esc(tel_dest)})" if tel_dest else ""
                         
                         col_detalhes, col_acao = st.columns([1.7, 1])
                         
@@ -249,11 +259,11 @@ if perfil_usuario in ["Administrador", "Operador"]:
                             st.markdown(
                                 f"""
                                 <div>
-                                    <span class="pedido-id-badge">ID #{ped.get('id')}</span>
-                                    <div class="comprador-txt">👤 Comp: <strong>{ped.get('cliente_nome')}</strong></div>
-                                    <div class="destinatario-txt">🎁 {ped.get('cesta_nome')} p/ <em>{ped.get('destinatario_nome')}</em>{tel_dest_str}</div>
-                                    <div class="endereco-box">📍 {endereco_completo}</div>
-                                    <div class="hora-badge">📅 {data_entrega} | 🕒 {turno}{hora_str}</div>
+                                    <span class="pedido-id-badge">ID #{id_curto(ped.get('id'))}</span>
+                                    <div class="comprador-txt">👤 Comp: <strong>{esc(ped.get('cliente_nome'))}</strong></div>
+                                    <div class="destinatario-txt">🎁 {esc(ped.get('cesta_nome'))} p/ <em>{esc(ped.get('destinatario_nome'))}</em>{tel_dest_str}</div>
+                                    <div class="endereco-box">📍 {esc(endereco_completo)}</div>
+                                    <div class="hora-badge">📅 {esc(data_entrega)} | 🕒 {esc(turno)}{hora_str}</div>
                                 </div>
                                 """, unsafe_allow_html=True
                             )
@@ -307,13 +317,13 @@ if perfil_usuario in ["Administrador", "Operador"]:
                             st.markdown("<span style='font-size:13px; font-weight:800; color:#5a3b28; text-transform: uppercase;'>Itens na Rota:</span>", unsafe_allow_html=True)
                             for i, ped in enumerate(ped_driver_ativos):
                                 with st.container(border=True):
-                                    endereco_completo = ped.get('endereco', 'Endereço não informado')
+                                    endereco_completo = ped.get('endereco') or 'Endereço não informado'
                                     data_entrega = formatar_data(ped.get('data_entrega'))
-                                    turno = ped.get('periodo_entrega', 'N/I')
+                                    turno = ped.get('periodo_entrega') or 'N/I'
                                     hora_combinada = ped.get('horario_combinado', '')
-                                    hora_str = f" • Às {hora_combinada}" if hora_combinada else ""
+                                    hora_str = f" • Às {esc(hora_combinada)}" if hora_combinada else ""
                                     tel_dest = ped.get('destinatario_telefone')
-                                    tel_dest_str = f" (📞 {tel_dest})" if tel_dest else ""
+                                    tel_dest_str = f" (📞 {esc(tel_dest)})" if tel_dest else ""
                                     
                                     col_inf_ativa, col_acoes_ativa = st.columns([1.6, 1])
                                     
@@ -321,10 +331,10 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                         st.markdown(
                                             f"""
                                             <div>
-                                                <div class="comprador-txt" style="margin-top: 0px;">👤 Comprador: <strong>{ped.get('cliente_nome')}</strong></div>
-                                                <div class="destinatario-txt">#{i+1} - 🎁 {ped.get('cesta_nome')} p/ <em>{ped.get('destinatario_nome')}</em></div>
-                                                <div class="endereco-box" style="border-left-color: #5a3b28;">📍 {endereco_completo}</div>
-                                                <div class="hora-badge">📅 {data_entrega} | 🕒 {turno}{hora_str}</div>
+                                                <div class="comprador-txt" style="margin-top: 0px;">👤 Comprador: <strong>{esc(ped.get('cliente_nome'))}</strong></div>
+                                                <div class="destinatario-txt">#{i+1} - 🎁 {esc(ped.get('cesta_nome'))} p/ <em>{esc(ped.get('destinatario_nome'))}</em></div>
+                                                <div class="endereco-box" style="border-left-color: #5a3b28;">📍 {esc(endereco_completo)}</div>
+                                                <div class="hora-badge">📅 {esc(data_entrega)} | 🕒 {esc(turno)}{hora_str}</div>
                                             </div>
                                             """, unsafe_allow_html=True
                                         )
@@ -343,29 +353,29 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                             marcar_como_entregue(ped, login_atual, se_vazio)
                                             st.rerun()
 
-                                st.write("")
-                                col_u, col_d = st.columns(2)
-                                with col_u:
-                                    if i > 0:
-                                        if st.button("⬆️ Subir na Rota", key=f"up_admin_{ped['id']}", use_container_width=True):
-                                            ped_driver_ativos[i], ped_driver_ativos[i-1] = ped_driver_ativos[i-1], ped_driver_ativos[i]
-                                            salvar_ordem(ped_driver_ativos)
-                                            st.rerun()
-                                with col_d:
-                                    if i < len(ped_driver_ativos) - 1:
-                                        if st.button("⬇️ Descer na Rota", key=f"down_admin_{ped['id']}", use_container_width=True):
-                                            ped_driver_ativos[i], ped_driver_ativos[i+1] = ped_driver_ativos[i+1], ped_driver_ativos[i]
-                                            salvar_ordem(ped_driver_ativos)
-                                            st.rerun()
+                                    st.write("")
+                                    col_u, col_d = st.columns(2)
+                                    with col_u:
+                                        if i > 0:
+                                            if st.button("⬆️ Subir na Rota", key=f"up_admin_{ped['id']}", use_container_width=True):
+                                                ped_driver_ativos[i], ped_driver_ativos[i-1] = ped_driver_ativos[i-1], ped_driver_ativos[i]
+                                                salvar_ordem(ped_driver_ativos)
+                                                st.rerun()
+                                    with col_d:
+                                        if i < len(ped_driver_ativos) - 1:
+                                            if st.button("⬇️ Descer na Rota", key=f"down_admin_{ped['id']}", use_container_width=True):
+                                                ped_driver_ativos[i], ped_driver_ativos[i+1] = ped_driver_ativos[i+1], ped_driver_ativos[i]
+                                                salvar_ordem(ped_driver_ativos)
+                                                st.rerun()
 
                         if ped_driver_concluidos:
                             st.markdown("<span style='font-size:13px; font-weight:800; color:#137333; margin-top:15px; display:block; text-transform: uppercase;'>✅ Finalizados Hoje:</span>", unsafe_allow_html=True)
                             for ped in ped_driver_concluidos:
-                                hora_ext = ped.get('hora_entrega_realizada', '')[-5:] 
-                                bairro_con = str(ped.get('endereco', '')).split(',')[-1].split('(')[0].strip()
+                                hora_ext = (ped.get('hora_entrega_realizada') or '')[-5:]
+                                bairro_con = str(ped.get('endereco') or '').split(',')[-1].split('(')[0].strip()
                                 st.markdown(f"""
                                 <div data-testid="stVerticalBlockBorderWrapper" class="entregue-box" style="padding: 14px !important;">
-                                    <div style="font-size:14px; font-weight:800; color:#137333;">✅ Entregue às {hora_ext} - 📍 {bairro_con} ({ped.get('cesta_nome')})</div>
+                                    <div style="font-size:14px; font-weight:800; color:#137333;">✅ Entregue às {esc(hora_ext)} - 📍 {esc(bairro_con)} ({esc(ped.get('cesta_nome'))})</div>
                                 </div>
                                 """, unsafe_allow_html=True)
                                 
@@ -408,10 +418,10 @@ if perfil_usuario in ["Administrador", "Operador"]:
                     salvar_ordem(p_ativos_mb)
                     for i, ped in enumerate(p_ativos_mb):
                         with st.container(border=True):
-                            horario = ped.get('horario_combinado', '') or ped.get('periodo_entrega', 'Livre')
+                            horario = ped.get('horario_combinado') or ped.get('periodo_entrega') or 'Livre'
                             data_e = formatar_data(ped.get('data_entrega'))
                             tel_dest = ped.get('destinatario_telefone')
-                            tel_dest_str = f" (📞 {tel_dest})" if tel_dest else ""
+                            tel_dest_str = f" (📞 {esc(tel_dest)})" if tel_dest else ""
                             
                             col_info_mb, col_btn_mb = st.columns([1.6, 1])
                             
@@ -419,15 +429,15 @@ if perfil_usuario in ["Administrador", "Operador"]:
                                 st.markdown(f"""
                                     <div>
                                         <span class="pedido-id-badge">📍 PARADA #{i+1}</span>
-                                        <div class="comprador-txt" style="margin-top: 8px;">👤 Comprador: {ped.get('cliente_nome')} ({ped.get('cliente_telefone')})</div>
-                                        <div class="destinatario-txt">🎁 {ped.get('cesta_nome')} p/ <strong>{ped.get('destinatario_nome')}</strong>{tel_dest_str}</div>
-                                        <div class="endereco-box">📍 {ped.get('endereco')}</div>
-                                        <div class="hora-badge">📅 {data_e} | 🕒 {horario}</div>
+                                        <div class="comprador-txt" style="margin-top: 8px;">👤 Comprador: {esc(ped.get('cliente_nome'))} ({esc(ped.get('cliente_telefone'))})</div>
+                                        <div class="destinatario-txt">🎁 {esc(ped.get('cesta_nome'))} p/ <strong>{esc(ped.get('destinatario_nome'))}</strong>{tel_dest_str}</div>
+                                        <div class="endereco-box">📍 {esc(ped.get('endereco'))}</div>
+                                        <div class="hora-badge">📅 {esc(data_e)} | 🕒 {esc(horario)}</div>
                                     </div>
                                 """, unsafe_allow_html=True)
                                 
                                 st.write("")
-                                endereco_gps = urllib.parse.quote(re.sub(r'\(CEP:.*?\)', '', ped.get('endereco', '')).strip())
+                                endereco_gps = urllib.parse.quote(re.sub(r'\(CEP:.*?\)', '', ped.get('endereco') or '').strip())
                                 c_m, c_w = st.columns(2)
                                 with c_m:
                                     st.markdown('<div class="btn-maps">', unsafe_allow_html=True)
@@ -452,11 +462,11 @@ if perfil_usuario in ["Administrador", "Operador"]:
                     st.write("")
                     st.markdown("<span style='font-size:14px; font-weight:800; color:#137333; margin-top:10px; display:block; text-transform: uppercase;'>✅ Histórico de Hoje:</span>", unsafe_allow_html=True)
                     for ped in p_concluidos_mb:
-                        hora_extraida = ped.get('hora_entrega_realizada', '')[-5:] 
-                        bairro_concluido = str(ped.get('endereco', '')).split(',')[-1].split('(')[0].strip()
+                        hora_extraida = (ped.get('hora_entrega_realizada') or '')[-5:]
+                        bairro_concluido = str(ped.get('endereco') or '').split(',')[-1].split('(')[0].strip()
                         st.markdown(f"""
                         <div data-testid="stVerticalBlockBorderWrapper" class="entregue-box">
-                            <div style="font-size:14px; font-weight:800; color:#137333;">✅ Entregue às {hora_extraida} - 📍 {bairro_concluido}</div>
+                            <div style="font-size:14px; font-weight:800; color:#137333;">✅ Entregue às {esc(hora_extraida)} - 📍 {esc(bairro_concluido)}</div>
                         </div>
                         """, unsafe_allow_html=True)
 
@@ -486,13 +496,13 @@ else:
             
             for i, ped in enumerate(pedidos_ativos_driver):
                 with st.container(border=True):
-                    endereco_completo = ped.get('endereco', 'Endereço não informado')
+                    endereco_completo = ped.get('endereco') or 'Endereço não informado'
                     data_entrega = formatar_data(ped.get('data_entrega'))
-                    turno = ped.get('periodo_entrega', 'N/I')
+                    turno = ped.get('periodo_entrega') or 'N/I'
                     hora_combinada = ped.get('horario_combinado', '')
-                    hora_str = f" • Às {hora_combinada}" if hora_combinada else ""
+                    hora_str = f" • Às {esc(hora_combinada)}" if hora_combinada else ""
                     tel_dest = ped.get('destinatario_telefone')
-                    tel_dest_str = f" (📞 {tel_dest})" if tel_dest else ""
+                    tel_dest_str = f" (📞 {esc(tel_dest)})" if tel_dest else ""
                     
                     col_inf_drv, col_btn_drv = st.columns([1.6, 1])
                     
@@ -501,16 +511,16 @@ else:
                             f"""
                             <div>
                                 <span class="pedido-id-badge">📍 PARADA #{i+1}</span>
-                                <div class="comprador-txt" style="margin-top: 8px;">👤 Comprador: {ped.get('cliente_nome')} ({ped.get('cliente_telefone')})</div>
-                                <div class="destinatario-txt">🎁 <strong>{ped.get('cesta_nome')}</strong> p/ <em>{ped.get('destinatario_nome')}</em>{tel_dest_str}</div>
-                                <div class="endereco-box">📍 {endereco_completo}</div>
-                                <div class="hora-badge">📅 {data_entrega} | 🕒 {turno}{hora_str}</div>
+                                <div class="comprador-txt" style="margin-top: 8px;">👤 Comprador: {esc(ped.get('cliente_nome'))} ({esc(ped.get('cliente_telefone'))})</div>
+                                <div class="destinatario-txt">🎁 <strong>{esc(ped.get('cesta_nome'))}</strong> p/ <em>{esc(ped.get('destinatario_nome'))}</em>{tel_dest_str}</div>
+                                <div class="endereco-box">📍 {esc(endereco_completo)}</div>
+                                <div class="hora-badge">📅 {esc(data_entrega)} | 🕒 {esc(turno)}{hora_str}</div>
                             </div>
                             """, unsafe_allow_html=True
                         )
                         
                         st.write("")
-                        endereco_gps = urllib.parse.quote(re.sub(r'\(CEP:.*?\)', '', ped.get('endereco', '')).strip())
+                        endereco_gps = urllib.parse.quote(re.sub(r'\(CEP:.*?\)', '', ped.get('endereco') or '').strip())
                         c_m_d, c_w_d = st.columns(2)
                         with c_m_d:
                             st.markdown('<div class="btn-maps">', unsafe_allow_html=True)
@@ -562,23 +572,23 @@ else:
                 st.markdown(f'<div style="font-size:22px; font-weight:800; color:#1a73e8; text-align:center; margin-bottom: 4px; text-transform: uppercase;">🎯 Parada Atual</div>', unsafe_allow_html=True)
                 st.divider()
                 tel_dest_atual = pedido_atual.get('destinatario_telefone')
-                tel_dest_atual_str = f" (📞 {tel_dest_atual})" if tel_dest_atual else " (Sem telefone)"
+                tel_dest_atual_str = f" (📞 {esc(tel_dest_atual)})" if tel_dest_atual else " (Sem telefone)"
                 
                 col_foco_info, col_foco_botoes = st.columns([1.6, 1])
                 
                 with col_foco_info:
                     st.markdown(f"""
                         <div class="ficha-entrega">
-                            <div><strong>👤 Comprador:</strong> {pedido_atual.get('cliente_nome')} (📞 {pedido_atual.get('cliente_telefone')})</div>
-                            <div class="ficha-secao"><strong>🎁 Pacote:</strong> {pedido_atual.get('cesta_nome')}</div>
-                            <div class="ficha-secao"><strong>💝 Quem Recebe:</strong><br><span style="font-size: 18px; color: #137333;">{pedido_atual.get('destinatario_nome')}</span>{tel_dest_atual_str}</div>
-                            <div class="ficha-secao"><strong>📍 Endereço de Entrega:</strong><br><span style="font-size: 18px; font-weight: 800; color: #c5721f; line-height:1.4; display:block; margin-top:5px;">{pedido_atual.get('endereco')}</span></div>
-                            <div class="ficha-secao"><strong>📅 Horário Marcado:</strong><br>{formatar_data(pedido_atual.get('data_entrega'))} | 🕒 {pedido_atual.get('horario_combinado') or pedido_atual.get('periodo_entrega', 'Livre')}</div>
+                            <div><strong>👤 Comprador:</strong> {esc(pedido_atual.get('cliente_nome'))} (📞 {esc(pedido_atual.get('cliente_telefone'))})</div>
+                            <div class="ficha-secao"><strong>🎁 Pacote:</strong> {esc(pedido_atual.get('cesta_nome'))}</div>
+                            <div class="ficha-secao"><strong>💝 Quem Recebe:</strong><br><span style="font-size: 18px; color: #137333;">{esc(pedido_atual.get('destinatario_nome'))}</span>{tel_dest_atual_str}</div>
+                            <div class="ficha-secao"><strong>📍 Endereço de Entrega:</strong><br><span style="font-size: 18px; font-weight: 800; color: #c5721f; line-height:1.4; display:block; margin-top:5px;">{esc(pedido_atual.get('endereco'))}</span></div>
+                            <div class="ficha-secao"><strong>📅 Horário Marcado:</strong><br>{esc(formatar_data(pedido_atual.get('data_entrega')))} | 🕒 {esc(pedido_atual.get('horario_combinado') or pedido_atual.get('periodo_entrega') or 'Livre')}</div>
                         </div>
                     """, unsafe_allow_html=True)
                     
                     st.write("")
-                    endereco_gps = urllib.parse.quote(re.sub(r'\(CEP:.*?\)', '', pedido_atual.get('endereco', '')).strip())
+                    endereco_gps = urllib.parse.quote(re.sub(r'\(CEP:.*?\)', '', pedido_atual.get('endereco') or '').strip())
                     c_maps, c_waze = st.columns(2)
                     with c_maps:
                         st.markdown('<div class="btn-maps">', unsafe_allow_html=True)
@@ -615,12 +625,12 @@ else:
         st.markdown("<span style='font-size:15px; font-weight:800; color:#137333; margin-top:20px; display:block; text-transform: uppercase;'>✅ Histórico de Entregas Hoje:</span>", unsafe_allow_html=True)
         
         for ped in pedidos_concluidos_driver:
-            hora_extraida = ped.get('hora_entrega_realizada', '')[-5:] 
-            bairro_concluido = str(ped.get('endereco', '')).split(',')[-1].split('(')[0].strip()
-            recebedor_nome = ped.get('quem_recebeu', 'Não informado')
+            hora_extraida = (ped.get('hora_entrega_realizada') or '')[-5:]
+            bairro_concluido = str(ped.get('endereco') or '').split(',')[-1].split('(')[0].strip()
+            recebedor_nome = ped.get('quem_recebeu') or 'Não informado'
             st.markdown(f"""
             <div data-testid="stVerticalBlockBorderWrapper" class="entregue-box">
-                <div style="font-size:14px; font-weight:800; color:#137333;">✅ Entregue às {hora_extraida} - 📍 {bairro_concluido}</div>
-                <div class="nome-destaque" style="margin-top:6px; font-size: 13px;">🎁 {ped.get('cesta_nome')} | 👤 Recebido por: <strong>{recebedor_nome}</strong></div>
+                <div style="font-size:14px; font-weight:800; color:#137333;">✅ Entregue às {esc(hora_extraida)} - 📍 {esc(bairro_concluido)}</div>
+                <div class="nome-destaque" style="margin-top:6px; font-size: 13px;">🎁 {esc(ped.get('cesta_nome'))} | 👤 Recebido por: <strong>{esc(recebedor_nome)}</strong></div>
             </div>
             """, unsafe_allow_html=True)

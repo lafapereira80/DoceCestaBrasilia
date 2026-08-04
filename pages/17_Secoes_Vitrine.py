@@ -9,6 +9,9 @@ configurar_pagina()
 menu_lateral()
 administrador_operador()
 
+if "secao_confirmar_exclusao" not in st.session_state:
+    st.session_state["secao_confirmar_exclusao"] = None
+
 # =====================================================
 # CSS APP NATIVO
 # =====================================================
@@ -21,6 +24,23 @@ div[data-testid="stVerticalBlockBorderWrapper"] { background-color: #FFFFFF !imp
 div[data-testid="stFormSubmitButton"] button, div[data-testid="stButton"] button { border-radius: 12px !important; font-weight: 700 !important; }
 div[data-testid="stFormSubmitButton"] button[kind="primary"] { background: #10B981 !important; color: white !important; border: none !important; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2) !important; }
 div[data-testid="stFormSubmitButton"] button[kind="primary"]:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3) !important; }
+
+/* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 18px !important; }
+}
+
+/* =========================================
+   RESPONSIVIDADE — CELULAR (≤ 640px)
+========================================== */
+@media (max-width: 640px) {
+    .block-container { padding-left: .8rem !important; padding-right: .8rem !important; padding-top: 1rem !important; }
+    .app-sub { font-size: 13px; margin-bottom: 16px; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 14px !important; border-radius: 18px !important; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -84,16 +104,34 @@ with aba_lista:
                     
                     c_btn1, c_btn2 = st.columns(2)
                     with c_btn1:
-                        if st.form_submit_button("💾 Salvar Alterações", type="primary", use_container_width=True):
-                            try:
-                                supabase.table("vitrine_secoes").update({"nome": e_nome.strip(), "ordem": e_ordem, "ativa": e_ativa}).eq("id", secao_selecionada["id"]).execute()
-                                st.success("Atualizado com sucesso!")
-                                st.rerun()
-                            except: st.error("Erro ao atualizar.")
+                        salvar_secao = st.form_submit_button("💾 Salvar Alterações", type="primary", use_container_width=True)
                     with c_btn2:
-                        if st.form_submit_button("🗑️ Excluir Aba", use_container_width=True):
+                        pedir_exclusao = st.form_submit_button("🗑️ Excluir Aba", use_container_width=True)
+
+                    if salvar_secao:
+                        try:
+                            supabase.table("vitrine_secoes").update({"nome": e_nome.strip(), "ordem": e_ordem, "ativa": e_ativa}).eq("id", secao_selecionada["id"]).execute()
+                            st.success("Atualizado com sucesso!")
+                            st.rerun()
+                        except: st.error("Erro ao atualizar.")
+
+                    if pedir_exclusao:
+                        st.session_state["secao_confirmar_exclusao"] = secao_selecionada["id"]
+                        st.rerun()
+
+                if st.session_state.get("secao_confirmar_exclusao") == secao_selecionada["id"]:
+                    st.warning(f"⚠️ Confirma excluir a aba **{secao_selecionada['nome']}**? Isso não pode ser desfeito.")
+                    cc1, cc2 = st.columns(2)
+                    with cc1:
+                        if st.button("✅ Sim, excluir aba", key=f"conf_del_secao_{secao_selecionada['id']}", use_container_width=True, type="primary"):
                             try:
                                 supabase.table("vitrine_secoes").delete().eq("id", secao_selecionada["id"]).execute()
+                                st.session_state["secao_confirmar_exclusao"] = None
                                 st.warning("Aba excluída!")
                                 st.rerun()
-                            except: st.error("Erro: existem cestas vinculadas a esta aba. Altere as cestas antes de excluir.")
+                            except:
+                                st.error("Erro: existem cestas vinculadas a esta aba. Altere as cestas antes de excluir.")
+                    with cc2:
+                        if st.button("❌ Cancelar", key=f"canc_del_secao_{secao_selecionada['id']}", use_container_width=True):
+                            st.session_state["secao_confirmar_exclusao"] = None
+                            st.rerun()

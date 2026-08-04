@@ -40,10 +40,17 @@ div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1
 div[data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: #d2bfae !important; box-shadow: 0 8px 20px rgba(90, 59, 40, 0.06); }
 div[data-testid="stDataFrame"] { border: 1px solid #e8ddd3 !important; border-radius: 10px !important; overflow: hidden !important; }
 
+@media (max-width: 1024px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+}
+
 @media (max-width: 768px) {
-    h1 { font-size: 24px !important; }
-    .metric-card { padding: 16px 10px; }
-    .kpi-value, .kpi-value-neutral { font-size: 22px !important; }
+    .block-container { padding-top: 1rem !important; padding-left: .8rem !important; padding-right: .8rem !important; }
+    h1 { font-size: 22px !important; }
+    .metric-card { padding: 14px 10px; }
+    .kpi-title { font-size: 10.5px !important; }
+    .kpi-value, .kpi-value-neutral { font-size: 19px !important; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 14px 16px !important; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -123,7 +130,7 @@ with st.container(border=True):
     col_f1, col_f2 = st.columns(2)
 
     with col_f1:
-        anos = sorted(df["ano"].dropna().unique(), reverse=True)
+        anos = sorted(df["ano"].dropna().astype(int).unique(), reverse=True)
         ano_selecionado = st.selectbox("Ano de Apuração", ["Todos"] + list(anos))
 
     with col_f2:

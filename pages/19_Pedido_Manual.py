@@ -4,6 +4,7 @@ import requests
 import re
 import uuid
 import time
+import html
 from datetime import datetime, timedelta, date
 
 from config.supabase import supabase
@@ -12,10 +13,9 @@ from services.configuracao_cesta_service import carregar_configuracao_cesta
 from services.produto_service import listar_produtos_por_categoria_id
 from services.pedido_service import salvar_pedido
 from services.pedido_adicional_service import salvar_adicionais_pedido
-from services.foto_service import salvar_fotos 
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
-from utils.formatacao import formatar_moeda, tratar_preco, NOME_LOJA
+from utils.formatacao import formatar_moeda, tratar_preco, NOME_LOJA # <-- Puxando da Central!
 
 # =====================================================
 # CONFIGURAÇÃO DA PÁGINA 
@@ -63,6 +63,32 @@ h1, h2, h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-
 div[data-testid="stButton"] button { border-radius: 10px !important; font-weight: 800 !important; transition: all 0.15s ease !important; }
 div[data-testid="stButton"] button[kind="primary"] { background: linear-gradient(135deg, #137333 0%, #0d4e22) !important; color: white !important; border: none !important; box-shadow: 0 4px 12px rgba(19, 115, 51, 0.2) !important; }
 div[data-testid="stButton"] button[kind="primary"]:hover { background: linear-gradient(135deg, #0f5c28 0%, #093818) !important; transform: translateY(-1px) !important; }
+
+/* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+    .header-title { font-size: 32px !important; }
+    .corp-card { padding: 16px; }
+}
+
+/* =========================================
+   RESPONSIVIDADE — CELULAR (≤ 640px)
+========================================== */
+@media (max-width: 640px) {
+    .block-container { padding-left: .8rem !important; padding-right: .8rem !important; padding-top: 1rem !important; }
+    .header-banner { padding: 14px; }
+    .header-title { font-size: 24px !important; }
+    .header-subtitle { font-size: 11.5px !important; }
+    .corp-card { padding: 12px; }
+    .corp-title { font-size: 14px; }
+
+    .resumo-financeiro { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; text-align: left; }
+    .resumo-item { text-align: left; }
+    .resumo-valor { font-size: 14px; }
+    .resumo-destaque { font-size: 17px; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -111,22 +137,14 @@ def carregar_config_cesta_cached(cesta_id):
 
 def buscar_cep_api(cep_str):
     cep_limpo = re.sub(r'\D', '', cep_str)
-    if len(cep_limpo) != 8: return False, "CEP inválido. Digite 8 números."
+    if len(cep_limpo) != 8: return False, "CEP inválido."
     try:
-        # Utilizando ViaCEP para maior robustez e estabilidade
-        r = requests.get(f"https://viacep.com.br/ws/{cep_limpo}/json/", timeout=3)
+        r = requests.get(f"https://brasilapi.com.br/api/cep/v2/{cep_limpo}", timeout=2)
         if r.status_code == 200:
             d = r.json()
-            if d.get("erro"):
-                return False, "CEP não encontrado."
-            return True, {
-                "logradouro": d.get("logradouro", ""), 
-                "bairro": d.get("bairro", ""), 
-                "localidade": d.get("localidade", ""), 
-                "uf": d.get("uf", "")
-            }
+            return True, {"logradouro": d.get("street", ""), "bairro": d.get("neighborhood", ""), "localidade": d.get("city", ""), "uf": d.get("state", "")}
         return False, "CEP não encontrado."
-    except: return False, "Erro de conexão ao buscar CEP."
+    except: return False, "Erro de conexão."
 
 cestas_disponiveis = obter_cestas_admin()
 adicionais_disponiveis = obter_adicionais_admin()
@@ -136,6 +154,7 @@ for key in ["man_nome", "man_cpf", "man_tel", "man_rua", "man_num", "man_comp", 
     if key not in st.session_state: st.session_state[key] = ""
 if "modo_busca_cli" not in st.session_state: st.session_state.modo_busca_cli = False
 if "itens_orcamento_varejo" not in st.session_state: st.session_state["itens_orcamento_varejo"] = []
+if "man_processando" not in st.session_state: st.session_state["man_processando"] = False
 
 # =====================================================
 # 1. DADOS DO COMPRADOR
@@ -224,7 +243,7 @@ with col_add2:
     if st.button("➕ Inserir Extra", use_container_width=True):
         if adc_sel:
             st.session_state["itens_orcamento_varejo"].append({
-                "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None, "produto_id": adc_sel.get("id"), "nome": adc_sel["nome"], 
+                "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None, "nome": adc_sel["nome"], 
                 "preco_unitario": tratar_preco(adc_sel.get("preco")), "quantidade": 1, "descricao": ""
             })
             st.rerun()
@@ -235,7 +254,7 @@ with col_add3:
     if st.button("➕ Inserir Manual", use_container_width=True):
         if txt_man.strip():
             st.session_state["itens_orcamento_varejo"].append({
-                "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None, "produto_id": None, "nome": txt_man.strip(), 
+                "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None, "nome": txt_man.strip(), 
                 "preco_unitario": 0.0, "quantidade": 1, "descricao": ""
             })
             st.rerun()
@@ -255,7 +274,7 @@ if st.session_state["itens_orcamento_varejo"]:
         c1, c2, c3, c4, c5 = st.columns([3.5, 1.5, 1.5, 1.5, 0.5])
         with c1:
             icone = "📦" if item["tipo"] == "Cesta" else "✨"
-            st.markdown(f"<div style='margin-top:6px; font-weight:700; font-size:13.5px; color:#4a2e1b;'>{icone} {item['nome']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='margin-top:6px; font-weight:700; font-size:13.5px; color:#4a2e1b;'>{icone} {html.escape(str(item['nome']))}</div>", unsafe_allow_html=True)
             if item.get("descricao"): st.caption(item["descricao"])
         with c2:
             novo_preco = st.number_input("Valor", value=float(item["preco_unitario"]), min_value=0.0, step=1.0, format="%.2f", key=f"var_p_{item['id']}", label_visibility="collapsed")
@@ -294,29 +313,6 @@ mensagem = st.text_area("Mensagem do Cartão", height=70, key="man_msg", placeho
 st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
-# 4. FOTOS E POLAROID (DINÂMICO)
-# =====================================================
-precisa_foto = False
-if st.session_state["itens_orcamento_varejo"]:
-    precisa_foto = any("polaroid" in item["nome"].lower() or "foto" in item["nome"].lower() for item in st.session_state["itens_orcamento_varejo"])
-
-fotos_upload = []
-if precisa_foto:
-    st.markdown('<div class="corp-card">', unsafe_allow_html=True)
-    st.markdown('<div class="corp-title">📷 4. Fotos (Polaroid / Revelação)</div>', unsafe_allow_html=True)
-    st.info("O sistema detectou um item de Foto/Polaroid no carrinho. Faça o upload das imagens do cliente abaixo.")
-    
-    fotos_upload = st.file_uploader(
-        "Anexar Imagens", 
-        type=["jpg", "jpeg", "png", "webp", "heic"], 
-        accept_multiple_files=True, 
-        label_visibility="collapsed"
-    )
-    if fotos_upload:
-        st.success(f"✅ {len(fotos_upload)} foto(s) anexada(s) e prontas para o envio!")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# =====================================================
 # 5. ENDEREÇO E ENTREGA
 # =====================================================
 st.markdown('<div class="corp-card">', unsafe_allow_html=True)
@@ -332,13 +328,15 @@ with cx2:
             st.session_state.man_rua = dados.get("logradouro", "")
             st.session_state.man_bairro = dados.get("bairro", "")
             st.session_state.man_cidade = f"{dados.get('localidade', '')} - {dados.get('uf', '')}"
-            st.toast("✅ Endereço carregado com sucesso!")
+            st.toast("✅ Endereço carregado!")
             st.rerun()
         else: st.warning(dados)
 
 c_r1, c_r2 = st.columns([3, 1])
 with c_r1: rua = st.text_input("Rua/Logradouro *", value=st.session_state.man_rua, key="in_rua")
 with c_r2: num = st.text_input("Nº *", key="in_num")
+
+comp = st.text_input("Complemento (opcional)", value=st.session_state.man_comp, placeholder="Apto, bloco, ponto de referência...", key="in_comp")
 
 c_b1, c_b2 = st.columns(2)
 with c_b1: bairro = st.text_input("Bairro *", value=st.session_state.man_bairro, key="in_bairro")
@@ -388,7 +386,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 st.write("")
-if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width=True):
+if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width=True, disabled=st.session_state.get("man_processando", False)):
     if not nome_comp: st.error("Informe o nome do comprador."); st.stop()
     if not tel_comp: st.error("Informe o WhatsApp do comprador."); st.stop()
     if not st.session_state["itens_orcamento_varejo"]: st.error("Adicione ao menos um item ao pedido."); st.stop()
@@ -398,14 +396,7 @@ if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width
     lista_cestas = [it for it in st.session_state["itens_orcamento_varejo"] if it["tipo"] == "Cesta"]
     lista_extras = [it for it in st.session_state["itens_orcamento_varejo"] if it["tipo"] == "Extra"]
     
-    # Tratamento para múltiplas cestas inseridas no carrinho
-    str_cestas_prod = []
-    for c_item in lista_cestas:
-        bloco = f"📦 {c_item['quantidade']}x {c_item['nome']} (R$ {formatar_moeda(c_item['preco_unitario'])})"
-        if c_item.get('descricao'):
-            bloco += f"\n{c_item['descricao']}"
-        str_cestas_prod.append(bloco)
-
+    lista_str_produtos = [f"{it['quantidade']}x {it['nome']} (R$ {formatar_moeda(it['preco_unitario'])})\n{it.get('descricao','')}".strip() for it in lista_cestas]
     lista_str_extras = [f"{it['quantidade']}x {it['nome']} (R$ {formatar_moeda(it['preco_unitario'])})" for it in lista_extras]
     
     nome_da_cesta_principal = "Pedido Varejo"
@@ -416,11 +407,16 @@ if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width
     elif lista_extras:
         nome_da_cesta_principal = "Itens Extras"
         
-    msg_adicionais = f"Desconto de {desconto_perc}% aplicado."
-    if lista_str_extras:
-        msg_adicionais += "\n\nEXTRAS E ADICIONAIS:\n" + "\n".join(lista_str_extras)
+    if not lista_cestas and lista_extras:
+        lista_str_produtos = lista_str_extras
+        msg_adicionais = f"Desconto de {desconto_perc}% aplicado."
+    else:
+        msg_adicionais = f"Desconto de {desconto_perc}% aplicado."
+        if lista_str_extras:
+            msg_adicionais += "\n\nEXTRAS E ADICIONAIS:\n" + "\n".join(lista_str_extras)
 
-    end_comp = f"{rua}, {num} - {st.session_state.get('man_comp', '')} - {bairro}, {cidade} (CEP: {cep_in})"
+    comp_fmt = f" - {comp.strip()}" if comp and comp.strip() else ""
+    end_comp = f"{rua}, {num}{comp_fmt} - {bairro}, {cidade} (CEP: {cep_in})"
     
     dados_ped = {
         "cliente_nome": nome_comp.strip(),
@@ -431,7 +427,7 @@ if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width
         "motivo_homenagem": motivo.strip() or "Varejo/Manual",
         "cesta_id": cesta_id_principal,
         "cesta_nome": nome_da_cesta_principal,
-        "produtos": "\n\n".join(str_cestas_prod),
+        "produtos": "\n\n".join(lista_str_produtos),
         "adicionais": msg_adicionais,
         "pagamento": pag,
         "mensagem": mensagem,
@@ -446,28 +442,22 @@ if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width
     }
     
     with st.spinner("Registrando pedido..."):
-        suc, p_id = salvar_pedido(dados_ped)
+        st.session_state["man_processando"] = True
+        try:
+            suc, p_id = salvar_pedido(dados_ped)
+        except Exception as e:
+            st.session_state["man_processando"] = False
+            st.error(f"Erro de conexão ao registrar pedido: {e}")
+            st.stop()
+
         if suc:
-            adicionais_para_banco = [
-                {
-                    "produto_id": e.get("produto_id"), 
-                    "nome_produto": e["nome"], 
-                    "quantidade": e.get("quantidade", 1),
-                    "valor_unitario": e.get("preco_unitario", 0.0)
-                } 
-                for e in lista_extras if e.get("produto_id") is not None
-            ]
-            if adicionais_para_banco: 
-                salvar_adicionais_pedido(p_id, adicionais_para_banco)
-            
-            if fotos_upload:
-                with st.spinner("📦 Salvando imagens Polaroid no servidor..."):
-                    salvar_fotos(p_id, fotos_upload)
+            adicionais_para_banco = [{"produto_id": e.get("produto_id"), "nome": e["nome"], "preco": e.get("preco", 0.0)} for e in lista_extras]
+            if adicionais_para_banco: salvar_adicionais_pedido(p_id, adicionais_para_banco)
             
             st.success(f"✅ Pedido criado com sucesso para {nome_comp}!")
             st.session_state["itens_orcamento_varejo"] = []
             
-            linhas_wpp = "\n".join(str_cestas_prod)
+            linhas_wpp = "\n".join([f"📦 {p}" for p in lista_str_produtos])
             if lista_str_extras:
                 linhas_wpp += "\n" + "\n".join([f"🎀 {e}" for e in lista_str_extras])
             
@@ -475,9 +465,11 @@ if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width
             
             st.info("📱 Copie a mensagem para enviar ao cliente no WhatsApp:")
             st.code(texto_wpp, language="markdown")
+            st.session_state["man_processando"] = False
             time.sleep(3)
             st.switch_page("pages/02_Pedidos.py")
         else: 
+            st.session_state["man_processando"] = False
             st.error("Erro ao registrar no banco de dados.")
 
 st.markdown('</div>', unsafe_allow_html=True)

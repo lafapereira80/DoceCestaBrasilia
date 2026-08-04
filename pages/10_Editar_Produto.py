@@ -17,7 +17,7 @@ from utils.menu import (
 )
 
 from utils.permissao import (
-    administrador_operador
+    administrador
 )
 
 
@@ -33,7 +33,7 @@ st.set_page_config(
 
 configurar_pagina()
 menu_lateral()
-administrador_operador()
+administrador()
 
 
 # =====================================================
@@ -149,6 +149,13 @@ div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > bu
     object-fit: cover;
     border: 1px solid #e8ddd3;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
 }
 
 /* =========================================

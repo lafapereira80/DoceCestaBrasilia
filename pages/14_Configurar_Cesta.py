@@ -1,5 +1,6 @@
 import streamlit as st
 import time
+import html
 
 from services.cesta_service import (
     listar_cestas
@@ -158,6 +159,13 @@ div[data-testid="stColumn"] > div > div > div > div[data-testid="stButton"] > bu
 }
 .resumo-cat { font-size: 13px; font-weight: 800; color: #5a3b28; text-transform: uppercase; margin-bottom: 4px; }
 .resumo-info { font-size: 12px; color: #666; font-weight: 600; }
+
+/* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+}
 
 /* =========================================
    RESPONSIVIDADE MOBILE (LADO A LADO)
@@ -340,7 +348,7 @@ for categoria_id, dados_categoria in produtos_por_categoria.items():
     lista_produtos = dados_categoria["produtos"]
 
     with st.container(border=True):
-        st.markdown(f'<div class="categoria-title">📁 {categoria_nome}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="categoria-title">📁 {html.escape(str(categoria_nome))}</div>', unsafe_allow_html=True)
 
         col_min, col_max = st.columns(2)
         
@@ -424,7 +432,7 @@ if configuracoes:
             st.markdown(
                 f"""
                 <div class="resumo-card">
-                    <div class="resumo-cat">📦 {item['categoria']}</div>
+                    <div class="resumo-cat">📦 {html.escape(str(item['categoria']))}</div>
                     <div class="resumo-info">Produtos Selecionados: <strong>{len(item['produtos'])}</strong></div>
                     <div class="resumo-info">Regra: <strong>{item['min_escolhas']} a {item['max_escolhas']} itens</strong></div>
                 </div>

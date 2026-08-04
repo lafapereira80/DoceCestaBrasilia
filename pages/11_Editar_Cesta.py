@@ -1,4 +1,5 @@
 import streamlit as st
+import time
 from config.supabase import supabase
 from services.cesta_service import buscar_cesta_por_id, atualizar_cesta, upload_imagem_cesta
 from utils.menu import configurar_pagina, menu_lateral
@@ -24,6 +25,24 @@ div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1
 .stButton button { font-size: 15px !important; font-weight: 800 !important; border-radius: 12px !important; height: 48px !important; }
 .stButton button[kind="primary"] { background: linear-gradient(135deg, #137333 0%, #0d4e22 100%) !important; color: white !important; border: none !important; }
 .stButton button[kind="secondary"] { background: #faf7f3 !important; border: 1px solid #dfcdbb !important; color: #5a3b28 !important; }
+
+/* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 18px !important; }
+}
+
+/* =========================================
+   RESPONSIVIDADE — CELULAR (≤ 640px)
+========================================== */
+@media (max-width: 640px) {
+    .block-container { padding-left: .8rem !important; padding-right: .8rem !important; padding-top: 1rem !important; }
+    h1 { font-size: 22px !important; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 14px !important; border-radius: 14px !important; }
+    .stButton button { height: 44px !important; font-size: 13.5px !important; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -88,7 +107,9 @@ with st.container(border=True):
 
     with col2:
         nova_ativa = st.toggle("Item Ativo na Vitrine?", value=cesta_atual.get("ativa", True))
-        novo_preco = st.number_input("Preço (R$)", value=float(cesta_atual.get("preco", 0)), min_value=0.0, step=1.0, format="%.2f")
+        preco_atual = cesta_atual.get("preco")
+        novo_preco = st.number_input("Preço (R$)", value=float(preco_atual) if preco_atual is not None else 0.0, min_value=0.0, step=1.0, format="%.2f")
+        nova_sem_preco = st.checkbox("💬 Preço sob consulta (não definido)", value=preco_atual is None, help="Marque se essa cesta ainda não tem preço fechado. A vitrine mostrará 'Sob consulta' em vez de R$ 0,00.")
         
         st.write("")
         if cesta_atual.get("imagem"):
@@ -120,7 +141,7 @@ with col_b2:
                 dados_atualizados = {
                     "nome": novo_nome.strip(),
                     "descricao": nova_descricao.strip(),
-                    "preco": novo_preco,
+                    "preco": None if nova_sem_preco else novo_preco,
                     "ativa": nova_ativa,
                     "ordem": int(nova_ordem),
                     "secao_vitrine": nova_secao,

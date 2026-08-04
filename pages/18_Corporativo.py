@@ -3,6 +3,8 @@ import pandas as pd
 import requests
 import re
 import uuid
+import html
+import time
 from datetime import datetime, timedelta, date
 
 from config.supabase import supabase
@@ -77,6 +79,33 @@ div[data-testid="stButton"] button[kind="primary"]:hover { background: linear-gr
     .proposta-preview { box-shadow: none !important; border: none !important; padding: 0 !important; }
     body { background-color: white !important; }
 }
+
+/* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+    .header-title { font-size: 34px !important; }
+    .corp-card { padding: 18px; }
+}
+
+/* =========================================
+   RESPONSIVIDADE — CELULAR (≤ 640px)
+========================================== */
+@media (max-width: 640px) {
+    .block-container { padding-left: .8rem !important; padding-right: .8rem !important; padding-top: 1rem !important; }
+    .header-banner { padding: 18px 14px; }
+    .header-title { font-size: 26px !important; }
+    .header-subtitle { font-size: 12.5px !important; }
+    .corp-card { padding: 14px; }
+    .corp-title { font-size: 15px; }
+    .proposta-preview { padding: 18px; }
+
+    .resumo-financeiro { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; text-align: left; }
+    .resumo-item { text-align: left; }
+    .resumo-valor { font-size: 15px; }
+    .resumo-destaque { font-size: 18px; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -145,6 +174,7 @@ if "corp_nome" not in st.session_state: st.session_state.corp_nome = ""
 if "corp_tel" not in st.session_state: st.session_state.corp_tel = ""
 if "corp_end" not in st.session_state: st.session_state.corp_end = ""
 if "itens_orcamento" not in st.session_state: st.session_state["itens_orcamento"] = []
+if "b2b_processando" not in st.session_state: st.session_state["b2b_processando"] = False
 
 # =====================================================
 # ABAS DO MÓDULO
@@ -265,7 +295,7 @@ with aba_proposta:
             c1, c2, c3, c4, c5 = st.columns([3.5, 1.5, 1.5, 1.5, 0.5])
             with c1:
                 icone = "📦" if item["tipo"] == "Cesta" else "✨"
-                st.markdown(f"<div style='margin-top:8px; font-weight:700; font-size:14px; color:#4a2e1b;'>{icone} {item['nome']}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='margin-top:8px; font-weight:700; font-size:14px; color:#4a2e1b;'>{icone} {html.escape(str(item['nome']))}</div>", unsafe_allow_html=True)
                 if item.get("descricao"): st.caption(item["descricao"])
             with c2:
                 novo_preco = st.number_input("Valor", value=float(item["preco_unitario"]), min_value=0.0, step=1.0, format="%.2f", key=f"p_{item['id']}", label_visibility="collapsed")
@@ -325,7 +355,7 @@ with aba_proposta:
     col_btn1, col_btn2 = st.columns(2)
     with col_btn1: ver_preview = st.checkbox("👁️ Montar Documento de Orçamento (PDF / WhatsApp)", value=False)
     with col_btn2:
-        if st.button("✅ REGISTRAR PEDIDO B2B", type="primary", use_container_width=True):
+        if st.button("✅ REGISTRAR PEDIDO B2B", type="primary", use_container_width=True, disabled=st.session_state.get("b2b_processando", False)):
             if not empresa_nome: st.error("Informe o Nome da Empresa."); st.stop()
             if not st.session_state["itens_orcamento"]: st.error("Adicione itens ao contrato."); st.stop()
             if not endereco_empresa: st.error("Informe o Endereço de Entrega."); st.stop()
@@ -368,7 +398,14 @@ with aba_proposta:
             }
             
             with st.spinner("Registrando pedido..."):
-                sucesso, p_id = salvar_pedido(dados_b2b)
+                st.session_state["b2b_processando"] = True
+                try:
+                    sucesso, p_id = salvar_pedido(dados_b2b)
+                except Exception as e:
+                    st.session_state["b2b_processando"] = False
+                    st.error(f"Erro de conexão ao registrar pedido: {e}")
+                    st.stop()
+
                 if sucesso:
                     st.success(f"🎉 Pedido corporativo registrado com sucesso!")
                     st.session_state["itens_orcamento"] = []
@@ -376,9 +413,12 @@ with aba_proposta:
                     st.session_state.corp_nome = ""
                     st.session_state.corp_tel = ""
                     st.session_state.corp_end = ""
+                    st.session_state["b2b_processando"] = False
                     time.sleep(2)
                     st.switch_page("pages/02_Pedidos.py")
-                else: st.error("Erro ao registrar no banco de dados.")
+                else:
+                    st.session_state["b2b_processando"] = False
+                    st.error("Erro ao registrar no banco de dados.")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -393,9 +433,13 @@ with aba_proposta:
                 desc_curta = (item['descricao'][:150] + '...') if item['descricao'] and len(item['descricao']) > 150 else (item['descricao'] or '')
                 preco_f = formatar_moeda(item['preco_unitario'])
                 subtotal_f = formatar_moeda(item['preco_unitario'] * item['quantidade'])
-                linhas_html += f"""<tr><td style="padding: 10px; border-bottom: 1px solid #f5eee6;"><b>{item['nome']}</b><br><span style="font-size:11px; color:#666;">{desc_curta}</span></td><td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: center;">{item['quantidade']}</td><td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: right;">R$ {preco_f}</td><td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: right;">R$ {subtotal_f}</td></tr>"""
+                linhas_html += f"""<tr><td style="padding: 10px; border-bottom: 1px solid #f5eee6;"><b>{html.escape(str(item['nome']))}</b><br><span style="font-size:11px; color:#666;">{html.escape(str(desc_curta))}</span></td><td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: center;">{item['quantidade']}</td><td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: right;">R$ {preco_f}</td><td style="padding: 10px; border-bottom: 1px solid #f5eee6; text-align: right;">R$ {subtotal_f}</td></tr>"""
 
-            html_documento = f"""<div class="proposta-preview"><div class="proposta-header"><h2 style="color: #137333; margin-bottom: 5px; font-weight: 800;">PROPOSTA COMERCIAL</h2><p style="margin: 0; color: #555; font-size: 14px;">{NOME_LOJA} - Gestão de Encantamento B2B</p></div><table style="width: 100%; border: none; margin-bottom: 25px;"><tr><td style="width: 60%; vertical-align: top;"><p style="margin:2px 0;"><b>Para:</b> {empresa_nome}</p><p style="margin:2px 0;"><b>A/C:</b> {contato_nome}</p><p style="margin:2px 0;"><b>Ref:</b> {motivo or 'Orçamento'}</p></td><td style="width: 40%; vertical-align: top; text-align: right;"><p style="margin:2px 0;"><b>Data Emissão:</b> {datetime.now().strftime("%d/%m/%Y")}</p><p style="margin:2px 0;"><b>Validade:</b> {validade.strftime("%d/%m/%Y")}</p></td></tr></table><table style="width: 100%; border-collapse: collapse; margin-top: 10px;"><tr style="background-color: #faf7f3;"><th style="padding: 12px; text-align: left; border-bottom: 2px solid #e8ddd3;">Descrição</th><th style="padding: 12px; text-align: center; border-bottom: 2px solid #e8ddd3;">Qtd</th><th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">V. Unitário</th><th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">Subtotal</th></tr>{linhas_html}</table><div style="margin-top: 25px; text-align: right; font-size: 15px;"><p style="margin: 4px 0;">Subtotal: R$ {formatar_moeda(total_bruto)}</p><p style="margin: 4px 0; color: #c5221f;">Desconto ({desconto_perc}%): - R$ {formatar_moeda(valor_desconto)}</p><p style="margin: 4px 0;">Logística: R$ {formatar_moeda(frete_lote)}</p></div><div class="proposta-total">TOTAL GERAL: R$ {formatar_moeda(total_liquido)}</div></div>"""
+            empresa_nome_seg = html.escape(str(empresa_nome))
+            contato_nome_seg = html.escape(str(contato_nome)) if contato_nome else ""
+            motivo_seg = html.escape(str(motivo)) if motivo else "Orçamento"
+
+            html_documento = f"""<div class="proposta-preview"><div class="proposta-header"><h2 style="color: #137333; margin-bottom: 5px; font-weight: 800;">PROPOSTA COMERCIAL</h2><p style="margin: 0; color: #555; font-size: 14px;">{NOME_LOJA} - Gestão de Encantamento B2B</p></div><table style="width: 100%; border: none; margin-bottom: 25px;"><tr><td style="width: 60%; vertical-align: top;"><p style="margin:2px 0;"><b>Para:</b> {empresa_nome_seg}</p><p style="margin:2px 0;"><b>A/C:</b> {contato_nome_seg}</p><p style="margin:2px 0;"><b>Ref:</b> {motivo_seg}</p></td><td style="width: 40%; vertical-align: top; text-align: right;"><p style="margin:2px 0;"><b>Data Emissão:</b> {datetime.now().strftime("%d/%m/%Y")}</p><p style="margin:2px 0;"><b>Validade:</b> {validade.strftime("%d/%m/%Y")}</p></td></tr></table><table style="width: 100%; border-collapse: collapse; margin-top: 10px;"><tr style="background-color: #faf7f3;"><th style="padding: 12px; text-align: left; border-bottom: 2px solid #e8ddd3;">Descrição</th><th style="padding: 12px; text-align: center; border-bottom: 2px solid #e8ddd3;">Qtd</th><th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">V. Unitário</th><th style="padding: 12px; text-align: right; border-bottom: 2px solid #e8ddd3;">Subtotal</th></tr>{linhas_html}</table><div style="margin-top: 25px; text-align: right; font-size: 15px;"><p style="margin: 4px 0;">Subtotal: R$ {formatar_moeda(total_bruto)}</p><p style="margin: 4px 0; color: #c5221f;">Desconto ({desconto_perc}%): - R$ {formatar_moeda(valor_desconto)}</p><p style="margin: 4px 0;">Logística: R$ {formatar_moeda(frete_lote)}</p></div><div class="proposta-total">TOTAL GERAL: R$ {formatar_moeda(total_liquido)}</div></div>"""
             st.markdown(html_documento, unsafe_allow_html=True)
 
         with aba_whats:

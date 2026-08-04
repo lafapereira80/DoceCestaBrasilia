@@ -346,7 +346,7 @@ if salvar:
 # FUNÇÃO EXIBIR PRODUTO (LAYOUT CARD)
 # =====================================================
 
-def exibir_produto(produto, categoria):
+def exibir_produto(produto, categoria, usuario_eh_admin):
     with st.container(border=True):
         col1, col2, col3, col4 = st.columns([4.5, 2.5, 1.2, 1.8])
         
@@ -398,11 +398,11 @@ def exibir_produto(produto, categoria):
         with col4:
             b1, b2, b3 = st.columns(3)
             with b1:
-                editar = st.button("✏️", key=f"editar_{produto['id']}", help="Editar detalhes do produto", use_container_width=True)
+                editar = st.button("✏️", key=f"editar_{produto['id']}", help="Editar detalhes do produto" if usuario_eh_admin else "Somente Administrador pode editar", use_container_width=True, disabled=not usuario_eh_admin)
             with b2:
                 status = st.button("🔴" if produto.get("ativo", True) else "🟢", key=f"status_{produto['id']}", help="Ativar/Desativar produto", use_container_width=True)
             with b3:
-                excluir = st.button("🗑️", key=f"excluir_{produto['id']}", help="Excluir do catálogo", use_container_width=True)
+                excluir = st.button("🗑️", key=f"excluir_{produto['id']}", help="Excluir do catálogo" if usuario_eh_admin else "Somente Administrador pode excluir", use_container_width=True, disabled=not usuario_eh_admin)
 
     return editar, status, excluir
 
@@ -462,9 +462,9 @@ for categoria_nome, dados in categorias_ordenadas:
     )
 
     for produto in dados["produtos"]:
-        editar, status, excluir = exibir_produto(produto, categoria)
+        editar, status, excluir = exibir_produto(produto, categoria, usuario.get("perfil") == "Administrador")
 
-        if editar:
+        if editar and usuario.get("perfil") == "Administrador":
             st.session_state["produto_editar"] = produto["id"]
             st.switch_page("pages/10_Editar_Produto.py")
 
@@ -476,7 +476,7 @@ for categoria_nome, dados in categorias_ordenadas:
             except Exception as erro:
                 st.error(f"Erro ao alterar status: {erro}")
 
-        if excluir:
+        if excluir and usuario.get("perfil") == "Administrador":
             st.session_state["produto_confirmar_exclusao"] = produto["id"]
             st.rerun()
 

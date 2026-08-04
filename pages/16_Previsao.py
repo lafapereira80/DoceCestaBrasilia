@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import html
 from datetime import datetime, date
 import json
 import time
@@ -54,6 +55,26 @@ div[data-testid="stVerticalBlockBorderWrapper"] { background: #ffffff; border: 1
 
 div[data-testid="stCheckbox"] { background: #faf7f3; border: 1px solid #e8ddd3; padding: 8px 12px; border-radius: 10px; margin-bottom: 6px; }
 div[data-testid="stButton"] > button { font-size: 14px !important; font-weight: 800 !important; border-radius: 10px !important; min-height: 40px !important; }
+
+/* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+}
+
+/* =========================================
+   RESPONSIVIDADE — CELULAR (≤ 768px)
+========================================== */
+@media (max-width: 768px) {
+    .block-container { padding-top: 1rem !important; padding-left: .8rem !important; padding-right: .8rem !important; }
+    h1 { font-size: 22px !important; }
+    .pedido-card { padding: 14px 16px; }
+    .cliente-titulo { font-size: 15px; }
+    .cesta-subtitulo { font-size: 13.5px; }
+    .cesta-pill { font-size: 12px; padding: 5px 10px; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { padding: 14px 16px !important; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -98,7 +119,7 @@ for p in pedidos:
             label_dia = "SEM DATA DEFINIDA"
             
     if chave_ordem not in resumo: resumo[chave_ordem] = {"label": label_dia, "cestas_agrupadas": {}, "pedidos_lista": [], "total": 0}
-    nome_cesta = p.get("cesta_nome", "Cesta Não Informada")
+    nome_cesta = p.get("cesta_nome") or "Cesta Não Informada"
     resumo[chave_ordem]["cestas_agrupadas"][nome_cesta] = resumo[chave_ordem]["cestas_agrupadas"].get(nome_cesta, 0) + 1
     resumo[chave_ordem]["pedidos_lista"].append(p)
     resumo[chave_ordem]["total"] += 1
@@ -120,13 +141,13 @@ if st.session_state.pedido_em_montagem:
                     st.session_state.pedido_em_montagem = None
                     st.rerun()
             
-            nome_cli_exibicao = p_ativo.get('cliente_nome', '').replace("[B2B]", "").strip()
+            nome_cli_exibicao = html.escape((p_ativo.get('cliente_nome') or '').replace("[B2B]", "").strip())
 
             st.markdown(f"""
                 <div class="montagem-header">
                     <div style="font-size: 18px; font-weight: 800; color: #2c1e14;">👤 {nome_cli_exibicao}</div>
-                    <div style="font-size: 15px; font-weight: 800; color: #b06000;">🎁 {p_ativo.get('cesta_nome')}</div>
-                    <div style="font-size: 13px; color: #444; margin-top: 4px;">📍 <strong>Endereço:</strong> {p_ativo.get('endereco', 'N/I')}</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #b06000;">🎁 {html.escape(str(p_ativo.get('cesta_nome') or '-'))}</div>
+                    <div style="font-size: 13px; color: #444; margin-top: 4px;">📍 <strong>Endereço:</strong> {html.escape(str(p_ativo.get('endereco') or 'N/I'))}</div>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -294,7 +315,7 @@ if dados_previsao:
     
     for i, (data, info) in enumerate(dados_previsao.items()):
         with abas[i]:
-            html_pills = "".join([f"<div class='cesta-pill'>📦 {cesta} <span class='cesta-pill-qtd'>{qtd}</span></div>" for cesta, qtd in info["cestas_agrupadas"].items()])
+            html_pills = "".join([f"<div class='cesta-pill'>📦 {html.escape(str(cesta))} <span class='cesta-pill-qtd'>{qtd}</span></div>" for cesta, qtd in info["cestas_agrupadas"].items()])
             st.markdown(f"<div class='resumo-bar'><div class='resumo-header'>📊 Resumo (Total: {info['total']})</div><div class='pills-container'>{html_pills}</div></div>", unsafe_allow_html=True)
             
             pedidos_lista = info["pedidos_lista"]
@@ -320,16 +341,16 @@ if dados_previsao:
                 else:
                     status_badge = '<span class="badge-status-pendente">⏳ PENDENTE</span>'
                 
-                endereco_completo = p.get('endereco', 'Endereço não informado')
+                endereco_completo = p.get('endereco') or 'Endereço não informado'
                 bairro = endereco_completo.split(',')[-1].split('(')[0].strip() if ',' in endereco_completo else endereco_completo
-                nome_cliente_card = p.get('cliente_nome', '-').replace("[B2B]", "").strip()
+                nome_cliente_card = (p.get('cliente_nome') or '-').replace("[B2B]", "").strip()
                 
                 card_html = f"""
                 <div class="pedido-card">
                     <div class="card-top"><span class="pedido-id">Pedido #{pid}</span>{status_badge}</div>
-                    <div class="cliente-titulo">{nome_cliente_card}</div>
-                    <div class="cesta-subtitulo">🎁 {p.get('cesta_nome', '-')}</div>
-                    <div class="info-linha-card">📍 <strong>Localização:</strong> {bairro}</div>
+                    <div class="cliente-titulo">{html.escape(nome_cliente_card)}</div>
+                    <div class="cesta-subtitulo">🎁 {html.escape(str(p.get('cesta_nome') or '-'))}</div>
+                    <div class="info-linha-card">📍 <strong>Localização:</strong> {html.escape(bairro)}</div>
                     <div class="progresso-container"><div class="progresso-barra" style="width: {porcentagem}%;"></div></div>
                     <div style="font-size: 11px; color: #775a46; text-align: right; font-weight: 800;">Verificação: {itens_marcados}/{total_itens} ({porcentagem}%)</div>
                 </div>

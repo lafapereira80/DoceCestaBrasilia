@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import uuid
 from config.supabase import supabase
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
@@ -24,14 +23,17 @@ div[data-testid="stFormSubmitButton"] button, div[data-testid="stButton"] button
 div[data-testid="stFormSubmitButton"] button[kind="primary"] { background: #10B981 !important; color: white !important; border: none !important; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2) !important; }
 div[data-testid="stFormSubmitButton"] button[kind="primary"]:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3) !important; }
 
-/* Upload Widget Styling */
-div[data-testid="stFileUploader"] { background-color: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 12px; padding: 10px; }
-
-/* RESPONSIVIDADE */
+/* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
 @media (max-width: 1024px) {
     .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
     div[data-testid="stVerticalBlockBorderWrapper"] { padding: 18px !important; }
 }
+
+/* =========================================
+   RESPONSIVIDADE — CELULAR (≤ 640px)
+========================================== */
 @media (max-width: 640px) {
     .block-container { padding-left: .8rem !important; padding-right: .8rem !important; }
     .app-sub { font-size: 13px; margin-bottom: 16px; }
@@ -43,7 +45,7 @@ div[data-testid="stFileUploader"] { background-color: #F8FAFC; border: 1px dashe
 st.markdown('<div class="app-header">🧺 Gestão de Cestas e Kits</div><div class="app-sub">Cadastre novos pacotes e organize as abas da sua vitrine pública.</div>', unsafe_allow_html=True)
 
 # =====================================================
-# FUNÇÕES DE BANCO DE DADOS E UPLOAD
+# FUNÇÕES DE BANCO DE DADOS
 # =====================================================
 def carregar_secoes():
     """Busca as seções cadastradas para organizar as abas da vitrine"""
@@ -56,30 +58,6 @@ def carregar_secoes():
 def carregar_cestas():
     try: return supabase.table("cestas").select("*").order("ordem").execute().data or []
     except Exception as e: st.error(f"Erro ao carregar cestas: {e}"); return []
-
-def fazer_upload_imagem(arquivo):
-    """Faz o upload do arquivo para o bucket 'cestas' e retorna a URL pública."""
-    if arquivo is None:
-        return None
-    try:
-        # Gera um nome único para o arquivo usando UUID para não sobrescrever imagens antigas
-        extensao = arquivo.name.split('.')[-1]
-        nome_arquivo = f"{uuid.uuid4()}.{extensao}"
-        bytes_arquivo = arquivo.getvalue()
-        
-        # Upload para o bucket 'cestas' no Supabase
-        supabase.storage.from_("cestas").upload(
-            file=bytes_arquivo,
-            path=nome_arquivo,
-            file_options={"content-type": arquivo.type}
-        )
-        
-        # Retorna a URL pública gerada
-        url_publica = supabase.storage.from_("cestas").get_public_url(nome_arquivo)
-        return url_publica
-    except Exception as e:
-        st.error(f"Erro no upload da imagem: {e}")
-        return None
 
 secoes_disponiveis = carregar_secoes()
 
@@ -95,6 +73,7 @@ with aba_nova:
             col1, col2 = st.columns(2)
             with col1:
                 nome = st.text_input("Nome da Cesta/Kit *", placeholder="Ex: Cesta Romântica Luxo")
+                # A MÁGICA ACONTECE AQUI: Ligação direta com a Vitrine
                 secao = st.selectbox("Seção da Vitrine (Aba) *", secoes_disponiveis, help="Em qual aba do site essa cesta vai aparecer?")
                 preco = st.number_input("Preço Base (R$)", min_value=0.0, step=10.0, format="%.2f")
                 sem_preco = st.checkbox("💬 Preço sob consulta (não definido)", help="Marque se essa cesta ainda não tem preço fechado. A vitrine mostrará 'Sob consulta' em vez de R$ 0,00.")
@@ -102,10 +81,11 @@ with aba_nova:
             with col2:
                 ordem = st.number_input("Ordem de Exibição", min_value=1, step=1, value=1, help="1 aparece primeiro, 2 depois...")
                 ativa = st.checkbox("Cesta Ativa (Aparece no site)?", value=True)
-                
-                # Novo sistema híbrido de imagens (Upload ou Link)
-                imagem_arquivo = st.file_uploader("📸 Upload da Imagem (Recomendado)", type=["jpg", "jpeg", "png", "webp"], help="Faça o upload direto do seu dispositivo para a nuvem.")
-                imagem_url = st.text_input("Ou URL externa da imagem", placeholder="Ex: https://... (Deixe em branco se fizer o upload acima)")
+                imagem = st.text_input(
+                    "URL da Imagem Principal",
+                    placeholder="Ex: https://i.imgur.com/xxxxx.jpg",
+                    help="Precisa ser um link direto pro arquivo de imagem (termina em .jpg/.png/.webp). Link de compartilhamento do Google Drive NÃO funciona — use Imgur, o Supabase Storage, ou outro host de imagem direta."
+                )
 
             descricao = st.text_area("Descrição (Opcional)", placeholder="Itens pré-definidos ou texto de encantamento...")
             
@@ -116,19 +96,12 @@ with aba_nova:
                 if not nome.strip():
                     st.error("O nome da cesta é obrigatório!")
                 else:
-                    # Lógica para definir a imagem
-                    link_final_imagem = imagem_url.strip()
-                    if imagem_arquivo is not None:
-                        url_upload = fazer_upload_imagem(imagem_arquivo)
-                        if url_upload:
-                            link_final_imagem = url_upload
-
                     dados = {
                         "nome": nome.strip(),
                         "descricao": descricao.strip(),
                         "preco": None if sem_preco else preco,
-                        "imagem": link_final_imagem,
-                        "secao_vitrine": secao,
+                        "imagem": imagem.strip(),
+                        "secao_vitrine": secao, # <-- Salvando a Seção!
                         "ordem": ordem,
                         "ativa": ativa
                     }
@@ -146,6 +119,7 @@ with aba_lista:
         st.info("Nenhuma cesta cadastrada ainda. Vá para a aba 'Adicionar Nova Cesta'.")
     else:
         df = pd.DataFrame(cestas)
+        # Exibimos a Seção na tabela para o administrador ter controle visual
         df_display = df[["ordem", "nome", "secao_vitrine", "preco", "ativa"]].copy()
         df_display["preco"] = df_display["preco"].apply(lambda x: "💬 Sob consulta" if x is None else f"R$ {formatar_moeda(x)}")
         df_display = df_display.rename(columns={"ordem": "Posição", "nome": "Cesta", "secao_vitrine": "Aba da Vitrine", "preco": "Preço", "ativa": "Ativa?"})
@@ -165,6 +139,7 @@ with aba_lista:
                     with e_col1:
                         e_nome = st.text_input("Nome", value=cesta_selecionada.get("nome", ""))
                         
+                        # Garantir que o selectbox de edição reconheça a seção salva, mesmo se ela foi apagada do banco
                         secao_atual = cesta_selecionada.get("secao_vitrine", "Cestas de Café")
                         opcoes_secao = secoes_disponiveis if secao_atual in secoes_disponiveis else [secao_atual] + secoes_disponiveis
                         idx_secao = opcoes_secao.index(secao_atual)
@@ -172,32 +147,25 @@ with aba_lista:
                         e_secao = st.selectbox("Seção da Vitrine", opcoes_secao, index=idx_secao)
                         preco_atual = cesta_selecionada.get("preco")
                         e_preco = st.number_input("Preço", value=float(preco_atual) if preco_atual is not None else 0.0, step=10.0, format="%.2f")
-                        e_sem_preco = st.checkbox("💬 Preço sob consulta (não definido)", value=preco_atual is None)
+                        e_sem_preco = st.checkbox("💬 Preço sob consulta (não definido)", value=preco_atual is None, help="Marque se essa cesta ainda não tem preço fechado.")
                         
                     with e_col2:
                         e_ordem = st.number_input("Ordem", value=int(cesta_selecionada.get("ordem", 1)), step=1)
                         e_ativa = st.checkbox("Ativa?", value=bool(cesta_selecionada.get("ativa", True)))
-                        
-                        # Upload na edição
-                        e_imagem_arquivo = st.file_uploader("📸 Nova Foto (Substituir a atual)", type=["jpg", "jpeg", "png", "webp"])
-                        e_imagem_url = st.text_input("URL da Imagem Atual", value=cesta_selecionada.get("imagem", ""), help="Você pode colar uma nova URL ou fazer o upload acima.")
+                        e_imagem = st.text_input(
+                            "URL da Imagem",
+                            value=cesta_selecionada.get("imagem", ""),
+                            help="Precisa ser um link direto pro arquivo de imagem. Link de compartilhamento do Google Drive não funciona como imagem."
+                        )
                         
                     e_desc = st.text_area("Descrição", value=cesta_selecionada.get("descricao", ""))
                     
                     col_btn1, col_btn2 = st.columns(2)
                     with col_btn1:
                         if st.form_submit_button("💾 Salvar Alterações", type="primary", use_container_width=True):
-                            
-                            # Lógica para definir a nova imagem na edição
-                            link_final_imagem_edit = e_imagem_url.strip()
-                            if e_imagem_arquivo is not None:
-                                url_upload_edit = fazer_upload_imagem(e_imagem_arquivo)
-                                if url_upload_edit:
-                                    link_final_imagem_edit = url_upload_edit
-                            
                             update_data = {
                                 "nome": e_nome.strip(), "descricao": e_desc.strip(), "preco": None if e_sem_preco else e_preco,
-                                "imagem": link_final_imagem_edit, "secao_vitrine": e_secao, "ordem": e_ordem, "ativa": e_ativa
+                                "imagem": e_imagem.strip(), "secao_vitrine": e_secao, "ordem": e_ordem, "ativa": e_ativa
                             }
                             try:
                                 supabase.table("cestas").update(update_data).eq("id", c_id).execute()

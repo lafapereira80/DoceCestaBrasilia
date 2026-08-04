@@ -150,18 +150,17 @@ div[role="radiogroup"] { flex-wrap: wrap !important; row-gap: 6px !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# OS STATUS OFICIAIS EXATAMENTE COMO ESTÃO NO BANCO
-STATUS_PERMITIDOS = ["Recebido", "Pago", "Em Rota de Entrega", "Entregue", "Desistência"]
-STATUS_BUSCA_DB = ["Recebido", "Pago", "Enviado", "Em Rota de Entrega", "Entregue", "Desistência"]
+# OS STATUS OFICIAIS DO BANCO (inalterado)
+STATUS_PERMITIDOS = ["Recebido", "Pago", "Enviado", "Em Rota de Entrega", "Entregue", "Desistência"]
 
 # Cor de destaque por status (accent do card + badge)
 STATUS_STYLE = {
-    "Recebido":           {"cor": "#1a73e8", "bg": "#e8f0fe", "icone": "📥"},
-    "Pago":               {"cor": "#137333", "bg": "#e6f4ea", "icone": "💰"},
-    "Enviado":            {"cor": "#7c3aed", "bg": "#efe6fd", "icone": "📦"},
-    "Em Rota de Entrega": {"cor": "#b06000", "bg": "#fef7e0", "icone": "🛵"},
-    "Entregue":           {"cor": "#137333", "bg": "#e6f4ea", "icone": "🎉"},
-    "Desistência":        {"cor": "#c5221f", "bg": "#fce8e6", "icone": "⚠️"},
+    "Recebido":            {"cor": "#1a73e8", "bg": "#e8f0fe", "icone": "📥"},
+    "Pago":                {"cor": "#137333", "bg": "#e6f4ea", "icone": "💰"},
+    "Enviado":             {"cor": "#7c3aed", "bg": "#efe6fd", "icone": "📦"},
+    "Em Rota de Entrega":  {"cor": "#b06000", "bg": "#fef7e0", "icone": "🛵"},
+    "Entregue":            {"cor": "#137333", "bg": "#e6f4ea", "icone": "🎉"},
+    "Desistência":         {"cor": "#c5221f", "bg": "#fce8e6", "icone": "⚠️"},
 }
 STATUS_STYLE_PADRAO = {"cor": "#775a46", "bg": "#f3ece6", "icone": "❔"}
 
@@ -169,6 +168,7 @@ ETAPAS = ["Aguardando", "Montagem", "Cesta Pronta", "Em Rota", "Entregue"]
 
 
 def _etapa_index(status_db, entregador, cesta_montada, chk):
+    """Reproduz a mesma lógica original de texto_discreto, retornando o índice do estágio."""
     if status_db == "Entregue":
         return 4
     if status_db in ["Enviado", "Em Rota de Entrega"] or entregador:
@@ -192,6 +192,7 @@ def _texto_etapa(idx):
 
 @st.cache_data(ttl=30, show_spinner=False)
 def carregar_pedidos():
+    """Busca só as colunas usadas nesta página (menos payload = mais rápido)."""
     colunas = (
         "id,status,data_entrega,periodo_entrega,cliente_nome,cesta_nome,"
         "valor_total,checklist,entregador_login,cesta_montada"
@@ -199,7 +200,7 @@ def carregar_pedidos():
     res = (
         supabase.table("pedidos")
         .select(colunas)
-        .in_("status", STATUS_BUSCA_DB)
+        .in_("status", ["Recebido", "Pago", "Enviado", "Em Rota de Entrega", "Desistência"])
         .order("data_entrega", desc=False)
         .execute()
     )
@@ -210,7 +211,7 @@ def alterar_status_callback(pedido_id, widget_key):
     novo_status = st.session_state[widget_key]
     try:
         supabase.table("pedidos").update({"status": novo_status}).eq("id", pedido_id).execute()
-        carregar_pedidos.clear() 
+        carregar_pedidos.clear()  # invalida cache para refletir a mudança no próximo render
         st.toast(f"✅ Pedido atualizado para: {novo_status}!")
     except Exception as e:
         st.toast(f"❌ Falha ao atualizar pedido: {e}", icon="⚠️")
@@ -231,7 +232,7 @@ qtd_pago = sum(1 for p in todos_pedidos if p.get('status') == 'Pago')
 qtd_rota = sum(1 for p in todos_pedidos if p.get('status') in ['Enviado', 'Em Rota de Entrega'])
 qtd_desistencia = sum(1 for p in todos_pedidos if p.get('status') == 'Desistência')
 
-# --- Métricas rápidas ---
+# --- Métricas rápidas (grid único, reflow controlado por CSS) ---
 metricas = [
     ("📥", qtd_recebido, "Recebidos"),
     ("💰", qtd_pago, "Pagos"),
@@ -257,7 +258,7 @@ c_filtro, c_busca, c_colunas, c_refresh = st.columns([2.4, 1.6, .8, .6])
 with c_filtro:
     filtro_selecionado = st.radio(
         "Filtro:",
-        [f"Recebidos ({qtd_recebido})", f"Pagos ({qtd_pago})", f"Em Rota ({qtd_rota})", f"Desistências ({qtd_desistencia})", "Todos"],
+        [f"Recebidos ({qtd_recebido})", f"Pagos ({qtd_pago})", f"Em Rota ({qtd_rota})", "Todos"],
         horizontal=True,
     )
 with c_busca:
@@ -277,8 +278,6 @@ for p in todos_pedidos:
     elif filtro_selecionado.startswith("Pagos") and st_atual == "Pago":
         pedidos_filtrados.append(p)
     elif filtro_selecionado.startswith("Em Rota") and st_atual in ["Enviado", "Em Rota de Entrega"]:
-        pedidos_filtrados.append(p)
-    elif filtro_selecionado.startswith("Desistências") and st_atual == "Desistência":
         pedidos_filtrados.append(p)
     elif filtro_selecionado.startswith("Todos"):
         pedidos_filtrados.append(p)
@@ -301,6 +300,7 @@ for idx, p in enumerate(pedidos_filtrados):
     pid = p['id']
     id_curto = str(pid).split('-')[0].upper()
 
+    # Tratamento visual (com escape de HTML para evitar quebra de layout / XSS)
     cliente_bruto = str(p.get('cliente_nome') or '')
     if "[B2B]" in cliente_bruto:
         tag_html = '<span class="tag-tipo tag-b2b">🏢 B2B</span>'
@@ -321,6 +321,7 @@ for idx, p in enumerate(pedidos_filtrados):
     except Exception:
         valor_f = "0,00"
 
+    # --- Etapa logística (mesma lógica original) ---
     chk_str = p.get('checklist') or "{}"
     if isinstance(chk_str, str):
         try:
@@ -372,53 +373,16 @@ for idx, p in enumerate(pedidos_filtrados):
             """
             st.markdown(html_card.replace('\n', ''), unsafe_allow_html=True)
 
-            if status_db == 'Desistência':
-                c_status, c_btn, c_del = st.columns([1.2, 0.9, 0.9])
-                with c_status:
-                    idx_st = STATUS_PERMITIDOS.index(status_db) if status_db in STATUS_PERMITIDOS else 0
-                    widget_key = f"st_{pid}"
-                    st.selectbox(
-                        "Status Oficial", STATUS_PERMITIDOS, index=idx_st, key=widget_key,
-                        on_change=alterar_status_callback, args=(pid, widget_key),
-                        label_visibility="collapsed",
-                    )
-                with c_btn:
-                    if st.button("Detalhes", key=f"btn_{pid}", use_container_width=True, type="primary"):
-                        st.session_state['pedido_detalhe_id'] = pid
-                        st.switch_page("pages/09_Detalhes_Pedido.py")
-                with c_del:
-                    if st.button("🗑️ Excluir", key=f"del_{pid}", use_container_width=True):
-                        try:
-                            # 1. Buscar arquivos físicos no banco e excluir do bucket de fotos (Limpando a memória do servidor)
-                            fotos_bd = supabase.table("pedido_fotos").select("arquivo").eq("pedido_id", pid).execute()
-                            if fotos_bd.data:
-                                arquivos = [f["arquivo"] for f in fotos_bd.data if f.get("arquivo")]
-                                if arquivos:
-                                    supabase.storage.from_("pedido_fotos").remove(arquivos)
-                            
-                            # 2. Excluir dependências (tabelas filhas) para evitar erros estruturais
-                            supabase.table("pedido_fotos").delete().eq("pedido_id", pid).execute()
-                            supabase.table("pedido_adicionais").delete().eq("pedido_id", pid).execute()
-                            
-                            # 3. Excluir o pedido principal
-                            supabase.table("pedidos").delete().eq("id", pid).execute()
-                            
-                            carregar_pedidos.clear()
-                            st.toast("✅ Pedido e fotos apagados com sucesso!")
-                            st.rerun()
-                        except Exception as e:
-                            st.toast(f"Erro ao excluir permanentemente: {e}", icon="❌")
-            else:
-                c_status, c_btn = st.columns([1.5, 1])
-                with c_status:
-                    idx_st = STATUS_PERMITIDOS.index(status_db) if status_db in STATUS_PERMITIDOS else 0
-                    widget_key = f"st_{pid}"
-                    st.selectbox(
-                        "Status Oficial", STATUS_PERMITIDOS, index=idx_st, key=widget_key,
-                        on_change=alterar_status_callback, args=(pid, widget_key),
-                        label_visibility="collapsed",
-                    )
-                with c_btn:
-                    if st.button("Detalhes", key=f"btn_{pid}", use_container_width=True, type="primary"):
-                        st.session_state['pedido_detalhe_id'] = pid
-                        st.switch_page("pages/09_Detalhes_Pedido.py")
+            c_status, c_btn = st.columns([1.5, 1])
+            with c_status:
+                idx_st = STATUS_PERMITIDOS.index(status_db) if status_db in STATUS_PERMITIDOS else 0
+                widget_key = f"st_{pid}"
+                st.selectbox(
+                    "Status Oficial", STATUS_PERMITIDOS, index=idx_st, key=widget_key,
+                    on_change=alterar_status_callback, args=(pid, widget_key),
+                    label_visibility="collapsed",
+                )
+            with c_btn:
+                if st.button("Detalhes", key=f"btn_{pid}", use_container_width=True, type="primary"):
+                    st.session_state['pedido_detalhe_id'] = pid
+                    st.switch_page("pages/09_Detalhes_Pedido.py")

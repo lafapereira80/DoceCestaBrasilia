@@ -1,4 +1,5 @@
 import streamlit as st
+import html
 from config.supabase import supabase
 
 from utils.menu import (
@@ -70,6 +71,8 @@ administrador_operador()
 
 if "categoria_editando" not in st.session_state:
     st.session_state["categoria_editando"] = None
+if "categoria_confirmar_exclusao" not in st.session_state:
+    st.session_state["categoria_confirmar_exclusao"] = None
 
 
 # =====================================================
@@ -207,6 +210,13 @@ div[data-testid="stColumn"] div[data-testid="stButton"] button:hover {
 }
 
 /* =========================================
+   RESPONSIVIDADE — TABLET (≤ 1024px)
+========================================== */
+@media (max-width: 1024px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+}
+
+/* =========================================
    RESPONSIVIDADE MOBILE E BOTÕES (LADO A LADO)
 ========================================== */
 @media (max-width: 768px) {
@@ -324,7 +334,7 @@ for categoria in categorias:
 
         # Coluna 1: Nome
         with col_nome:
-            st.markdown(f'<div class="categoria-nome">📁 {nome}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="categoria-nome">📁 {html.escape(str(nome))}</div>', unsafe_allow_html=True)
 
         # Coluna 2: Status
         with col_status:
@@ -366,7 +376,9 @@ for categoria in categorias:
                     st.rerun()
 
             with col_b3:
-                excluir = st.button("🗑️", key=f"excluir_{categoria_id}", help="Excluir Categoria", use_container_width=True)
+                if st.button("🗑️", key=f"excluir_{categoria_id}", help="Excluir Categoria", use_container_width=True):
+                    st.session_state["categoria_confirmar_exclusao"] = categoria_id
+                    st.rerun()
 
         # =====================================================
         # FORMULÁRIO DE EDIÇÃO INLINE (DENTRO DO CARD)
@@ -429,7 +441,7 @@ for categoria in categorias:
         # =====================================================
         # CONFIRMAÇÃO DE EXCLUSÃO
         # =====================================================
-        if excluir:
+        if st.session_state.get("categoria_confirmar_exclusao") == categoria_id:
             st.error(f"⚠️ Atenção! Deseja realmente excluir a categoria **{nome}**?")
             col_confirmar, col_cancelar = st.columns(2)
 
@@ -442,12 +454,14 @@ for categoria in categorias:
                         else:
                             st.toast("✅ Categoria excluída com sucesso!")
                             st.session_state["categoria_editando"] = None
+                            st.session_state["categoria_confirmar_exclusao"] = None
                             st.rerun()
                     except Exception as erro:
                         st.error(f"Erro ao excluir: {erro}")
 
             with col_cancelar:
                 if st.button("❌ Cancelar", key=f"cancelar_excluir_{categoria_id}", use_container_width=True):
+                    st.session_state["categoria_confirmar_exclusao"] = None
                     st.rerun()
 
 
