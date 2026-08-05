@@ -14,7 +14,7 @@ from services.pedido_service import salvar_pedido
 from services.foto_service import salvar_fotos
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
-from utils.formatacao import formatar_moeda, tratar_preco, NOME_LOJA # <-- Puxando da Central!
+from utils.formatacao import formatar_moeda, tratar_preco, NOME_LOJA 
 
 # =====================================================
 # CONFIGURAÇÃO DA PÁGINA
