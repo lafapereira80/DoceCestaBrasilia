@@ -5,6 +5,7 @@ from datetime import datetime
 import streamlit as st
 
 from config.supabase import supabase
+from services.pedido_service import excluir_pedido_completo
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 
@@ -150,8 +151,12 @@ div[role="radiogroup"] { flex-wrap: wrap !important; row-gap: 6px !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# OS STATUS OFICIAIS DO BANCO (inalterado)
-STATUS_PERMITIDOS = ["Recebido", "Pago", "Enviado", "Em Rota de Entrega", "Entregue", "Desistência"]
+# STATUS MANUAIS PERMITIDOS NO MURAL — a partir de "Pago" a progressão
+# (Montagem / Em Rota) passa a ser controlada pelas flags/tags (cesta_montada,
+# entregador_login, checklist) refletidas no stepper, não mais pela troca manual
+# de status aqui. "Enviado"/"Em Rota de Entrega"/"Entregue" continuam existindo
+# no banco (geridos por 08_Entregas.py e 09_Detalhes_Pedido.py) e são só exibidos.
+STATUS_PERMITIDOS = ["Recebido", "Pago", "Desistência"]
 
 # Cor de destaque por status (accent do card + badge)
 STATUS_STYLE = {
@@ -220,6 +225,9 @@ def alterar_status_callback(pedido_id, widget_key):
 st.markdown("<div class='header-title'>📋 Mural Central de Pedidos</div>", unsafe_allow_html=True)
 st.markdown("<div class='header-subtitle'>Acompanhe a situação e etapa dos pedidos.</div>", unsafe_allow_html=True)
 
+if "pedido_excluir_confirmar" not in st.session_state:
+    st.session_state["pedido_excluir_confirmar"] = None
+
 try:
     with st.spinner("Carregando pedidos ativos..."):
         todos_pedidos = carregar_pedidos()
@@ -229,15 +237,14 @@ except Exception as e:
 
 qtd_recebido = sum(1 for p in todos_pedidos if p.get('status') == 'Recebido')
 qtd_pago = sum(1 for p in todos_pedidos if p.get('status') == 'Pago')
-qtd_rota = sum(1 for p in todos_pedidos if p.get('status') in ['Enviado', 'Em Rota de Entrega'])
 qtd_desistencia = sum(1 for p in todos_pedidos if p.get('status') == 'Desistência')
 
 # --- Métricas rápidas (grid único, reflow controlado por CSS) ---
 metricas = [
     ("📥", qtd_recebido, "Recebidos"),
     ("💰", qtd_pago, "Pagos"),
-    ("🛵", qtd_rota, "Em Rota"),
     ("⚠️", qtd_desistencia, "Desistências"),
+    ("📦", len(todos_pedidos), "Total Ativo"),
 ]
 metrics_html = "<div class='metrics-grid'>" + "".join(
     f"""<div class="metric-box">
@@ -258,7 +265,7 @@ c_filtro, c_busca, c_colunas, c_refresh = st.columns([2.4, 1.6, .8, .6])
 with c_filtro:
     filtro_selecionado = st.radio(
         "Filtro:",
-        [f"Recebidos ({qtd_recebido})", f"Pagos ({qtd_pago})", f"Em Rota ({qtd_rota})", "Todos"],
+        [f"Recebidos ({qtd_recebido})", f"Pagos ({qtd_pago})", f"Desistência ({qtd_desistencia})", "Todos"],
         horizontal=True,
     )
 with c_busca:
@@ -277,7 +284,7 @@ for p in todos_pedidos:
         pedidos_filtrados.append(p)
     elif filtro_selecionado.startswith("Pagos") and st_atual == "Pago":
         pedidos_filtrados.append(p)
-    elif filtro_selecionado.startswith("Em Rota") and st_atual in ["Enviado", "Em Rota de Entrega"]:
+    elif filtro_selecionado.startswith("Desistência") and st_atual == "Desistência":
         pedidos_filtrados.append(p)
     elif filtro_selecionado.startswith("Todos"):
         pedidos_filtrados.append(p)
@@ -375,10 +382,13 @@ for idx, p in enumerate(pedidos_filtrados):
 
             c_status, c_btn = st.columns([1.5, 1])
             with c_status:
-                idx_st = STATUS_PERMITIDOS.index(status_db) if status_db in STATUS_PERMITIDOS else 0
+                # Preserva o valor atual mesmo se for um status legado (Enviado/Em Rota/Entregue)
+                # gerido por outra página — evita que o dropdown minta mostrando "Recebido".
+                opcoes_status_card = STATUS_PERMITIDOS if status_db in STATUS_PERMITIDOS else STATUS_PERMITIDOS + [status_db]
+                idx_st = opcoes_status_card.index(status_db) if status_db in opcoes_status_card else 0
                 widget_key = f"st_{pid}"
                 st.selectbox(
-                    "Status Oficial", STATUS_PERMITIDOS, index=idx_st, key=widget_key,
+                    "Status Oficial", opcoes_status_card, index=idx_st, key=widget_key,
                     on_change=alterar_status_callback, args=(pid, widget_key),
                     label_visibility="collapsed",
                 )
@@ -386,3 +396,27 @@ for idx, p in enumerate(pedidos_filtrados):
                 if st.button("Detalhes", key=f"btn_{pid}", use_container_width=True, type="primary"):
                     st.session_state['pedido_detalhe_id'] = pid
                     st.switch_page("pages/09_Detalhes_Pedido.py")
+
+            if status_db == "Desistência":
+                st.write("")
+                if st.session_state.get("pedido_excluir_confirmar") == pid:
+                    st.warning("⚠️ Excluir **definitivamente** este pedido, incluindo as fotos no bucket? Ação irreversível.")
+                    cc1, cc2 = st.columns(2)
+                    with cc1:
+                        if st.button("✅ Confirmar", key=f"conf_excl_{pid}", use_container_width=True, type="primary"):
+                            sucesso, msg = excluir_pedido_completo(pid)
+                            if sucesso:
+                                st.session_state["pedido_excluir_confirmar"] = None
+                                carregar_pedidos.clear()
+                                st.toast("🗑️ Pedido excluído definitivamente.")
+                                st.rerun()
+                            else:
+                                st.error(msg)
+                    with cc2:
+                        if st.button("❌ Cancelar", key=f"canc_excl_{pid}", use_container_width=True):
+                            st.session_state["pedido_excluir_confirmar"] = None
+                            st.rerun()
+                else:
+                    if st.button("🗑️ Excluir Definitivamente", key=f"excl_{pid}", use_container_width=True):
+                        st.session_state["pedido_excluir_confirmar"] = pid
+                        st.rerun()
