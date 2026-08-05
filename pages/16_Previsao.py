@@ -87,6 +87,10 @@ def buscar_pedidos_producao():
     # A fábrica só vê os pedidos com Status "Pago".
     res_producao = supabase.table("pedidos").select("*").eq("status", "Pago").execute()
     lista_total = res_producao.data or []
+    # Uma vez que um entregador foi atribuído em 08_Entregas.py, o pedido já saiu das
+    # mãos da produção (mesmo continuando com status "Pago") e não deve mais aparecer
+    # aqui — só volta a ficar visível na fila de logística/entrega.
+    lista_total = [p for p in lista_total if not p.get("entregador_login")]
     unicos = {p["id"]: p for p in lista_total}.values()
     return sorted(list(unicos), key=lambda x: x.get('data_entrega') or '9999-99-99')
 
@@ -297,9 +301,12 @@ if st.session_state.pedido_em_montagem:
                         supabase.table("pedidos").update({
                             "checklist": novo_checklist,
                             "cesta_montada": True,
-                            "status": "Em Rota de Entrega" # Aqui sim o status muda de fato
+                            # O status PERMANECE "Pago" de propósito: a etapa de entrega é controlada
+                            # pela flag 'cesta_montada' + atribuição de entregador (08_Entregas.py), não
+                            # por uma troca de status. Isso mantém o pedido visível em 02_Pedidos.py
+                            # dentro do filtro "Pago" até a entrega ser efetivamente concluída.
                         }).eq("id", p_ativo['id']).execute()
-                        st.success("✅ Cesta despachada!")
+                        st.success("✅ Cesta pronta e liberada para a Rota de Entrega!")
                         st.session_state.pedido_em_montagem = None
                         time.sleep(1.5)
                         st.rerun(scope="app")
