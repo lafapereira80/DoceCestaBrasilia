@@ -1,7 +1,7 @@
 import streamlit as st
 import time
 from config.supabase import supabase
-from services.cesta_service import buscar_cesta_por_id, atualizar_cesta, upload_imagem_cesta
+from services.cesta_service import buscar_cesta_por_id, atualizar_cesta, upload_imagem_cesta, listar_cestas
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 
@@ -103,7 +103,12 @@ with st.container(border=True):
         nova_secao = st.selectbox("Seção na Vitrine", lista_secoes, index=lista_secoes.index(secao_atual))
         
         nova_descricao = st.text_area("Descrição (Itens principais)", value=cesta_atual.get("descricao", ""), height=130)
-        nova_ordem = st.number_input("Ordem de Exibição", value=cesta_atual.get("ordem", 1), min_value=1, step=1)
+        total_cestas = len(listar_cestas()) or 1
+        nova_ordem = st.number_input(
+            "Ordem de Exibição", value=min(int(cesta_atual.get("ordem", 1)), total_cestas),
+            min_value=1, max_value=total_cestas, step=1,
+            help=f"Posição na vitrine (1 a {total_cestas}). As outras cestas se reajustam automaticamente."
+        )
 
     with col2:
         nova_ativa = st.toggle("Item Ativo na Vitrine?", value=cesta_atual.get("ativa", True))
@@ -134,21 +139,26 @@ with col_b2:
             st.error("O nome é obrigatório.")
         else:
             with st.spinner("Atualizando dados..."):
-                imagem_url = cesta_atual.get("imagem")
-                if nova_imagem:
-                    imagem_url = upload_imagem_cesta(nova_imagem)
+                try:
+                    imagem_url = cesta_atual.get("imagem")
+                    if nova_imagem:
+                        imagem_url = upload_imagem_cesta(nova_imagem)
 
-                dados_atualizados = {
-                    "nome": novo_nome.strip(),
-                    "descricao": nova_descricao.strip(),
-                    "preco": None if nova_sem_preco else novo_preco,
-                    "ativa": nova_ativa,
-                    "ordem": int(nova_ordem),
-                    "secao_vitrine": nova_secao,
-                    "imagem": imagem_url
-                }
+                    dados_atualizados = {
+                        "nome": novo_nome.strip(),
+                        "descricao": nova_descricao.strip(),
+                        "preco": None if nova_sem_preco else novo_preco,
+                        "ativa": nova_ativa,
+                        "ordem": int(nova_ordem),
+                        "secao_vitrine": nova_secao,
+                        "imagem": imagem_url
+                    }
 
-                sucesso = atualizar_cesta(cesta_id, dados_atualizados)
+                    sucesso = atualizar_cesta(cesta_id, dados_atualizados)
+                except Exception as erro:
+                    sucesso = False
+                    st.error(f"Erro ao atualizar a cesta: {erro}")
+                    st.stop()
 
                 if sucesso:
                     st.success("✅ Cesta atualizada com sucesso!")
