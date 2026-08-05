@@ -269,6 +269,17 @@ with col_add3:
             })
             st.rerun()
 
+fotos_pendentes_man_preview = st.session_state.get("fotos_polaroid_pendentes_man") or []
+if fotos_pendentes_man_preview:
+    st.markdown("<div style='font-size: 13px; font-weight: 700; color: #775a46; margin-top: 16px;'>📷 Fotos Polaroid reservadas para este pedido (enviadas ao bucket ao registrar):</div>", unsafe_allow_html=True)
+    cols_pend_man = st.columns(4)
+    for i_f, arq in enumerate(fotos_pendentes_man_preview):
+        with cols_pend_man[i_f % 4]:
+            st.image(arq, use_container_width=True, caption=arq.name)
+            if st.button("🗑️ Remover", key=f"rem_foto_pend_man_{i_f}_{arq.name}", use_container_width=True):
+                st.session_state["fotos_polaroid_pendentes_man"].pop(i_f)
+                st.rerun()
+
 total_bruto = 0
 if st.session_state["itens_orcamento_varejo"]:
     st.markdown("<hr style='border-top: 1px dashed #e8ddd3; margin: 20px 0;'>", unsafe_allow_html=True)
