@@ -2,6 +2,7 @@ import html
 import streamlit as st
 import pandas as pd
 import re
+import time
 import uuid
 from datetime import datetime, date
 
@@ -10,6 +11,7 @@ from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
 from services.produto_service import listar_produtos_por_categoria_id
 from services.foto_service import listar_fotos, deletar_foto, salvar_fotos
+from services.pedido_adicional_service import listar_adicionais_pedido
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 from utils.formatacao import formatar_moeda, tratar_preco, formatar_data_br, gerar_link_wpp, gerar_resumo_whatsapp
@@ -212,10 +214,91 @@ subtotal_db = total_db - frete_db + vd_db
 desc_perc_inicial = float(round((vd_db / subtotal_db) * 100, 2)) if subtotal_db > 0 else 0.0
 
 if "modo_edicao" not in st.session_state: st.session_state.modo_edicao = False
+def _preco_txt(txt):
+    try:
+        return float(str(txt).replace(".", "").replace(",", "."))
+    except Exception:
+        return 0.0
+
+_PADRAO_ITEM = re.compile(r'^(\d+)x\s+(.+?)\s*\(R\$\s*([\d\.,]+)\)\s*$')
+
+def montar_carrinho_edicao(pedido, subtotal_base):
+    """
+    Reconstrói o carrinho editável a partir dos dados salvos. O pedido pode ter vindo
+    de fluxos diferentes (01_Inicio.py, 18_Corporativo.py, 19_Pedido_Manual.py), então
+    tenta as fontes estruturadas primeiro e só usa 1 item único de fallback se nada
+    puder ser separado.
+    """
+    itens = []
+
+    # 1) Tenta separar a(s) cesta(s)/produto(s) a partir do texto 'produtos'
+    #    (formato usado por 18_Corporativo.py e 19_Pedido_Manual.py: "1x Nome (R$ Valor)\ndescrição")
+    produtos_txt = pedido.get("produtos") or ""
+    for bloco in [b.strip() for b in produtos_txt.split("\n\n") if b.strip()]:
+        linhas = bloco.split("\n")
+        m = _PADRAO_ITEM.match(linhas[0].strip())
+        if m:
+            qtd, nome, preco = m.groups()
+            itens.append({
+                "id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": pedido.get("cesta_id"),
+                "nome": nome.strip(), "preco_unitario": _preco_txt(preco), "quantidade": int(qtd),
+                "descricao": "\n".join(linhas[1:]).strip()
+            })
+
+    # 2) Tenta os extras a partir da tabela estruturada pedido_adicionais (usada por
+    #    01_Inicio.py e 19_Pedido_Manual.py)
+    try:
+        extras_bd = listar_adicionais_pedido(pedido["id"]) or []
+    except Exception:
+        extras_bd = []
+
+    if extras_bd:
+        for ad in extras_bd:
+            itens.append({
+                "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None,
+                "nome": ad.get("nome_produto") or "Extra",
+                "preco_unitario": float(ad.get("valor_unitario") or 0),
+                "quantidade": int(ad.get("quantidade") or 1), "descricao": ""
+            })
+    else:
+        # Fallback: extrai do texto "EXTRAS E ADICIONAIS:" (formato do 18_Corporativo.py,
+        # que não grava na tabela pedido_adicionais)
+        adicionais_txt = pedido.get("adicionais") or ""
+        if "EXTRAS E ADICIONAIS:" in adicionais_txt:
+            bloco_extras = adicionais_txt.split("EXTRAS E ADICIONAIS:", 1)[1]
+            for linha in bloco_extras.split("\n"):
+                linha = linha.strip()
+                if not linha:
+                    continue
+                m = _PADRAO_ITEM.match(linha)
+                if m:
+                    qtd, nome, preco = m.groups()
+                    itens.append({
+                        "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None,
+                        "nome": nome.strip(), "preco_unitario": _preco_txt(preco), "quantidade": int(qtd),
+                        "descricao": ""
+                    })
+
+    # 3) Se nenhuma cesta foi reconhecida (ex: pedido veio de 01_Inicio.py, onde
+    #    'produtos' só descreve a personalização escolhida, sem preço por linha),
+    #    cria um único item de cesta com o preço isolado (subtotal menos os extras
+    #    já identificados), preservando a descrição original.
+    if not any(i["tipo"] == "Cesta" for i in itens):
+        soma_extras = sum(i["preco_unitario"] * i["quantidade"] for i in itens if i["tipo"] == "Extra")
+        preco_cesta_isolado = max(subtotal_base - soma_extras, 0.0)
+        itens.insert(0, {
+            "id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": pedido.get("cesta_id"),
+            "nome": pedido.get("cesta_nome") or "Cesta", "preco_unitario": preco_cesta_isolado,
+            "quantidade": 1, "descricao": produtos_txt
+        })
+
+    return itens
+
+
 if "foto_confirmar_exclusao" not in st.session_state: st.session_state["foto_confirmar_exclusao"] = None
 if "mostrar_upload_polaroid" not in st.session_state: st.session_state["mostrar_upload_polaroid"] = False
 if "edit_cart" not in st.session_state or st.session_state.get("edit_pedido_id") != pedido_id:
-    st.session_state["edit_cart"] = [{"id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": pedido.get("cesta_id"), "nome": pedido.get("cesta_nome") or "Cesta", "preco_unitario": subtotal_db, "quantidade": 1, "descricao": pedido.get("produtos") or ""}]
+    st.session_state["edit_cart"] = montar_carrinho_edicao(pedido, subtotal_db)
     st.session_state["edit_pedido_id"] = pedido_id
 
 STATUS_PERMITIDOS = ["Recebido", "Pago", "Em Montagem", "Pronto", "Enviado", "Em Rota de Entrega", "Entregue", "Desistência"]
@@ -296,53 +379,15 @@ if not st.session_state.modo_edicao:
         st.markdown(html_info2 + "</div>", unsafe_allow_html=True)
 
     fotos_pedido = listar_fotos(pedido_id)
-    with st.container(border=True):
-        st.markdown("<div class='card-title'>📷 Fotos Polaroid</div>", unsafe_allow_html=True)
-
-        if fotos_pedido:
+    if fotos_pedido:
+        with st.container(border=True):
+            st.markdown("<div class='card-title'>📷 Fotos Polaroid</div>", unsafe_allow_html=True)
             cols_fotos = st.columns(4)
             for i, foto in enumerate(fotos_pedido):
                 with cols_fotos[i % 4]:
                     if foto.get("url"):
                         st.image(foto["url"], use_container_width=True)
-
-                    if st.session_state.get("foto_confirmar_exclusao") == foto["id"]:
-                        st.caption("⚠️ Excluir do bucket?")
-                        cfc1, cfc2 = st.columns(2)
-                        with cfc1:
-                            if st.button("✅", key=f"conf_del_foto_{foto['id']}", use_container_width=True, help="Confirmar exclusão"):
-                                sucesso, msg = deletar_foto(foto["id"], foto.get("arquivo"))
-                                if sucesso:
-                                    st.session_state["foto_confirmar_exclusao"] = None
-                                    st.toast("🗑️ Foto excluída do bucket.")
-                                    st.rerun()
-                                else:
-                                    st.error(msg)
-                        with cfc2:
-                            if st.button("❌", key=f"canc_del_foto_{foto['id']}", use_container_width=True, help="Cancelar"):
-                                st.session_state["foto_confirmar_exclusao"] = None
-                                st.rerun()
-                    else:
-                        if st.button("🗑️ Excluir Foto", key=f"del_foto_{foto['id']}", use_container_width=True):
-                            st.session_state["foto_confirmar_exclusao"] = foto["id"]
-                            st.rerun()
-        else:
-            st.caption("Nenhuma foto enviada para este pedido ainda.")
-
-        st.write("")
-        novas_fotos = st.file_uploader(
-            "Enviar novas fotos para o bucket (pedido_fotos)",
-            type=["jpg", "jpeg", "png", "webp", "heic"],
-            accept_multiple_files=True, key=f"upload_fotos_view_{pedido_id}"
-        )
-        if st.button("📤 Enviar Fotos ao Bucket", use_container_width=True, disabled=not novas_fotos):
-            with st.spinner("Enviando fotos..."):
-                ok_fotos, msg_fotos = salvar_fotos(pedido_id, novas_fotos)
-            if ok_fotos:
-                st.toast(f"📷 {len(novas_fotos)} foto(s) enviada(s) com sucesso!")
-                st.rerun()
-            else:
-                st.error(f"Falha ao enviar as fotos: {msg_fotos}")
+            st.caption("Para enviar ou excluir fotos, use '✏️ Editar Carrinho / Dados Completos'.")
 
     with st.container(border=True):
         st.markdown("<div style='font-size: 13px; font-weight: 800; color: #b06000; margin-bottom: 4px;'>⚠️ Anotações Internas</div>", unsafe_allow_html=True)
@@ -387,13 +432,17 @@ if not st.session_state.modo_edicao:
                     "valor_frete": e_frete_rapido, "valor_total": novo_total, "pagamento": e_pag_rapido,
                     "status": e_status_rapido, "adicionais": "\n".join(ads_list)
                 }
-                if round(e_frete_rapido, 2) != round(frete_db, 2) or round(e_desc_rapido, 2) != round(desc_perc_inicial, 2):
+                mudou_valor_total = round(e_frete_rapido, 2) != round(frete_db, 2) or round(e_desc_rapido, 2) != round(desc_perc_inicial, 2)
+                if mudou_valor_total:
                     update_data["infinitepay_url"] = None
                     update_data["infinitepay_transaction_id"] = None
                     
                 try:
                     supabase.table("pedidos").update(update_data).eq("id", pedido_id).execute()
                     st.success("✅ Ajustes salvos com sucesso!")
+                    if mudou_valor_total and pedido.get("infinitepay_url"):
+                        st.warning("⚠️ O valor do pedido mudou — o link de pagamento anterior foi invalidado. Gere um novo link antes de cobrar o cliente.")
+                        time.sleep(2)
                     st.rerun()
                 except Exception as e: st.error(f"Erro ao salvar: {e}")
         else:
@@ -498,6 +547,54 @@ else:
             e_anotacoes = st.text_area("Anotações Internas", value=pedido.get('anotacoes_internas') or '', height=185)
 
     with st.container(border=True):
+        st.markdown("<div class='card-title'>📷 4. FOTOS POLAROID</div>", unsafe_allow_html=True)
+        fotos_pedido_edicao = listar_fotos(pedido_id)
+        if fotos_pedido_edicao:
+            cols_fotos_ed = st.columns(4)
+            for i, foto in enumerate(fotos_pedido_edicao):
+                with cols_fotos_ed[i % 4]:
+                    if foto.get("url"):
+                        st.image(foto["url"], use_container_width=True)
+
+                    if st.session_state.get("foto_confirmar_exclusao") == foto["id"]:
+                        st.caption("⚠️ Excluir do bucket?")
+                        cfc1, cfc2 = st.columns(2)
+                        with cfc1:
+                            if st.button("✅", key=f"conf_del_foto_ed_{foto['id']}", use_container_width=True, help="Confirmar exclusão"):
+                                sucesso, msg = deletar_foto(foto["id"], foto.get("arquivo"))
+                                if sucesso:
+                                    st.session_state["foto_confirmar_exclusao"] = None
+                                    st.toast("🗑️ Foto excluída do bucket.")
+                                    st.rerun()
+                                else:
+                                    st.error(msg)
+                        with cfc2:
+                            if st.button("❌", key=f"canc_del_foto_ed_{foto['id']}", use_container_width=True, help="Cancelar"):
+                                st.session_state["foto_confirmar_exclusao"] = None
+                                st.rerun()
+                    else:
+                        if st.button("🗑️ Excluir Foto", key=f"del_foto_ed_{foto['id']}", use_container_width=True):
+                            st.session_state["foto_confirmar_exclusao"] = foto["id"]
+                            st.rerun()
+        else:
+            st.caption("Nenhuma foto enviada para este pedido ainda.")
+
+        st.write("")
+        novas_fotos_edicao = st.file_uploader(
+            "Enviar novas fotos para o bucket (pedido_fotos)",
+            type=["jpg", "jpeg", "png", "webp", "heic"],
+            accept_multiple_files=True, key=f"upload_fotos_edicao_{pedido_id}"
+        )
+        if st.button("📤 Enviar Fotos ao Bucket", use_container_width=True, disabled=not novas_fotos_edicao):
+            with st.spinner("Enviando fotos..."):
+                ok_fotos, msg_fotos = salvar_fotos(pedido_id, novas_fotos_edicao)
+            if ok_fotos:
+                st.toast(f"📷 {len(novas_fotos_edicao)} foto(s) enviada(s) com sucesso!")
+                st.rerun()
+            else:
+                st.error(f"Falha ao enviar as fotos: {msg_fotos}")
+
+    with st.container(border=True):
         st.markdown("<div class='card-title'>🎁 3. PRODUTOS E CARRINHO (FECHAMENTO)</div>", unsafe_allow_html=True)
         col_add1, col_add2, col_add3 = st.columns(3)
         cestas_disponiveis, adicionais_disponiveis = obter_cestas(), obter_adicionais()
@@ -594,6 +691,12 @@ else:
                 "adicionais": msg_add.strip(), "pagamento": e_pag, "status": e_status,
                 "valor_frete": e_frete, "valor_total": total_liquido
             }
+
+            valor_mudou = round(total_liquido, 2) != round(total_db, 2)
+            if valor_mudou and pedido.get("infinitepay_url"):
+                dados_update["infinitepay_url"] = None
+                dados_update["infinitepay_transaction_id"] = None
+
             try:
                 supabase.table("pedidos").update(dados_update).eq("id", pedido_id).execute()
                 if cliente_id and e_email.strip() != email_cliente:
@@ -602,6 +705,9 @@ else:
                     except Exception as e:
                         st.toast(f"⚠️ Pedido salvo, mas não foi possível atualizar o e-mail do cliente: {e}")
                 st.success("✅ Atualizado!")
+                if valor_mudou:
+                    st.warning("⚠️ O valor do pedido mudou — o link de pagamento anterior foi invalidado. Gere um novo link na tela de detalhes antes de cobrar o cliente.")
+                    time.sleep(2)
                 st.session_state.modo_edicao = False
                 st.rerun()
             except Exception as e: st.error(f"Erro: {e}")
