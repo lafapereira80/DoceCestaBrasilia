@@ -11,6 +11,7 @@ from config.supabase import supabase
 from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
 from services.pedido_service import salvar_pedido
+from services.foto_service import salvar_fotos
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 from utils.formatacao import formatar_moeda, tratar_preco, NOME_LOJA # <-- Puxando da Central!
@@ -261,12 +262,21 @@ with aba_proposta:
     with col_add2:
         st.markdown("<div style='font-size: 13px; font-weight: 700; color: #775a46;'>✨ Extras do Catálogo</div>", unsafe_allow_html=True)
         adc_sel = st.selectbox("Extras", [None] + adicionais_disponiveis, format_func=lambda x: x["nome"] if x else "Selecione um Adicional...", label_visibility="collapsed")
+        fotos_polaroid_novas = None
+        if adc_sel and "polaroid" in str(adc_sel.get("nome", "")).lower():
+            fotos_polaroid_novas = st.file_uploader(
+                "📷 Fotos para o Polaroid", type=["jpg", "jpeg", "png", "webp", "heic"],
+                accept_multiple_files=True, key="upload_polaroid_corp"
+            )
         if st.button("➕ Inserir Extra", use_container_width=True):
             if adc_sel:
                 st.session_state["itens_orcamento"].append({
                     "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None, "nome": adc_sel["nome"], 
                     "preco_unitario": tratar_preco(adc_sel.get("preco")), "quantidade": 1, "descricao": ""
                 })
+                if fotos_polaroid_novas:
+                    st.session_state.setdefault("fotos_polaroid_pendentes", []).extend(fotos_polaroid_novas)
+                    st.toast(f"📷 {len(fotos_polaroid_novas)} foto(s) reservada(s) — serão enviadas ao registrar o pedido.")
                 st.rerun()
 
     with col_add3:
@@ -407,6 +417,12 @@ with aba_proposta:
                     st.stop()
 
                 if sucesso:
+                    fotos_pendentes = st.session_state.get("fotos_polaroid_pendentes") or []
+                    if fotos_pendentes:
+                        ok_fotos, msg_fotos = salvar_fotos(p_id, fotos_pendentes)
+                        if not ok_fotos:
+                            st.warning(f"⚠️ Pedido registrado, mas houve falha ao enviar algumas fotos: {msg_fotos}")
+                        st.session_state["fotos_polaroid_pendentes"] = []
                     st.success(f"🎉 Pedido corporativo registrado com sucesso!")
                     st.session_state["itens_orcamento"] = []
                     st.session_state.corp_cnpj = ""
