@@ -448,6 +448,8 @@ with aba_proposta:
                     st.error("Erro ao registrar no banco de dados.")
 
     st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
 
     if st.session_state["itens_orcamento"] and empresa_nome and ver_preview:
         st.markdown("### 👁️ Enviar Proposta para o Cliente")
