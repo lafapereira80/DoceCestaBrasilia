@@ -126,13 +126,17 @@ def obter_horario_brasilia():
 def buscar_entregas_dia(driver_login=None):
     data_hoje = obter_horario_brasilia().strftime("%d/%m/%Y")
     
-    query_env = supabase.table("pedidos").select("*").in_("status", ["Enviado", "Em Rota de Entrega"])
+    query_env = supabase.table("pedidos").select("*").in_("status", ["Pago", "Enviado", "Em Rota de Entrega"])
     if perfil_usuario == "Entregador" or driver_login:
         alvo = login_atual if perfil_usuario == "Entregador" else driver_login
         query_env = query_env.eq("entregador_login", alvo)
         
     res_env = query_env.execute()
     enviados = res_env.data or []
+    # Pedidos com status "Pago" só entram na fila de logística quando a cesta já foi
+    # montada e liberada pela produção (16_Previsao.py). "Enviado"/"Em Rota de Entrega"
+    # seguem valendo por compatibilidade com pedidos antigos que já usavam esse status.
+    enviados = [p for p in enviados if p.get("status") in ("Enviado", "Em Rota de Entrega") or p.get("cesta_montada")]
     enviados.sort(key=lambda x: (x.get('ordem_entrega') if x.get('ordem_entrega') is not None else 999, x.get('created_at')))
     
     query_ent = supabase.table("pedidos").select("*").eq("status", "Entregue")
