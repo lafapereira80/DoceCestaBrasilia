@@ -7,6 +7,7 @@ from services.cesta_service import (
     atualizar_cesta,
     excluir_cesta,
     upload_imagem_cesta,
+    remover_imagem_cesta,
 )
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
@@ -19,6 +20,8 @@ administrador_operador()
 
 if "cesta_confirmar_exclusao" not in st.session_state:
     st.session_state["cesta_confirmar_exclusao"] = None
+if "cesta_confirmar_exclusao_foto" not in st.session_state:
+    st.session_state["cesta_confirmar_exclusao_foto"] = None
 
 # =====================================================
 # CSS APP NATIVO (CRYSTAL CLEAN)
@@ -152,6 +155,33 @@ with aba_lista:
                 if cesta_selecionada:
                     c_id = cesta_selecionada["id"]
 
+                    if cesta_selecionada.get("imagem"):
+                        col_foto_atual, col_foto_btn = st.columns([1, 2])
+                        with col_foto_atual:
+                            st.image(cesta_selecionada["imagem"], width=140, caption="Foto atual")
+                        with col_foto_btn:
+                            st.write("")
+                            if st.session_state.get("cesta_confirmar_exclusao_foto") == c_id:
+                                st.caption("⚠️ Excluir esta foto do bucket?")
+                                cff1, cff2 = st.columns(2)
+                                with cff1:
+                                    if st.button("✅ Confirmar", key=f"conf_del_foto_cesta_{idx_aba}", use_container_width=True, type="primary"):
+                                        try:
+                                            remover_imagem_cesta(c_id, cesta_selecionada.get("imagem"))
+                                            st.session_state["cesta_confirmar_exclusao_foto"] = None
+                                            st.toast("🗑️ Foto excluída do bucket.")
+                                            st.rerun()
+                                        except Exception as e:
+                                            st.error(f"Erro ao excluir foto: {e}")
+                                with cff2:
+                                    if st.button("❌ Cancelar", key=f"canc_del_foto_cesta_{idx_aba}", use_container_width=True):
+                                        st.session_state["cesta_confirmar_exclusao_foto"] = None
+                                        st.rerun()
+                            else:
+                                if st.button("🗑️ Excluir Foto", key=f"del_foto_cesta_{idx_aba}"):
+                                    st.session_state["cesta_confirmar_exclusao_foto"] = c_id
+                                    st.rerun()
+
                     with st.form(f"form_editar_cesta_{idx_aba}"):
                         e_col1, e_col2 = st.columns(2)
                         with e_col1:
@@ -175,8 +205,6 @@ with aba_lista:
                             )
                             e_ativa = st.checkbox("Ativa?", value=bool(cesta_selecionada.get("ativa", True)))
 
-                            if cesta_selecionada.get("imagem"):
-                                st.image(cesta_selecionada["imagem"], width=110, caption="Foto atual")
                             e_imagem_arquivo = st.file_uploader(
                                 "📷 Substituir Foto de Referência (opcional)",
                                 type=["jpg", "jpeg", "png", "webp"],
