@@ -125,7 +125,19 @@ def atualizar_cesta(cesta_id, dados: dict):
 
 
 # =====================================================
-# REMOVER IMAGEM DA CESTA
+# REMOVER IMAGEM DA CESTA (apaga o arquivo físico no bucket também)
 # =====================================================
-def remover_imagem_cesta(cesta_id):
+def remover_imagem_cesta(cesta_id, imagem_url=None):
+    try:
+        if imagem_url and "/public/cestas/" in str(imagem_url):
+            caminho_arquivo = str(imagem_url).split("/public/cestas/", 1)[1]
+            supabase.storage.from_("cestas").remove([caminho_arquivo])
+    except Exception:
+        pass  # segue removendo a referência no banco mesmo se o storage falhar
+
     supabase.table("cestas").update({"imagem": None}).eq("id", cesta_id).execute()
+    return True
+
+
+# Alias mais explícito, usado pelas páginas de gestão de cestas.
+deletar_imagem_cesta = remover_imagem_cesta
