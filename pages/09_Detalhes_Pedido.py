@@ -9,6 +9,7 @@ from config.supabase import supabase
 from services.cesta_service import listar_cestas
 from services.configuracao_cesta_service import carregar_configuracao_cesta
 from services.produto_service import listar_produtos_por_categoria_id
+from services.foto_service import listar_fotos, deletar_foto, salvar_fotos
 from utils.menu import configurar_pagina, menu_lateral
 from utils.permissao import administrador_operador
 from utils.formatacao import formatar_moeda, tratar_preco, formatar_data_br, gerar_link_wpp, gerar_resumo_whatsapp
@@ -211,6 +212,8 @@ subtotal_db = total_db - frete_db + vd_db
 desc_perc_inicial = float(round((vd_db / subtotal_db) * 100, 2)) if subtotal_db > 0 else 0.0
 
 if "modo_edicao" not in st.session_state: st.session_state.modo_edicao = False
+if "foto_confirmar_exclusao" not in st.session_state: st.session_state["foto_confirmar_exclusao"] = None
+if "mostrar_upload_polaroid" not in st.session_state: st.session_state["mostrar_upload_polaroid"] = False
 if "edit_cart" not in st.session_state or st.session_state.get("edit_pedido_id") != pedido_id:
     st.session_state["edit_cart"] = [{"id": str(uuid.uuid4()), "tipo": "Cesta", "cesta_id": pedido.get("cesta_id"), "nome": pedido.get("cesta_nome") or "Cesta", "preco_unitario": subtotal_db, "quantidade": 1, "descricao": pedido.get("produtos") or ""}]
     st.session_state["edit_pedido_id"] = pedido_id
@@ -291,6 +294,37 @@ if not st.session_state.modo_edicao:
             html_info2 += f"""<div class='data-label' style='margin-top: 15px;'>💌 Mensagem do Cartão</div>
             <div style='background:#fdfbf8; padding:10px; border-radius:8px; font-style:italic; font-size:13px; color:#4a2e1b; border-left:3px solid #c5721f;'>"{esc(pedido.get('mensagem'))}"</div>"""
         st.markdown(html_info2 + "</div>", unsafe_allow_html=True)
+
+    fotos_pedido = listar_fotos(pedido_id)
+    if fotos_pedido:
+        with st.container(border=True):
+            st.markdown("<div class='card-title'>📷 Fotos Polaroid Enviadas pelo Cliente</div>", unsafe_allow_html=True)
+            cols_fotos = st.columns(4)
+            for i, foto in enumerate(fotos_pedido):
+                with cols_fotos[i % 4]:
+                    if foto.get("url"):
+                        st.image(foto["url"], use_container_width=True)
+
+                    if st.session_state.get("foto_confirmar_exclusao") == foto["id"]:
+                        st.caption("⚠️ Excluir do bucket?")
+                        cfc1, cfc2 = st.columns(2)
+                        with cfc1:
+                            if st.button("✅", key=f"conf_del_foto_{foto['id']}", use_container_width=True, help="Confirmar exclusão"):
+                                sucesso, msg = deletar_foto(foto["id"], foto.get("arquivo"))
+                                if sucesso:
+                                    st.session_state["foto_confirmar_exclusao"] = None
+                                    st.toast("🗑️ Foto excluída do bucket.")
+                                    st.rerun()
+                                else:
+                                    st.error(msg)
+                        with cfc2:
+                            if st.button("❌", key=f"canc_del_foto_{foto['id']}", use_container_width=True, help="Cancelar"):
+                                st.session_state["foto_confirmar_exclusao"] = None
+                                st.rerun()
+                    else:
+                        if st.button("🗑️ Excluir Foto", key=f"del_foto_{foto['id']}", use_container_width=True):
+                            st.session_state["foto_confirmar_exclusao"] = foto["id"]
+                            st.rerun()
 
     with st.container(border=True):
         st.markdown("<div style='font-size: 13px; font-weight: 800; color: #b06000; margin-bottom: 4px;'>⚠️ Anotações Internas</div>", unsafe_allow_html=True)
@@ -456,8 +490,25 @@ else:
                 st.rerun()
         with col_add2:
             adc_sel = st.selectbox("Extra do Catálogo", [None] + adicionais_disponiveis, format_func=lambda x: x["nome"] if x else "Selecione...")
+
+            eh_polaroid = adc_sel and "polaroid" in str(adc_sel.get("nome", "")).lower()
+            fotos_polaroid_edicao = None
+            if eh_polaroid:
+                fotos_polaroid_edicao = st.file_uploader(
+                    "📷 Fotos para o Polaroid (envia direto pro bucket)",
+                    type=["jpg", "jpeg", "png", "webp", "heic"],
+                    accept_multiple_files=True, key="upload_polaroid_edicao_pedido"
+                )
+
             if st.button("➕ Inserir Extra", use_container_width=True) and adc_sel:
                 st.session_state["edit_cart"].append({"id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None, "nome": adc_sel["nome"], "preco_unitario": tratar_preco(adc_sel.get("preco")), "quantidade": 1, "descricao": ""})
+                if eh_polaroid and fotos_polaroid_edicao:
+                    with st.spinner("📦 Enviando fotos para o bucket..."):
+                        ok_fotos, msg_fotos = salvar_fotos(pedido_id, fotos_polaroid_edicao[:2])
+                    if ok_fotos:
+                        st.toast(f"📷 {len(fotos_polaroid_edicao[:2])} foto(s) enviada(s) ao bucket!")
+                    else:
+                        st.error(f"Extra adicionado, mas houve falha ao enviar as fotos: {msg_fotos}")
                 st.rerun()
         with col_add3:
             txt_man = st.text_input("Extra Manual", placeholder="Ex: Vinho Personalizado")
