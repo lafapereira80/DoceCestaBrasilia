@@ -296,9 +296,10 @@ if not st.session_state.modo_edicao:
         st.markdown(html_info2 + "</div>", unsafe_allow_html=True)
 
     fotos_pedido = listar_fotos(pedido_id)
-    if fotos_pedido:
-        with st.container(border=True):
-            st.markdown("<div class='card-title'>📷 Fotos Polaroid Enviadas pelo Cliente</div>", unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown("<div class='card-title'>📷 Fotos Polaroid</div>", unsafe_allow_html=True)
+
+        if fotos_pedido:
             cols_fotos = st.columns(4)
             for i, foto in enumerate(fotos_pedido):
                 with cols_fotos[i % 4]:
@@ -325,6 +326,23 @@ if not st.session_state.modo_edicao:
                         if st.button("🗑️ Excluir Foto", key=f"del_foto_{foto['id']}", use_container_width=True):
                             st.session_state["foto_confirmar_exclusao"] = foto["id"]
                             st.rerun()
+        else:
+            st.caption("Nenhuma foto enviada para este pedido ainda.")
+
+        st.write("")
+        novas_fotos = st.file_uploader(
+            "Enviar novas fotos para o bucket (pedido_fotos)",
+            type=["jpg", "jpeg", "png", "webp", "heic"],
+            accept_multiple_files=True, key=f"upload_fotos_view_{pedido_id}"
+        )
+        if st.button("📤 Enviar Fotos ao Bucket", use_container_width=True, disabled=not novas_fotos):
+            with st.spinner("Enviando fotos..."):
+                ok_fotos, msg_fotos = salvar_fotos(pedido_id, novas_fotos)
+            if ok_fotos:
+                st.toast(f"📷 {len(novas_fotos)} foto(s) enviada(s) com sucesso!")
+                st.rerun()
+            else:
+                st.error(f"Falha ao enviar as fotos: {msg_fotos}")
 
     with st.container(border=True):
         st.markdown("<div style='font-size: 13px; font-weight: 800; color: #b06000; margin-bottom: 4px;'>⚠️ Anotações Internas</div>", unsafe_allow_html=True)
