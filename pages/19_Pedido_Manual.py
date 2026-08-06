@@ -50,7 +50,7 @@ h1, h2, h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-
     background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 20px;
     box-shadow: 0 4px 12px rgba(90, 59, 40, 0.02); margin-bottom: 15px;
 }
-.corp-title { font-size: 16px; font-weight: 800; color: #c5721f; margin-bottom: 12px; border-bottom: 2px dashed #f5eee6; padding-bottom: 8px;}
+.corp-title { font-size: 16px; font-weight: 800; color: #c5721f; margin-bottom: 12px; margin-top: 28px; border-bottom: 2px dashed #f5eee6; padding-bottom: 8px;}
 
 .resumo-financeiro {
     background: #fdfbf8; border: 1px solid #e8ddd3; border-radius: 12px; padding: 12px 18px;
@@ -160,7 +160,6 @@ if "man_processando" not in st.session_state: st.session_state["man_processando"
 # =====================================================
 # 1. DADOS DO COMPRADOR
 # =====================================================
-st.markdown('<div class="corp-card">', unsafe_allow_html=True)
 st.markdown('<div class="corp-title">👤 1. Dados do Comprador</div>', unsafe_allow_html=True)
 
 cc1, cc_btn = st.columns([3.5, 1], vertical_alignment="bottom")
@@ -194,12 +193,10 @@ if st.session_state.modo_busca_cli:
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
 # 2. SELEÇÃO DE PRODUTOS E ADICIONAIS
 # =====================================================
-st.markdown('<div class="corp-card">', unsafe_allow_html=True)
 st.markdown('<div class="corp-title">🎁 2. Seleção de Produtos e Adicionais</div>', unsafe_allow_html=True)
 
 col_add1, col_add2, col_add3 = st.columns(3)
@@ -310,12 +307,10 @@ if st.session_state["itens_orcamento_varejo"]:
         st.session_state["itens_orcamento_varejo"] = []
         st.rerun()
 
-st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
 # 3. DESTINATÁRIO E CARTÃO
 # =====================================================
-st.markdown('<div class="corp-card">', unsafe_allow_html=True)
 st.markdown('<div class="corp-title">💌 3. Destinatário e Cartão</div>', unsafe_allow_html=True)
 
 cd1, cd2 = st.columns(2)
@@ -324,12 +319,10 @@ with cd2: dest_tel = st.text_input("Telefone do Homenageado", key="man_dest_tel"
 motivo = st.text_input("Ocasião (Ex: Aniversário)", key="man_motivo")
 mensagem = st.text_area("Mensagem do Cartão", height=70, key="man_msg", placeholder="Texto impresso no cartão.")
 
-st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
 # 5. ENDEREÇO E ENTREGA
 # =====================================================
-st.markdown('<div class="corp-card">', unsafe_allow_html=True)
 st.markdown('<div class="corp-title">📍 5. Endereço e Entrega</div>', unsafe_allow_html=True)
 
 cx1, cx2 = st.columns([1.5, 2.5], vertical_alignment="bottom")
@@ -361,12 +354,10 @@ ce1, ce2 = st.columns(2)
 with ce1: dt_ent = st.date_input("Data da Entrega", value=date.today(), format="DD/MM/YYYY", key="man_dt")
 with ce2: per_ent = st.text_input("Horário Combinado", placeholder="Ex: 08h às 10h", key="man_per")
 
-st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
 # LOGÍSTICA, PAGAMENTO E FECHAMENTO
 # =====================================================
-st.markdown('<div class="corp-card">', unsafe_allow_html=True)
 st.markdown('<div class="corp-title">💰 Logística, Pagamento e Resumo</div>', unsafe_allow_html=True)
 
 col_d1, col_d2, col_d3, col_d4 = st.columns(4)
@@ -506,4 +497,3 @@ if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width
             st.session_state["man_processando"] = False
             st.error("Erro ao registrar no banco de dados.")
 
-st.markdown('</div>', unsafe_allow_html=True)
