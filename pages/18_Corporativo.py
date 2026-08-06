@@ -48,7 +48,7 @@ h1, h2, h3, h4 { color: #5a3b28 !important; font-weight: 800 !important; margin-
     background: #ffffff; border: 1px solid #e8ddd3; border-radius: 16px; padding: 24px;
     box-shadow: 0 4px 15px rgba(90, 59, 40, 0.02); margin-bottom: 15px;
 }
-.corp-title { font-size: 18px; font-weight: 800; color: #c5721f; margin-bottom: 15px; border-bottom: 2px dashed #f5eee6; padding-bottom: 10px;}
+.corp-title { font-size: 18px; font-weight: 800; color: #c5721f; margin-bottom: 15px; margin-top: 30px; border-bottom: 2px dashed #f5eee6; padding-bottom: 10px;}
 
 .proposta-preview {
     background: #ffffff; border: 1px solid #dfcdbb; border-radius: 12px; padding: 40px;
@@ -183,7 +183,6 @@ if "b2b_processando" not in st.session_state: st.session_state["b2b_processando"
 aba_proposta, aba_empresas = st.tabs(["📝 Novo Orçamento / Pedido", "🤝 Histórico de Vendas B2B"])
 
 with aba_proposta:
-    st.markdown('<div class="corp-card">', unsafe_allow_html=True)
     st.markdown('<div class="corp-title">⚙️ 1. Dados da Empresa e Negociação</div>', unsafe_allow_html=True)
     
     col_c1, col_c2, col_c3 = st.columns([2, 1, 3], vertical_alignment="bottom")
@@ -440,7 +439,6 @@ with aba_proposta:
                     st.session_state["b2b_processando"] = False
                     st.error("Erro ao registrar no banco de dados.")
 
-    st.markdown('</div>', unsafe_allow_html=True)
 
     if st.session_state["itens_orcamento"] and empresa_nome and ver_preview:
         st.markdown("### 👁️ Enviar Proposta para o Cliente")
@@ -468,7 +466,7 @@ with aba_proposta:
             st.code(texto_wpp, language="markdown")
 
 with aba_empresas:
-    st.markdown('<div class="corp-card"><div class="corp-title">🏢 Histórico de Contratos B2B</div>', unsafe_allow_html=True)
+    st.markdown('<div class="corp-title">🏢 Histórico de Contratos B2B</div>', unsafe_allow_html=True)
     pedidos_b2b = carregar_pedidos_b2b()
     if not pedidos_b2b:
         st.info("Nenhuma venda corporativa registrada ainda.")
@@ -479,4 +477,3 @@ with aba_empresas:
         df_b2b["Valor"] = pd.to_numeric(df_b2b["valor_total"]).apply(lambda x: f"R$ {formatar_moeda(x)}")
         df_display = df_b2b[["Data", "Empresa", "cesta_nome", "Valor", "status", "pagamento"]].rename(columns={"cesta_nome": "Pacote", "status": "Status", "pagamento": "Condição"})
         st.dataframe(df_display, use_container_width=True, hide_index=True)
-    st.markdown('</div>', unsafe_allow_html=True)
