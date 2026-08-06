@@ -245,41 +245,47 @@ def montar_carrinho_edicao(pedido, subtotal_base):
                 "descricao": "\n".join(linhas[1:]).strip()
             })
 
-    # 2) Tenta os extras a partir da tabela estruturada pedido_adicionais (usada por
-    #    01_Inicio.py e 19_Pedido_Manual.py)
+    # 2) Extras a partir da tabela estruturada pedido_adicionais (usada por 01_Inicio.py
+    #    e pelos extras de catálogo do 19_Pedido_Manual.py)
     try:
         extras_bd = listar_adicionais_pedido(pedido["id"]) or []
     except Exception:
         extras_bd = []
 
-    if extras_bd:
-        for ad in extras_bd:
-            itens.append({
-                "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None,
-                "nome": ad.get("nome_produto") or "Extra",
-                "preco_unitario": float(ad.get("valor_unitario") or 0),
-                "quantidade": int(ad.get("quantidade") or 1), "descricao": ""
-            })
-    else:
-        # Fallback: extrai do texto "EXTRAS E ADICIONAIS:" (formato do 18_Corporativo.py,
-        # que não grava na tabela pedido_adicionais)
-        adicionais_txt = pedido.get("adicionais") or ""
-        if "EXTRAS E ADICIONAIS:" in adicionais_txt:
-            bloco_extras = adicionais_txt.split("EXTRAS E ADICIONAIS:", 1)[1]
-            for linha in bloco_extras.split("\n"):
-                linha = linha.strip()
-                if not linha:
-                    continue
-                m = _PADRAO_ITEM.match(linha)
-                if m:
-                    qtd, nome, preco = m.groups()
-                    itens.append({
-                        "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None,
-                        "nome": nome.strip(), "preco_unitario": _preco_txt(preco), "quantidade": int(qtd),
-                        "descricao": ""
-                    })
+    nomes_ja_capturados = set()
+    for ad in extras_bd:
+        nome_ad = ad.get("nome_produto") or "Extra"
+        nomes_ja_capturados.add(nome_ad.strip().lower())
+        itens.append({
+            "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None,
+            "nome": nome_ad,
+            "preco_unitario": float(ad.get("valor_unitario") or 0),
+            "quantidade": int(ad.get("quantidade") or 1), "descricao": ""
+        })
 
-    # 3) Se nenhuma cesta foi reconhecida (ex: pedido veio de 01_Inicio.py, onde
+    # 3) Extras a partir do texto "EXTRAS E ADICIONAIS:" — cobre o 18_Corporativo.py
+    #    (que não grava em pedido_adicionais) e extras manuais do 19_Pedido_Manual.py
+    #    (que não têm produto_id, então também não vão para a tabela). Pula qualquer
+    #    nome que já tenha vindo da tabela acima, para não duplicar.
+    adicionais_txt = pedido.get("adicionais") or ""
+    if "EXTRAS E ADICIONAIS:" in adicionais_txt:
+        bloco_extras = adicionais_txt.split("EXTRAS E ADICIONAIS:", 1)[1]
+        for linha in bloco_extras.split("\n"):
+            linha = linha.strip()
+            if not linha:
+                continue
+            m = _PADRAO_ITEM.match(linha)
+            if m:
+                qtd, nome, preco = m.groups()
+                if nome.strip().lower() in nomes_ja_capturados:
+                    continue
+                itens.append({
+                    "id": str(uuid.uuid4()), "tipo": "Extra", "cesta_id": None,
+                    "nome": nome.strip(), "preco_unitario": _preco_txt(preco), "quantidade": int(qtd),
+                    "descricao": ""
+                })
+
+    # 4) Se nenhuma cesta foi reconhecida (ex: pedido veio de 01_Inicio.py, onde
     #    'produtos' só descreve a personalização escolhida, sem preço por linha),
     #    cria um único item de cesta com o preço isolado (subtotal menos os extras
     #    já identificados), preservando a descrição original.
