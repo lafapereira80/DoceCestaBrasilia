@@ -241,12 +241,6 @@ with col_add1:
 with col_add2:
     st.markdown("<div style='font-size: 13px; font-weight: 700; color: #775a46;'>✨ Extras do Catálogo</div>", unsafe_allow_html=True)
     adc_sel = st.selectbox("Extras", [None] + adicionais_disponiveis, format_func=lambda x: x["nome"] if x else "Selecione um Adicional...", label_visibility="collapsed")
-    fotos_polaroid_novas = None
-    if adc_sel and "polaroid" in str(adc_sel.get("nome", "")).lower():
-        fotos_polaroid_novas = st.file_uploader(
-            "📷 Fotos para o Polaroid", type=["jpg", "jpeg", "png", "webp", "heic"],
-            accept_multiple_files=True, key="upload_polaroid_manual"
-        )
     if st.button("➕ Inserir Extra", use_container_width=True):
         if adc_sel:
             st.session_state["itens_orcamento_varejo"].append({
@@ -265,6 +259,19 @@ with col_add3:
                 "produto_id": None, "preco_unitario": 0.0, "quantidade": 1, "descricao": ""
             })
             st.rerun()
+
+# Uploader de fotos Polaroid em largura cheia (fora das colunas estreitas, evita o
+# layout apertado) — só aparece quando o item selecionado em Extras é Polaroid.
+if adc_sel and "polaroid" in str(adc_sel.get("nome", "")).lower():
+    fotos_polaroid_novas = st.file_uploader(
+        "📷 Fotos para o Polaroid (serão enviadas ao bucket ao registrar o pedido)",
+        type=["jpg", "jpeg", "png", "webp", "heic"],
+        accept_multiple_files=True, key="upload_polaroid_manual"
+    )
+    # Captura os arquivos numa chave estável assim que aparecem — o uploader some da
+    # tela quando o admin troca a seleção do Extra, e sem isso as fotos se perdiam.
+    if fotos_polaroid_novas:
+        st.session_state["fotos_polaroid_staged_man"] = fotos_polaroid_novas
 
 total_bruto = 0
 if st.session_state["itens_orcamento_varejo"]:
@@ -472,11 +479,13 @@ if st.button("✅ GRAVAR PEDIDO NO SISTEMA", type="primary", use_container_width
                 except Exception as e:
                     st.warning(f"Pedido salvo, mas houve falha ao registrar detalhes dos extras: {e}")
 
-            fotos_pendentes_man = st.session_state.get("upload_polaroid_manual") or []
+            fotos_pendentes_man = st.session_state.get("fotos_polaroid_staged_man") or []
             if fotos_pendentes_man:
                 with st.spinner("📦 Enviando fotos Polaroid para o bucket..."):
                     ok_fotos, msg_fotos = salvar_fotos(p_id, fotos_pendentes_man[:2])
-                if not ok_fotos:
+                if ok_fotos:
+                    st.session_state["fotos_polaroid_staged_man"] = []
+                else:
                     st.warning(f"Pedido criado, mas houve falha ao enviar as fotos: {msg_fotos}")
 
             st.success(f"✅ Pedido criado com sucesso para {nome_comp}!")
