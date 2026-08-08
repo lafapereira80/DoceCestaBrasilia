@@ -1,0 +1,17 @@
+name: Manter App Streamlit Vivo
+
+on:
+  schedule:
+    # Executa a cada 12 horas (Streamlit costuma dormir após alguns dias sem acessos)
+    - cron: '0 */12 * * *'
+  # Permite rodar o robô manualmente pelo painel do GitHub
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fazer requisição no site
+        run: |
+          curl -sL "https://docecestabrasilia.streamlit.app/" > /dev/null
+          echo "Ping enviado com sucesso!"
