@@ -512,7 +512,7 @@ st.markdown(
 # ==========================================================
 # TÍTULO PRINCIPAL DO CATÁLOGO
 # ==========================================================
-st.markdown("<h3 style='font-family: \"Montserrat\", sans-serif; color:#4a2e1b; margin-top:10px; margin-bottom:4px; font-weight:800; font-size: 26px; letter-spacing: -0.5px;'>🎁 Catálogo Oficial</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='font-family: \"Montserrat\", sans-serif; color:#4a2e1b; margin-top:10px; margin-bottom:4px; font-weight:800; font-size: 26px; letter-spacing: -0.5px;'>🎁 Catálogo</h3>", unsafe_allow_html=True)
 st.caption("Escolha a cesta perfeita, confira os itens detalhados e personalize do seu jeito em nosso formulário.")
 
 # ==========================================================
