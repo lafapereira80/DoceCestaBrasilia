@@ -6,7 +6,7 @@ def gerar_link_checkout_infinitepay(pedido_id: str, valor_total: float, cliente_
     """
     Gera o link de pagamento na InfinitePay e passa pelo módulo encurtador.
     """
-    handle_seguro = st.secrets.get("INFINITEPAY_HANDLE", "lafayette-improise")
+    handle_seguro = st.secrets.get("INFINITEPAY_HANDLE", "vanessa-hagen")
     webhook_seguro = st.secrets.get("INFINITEPAY_WEBHOOK", "https://qtkcmwydongznncytncw.supabase.co/functions/v1/bright-action")
 
     if valor_total < 1.00:
