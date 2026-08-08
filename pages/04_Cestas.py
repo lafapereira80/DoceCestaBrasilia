@@ -107,10 +107,10 @@ with aba_nova:
 
                     col_pd1, col_pd2 = st.columns(2)
                     with col_pd1:
-                        data_ini = st.date_input("Início da promoção", value=date.today())
+                        data_ini = st.date_input("Início da promoção", value=date.today(), format="DD/MM/YYYY")
                         hora_ini = st.time_input("Hora de início", value=dtime(0, 0))
                     with col_pd2:
-                        data_fim = st.date_input("Fim da promoção", value=date.today())
+                        data_fim = st.date_input("Fim da promoção", value=date.today(), format="DD/MM/YYYY")
                         hora_fim = st.time_input("Hora de término", value=dtime(23, 59))
                     promo_inicio_dt = datetime.combine(data_ini, hora_ini)
                     promo_fim_dt = datetime.combine(data_fim, hora_fim)
@@ -270,10 +270,10 @@ with aba_lista:
 
                                 col_ed1, col_ed2 = st.columns(2)
                                 with col_ed1:
-                                    e_data_ini = st.date_input("Início da promoção", value=promo_ini_dt_atual.date(), key=f"data_ini_{idx_aba}")
+                                    e_data_ini = st.date_input("Início da promoção", value=promo_ini_dt_atual.date(), format="DD/MM/YYYY", key=f"data_ini_{idx_aba}")
                                     e_hora_ini = st.time_input("Hora de início", value=promo_ini_dt_atual.time(), key=f"hora_ini_{idx_aba}")
                                 with col_ed2:
-                                    e_data_fim = st.date_input("Fim da promoção", value=promo_fim_dt_atual.date(), key=f"data_fim_{idx_aba}")
+                                    e_data_fim = st.date_input("Fim da promoção", value=promo_fim_dt_atual.date(), format="DD/MM/YYYY", key=f"data_fim_{idx_aba}")
                                     e_hora_fim = st.time_input("Hora de término", value=promo_fim_dt_atual.time(), key=f"hora_fim_{idx_aba}")
                                 e_promo_inicio_dt = datetime.combine(e_data_ini, e_hora_ini)
                                 e_promo_fim_dt = datetime.combine(e_data_fim, e_hora_fim)
